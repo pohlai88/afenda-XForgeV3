@@ -2,7 +2,7 @@
  * packages/db -- the ONLY place a tenant-scoped database handle is obtained.
  *
  * Two chokepoints, and only two (ADR-003):
- *   withTenant(tenantId, fn)        the only path to tenant-scoped data
+ *   withTenant(ctx, fn)             the only path to tenant-scoped data
  *   withPlatformAccess(reason, fn)  the only path to cross-tenant data, audited
  *
  * The second exists because the admin console, billing rollups and platform
@@ -11,9 +11,9 @@
  * query" -- the documented way RLS architectures fail. The point is not that
  * cross-tenant access is safe; it is that it is rare, named and logged.
  */
+import type { VerifiedTenantContext } from '@xforge/tenancy'
 import { type PlatformAccessRequest, performPlatformAccess } from './platform-access'
 
-export { createMemoryDriver } from './memory-driver'
 export type {
   ExecutionContext,
   PlatformAccessRequest,
@@ -86,10 +86,29 @@ function requireDriver(): Driver {
   return driver
 }
 
-/** The only sanctioned path to tenant-scoped data. */
-export function withTenant<T>(tenantId: string, fn: (tx: TenantClient) => Promise<T>): Promise<T> {
-  if (!tenantId) throw new Error('withTenant requires a tenantId')
-  return requireDriver().transactionWithTenant(tenantId, fn)
+/**
+ * The only sanctioned path to tenant-scoped data.
+ *
+ * It takes a VERIFIED context, not a tenant id (ADR-022). A string parameter
+ * would make `withTenant(request.body.tenantId, ...)` typecheck, and the whole
+ * isolation guarantee would then rest on that value having been checked
+ * somewhere upstream -- the kind of "checked somewhere" that stops being true
+ * during a refactor. The branded type is constructible only inside
+ * `packages/tenancy`, after host resolution and membership verification.
+ *
+ * The import is type-only, so there is no runtime dependency and no cycle:
+ * `packages/tenancy` never imports `packages/db`.
+ */
+export async function withTenant<T>(
+  ctx: VerifiedTenantContext,
+  fn: (tx: TenantClient) => Promise<T>,
+): Promise<T> {
+  // `async`, so a bad context REJECTS rather than throwing synchronously out of
+  // a Promise-returning function. A synchronous throw from an async-shaped API
+  // slips straight past `withTenant(...).catch(handle)`, which is precisely
+  // where a caller expects to see it.
+  if (!ctx?.tenantId) throw new Error('withTenant requires a verified tenant context')
+  return requireDriver().transactionWithTenant(ctx.tenantId, fn)
 }
 
 /**

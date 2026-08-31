@@ -7,6 +7,7 @@
  */
 
 import type { RouteDefinition } from '@xforge/api'
+import type { VerifiedTenantContext } from '@xforge/tenancy'
 import type { Context } from 'hono'
 import { hrRoutes } from './contract/routes'
 import * as repo from './infrastructure/repository/emergency-contact'
@@ -27,11 +28,15 @@ const problem = (c: Context, status: 404 | 409 | 422, title: string, detail: str
     { 'content-type': 'application/problem+json' },
   )
 
-/** ADR-015: exactly one bound tenant per request; never derived from the host. */
-const tenantOf = (c: Context): string => {
-  const principal = c.get('principal') as { tenantId: string } | undefined
-  if (!principal?.tenantId) throw new Error('no bound tenant on request')
-  return principal.tenantId
+/**
+ * ADR-015 / ADR-022: exactly one bound tenant per request, and it arrives as a
+ * VERIFIED context that the request layer built from host + principal +
+ * membership. A handler cannot construct one, so it cannot choose a tenant.
+ */
+const tenantOf = (c: Context): VerifiedTenantContext => {
+  const ctx = c.get('tenant')
+  if (!ctx) throw new Error('no verified tenant context on request')
+  return ctx
 }
 
 export const hrModuleRoutes: RouteDefinition[] = [
@@ -48,7 +53,7 @@ export const hrModuleRoutes: RouteDefinition[] = [
     async handler(c) {
       const { employeeId } = c.req.param()
       const body = (await c.req.json()) as { name: string; relationship: string; phone: string }
-      const id = (c.get('newId') as string | undefined) ?? crypto.randomUUID()
+      const id = c.get('newId') ?? crypto.randomUUID()
       const row = await repo.create(tenantOf(c), String(employeeId), body, id)
       return c.json(toContact(row), 201)
     },
@@ -82,5 +87,4 @@ export const hrModuleRoutes: RouteDefinition[] = [
   },
 ]
 
-export { __reset as __resetHrStore } from './infrastructure/repository/emergency-contact'
 export { hrRoutes }

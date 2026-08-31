@@ -1,47 +1,78 @@
 /**
- * Contract tests -- real HTTP requests through the real app.
+ * Contract tests -- real HTTP requests through the real app, against a REAL
+ * PostgreSQL as the non-owner `app_user` role.
  *
- * This is the spine's end-to-end proof: contract -> adapter -> policy ->
- * handler -> repository -> chokepoint. Nothing is stubbed except the database
- * driver, and the driver seam is itself part of the architecture (ADR-003:
- * every access goes through withTenant, whatever is underneath).
+ * Nothing is stubbed. That is the point of tenancy slice 1: the application
+ * path and the security-test path must be the SAME path. While the repository
+ * was in-memory, this suite proved the contract and the handler and told us
+ * nothing about the boundary those handlers actually run behind -- and a suite
+ * that proves a path nothing runs is convincing in exactly the wrong way.
+ *
+ * The tenant context is built here the way the composition root builds it:
+ * candidate from host, membership check, VerifiedTenantContext. A test cannot
+ * fabricate one, because nothing outside packages/tenancy can (ADR-022).
  */
 
 import { createApp } from '@xforge/api'
-import { type Driver, setDriver, type TenantClient } from '@xforge/db'
+import { type Driver, setDriver } from '@xforge/db'
+import { createPostgresDriver } from '@xforge/db/postgres'
+import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
 import type { Principal } from '@xforge/policy'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { __resetHrStore, hrModuleRoutes } from '../index'
+import { candidateFromHost, resolveTenantContext, staticMembershipSource } from '@xforge/tenancy'
+import postgres from 'postgres'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { hrModuleRoutes } from '../index'
 
 const TENANT = '11111111-1111-4111-8111-111111111111'
 const OTHER_TENANT = '22222222-2222-4222-8222-222222222222'
 const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const CONTACT = '44444444-4444-4444-8444-444444444444'
 
+/** Reachability is probed at MODULE scope: describe.skipIf runs at collection. */
+let owner!: ReturnType<typeof postgres>
+let pg!: ReturnType<typeof createPostgresDriver>
+let reachable = false
+
+try {
+  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  await owner`select 1`
+  pg = createPostgresDriver(appUrl())
+  reachable = true
+} catch {
+  reachable = false
+}
+
 /**
- * In-memory driver.
- *
- * It records the tenant each transaction ran under, so the tests can assert the
- * chokepoint was actually used rather than trusting that it was.
+ * A decorator over the REAL driver, so the suite can assert the chokepoint was
+ * used rather than trusting that it was. It records and delegates -- it does
+ * not substitute, which would put us back on a path nothing runs.
  */
 const tenantsSeen: string[] = []
-const noSql = (() => {
-  throw new Error('no SQL client in the test driver')
-}) as unknown as TenantClient
-
-const driver: Driver = {
-  async transactionWithTenant(tenantId, fn) {
-    tenantsSeen.push(tenantId)
-    return fn(noSql)
-  },
-  async transactionAsPlatform(fn) {
-    tenantsSeen.push('__platform__')
-    return fn(noSql)
-  },
+if (reachable) {
+  const recording: Driver = {
+    transactionWithTenant(tenantId, fn) {
+      tenantsSeen.push(tenantId)
+      return pg.transactionWithTenant(tenantId, fn)
+    },
+    transactionAsPlatform(fn) {
+      tenantsSeen.push('__platform__')
+      return pg.transactionAsPlatform(fn)
+    },
+  }
+  setDriver(recording)
 }
-setDriver(driver)
 
-const _app = createApp(hrModuleRoutes)
+const memberships = staticMembershipSource([
+  { principalId: 'u1', tenantId: TENANT },
+  { principalId: 'u2', tenantId: TENANT },
+  { principalId: 'u3', tenantId: TENANT },
+])
+
+afterAll(async () => {
+  if (!reachable) return
+  await owner.end({ timeout: 5 })
+  await pg.close()
+})
 
 /** Build a request with an explicitly bound tenant (ADR-015). */
 function req(
@@ -64,7 +95,17 @@ function req(
   const wrapped = createApp(hrModuleRoutes, {
     middleware: [
       async (c, next) => {
-        if (principal) c.set('principal', principal)
+        if (principal) {
+          // Exactly the composition root's sequence. The host PROPOSES a
+          // candidate; membership decides whether it becomes authority.
+          const resolved = await resolveTenantContext(
+            candidateFromHost(TENANT),
+            principal,
+            memberships,
+          )
+          if (resolved.kind === 'verified') c.set('tenant', resolved.context)
+          c.set('principal', principal)
+        }
         c.set('asOf', '2026-08-31T00:00:00.000Z')
         c.set('newId', CONTACT)
         await next()
@@ -77,12 +118,20 @@ function req(
   })
 }
 
-beforeEach(() => {
-  __resetHrStore()
+beforeEach(async () => {
+  if (!reachable) return
+  // RLS is FORCED, so even the owner is subject to policy and a context-free
+  // DELETE removes nothing. Clean per tenant, inside the tenant's context.
+  for (const tenant of [TENANT, OTHER_TENANT]) {
+    await owner.begin(async (tx) => {
+      await tx`select set_config('app.tenant_id', ${tenant}, true)`
+      await tx`delete from emergency_contact`
+    })
+  }
   tenantsSeen.length = 0
 })
 
-describe('authorisation (ADR-014)', () => {
+describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
   it('401 when there is no principal', async () => {
     const res = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {}, null)
     expect(res.status).toBe(401)
@@ -120,7 +169,7 @@ describe('authorisation (ADR-014)', () => {
   })
 })
 
-describe('the vertical slice', () => {
+describe.skipIf(!reachable)('the vertical slice', () => {
   it('lists an empty collection before anything exists', async () => {
     const res = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`)
     expect(res.status).toBe(200)
@@ -149,7 +198,7 @@ describe('the vertical slice', () => {
   })
 })
 
-describe('optimistic concurrency (ADR-013)', () => {
+describe.skipIf(!reachable)('optimistic concurrency (ADR-013)', () => {
   it('updates when the version matches', async () => {
     await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
       method: 'POST',

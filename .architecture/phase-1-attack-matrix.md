@@ -36,26 +36,42 @@ or the proof is about a program nobody runs.
 
 ## The matrix
 
-| ID | Attack | Expected |
-|---|---|---|
-| T01 | A reads B by id | deny |
-| T02 | A lists rows when the repository forgets the tenant predicate | only A's rows |
-| T03 | A updates B | deny |
-| T04 | A deletes B | deny |
-| T05 | A inserts a row claiming B | deny |
-| T06 | valid A session presented at B's host, no B membership | deny |
-| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context |
-| T08 | raw tenant UUID passed to `withTenant` | compile / architecture failure |
-| T09 | application role owns a tenant table | verify failure |
-| T10 | application role holds `BYPASSRLS` | verify failure |
-| T11 | tenant-owned table without RLS enabled and forced | verify failure |
-| T12 | tenant-owned table without `tenant_id` | verify failure |
-| T13 | database handle acquired outside the sanctioned API | guard failure |
-| T14 | `withPlatformAccess` called from an HR module | guard failure |
-| T15 | the platform audit sink is unavailable | privileged work does not run |
-| T16 | a privileged operation crashes mid-flight | the ATTEMPT remains observable |
+| ID | Attack | Expected | Available from |
+|---|---|---|---|
+| T01 | A reads B by id | deny | now |
+| T02 | A lists rows when the repository forgets the tenant predicate | only A's rows | now |
+| T03 | A updates B | deny | now |
+| T04 | A deletes B | deny | an HR delete operation |
+| T05 | A inserts a row claiming B | deny | now |
+| T06 | valid A session presented at B's host, no B membership | deny | slice 2 |
+| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | slice 2 |
+| T08 | raw tenant UUID passed to `withTenant` | compile / architecture failure | now |
+| T09 | application role owns a tenant table | verify failure | now |
+| T10 | application role holds `BYPASSRLS` | verify failure | now |
+| T11 | tenant-owned table without RLS enabled and forced | verify failure | now |
+| T12 | tenant-owned table without `tenant_id` | verify failure | now |
+| T13 | database handle acquired outside the sanctioned API | guard failure | now |
+| T14 | `withPlatformAccess` called from an HR module | guard failure | now |
+| T15 | the platform audit sink is unavailable | privileged work does not run | now |
+| T16 | a privileged operation crashes mid-flight | the ATTEMPT remains observable | now |
+
+**The fourth column exists so the ratio carries information.** A single figure
+mixes *not written yet* with *cannot be written yet*, and a number that means
+two things means neither -- the same defect as counting unenforced laws without
+saying which are deliberate. `pnpm verify` reports both: progress against what
+is reachable at this slice, and progress against the whole matrix.
+
+Only three cases are genuinely blocked. T06 and T07 need real membership data,
+which arrives in slice 2. T04 needs the HR module to have a delete operation at
+all, which is product scope rather than a tenancy dependency. Everything else is
+reachable today and simply unwritten.
 
 **T02 is Mutation A.** **T11 is Mutation B seen from the gate's side.**
+
+Implementation status is not recorded here -- it is reported by `pnpm verify`,
+which reads this table and compares it against `tests/architecture/tenancy/`.
+A status column in a document drifts; a gate that names the missing cases and
+turns them into a failure the day the tenancy phase is declared does not.
 
 **T07 is the multi-tab case ADR-022 exists for**, and the expected result is the
 one people find surprising: the host decides, so a tenant switch in another tab

@@ -16,6 +16,7 @@
     "@xforge/api": "workspace:*",
     "@xforge/api-client": "workspace:*",
     "hono": "^4.9.0",
-    "@xforge/policy": "workspace:*"
+    "@xforge/policy": "workspace:*",
+    "@xforge/tenancy": "workspace:*"
   }
 }

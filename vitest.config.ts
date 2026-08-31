@@ -1,22 +1,15 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-
-const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
+import { aliases } from './vitest.aliases.ts'
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@xforge/api-client/mocks': r('./packages/api-client/src/mocks.ts'),
-      '@xforge/api-client': r('./packages/api-client/src/index.ts'),
-      '@xforge/api': r('./packages/api/src/index.ts'),
-      '@xforge/db': r('./packages/db/src/index.ts'),
-      '@xforge/policy': r('./packages/policy/src/index.ts'),
-      '@xforge/hr': r('./modules/hr/index.ts'),
-    },
-  },
+  resolve: { alias: aliases },
   test: {
     include: ['**/tests/**/*.test.ts', '**/tests/**/*.test.tsx', '**/tests/**/*.test.mjs'],
-    exclude: ['**/node_modules/**', '**/.next/**'],
+    // The architecture qualification suite has its own config: it mutates
+    // shared database state (T11 disables row-level security) and must run
+    // serially. Running it here would let it race the ordinary suite and, worse,
+    // race itself.
+    exclude: ['**/node_modules/**', '**/.next/**', 'tests/architecture/**'],
     environment: 'node',
   },
 })

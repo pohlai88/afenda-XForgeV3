@@ -12,13 +12,10 @@
  * subject is absent is worse than one that says it did not run.
  */
 
+import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createPostgresDriver } from '../src/postgres-driver'
-
-const OWNER_URL = process.env.DATABASE_URL ?? 'postgres://postgres:xforge@127.0.0.1:55432/xforge'
-const APP_URL =
-  process.env.APP_DATABASE_URL ?? 'postgres://app_user:app_user_dev_only@127.0.0.1:55432/xforge'
 
 const TENANT_A = '11111111-1111-4111-8111-111111111111'
 const TENANT_B = '22222222-2222-4222-8222-222222222222'
@@ -38,11 +35,11 @@ let driver!: ReturnType<typeof createPostgresDriver>
 let reachable = false
 
 try {
-  owner = postgres(OWNER_URL, { max: 2, prepare: false, connect_timeout: 5 })
+  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
   await owner`select 1`
-  app = postgres(APP_URL, { max: 2, prepare: false, connect_timeout: 5 })
+  app = postgres(appUrl(), { max: 2, prepare: false, connect_timeout: 5 })
   await app`select 1`
-  driver = createPostgresDriver(APP_URL)
+  driver = createPostgresDriver(appUrl())
   reachable = true
 } catch {
   reachable = false

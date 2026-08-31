@@ -152,13 +152,15 @@ describe('PENDING expires when its phase starts', () => {
     }
   })
 
-  it('turns the tenancy stage red the moment the phase is raised', () => {
-    // The whole point: local qualification of the next phase is now real
-    // evidence rather than a quiet PENDING.
+  it('would turn the tenancy stage red the moment that phase is raised', () => {
+    // The rule, not the run. Invoking rls.run() here would spawn the entire
+    // attack suite from inside a unit test -- a test that runs a test suite,
+    // which is how a fast feedback loop stops being one.
     const rls = stages.find((s) => s.id === 'rls')
     expect(rls.phase).toBe('tenancy')
-    expect(rls.run().status).toBe(PENDING)
-    expect(settleStatus({ ...rls, phase: 'spine' }, rls.run()).status).toBe(FAIL)
+    const incomplete = { status: PENDING, detail: '13 assertions, 5/16 cases' }
+    expect(settleStatus(rls, incomplete).status).toBe(PENDING)
+    expect(settleStatus({ ...rls, phase: 'spine' }, incomplete).status).toBe(FAIL)
   })
 })
 
