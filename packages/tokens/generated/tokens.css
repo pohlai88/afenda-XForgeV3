@@ -1,0 +1,62 @@
+/*
+ * GENERATED FROM packages/tokens/tokens.json -- DO NOT EDIT.
+ *
+ * Law 27: generated state is never hand-edited. Change the token file and
+ * run `pnpm generate`; editing this output makes the generate stage fail,
+ * which asserts it is byte-identical after regeneration.
+ */
+:root {
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-600: #475569;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-blue-100: #dbeafe;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-red-50: #fef2f2;
+  --color-red-200: #fecaca;
+  --color-red-700: #b91c1c;
+  --color-amber-50: #fffbeb;
+  --color-amber-200: #fde68a;
+  --color-amber-800: #92400e;
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --size-radius-sm: 0.25rem;
+  --size-radius-md: 0.5rem;
+  --size-border: 1px;
+  --size-focus-ring: 2px;
+  --size-focus-offset: 2px;
+  --size-text-sm: 0.875rem;
+  --size-text-md: 1rem;
+  --size-text-lg: 1.25rem;
+  --size-measure: 42rem;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --semantic-surface-page: #f8fafc;
+  --semantic-surface-raised: #ffffff;
+  --semantic-surface-sunken: #f1f5f9;
+  --semantic-text-default: #0f172a;
+  --semantic-text-muted: #475569;
+  --semantic-text-on-accent: #ffffff;
+  --semantic-border-default: #e2e8f0;
+  --semantic-border-strong: #94a3b8;
+  --semantic-accent-default: #2563eb;
+  --semantic-accent-hover: #1d4ed8;
+  --semantic-accent-subtle: #dbeafe;
+  --semantic-danger-text: #b91c1c;
+  --semantic-danger-surface: #fef2f2;
+  --semantic-danger-border: #fecaca;
+  --semantic-warning-text: #92400e;
+  --semantic-warning-surface: #fffbeb;
+  --semantic-warning-border: #fde68a;
+  --semantic-focus-ring: #2563eb;
+}

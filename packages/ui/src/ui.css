@@ -1,0 +1,155 @@
+/*
+ * The design system's only stylesheet.
+ *
+ * Every value here is a SEMANTIC token. No literal colour, spacing or size
+ * appears below -- if one did, the token file would have stopped being the
+ * authority and a theme change would need a sweep through this file instead of
+ * an edit to one JSON. A guard asserts it.
+ *
+ * Screens do not use these class names. They compose components from
+ * @xforge/ui, and the `no-bespoke-styling` guard fails a business screen that
+ * writes `className` or `style` -- which is what "no bespoke CSS" has to mean
+ * to be checkable rather than aspirational.
+ */
+
+.xf-page {
+  font-family: var(--font-sans);
+  color: var(--semantic-text-default);
+  background: var(--semantic-surface-page);
+  margin: 0;
+  padding: var(--space-5);
+  min-height: 100vh;
+}
+
+/*
+ * ONE focus style, defined once.
+ *
+ * A ring per component is a ring that eventually gets removed from one of them
+ * for looking wrong, and keyboard users lose that control silently. This is
+ * why the ring is a token: it cannot be styled away per screen.
+ */
+.xf-focusable:focus-visible {
+  outline: var(--size-focus-ring) solid var(--semantic-focus-ring);
+  outline-offset: var(--size-focus-offset);
+  border-radius: var(--size-radius-sm);
+}
+
+.xf-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.xf-stack[data-gap='tight'] { gap: var(--space-2); }
+.xf-stack[data-gap='normal'] { gap: var(--space-4); }
+.xf-stack[data-gap='loose'] { gap: var(--space-5); }
+.xf-stack[data-direction='row'] {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.xf-card {
+  background: var(--semantic-surface-raised);
+  border: var(--size-border) solid var(--semantic-border-default);
+  border-radius: var(--size-radius-md);
+  padding: var(--space-5);
+  max-width: var(--size-measure);
+}
+
+.xf-heading {
+  margin: 0;
+  font-size: var(--size-text-lg);
+  line-height: 1.3;
+}
+
+.xf-text {
+  margin: 0;
+  font-size: var(--size-text-md);
+  line-height: 1.5;
+}
+.xf-text[data-tone='muted'] {
+  color: var(--semantic-text-muted);
+  font-size: var(--size-text-sm);
+}
+
+.xf-code {
+  font-family: var(--font-mono);
+  font-size: var(--size-text-sm);
+  background: var(--semantic-surface-sunken);
+  border-radius: var(--size-radius-sm);
+  padding: 0 var(--space-1);
+}
+
+.xf-button {
+  font: inherit;
+  font-size: var(--size-text-sm);
+  border-radius: var(--size-radius-sm);
+  border: var(--size-border) solid transparent;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+.xf-button[data-variant='primary'] {
+  background: var(--semantic-accent-default);
+  color: var(--semantic-text-on-accent);
+}
+.xf-button[data-variant='primary']:hover:not(:disabled) {
+  background: var(--semantic-accent-hover);
+}
+.xf-button[data-variant='secondary'] {
+  background: var(--semantic-surface-raised);
+  color: var(--semantic-text-default);
+  border-color: var(--semantic-border-strong);
+}
+.xf-button[data-variant='secondary']:hover:not(:disabled) {
+  background: var(--semantic-surface-sunken);
+}
+.xf-button:disabled {
+  cursor: not-allowed;
+  /*
+   * Dimmed, never hidden, and never below the contrast a disabled control still
+   * needs to be readable. A disabled control the user cannot read is a control
+   * they cannot understand the absence of.
+   */
+  opacity: 0.6;
+}
+
+.xf-alert {
+  border: var(--size-border) solid;
+  border-radius: var(--size-radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+.xf-alert[data-tone='danger'] {
+  color: var(--semantic-danger-text);
+  background: var(--semantic-danger-surface);
+  border-color: var(--semantic-danger-border);
+}
+.xf-alert[data-tone='warning'] {
+  color: var(--semantic-warning-text);
+  background: var(--semantic-warning-surface);
+  border-color: var(--semantic-warning-border);
+}
+.xf-alert[data-tone='info'] {
+  color: var(--semantic-text-default);
+  background: var(--semantic-accent-subtle);
+  border-color: var(--semantic-border-default);
+}
+
+.xf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.xf-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background: var(--semantic-surface-raised);
+  border: var(--size-border) solid var(--semantic-border-default);
+  border-radius: var(--size-radius-sm);
+}

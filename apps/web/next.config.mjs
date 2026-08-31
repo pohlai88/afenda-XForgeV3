@@ -7,5 +7,7 @@ export default {
     '@xforge/db',
     '@xforge/policy',
     '@xforge/hr',
+    '@xforge/ui',
+    '@xforge/tokens',
   ],
 }

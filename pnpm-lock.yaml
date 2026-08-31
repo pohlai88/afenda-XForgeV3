@@ -80,6 +80,12 @@ importers:
       '@xforge/tenancy':
         specifier: workspace:*
         version: link:../../packages/tenancy
+      '@xforge/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
+      '@xforge/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       hono:
         specifier: ^4.9.0
         version: 4.13.5
@@ -162,6 +168,17 @@ importers:
   packages/policy: {}
 
   packages/tenancy: {}
+
+  packages/tokens: {}
+
+  packages/ui:
+    dependencies:
+      '@xforge/tokens':
+        specifier: workspace:*
+        version: link:../tokens
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
 
 packages:
 
