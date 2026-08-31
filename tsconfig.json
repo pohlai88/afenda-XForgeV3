@@ -16,7 +16,9 @@
       "@xforge/fixtures/local-database": ["./tests/fixtures/local-database.ts"],
       "@xforge/fixtures/tenancy": ["./tests/fixtures/tenancy.ts"],
       "@xforge/fixtures/rls-checks": ["./tests/fixtures/rls-checks.ts"],
-      "@xforge/ui": ["./packages/ui/src/index.tsx"]
+      "@xforge/ui": ["./packages/ui/src/index.tsx"],
+      "@xforge/ui/contracts": ["./packages/ui/src/contracts.ts"],
+      "@xforge/ui/runtime": ["./packages/ui/src/runtime.ts"]
     },
     "strictNullChecks": true
   },

@@ -236,3 +236,50 @@ is a stable proxy at a pinned gzip level, and real transfer will be lower.
 **The gate.** `tooling/perf/check-budgets.mjs`, wired as the `perf-budgets`
 verify stage and covered by 15 unit tests, 8 of which assert it *rejects* a
 violation — ADR-024's rule, applied to the tool that enforces this table.
+
+---
+
+## Stage 1 — the UI grammar validates in bounded time, measured 31 August 2026
+
+Grade **X**. An Xforge measurement against `ajv` 8.20.0.
+
+The generated UI schema (`packages/ui/generated/schema.json`) expresses the
+grammar as a union over permitted components at every slot. Written the obvious
+way — `anyOf` over the eleven registered components — validation cost is
+**exponential in nesting depth**, because a validator collecting all errors
+explores every branch at every level and descends the whole subtree of each:
+
+| Depth | `anyOf`, `allErrors: true` | discriminated `oneOf` |
+|---|---|---|
+| 6 | 110 ms | 3.6 ms |
+| 8 | 548 ms | — |
+| 10 | 4 700 ms | 0.1 ms |
+| 12 | **80 598 ms** | — |
+| 20 | not attempted | 0.0 ms |
+| 40 | not attempted | 0.1 ms |
+
+**Why this is a security finding and not a performance note.** Metadata
+documents are *tenant configuration* — untrusted input, authored by anyone
+permitted to customise a screen. A fifteen-level document would have hung the
+validator: a denial of service in the metadata plane, one of the four
+architecture planes. It was found only because a test asserted the schema
+accepts a document deeper than `MAX_NESTING_DEPTH`, and that test never
+returned.
+
+**The fix** tags every union with an OpenAPI `discriminator` on `component`, so
+branch selection is a lookup rather than a search.
+
+**What this does NOT prove, and it matters:**
+
+- `discriminator` is an **OpenAPI keyword, not JSON Schema 2020-12**. Correctness
+  must not depend on it and does not — every branch carries a distinct
+  `component` const, so exactly one can match and plain `oneOf` semantics are
+  identical. A validator ignoring the keyword reaches the same verdict, slowly.
+  **Only the cost depends on the tag.** Any validator other than ajv must be
+  re-measured before it is trusted with untrusted input.
+- The numbers are ajv 8.20.0 on one machine. The five-orders-of-magnitude gap is
+  the finding; the individual timings are not a benchmark.
+- Nesting depth is still **unenforced by the schema** — JSON Schema cannot
+  express a recursion bound. `MAX_NESTING_DEPTH` remains a validator obligation
+  and no validator implements it yet, because no metadata renderer exists to
+  own one. Recorded here rather than left to be discovered.

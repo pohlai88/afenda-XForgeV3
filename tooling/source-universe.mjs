@@ -48,6 +48,7 @@ export const GENERATED_PATHS = [
   'contracts/',
   'packages/api-client/src/generated/',
   'packages/tokens/generated/',
+  'packages/ui/generated/',
 ]
 
 /**

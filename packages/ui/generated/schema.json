@@ -1,0 +1,605 @@
+{
+  "$defs": {
+    "node": {
+      "description": "Any component configuration may name.",
+      "discriminator": {
+        "propertyName": "component"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Alert"
+        },
+        {
+          "$ref": "#/$defs/Button"
+        },
+        {
+          "$ref": "#/$defs/Card"
+        },
+        {
+          "$ref": "#/$defs/Code"
+        },
+        {
+          "$ref": "#/$defs/Heading"
+        },
+        {
+          "$ref": "#/$defs/List"
+        },
+        {
+          "$ref": "#/$defs/ListItem"
+        },
+        {
+          "$ref": "#/$defs/Page"
+        },
+        {
+          "$ref": "#/$defs/Stack"
+        },
+        {
+          "$ref": "#/$defs/Status"
+        },
+        {
+          "$ref": "#/$defs/Text"
+        }
+      ],
+      "type": "object"
+    },
+    "Alert": {
+      "additionalProperties": false,
+      "description": "feedback / live-region (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Alert"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            },
+            "tone": {
+              "enum": [
+                "danger",
+                "warning",
+                "info"
+              ]
+            }
+          },
+          "type": "object",
+          "required": [
+            "tone"
+          ],
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props",
+        "slots"
+      ],
+      "title": "Alert",
+      "type": "object"
+    },
+    "Button": {
+      "additionalProperties": false,
+      "description": "action / native-control (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Button"
+        },
+        "props": {
+          "properties": {
+            "disabled": {
+              "type": "boolean"
+            },
+            "testId": {
+              "type": "string"
+            },
+            "variant": {
+              "enum": [
+                "primary",
+                "secondary"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Button",
+      "type": "object"
+    },
+    "Card": {
+      "additionalProperties": false,
+      "description": "layout / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Card"
+        },
+        "props": {
+          "properties": {
+            "labelledBy": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/List"
+                  },
+                  {
+                    "$ref": "#/$defs/ListItem"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Card",
+      "type": "object"
+    },
+    "Code": {
+      "additionalProperties": false,
+      "description": "content / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Code"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Code",
+      "type": "object"
+    },
+    "Heading": {
+      "additionalProperties": false,
+      "description": "content / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Heading"
+        },
+        "props": {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "level": {
+              "enum": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Heading",
+      "type": "object"
+    },
+    "List": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "List"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "$ref": "#/$defs/ListItem"
+              },
+              "type": "array",
+              "minItems": 0
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "List",
+      "type": "object"
+    },
+    "ListItem": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "ListItem"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Button"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "ListItem",
+      "type": "object"
+    },
+    "Page": {
+      "additionalProperties": false,
+      "description": "layout / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Page"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/List"
+                  },
+                  {
+                    "$ref": "#/$defs/ListItem"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Page",
+      "type": "object"
+    },
+    "Stack": {
+      "additionalProperties": false,
+      "description": "layout / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Stack"
+        },
+        "props": {
+          "properties": {
+            "direction": {
+              "enum": [
+                "column",
+                "row"
+              ]
+            },
+            "gap": {
+              "enum": [
+                "tight",
+                "normal",
+                "loose"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Button"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/List"
+                  },
+                  {
+                    "$ref": "#/$defs/ListItem"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Stack",
+      "type": "object"
+    },
+    "Status": {
+      "additionalProperties": false,
+      "description": "feedback / live-region (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Status"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Status",
+      "type": "object"
+    },
+    "Text": {
+      "additionalProperties": false,
+      "description": "content / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Text"
+        },
+        "props": {
+          "properties": {
+            "tone": {
+              "enum": [
+                "default",
+                "muted"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Text",
+      "type": "object"
+    }
+  },
+  "$id": "https://xforge.internal/schemas/ui-language/1.json",
+  "$ref": "#/$defs/node",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "GENERATED from packages/ui/src/contracts.ts. Never hand-edited (law 27).\nUI language version 1.\nNOT ENFORCED HERE: nesting depth. JSON Schema cannot express a recursion bound, so a document valid against this schema may still exceed the stated maximum of 8. That check belongs to the validator.\nUnions carry an OpenAPI `discriminator` on `component`. It is a performance affordance only: every branch has a distinct `component` const, so a validator ignoring the keyword reaches the same verdict by plain `oneOf`.",
+  "title": "Xforge UI language"
+}

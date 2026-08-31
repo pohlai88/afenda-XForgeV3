@@ -44,6 +44,12 @@ importers:
       '@xforge/tenancy':
         specifier: workspace:*
         version: link:packages/tenancy
+      '@xforge/ui':
+        specifier: workspace:*
+        version: link:packages/ui
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
