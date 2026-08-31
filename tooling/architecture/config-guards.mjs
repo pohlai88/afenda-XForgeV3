@@ -13,7 +13,14 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { classify, NON_SOURCE_DIRS, UNCOMMITTABLE } from '../source-universe.mjs'
+import {
+  classify,
+  GENERATED_DIRS,
+  GENERATED_FILES,
+  GENERATED_PATHS,
+  NON_SOURCE_DIRS,
+  UNCOMMITTABLE,
+} from '../source-universe.mjs'
 import { posix, ROOT, read, run, sourceFiles } from '../verify/lib/util.mjs'
 
 /**
@@ -62,6 +69,30 @@ export const configGuards = [
             out.push({
               where: 'biome.json files.includes',
               message: `'${d}' is not excluded -- lint would depend on whether a build ran first`,
+            })
+          }
+        }
+      }
+
+      if (env.biome) {
+        // Generated state is type-checked and compiled, never formatted. A
+        // formatter that rewrites it fights whatever regenerates it, and the
+        // lint result then depends on which ran last. This is law 27 violated
+        // by a tool rather than by a hand, and it is why the generated FILE
+        // list exists beside the generated directory list.
+        const includes = (env.biome.files?.includes ?? []).join(' ')
+        const required = [
+          ...GENERATED_DIRS.map((d) => ({ what: `generated directory '${d}'`, token: d })),
+          ...GENERATED_FILES.map((f) => ({ what: `generated file '${f}'`, token: f })),
+          ...GENERATED_PATHS.filter(
+            (g) => !GENERATED_DIRS.some((d) => g.split('/').includes(d)),
+          ).map((g) => ({ what: `generated path '${g}'`, token: g.split('/')[0] })),
+        ]
+        for (const { what, token } of required) {
+          if (!includes.includes(`!**/${token}`) && !includes.includes(`!${token}`)) {
+            out.push({
+              where: 'biome.json files.includes',
+              message: `${what} is not excluded -- the formatter would rewrite generated state`,
             })
           }
         }

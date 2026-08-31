@@ -17,7 +17,8 @@
  * directions: real source must be INCLUDED, and build output must be EXCLUDED.
  *
  * Adding a tool that writes into the workspace -- Storybook, coverage,
- * generated docs, Playwright traces -- means adding it HERE, once.
+ * generated docs, Playwright traces, a framework's own .d.ts -- means adding it
+ * HERE, once.
  */
 
 /** Directories that are never source, in any tool, ever. */
@@ -46,6 +47,18 @@ export const GENERATED_DIRS = ['generated']
 export const GENERATED_PATHS = ['contracts/', 'packages/api-client/src/generated/']
 
 /**
+ * Generated FILES, which the directory rules above cannot express.
+ *
+ * `next-env.d.ts` is written by Next's build and carries "This file should not
+ * be edited" in its own body. Biome reformatted it, the build wrote it back,
+ * and lint then passed or failed depending on which had run last -- the exact
+ * order-dependence this module exists to prevent, reappearing in a file rather
+ * than a directory. A formatter rewriting generated state is law 27 violated by
+ * a tool instead of by a hand.
+ */
+export const GENERATED_FILES = ['next-env.d.ts']
+
+/**
  * File classification. One function, so every consumer and every test asks the
  * same question and gets the same answer.
  *
@@ -60,6 +73,7 @@ export function classify(path) {
   for (const d of GENERATED_DIRS) {
     if (p.includes(`/${d}/`) || p.startsWith(`${d}/`)) return 'generated'
   }
+  if (GENERATED_FILES.includes(p.slice(p.lastIndexOf('/') + 1))) return 'generated'
   if (p.startsWith('contracts/')) return 'generated'
   if (/(^|\/)(tests?|e2e)\//.test(p) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(p)) return 'test'
   if (/(^|\/)\.architecture\//.test(p) || /\.md$/.test(p)) return 'documentation'

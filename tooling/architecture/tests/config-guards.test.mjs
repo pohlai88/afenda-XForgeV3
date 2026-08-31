@@ -11,7 +11,7 @@
  * guard never observed to reject bad source.
  */
 import { describe, expect, it } from 'vitest'
-import { NON_SOURCE_DIRS } from '../../source-universe.mjs'
+import { GENERATED_DIRS, GENERATED_FILES, NON_SOURCE_DIRS } from '../../source-universe.mjs'
 import {
   configGuards,
   FIXTURE_SECRET,
@@ -26,7 +26,16 @@ const byId = (id) => {
 }
 
 const goodEnv = () => ({
-  biome: { files: { includes: NON_SOURCE_DIRS.map((d) => `!**/${d}/**`) } },
+  biome: {
+    files: {
+      includes: [
+        ...NON_SOURCE_DIRS.map((d) => `!**/${d}/**`),
+        ...GENERATED_DIRS.map((d) => `!**/${d}`),
+        ...GENERATED_FILES.map((f) => `!**/${f}`),
+        '!contracts',
+      ],
+    },
+  },
   tsconfig: { exclude: ['node_modules', '**/node_modules', '**/.next', '**/dist'] },
   gitignore: NON_SOURCE_DIRS.map((d) => `${d}/`).join('\n'),
   files: [],
@@ -37,6 +46,22 @@ describe('deterministic-source-set', () => {
 
   it('accepts a config that excludes every non-source directory', () => {
     expect(guard.check(goodEnv())).toHaveLength(0)
+  })
+
+  it('REJECTS a Biome config that would FORMAT generated state', () => {
+    // The concrete case: Biome rewrote next-env.d.ts, Next's build wrote it
+    // back, and lint passed or failed depending on which ran last.
+    const env = goodEnv()
+    env.biome.files.includes = env.biome.files.includes.filter((p) => !p.includes('next-env.d.ts'))
+    const found = guard.check(env)
+    expect(found.length).toBeGreaterThan(0)
+    expect(found[0].message).toContain('generated state')
+  })
+
+  it('REJECTS a Biome config that would format the published contract', () => {
+    const env = goodEnv()
+    env.biome.files.includes = env.biome.files.includes.filter((p) => p !== '!contracts')
+    expect(guard.check(env).length).toBeGreaterThan(0)
   })
 
   it('REJECTS a Biome config that would lint build output', () => {

@@ -10,7 +10,12 @@
  * EXCLUDED -- against the same classify() every consumer uses.
  */
 import { describe, expect, it } from 'vitest'
-import { classify, NON_SOURCE_DIRS, UNCOMMITTABLE } from '../../source-universe.mjs'
+import {
+  classify,
+  GENERATED_FILES,
+  NON_SOURCE_DIRS,
+  UNCOMMITTABLE,
+} from '../../source-universe.mjs'
 import { configGuards } from '../config-guards.mjs'
 
 const guard = (id) => {
@@ -62,6 +67,22 @@ describe('generated source is classified explicitly, not as output', () => {
   it('the published contract is generated', () => {
     expect(classify('contracts/openapi.generated.json')).toBe('generated')
   })
+  it("a framework's own .d.ts is generated, wherever it sits", () => {
+    // Found by a red build, not by the guard: classify() knew about generated
+    // DIRECTORIES and this is a generated FILE, so nothing objected while a
+    // formatter and a build took turns rewriting it.
+    expect(classify('apps/web/next-env.d.ts')).toBe('generated')
+    expect(classify('next-env.d.ts')).toBe('generated')
+  })
+
+  it('every declared generated file classifies as generated', () => {
+    for (const f of GENERATED_FILES) expect(classify(`apps/web/${f}`)).toBe('generated')
+  })
+
+  it('a source file merely NAMED like generated state stays source', () => {
+    expect(classify('apps/web/app/next-env-banner.tsx')).toBe('source')
+  })
+
   it('generated is NOT uncommittable -- it is committed and diffed', () => {
     expect(UNCOMMITTABLE).not.toContain('generated')
   })
