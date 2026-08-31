@@ -1,0 +1,61 @@
+# The required check for master.
+#
+# `pnpm verify --ci` differs from the local gate in two ways that matter:
+#   - the phase comes from .architecture/state.json, never from the environment,
+#     so a job cannot declare an earlier phase and turn mandatory stages into
+#     legitimate PENDINGs
+#   - a BLOCKED stage is a FAILURE, so "verify was green" can never come to mean
+#     "the database tests never ran"
+name: verify
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: xforge
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+
+    env:
+      # Injected, never committed. The local fixture credential exists only in
+      # the approved fixture locations enforced by the no-shared-dev-secret
+      # guard, and is not a working secret anywhere else.
+      DATABASE_URL: postgres://postgres:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/xforge
+      APP_USER_PASSWORD: ${{ secrets.CI_APP_USER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Provision the non-owner app_user role. RLS silently skips owners, so the
+      # integration stage is only meaningful when it connects as this role.
+      - name: Bootstrap database roles
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f packages/db/bootstrap.sql
+
+      - name: pnpm verify --ci
+        run: pnpm verify --ci
