@@ -18,8 +18,15 @@ import type { Driver, TenantClient } from './index'
  *
  * AQS-022 proves 2 and 3 against the real driver rather than assuming them.
  */
-export function createPostgresDriver(url: string): Driver & { close(): Promise<void> } {
-  const sql = postgres(url, { max: 5, prepare: false })
+export function createPostgresDriver(
+  url: string,
+  options: { readonly max?: number } = {},
+): Driver & { close(): Promise<void> } {
+  // `max` is configurable ONLY so the pooled-reuse proof can force a pool of
+  // one and guarantee the same physical connection is handed back. Building a
+  // separate client for that test would prove connection reuse is safe on a
+  // path the application does not use.
+  const sql = postgres(url, { max: options.max ?? 5, prepare: false })
 
   return {
     async transactionWithTenant(tenantId, fn) {

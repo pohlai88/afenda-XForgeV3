@@ -57,6 +57,19 @@ export interface ExecutionContext {
   readonly actor: string
   readonly correlationId: string
   readonly origin: 'request' | 'job' | 'cli'
+  /**
+   * The tenant this execution was operating in, where there is one.
+   *
+   * The SERVER-VERIFIED tenant from the request's VerifiedTenantContext, never
+   * a client-supplied value -- OWASP's rule for audit records, and the same
+   * reason `actor` is not the caller's to state. Absent for a job or a console
+   * session that never bound one.
+   *
+   * Cross-tenant by definition is what platform access IS, so this does not
+   * scope the access. It records where the privileged call was made FROM, which
+   * is the question an investigation actually starts with.
+   */
+  readonly tenantId?: string
 }
 
 /** What a caller may state: intent, and nothing about who it is. */

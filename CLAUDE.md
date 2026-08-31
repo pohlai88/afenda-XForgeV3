@@ -48,11 +48,51 @@
 31. Generalise a platform abstraction only after a second real use case proves it.
 32. pnpm verify is the canonical definition of repository green.
 33. A green verification run leaves the checkout exactly as it found it.
+34. Search prior art before proposing an architectural pattern. Record what
+    was found, what was rejected, and what it does not prove. Do not build
+    infrastructure a mature tool already provides.
 
 Canonical architecture: .architecture/architecture-final.md
 Decisions:              .architecture/adr/
 Evidence:               .architecture/evidence-register.md
 Next phase's spec:      .architecture/phase-1-attack-matrix.md
+
+# Prior art
+
+Law 34 exists because it lapsed once already. The evidence register was built to
+grade external precedent and then went unused: 2 of 21 entries were ever
+verified, while sessions were spent deriving what PostgreSQL documents in one
+sentence and OWASP publishes as a cheat sheet.
+
+  search BEFORE designing.  gate BEFORE freezing.
+
+An exploratory sketch needs no evidence record. A FROZEN decision needs:
+sources with retrieval dates and the claim each supports, the alternatives
+reviewed, and -- the load-bearing part -- what the prior art does NOT prove.
+"AWS recommends RLS" establishes that the pattern is credible. It says nothing
+about whether ours is correct; only the qualification suite does that.
+
+Three outcomes are all valid, and REJECT is evidence too:
+
+  ADOPT   the pattern fits as published
+  ADAPT   sound, but needs Xforge constraints
+  REJECT  conflicts with a requirement here -- record why
+
+Where nothing comparable exists, record `no-direct-match` with the sources
+examined. That is stronger than pretending a loosely related article proves
+the design.
+
+A governance tool earns authority by rejecting a known violation and by showing
+it inspected the expected source population -- never by exiting 0. depcruise
+reported "no violations found" against this repository having cruised 1 module
+and 0 dependencies, because it cannot parse TypeScript 7. Installed, configured,
+green, and blind. Any replacement must pass both proofs before it is adopted,
+and the guard it replaces is deleted in the same commit (ADR-024).
+
+The verify stage checks only that these fields are PRESENT. It cannot tell
+whether a source is good, relevant, or was read -- that is review. A guard whose
+name overclaims is worse than none, which is why it is called
+`adr-has-evidence`.
 
 # Repository workflow
 
@@ -111,6 +151,30 @@ So currentPhase reads "the furthest phase this architecture has CERTIFIED", not
 "the phase someone is working on". A stage that reports PENDING during its own
 phase is a failure, which is what makes the local raise real evidence rather
 than a quiet PENDING discovered at merge.
+
+# The defect this project keeps having
+
+A fact acquires a second source. The two agree, and go on agreeing, until they
+do not -- and nothing complains in between, because agreement is indistinguishable
+from correctness right up to the moment it ends.
+
+  next-env.d.ts          classify() knew generated DIRECTORIES; this was a file
+  behaviour guards       each invented a path regex instead of asking classify()
+  Principal.tenantId     policy's tenant vs the database's verified context
+  tenant_domain policy   a comment saying it could not be tenant-scoped, above a
+                         tenant-scoped policy
+  branches: [master]     the rename landed on main and not on the trees pushed
+
+Five appearances. Every one was caught by something else -- a red build, a
+compiler, a reviewer's question -- and none by a guard aimed at the category,
+because the manifestations have nothing in common at the level a guard can see.
+
+No check is proposed. This is a REVIEW PROMPT, and the prompt is:
+
+  having fixed something in one place, ask what else holds a copy of that fact.
+
+It is the first question to ask of any fix, and the last one to ask of any new
+subsystem.
 
 # Verification
 

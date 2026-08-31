@@ -41,10 +41,10 @@ or the proof is about a program nobody runs.
 | T01 | A reads B by id | deny | now |
 | T02 | A lists rows when the repository forgets the tenant predicate | only A's rows | now |
 | T03 | A updates B | deny | now |
-| T04 | A deletes B | deny | an HR delete operation |
+| T04 | A deletes B | deny | now |
 | T05 | A inserts a row claiming B | deny | now |
-| T06 | valid A session presented at B's host, no B membership | deny | slice 2 |
-| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | slice 2 |
+| T06 | valid A session presented at B's host, no B membership | deny | now |
+| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | now |
 | T08 | raw tenant UUID passed to `withTenant` | compile / architecture failure | now |
 | T09 | application role owns a tenant table | verify failure | now |
 | T10 | application role holds `BYPASSRLS` | verify failure | now |
@@ -54,6 +54,32 @@ or the proof is about a program nobody runs.
 | T14 | `withPlatformAccess` called from an HR module | guard failure | now |
 | T15 | the platform audit sink is unavailable | privileged work does not run | now |
 | T16 | a privileged operation crashes mid-flight | the ATTEMPT remains observable | now |
+| T17 | a forged `x-tenant-id` header at another tenant's host | the header decides nothing | now |
+| T18 | membership revoked between two requests | the second is denied | now |
+| T19 | two tenants over one pooled connection | no context survives the checkout | now |
+| T20 | a second permissive policy is added | access WIDENS, never narrows | now |
+| T21 | a backup taken with the application role | sees nothing, silently | now |
+
+**T17-T21 are amendments.** A frozen specification may be EXTENDED; what it must
+never be is quietly narrowed to match what the code turned out to do, which is
+the only direction that flatters anyone.
+
+T17 and T18 came from review. **T19, T20 and T21 came from published prior art**,
+after this matrix had been written and declared frozen -- which is the finding,
+not a footnote. All three describe hazards no amount of reasoning from our own
+code would have surfaced:
+
+- **T19** is the adversarial sequence the [OWASP Multi-Tenant Security Cheat
+  Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html)
+  asks for: two tenants over reused connections, proving the second cannot
+  observe the first. We had tested that `SET LOCAL` expires, which is a
+  different and weaker claim.
+- **T20**: permissive policies combine with OR, so adding one only ever grants.
+  We came within a design decision of adding a second policy to
+  `tenant_membership` believing it would narrow access.
+- **T21**: `FORCE ROW LEVEL SECURITY` applies to `pg_dump`. A backup taken by a
+  role without `BYPASSRLS` succeeds, is a plausible size, and contains no rows.
+  The failure surfaces during a restore.
 
 **The fourth column exists so the ratio carries information.** A single figure
 mixes *not written yet* with *cannot be written yet*, and a number that means
@@ -61,10 +87,24 @@ two things means neither -- the same defect as counting unenforced laws without
 saying which are deliberate. `pnpm verify` reports both: progress against what
 is reachable at this slice, and progress against the whole matrix.
 
-Only three cases are genuinely blocked. T06 and T07 need real membership data,
-which arrives in slice 2. T04 needs the HR module to have a delete operation at
-all, which is product scope rather than a tenancy dependency. Everything else is
-reachable today and simply unwritten.
+**T04 was misclassified as blocked.** It was listed as needing an HR delete
+operation, which inverts the dependency: exposing `DELETE /employees/:id` so an
+architecture test can call it would add product surface to satisfy a test. The
+claim is that tenant A cannot delete tenant B's row, and that is a property of
+the database boundary reached through `withTenant(A)` on the application role.
+It needs no product verb and is reachable now.
+
+**Nothing is blocked any more.** Every case that was ever listed as blocked was
+blocked on our own next step, never on an external dependency:
+
+- T06 and T07 needed real membership data; slice 2 supplied it.
+- P06 needed a permission registry; slice 3 supplied it.
+- T04 was never blocked at all. It was filed as needing an HR delete operation,
+  which inverted the dependency -- the claim is about the database boundary, not
+  about a product verb.
+
+That is worth stating rather than quietly closing out, because "blocked" was
+carrying three different meanings while reading as one number.
 
 **T02 is Mutation A.** **T11 is Mutation B seen from the gate's side.**
 
@@ -98,6 +138,43 @@ Absence of an outcome carries that meaning without a fourth stored state. What
 it cannot do on its own is distinguish *still running* from *process died* from
 *the outcome write itself failed* — so the admin and operations surface owes an
 explicit view, not a query someone remembers to write during an incident.
+
+## The policy matrix
+
+Same phase, different mechanism, and the distinction is the point:
+
+```
+RLS     answers  which tenant's rows can this request EVER see?
+policy  answers  what may this principal do INSIDE that tenant?
+```
+
+Cases where both deny at once prove neither. Each of these varies exactly one
+thing.
+
+| ID | Attack | Expected | Available from |
+|---|---|---|---|
+| P01 | same tenant, correct permission | allow | now |
+| P02 | same tenant, permission absent | deny, and the response says nothing useful | now |
+| P03 | permission held, but for another scope | deny | now |
+| P04 | a denied request | never reaches the business query | now |
+| P05 | client calls the API directly, bypassing the UI | deny | now |
+| P06 | an unregistered permission code | build or startup failure | a permission registry |
+| P07 | a grant whose window has closed | deny | now |
+| P08 | the evaluator cannot decide | fail closed | now |
+
+**P04 is the one that changes what the others prove.** Policy's guarantee is not
+*"my check fired"* but *"no path granted"* — different claims that a test
+conflates easily. A suite where the handler still runs and RLS happens to return
+nothing looks identical to one where authorisation worked, so the denial is
+asserted by the absence of the business transaction, not by the status code.
+
+**Internally rich, externally flat.** `permission_missing`, `scope_mismatch`,
+`grant_expired` and `scope_type_unknown` are distinguishable to the evaluator,
+to logs and to audit, and indistinguishable to the caller. "You lack
+`hr.employee.read` at `legal_entity MY02`" confirms MY02 exists and names the
+grant to go phishing for; repeated across identifiers, the API becomes an
+enumeration oracle one helpful error message at a time. The response carries a
+`request_id` so support can correlate without the caller learning anything.
 
 ## Order of work
 

@@ -14,11 +14,18 @@
  */
 
 import { createApp } from '@xforge/api'
-import { type Driver, setDriver } from '@xforge/db'
+import {
+  type Driver,
+  hasActiveMembership,
+  resolveHostname,
+  setDriver,
+  tenancyDriver,
+} from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
+import { HOST_A, seedTenancy } from '@xforge/fixtures/tenancy'
 import type { Principal } from '@xforge/policy'
-import { candidateFromHost, resolveTenantContext, staticMembershipSource } from '@xforge/tenancy'
+import { type MembershipQueries, resolveRequestTenant } from '@xforge/tenancy'
 import postgres from 'postgres'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { hrModuleRoutes } from '../index'
@@ -62,11 +69,11 @@ if (reachable) {
   setDriver(recording)
 }
 
-const memberships = staticMembershipSource([
-  { principalId: 'u1', tenantId: TENANT },
-  { principalId: 'u2', tenantId: TENANT },
-  { principalId: 'u3', tenantId: TENANT },
-])
+const queries: MembershipQueries = {
+  hasActiveMembership: (tenantId, principalId, asOf) =>
+    hasActiveMembership(tenancyDriver(), tenantId, principalId, asOf),
+  resolveHostname: (hostname) => resolveHostname(tenancyDriver(), hostname),
+}
 
 afterAll(async () => {
   if (!reachable) return
@@ -81,7 +88,6 @@ function req(
   principal: Principal | null = {
     id: 'u1',
     kind: 'user',
-    tenantId: TENANT,
     grants: [
       { permission: 'hr.employee.read', scopeType: 'tenant', scopeId: TENANT },
       { permission: 'hr.employee.update', scopeType: 'tenant', scopeId: TENANT },
@@ -96,13 +102,9 @@ function req(
     middleware: [
       async (c, next) => {
         if (principal) {
-          // Exactly the composition root's sequence. The host PROPOSES a
-          // candidate; membership decides whether it becomes authority.
-          const resolved = await resolveTenantContext(
-            candidateFromHost(TENANT),
-            principal,
-            memberships,
-          )
+          // Exactly the composition root's sequence: hostname -> candidate ->
+          // membership -> verified context (ADR-022).
+          const resolved = await resolveRequestTenant(HOST_A, principal, queries, new Date())
           if (resolved.kind === 'verified') c.set('tenant', resolved.context)
           c.set('principal', principal)
         }
@@ -120,6 +122,11 @@ function req(
 
 beforeEach(async () => {
   if (!reachable) return
+  await seedTenancy(owner, [
+    { principalId: 'u1', tenantId: TENANT },
+    { principalId: 'u2', tenantId: TENANT },
+    { principalId: 'u3', tenantId: TENANT },
+  ])
   // RLS is FORCED, so even the owner is subject to policy and a context-free
   // DELETE removes nothing. Clean per tenant, inside the tenant's context.
   for (const tenant of [TENANT, OTHER_TENANT]) {
@@ -145,13 +152,15 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       {
         id: 'u2',
         kind: 'user',
-        tenantId: TENANT,
         grants: [],
       },
     )
     expect(res.status).toBe(403)
     const body = await res.json()
-    expect(body.detail).toMatch(/hr\.employee\.read/)
+    // FLAT OUTSIDE. Naming the missing permission tells a caller exactly which
+    // grant to go phishing for, and confirms the resource was there to protect.
+    expect(body.detail).toBe('you do not have access to this operation')
+    expect(JSON.stringify(body)).not.toMatch(/hr\.employee\.read/)
   })
 
   it('403 when the grant belongs to a different tenant', async () => {
@@ -161,7 +170,6 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       {
         id: 'u3',
         kind: 'user',
-        tenantId: TENANT,
         grants: [{ permission: 'hr.employee.read', scopeType: 'tenant', scopeId: OTHER_TENANT }],
       },
     )
@@ -191,10 +199,21 @@ describe.skipIf(!reachable)('the vertical slice', () => {
     expect(body.items[0].name).toBe('Siti')
   })
 
-  it('every database access went through withTenant, bound to the request tenant', async () => {
+  it('the ADR-022 chain runs in order, and never touches another tenant', async () => {
     await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`)
-    expect(tenantsSeen).toEqual([TENANT])
-    expect(tenantsSeen).not.toContain('__platform__')
+
+    // Three database transactions, in this order, per request:
+    //
+    //   __platform__  the hostname lookup. Routing metadata only -- no tenant
+    //                 is bound yet because this is the step that finds one. It
+    //                 is not withPlatformAccess and writes no audit row: an
+    //                 audit trail where nearly every entry is a routine page
+    //                 load is one nobody reads.
+    //   TENANT        the membership check, bound to the CANDIDATE tenant so
+    //                 RLS confines it to that tenant's membership rows.
+    //   TENANT        the business query, bound to the now-verified tenant.
+    expect(tenantsSeen).toEqual(['__platform__', TENANT, TENANT])
+    expect(tenantsSeen).not.toContain(OTHER_TENANT)
   })
 })
 

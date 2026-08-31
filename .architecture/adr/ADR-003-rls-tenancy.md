@@ -11,6 +11,39 @@ the isolation guarantee **must not depend on anyone remembering to filter**.
 The tenant population is many SME tenants plus occasional enterprise groups, which
 rules out a model whose per-tenant cost is a provisioning job.
 
+## Prior art
+
+Backfilled under law 34 before the tenancy phase is certified. The decision was
+made without this check, which is the practice the law exists to end -- so what
+follows records where precedent and this design DIFFER, not only where they agree.
+
+### Approaches reviewed
+
+Shared schema + RLS, schema-per-tenant, and database-per-tenant are the three
+partitioning models the SaaS literature treats as standard. The isolation enum
+here keeps the first and the third and closes the middle.
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [PostgreSQL, Row Security Policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) | 2026-08-31 | Superusers and `BYPASSRLS` roles ALWAYS bypass row security; `FORCE` subjects only the table OWNER; TRUNCATE and REFERENCES are not subject to row security |
+| [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html) | 2026-08-31 | Enable RLS with `FORCE`; do not serve ordinary tenant-scoped requests through a privileged connection; re-establish tenant context per transaction with `SET LOCAL`; prefer schema-derived RLS coverage discovery, because a hand-maintained table list can drift |
+| [Postgres RLS in practice](https://queryplane.com/blog/postgres-row-level-security-in-practice/) | 2026-08-31 | Permissive policies combine with OR; `SECURITY DEFINER` evaluates the OWNER's policies; `pg_dump` by a role without `BYPASSRLS` exports zero rows under FORCE |
+
+### What prior art does NOT prove
+
+**The two-chokepoint shape is not borrowed.** No source found argues for a
+sanctioned, audited cross-tenant path on the grounds that WITHOUT one somebody
+adds a privileged connection at 2am. The sources describe how to isolate. The
+claim that an escape hatch makes isolation more durable than no escape hatch is
+an Xforge judgement, held by T14 and T15 rather than by precedent.
+
+**Closing the schema-per-tenant tier is ours.** Nothing found compares the three
+models with data at our scale, because our scale does not exist yet.
+
+**And none of it says this implementation is correct.** That is T01-T21.
+
 ## Decision
 
 Shared schema, `tenant_id` on every tenant-owned table, isolation enforced by

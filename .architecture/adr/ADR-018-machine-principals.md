@@ -29,6 +29,55 @@ A second gap sits beside it: **no revocation object existed anywhere.** Nothing
 described how a departed employee's access ends, how a leaked integration credential
 is killed, or how temporary delegation expires.
 
+## Prior art
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [OWASP Non-Human Identities Top 10 (2025)](https://owasp.org/www-project-non-human-identities-top-10/) | 2026-08-31 | Machine identities are a distinct risk class with their own Top 10. NHI1 Improper Offboarding -- inadequate deactivation when an identity is no longer needed. NHI5 Overprivileged NHI. NHI7 Long-Lived Secrets -- credentials that never expire |
+| [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | Least privilege and deny-by-default apply to every principal, not only to humans |
+
+### What prior art does NOT prove
+
+**That a machine must be a distinct principal TYPE rather than a user with a
+credential attached.** The NHI Top 10 catalogues what goes wrong with machine
+identities -- stale, overprivileged, long-lived -- and every item argues for
+governing them. None argues the modelling decision made here, which is driven by
+the AUDIT requirement: a credential resolving to a human's session produces a
+trail saying a person approved what a machine did.
+
+**A provider claim this ADR rests on has NOT been re-verified**: that the auth
+library's API-key plugin validates credentials by mocking a session tied to a
+user. It is recorded in the architecture as an unverified vendor observation and
+must be checked before `packages/auth` implements machine principals. If it is
+wrong the reasoning is unchanged -- the audit requirement stands alone -- but the
+illustration would be.
+
+Revocation as an object with a validity window is qualified by T18 and P07.
+
+### What the tenancy phase actually depends on
+
+This ADR has two halves and they are at different readiness, which matters
+because law 34's completeness check cannot tell them apart:
+
+| Part | Status | Does tenancy certification rest on it? |
+|---|---|---|
+| Revocation as an object with a validity window | QUALIFIED -- T18, P07 | **Yes.** This is why ADR-018 is due at tenancy |
+| Machine principals as a distinct principal type | DEFERRED -- not implemented | **No.** `Principal.kind` exists as a type; no machine authenticates yet |
+| The auth library's API-key plugin mocking a user session | **UNVERIFIED VENDOR CLAIM** | No |
+
+So the unverified claim does not block tenancy certification, and it must not be
+allowed to pass as settled once the phase is certified. `adr-has-evidence`
+checks that fields are present; it cannot notice that one row of the reasoning
+is a vendor observation nobody has checked. Recording the split here is the only
+thing that stops mechanical completeness from quietly upgrading an assumption
+into a frozen fact.
+
+**Verify before `packages/auth` implements machine principals**, not after. If
+the claim is wrong the decision is unchanged -- the audit requirement stands on
+its own -- but the illustration would need replacing.
+
 ## Decision
 
 **A machine principal is a first-class principal type — never a user with a

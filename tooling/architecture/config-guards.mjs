@@ -11,7 +11,7 @@
  * config guard never observed to reject a bad config is exactly as
  * untrustworthy as a source guard never observed to reject bad source.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   classify,
@@ -21,7 +21,15 @@ import {
   NON_SOURCE_DIRS,
   UNCOMMITTABLE,
 } from '../source-universe.mjs'
-import { posix, ROOT, read, run, sourceFiles } from '../verify/lib/util.mjs'
+import {
+  COMMITTED_PHASE,
+  PHASES,
+  posix,
+  ROOT,
+  read,
+  run,
+  sourceFiles,
+} from '../verify/lib/util.mjs'
 
 /**
  * Read JSON, tolerating comments only when genuinely needed.
@@ -56,6 +64,42 @@ export const SECRET_FIXTURE_ALLOWLIST = [
   'packages/db/bootstrap.sql',
   'tooling/verify/lib/migrate-check.mjs',
 ]
+
+/**
+ * ADRs written BEFORE law 34 existed.
+ *
+ * Grandfathered from immediate backfill -- re-citing twenty-two working
+ * decisions is the standing audit this law is specifically not meant to become.
+ * But NOT exempt forever: a decision that a phase materially depends on must be
+ * evidence-backed before that phase is CERTIFIED.
+ *
+ * So the backfill is lazy and triggered by actual dependency. Committing
+ * `currentPhase: tenancy` will demand evidence for the five decisions the
+ * tenancy proof rests on, and not for the payroll ones, which nothing yet
+ * relies on.
+ */
+const EVIDENCE_REQUIRED_BY_PHASE = {
+  '003': 'tenancy', // shared-schema RLS, two chokepoints
+  '010': 'tenancy', // all authorisation in packages/policy
+  '015': 'tenancy', // one bound tenant per request
+  '018': 'tenancy', // machine principals, revocation
+  '019': 'tenancy', // permission lifecycle, fail-closed compilation
+  '013': 'hr', // optimistic concurrency
+  '006': 'payroll', // money representation
+  '016': 'payroll', // time model
+  '017': 'payroll', // period lock and retro adjustment
+  '007': 'async', // transactional outbox
+  '011': 'ai', // bounded AI tool generation
+}
+
+/** True while the phase that depends on this decision has not been certified. */
+export function stillGrandfathered(name, committedPhase = COMMITTED_PHASE) {
+  const n = (name.match(/^ADR-(\d{3})/) || [])[1]
+  if (!n) return false
+  const required = EVIDENCE_REQUIRED_BY_PHASE[n]
+  if (!required) return Number(n) <= 22 // pre-law, nothing depends on it yet
+  return PHASES.indexOf(committedPhase) < PHASES.indexOf(required)
+}
 
 export const configGuards = [
   {
@@ -164,6 +208,149 @@ export const configGuards = [
         }))
     },
   },
+  {
+    id: 'database-image-matches-ci',
+    law: 32,
+    title: 'The local fixture and the gate run the same database image',
+    /**
+     * `pnpm verify` cannot be the canonical definition of green while it means
+     * two different things in two places. This diverged silently -- compose on
+     * 17, the workflow on 16 -- and row-level security is precisely where major
+     * versions differ, so the qualification suite would have been proving a
+     * property of an engine the gate never runs.
+     *
+     * Matched on `image:` lines only: prose about a past mismatch is not a
+     * mismatch, and a guard that cannot tell the two apart gets disabled.
+     */
+    check(env) {
+      const imagesIn = (path) => {
+        const f = (env.files ?? []).find((x) => x.path === path)
+        if (!f) return null
+        return [...f.source.matchAll(/^\s*image:\s*['"]?(postgres:[A-Za-z0-9._-]+)/gm)].map(
+          (m) => m[1],
+        )
+      }
+      const local = imagesIn('compose.yaml')
+      const ci = imagesIn('.github/workflows/verify.yml')
+      // Either side absent is a different problem than the two disagreeing.
+      if (local === null || ci === null) return []
+      if (local.length === 0 || ci.length === 0) return []
+
+      const distinct = [...new Set([...local, ...ci])]
+      return distinct.length === 1
+        ? []
+        : [
+            {
+              where: 'compose.yaml',
+              message:
+                `the local fixture and .github/workflows/verify.yml disagree on the database image (${distinct.join(' vs ')}) -- ` +
+                'a local green the gate cannot reproduce is not a green',
+            },
+          ]
+    },
+  },
+  {
+    id: 'adr-has-evidence',
+    law: 34,
+    title: 'A FROZEN decision records the prior art it was checked against',
+    /**
+     * NAMED FOR WHAT IT DOES. It checks that fields are PRESENT. It cannot tell
+     * whether a source is good, whether it supports the claim, or whether
+     * anyone read it -- that is review. `prior-art-verified` would have been a
+     * guard whose green light meant more than it can deliver, and an
+     * overclaiming name is worse than no guard at all.
+     *
+     * It catches the failure that actually happened: a decision frozen with no
+     * evidence recorded anywhere.
+     */
+    check(env) {
+      const out = []
+      for (const { name, source } of env.adrs ?? []) {
+        if (stillGrandfathered(name)) continue
+        if (!/FROZEN/.test(source)) continue
+
+        if (!/^##\s+Prior art/m.test(source)) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message: 'FROZEN with no Prior art section',
+          })
+          continue
+        }
+        const hasDated = /\|\s*20\d\d-\d\d-\d\d\s*\|/.test(source)
+        const noMatch = /no-direct-match/.test(source)
+        if (!hasDated && !noMatch) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message: 'Prior art records no dated source and no explicit no-direct-match finding',
+          })
+        }
+        if (!/does NOT prove/i.test(source)) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message:
+              'no "what prior art does NOT prove" section -- precedent qualifies the ' +
+              'pattern, never this implementation',
+          })
+        }
+      }
+      return out
+    },
+  },
+  {
+    id: 'ci-provides-fixture-env',
+    law: 32,
+    title: 'CI supplies every environment variable the qualification suite declares',
+    /**
+     * The sixth appearance of one defect: a fact with two homes and no check
+     * that they agree.
+     *
+     * The suite needs DATABASE_URL and APP_DATABASE_URL. That requirement lived
+     * only inside `process.env.X ?? fallback` expressions, so the workflow
+     * restated it by hand -- and got it wrong. APP_DATABASE_URL was missing, the
+     * fallback pointed at a developer port, and every stage that connects as
+     * app_user would have reported BLOCKED. `--ci` turns that into a failure,
+     * so the gate was right; it just could not say why.
+     *
+     * `REQUIRED_DATABASE_ENV` in tests/fixtures/local-database.ts is now the one
+     * declaration, and this asserts the workflow provides all of it. Reading the
+     * declaration rather than restating the names is the whole point: a guard
+     * with its own copy of the list is the defect it is meant to catch.
+     */
+    check(env) {
+      const fixture = (env.files ?? []).find((f) => f.path === 'tests/fixtures/local-database.ts')
+      const workflow = (env.files ?? []).find((f) => f.path === '.github/workflows/verify.yml')
+      if (!fixture || !workflow) return []
+
+      const block = fixture.source.match(/REQUIRED_DATABASE_ENV\s*=\s*\{([\s\S]*?)\}\s*as const/)
+      if (!block) {
+        return [
+          {
+            where: 'tests/fixtures/local-database.ts',
+            message:
+              'REQUIRED_DATABASE_ENV is missing -- the environment contract must be ' +
+              'declared in one place or CI has to guess it',
+          },
+        ]
+      }
+
+      const required = [...block[1].matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:/gm)].map((m) => m[1])
+      // The workflow's own `env:` block, not the whole file: a variable named
+      // only in a comment is not a variable that is set.
+      const provided = new Set(
+        [...workflow.source.matchAll(/^\s{4,}([A-Z][A-Z0-9_]*)\s*:\s*\S/gm)].map((m) => m[1]),
+      )
+
+      return required
+        .filter((name) => !provided.has(name))
+        .map((name) => ({
+          where: '.github/workflows/verify.yml',
+          message:
+            `does not set ${name}, which the qualification suite requires. Without ` +
+            'it the suite falls back to a developer URL and reports an unreachable ' +
+            'database instead of a missing variable',
+        }))
+    },
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
@@ -176,6 +363,14 @@ export function scanConfig() {
     // rather than silently passing on a wrong assumption.
     trackedFiles:
       tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
+    adrs: existsSync(join(ROOT, '.architecture/adr'))
+      ? readdirSync(join(ROOT, '.architecture/adr'))
+          .filter((f) => /^ADR-\d{3}.*\.md$/.test(f))
+          .map((name) => ({
+            name,
+            source: readFileSync(join(ROOT, '.architecture/adr', name), 'utf8'),
+          }))
+      : [],
     biome: readJsonc('biome.json'),
     tsconfig: readJsonc('tsconfig.json'),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',

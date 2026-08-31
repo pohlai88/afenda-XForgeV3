@@ -10,7 +10,7 @@
  * cast. Without it every handler asserts the brand onto an untyped value, which
  * is forgery with extra steps -- and the no-forged-tenant-context guard says so.
  */
-import type { Principal } from '@xforge/policy'
+import type { PolicyDecision, Principal } from '@xforge/policy'
 import type { VerifiedTenantContext } from '@xforge/tenancy'
 
 declare module 'hono' {
@@ -20,6 +20,12 @@ declare module 'hono' {
     /** Injected rather than read from a clock, so handlers stay deterministic (ADR-016). */
     asOf: string
     requestId: string
+    /**
+     * Why policy refused, for audit and logs. Never serialised into a response:
+     * the caller gets one flat refusal, because a specific reason is an
+     * enumeration oracle.
+     */
+    policyDenial: PolicyDecision | undefined
     /** Test seam for deterministic ids. */
     newId: string | undefined
   }

@@ -17,6 +17,37 @@ the answer.
 
 A related question: who owns tenant *membership*? Drafts disagreed.
 
+## Prior art
+
+### Approaches reviewed
+
+Identity providers increasingly ship an authorisation product -- organisations,
+roles, permissions -- and the pull is to adopt it because it is already there.
+The alternative is an application-owned policy store: more code, but one system
+instead of two.
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | Centralize the logic for handling failed access control checks; permission should be validated correctly on every request through middleware giving global, application-wide configuration rather than being applied individually; checks must be server-side |
+| [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html) | 2026-08-31 | Verify the authenticated principal is authorised to act in the selected tenant, and propagate only server-verified context downstream |
+
+### What prior art does NOT prove
+
+**OWASP says CENTRALISE. It does not say WHERE.** One authorisation system is
+well supported; that it must be the application's rather than the identity
+provider's is addressed by no source found.
+
+The reason it is Xforge's here is local and specific: membership is the fact the
+tenant-binding check evaluates (ADR-015), and that check must run against
+RLS-protected Xforge data. An authorisation store outside the tenant boundary
+cannot be read under the boundary it is being used to enforce -- the same
+circularity ADR-023 had to resolve, and an argument for keeping the fact inside.
+
+**Nothing here validates the six-value scope enum.** That is a modelling choice
+answering Malaysian group structure, qualified by P01-P03.
+
 ## Decision
 
 Three layers, never collapsed:

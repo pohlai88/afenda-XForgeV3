@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "jsx": "preserve",
     "allowJs": true,
@@ -8,18 +8,7 @@
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@xforge/api": ["../../packages/api/src/index.ts"],
-      "@xforge/api-client": ["../../packages/api-client/src/index.ts"],
-      "@xforge/api-client/mocks": ["../../packages/api-client/src/mocks.ts"],
-      "@xforge/db": ["../../packages/db/src/index.ts"],
-      "@xforge/policy": ["../../packages/policy/src/index.ts"],
-      "@xforge/hr": ["../../modules/hr/index.ts"],
-      "@xforge/tenancy": ["../../packages/tenancy/src/index.ts"],
-      "@xforge/db/postgres": ["../../packages/db/src/postgres-driver.ts"],
-      "@xforge/fixtures/local-database": ["../../tests/fixtures/local-database.ts"]
-    }
+    ]
   },
   "include": [
     "next-env.d.ts",

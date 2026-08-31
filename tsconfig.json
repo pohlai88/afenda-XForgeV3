@@ -11,7 +11,9 @@
       "@xforge/tenancy": ["./packages/tenancy/src/index.ts"],
       "@xforge/db/postgres": ["./packages/db/src/postgres-driver.ts"],
       "@xforge/hr/repository": ["./modules/hr/infrastructure/repository/emergency-contact.ts"],
-      "@xforge/fixtures/local-database": ["./tests/fixtures/local-database.ts"]
+      "@xforge/fixtures/local-database": ["./tests/fixtures/local-database.ts"],
+      "@xforge/fixtures/tenancy": ["./tests/fixtures/tenancy.ts"],
+      "@xforge/fixtures/rls-checks": ["./tests/fixtures/rls-checks.ts"]
     }
   },
   "include": [

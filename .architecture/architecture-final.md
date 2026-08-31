@@ -1231,6 +1231,7 @@ ADR-019  Permission-code lifecycle and fail-closed policy compilation
 ADR-020  Data retention, erasure and tenant offboarding
 ADR-021  Production migration compatibility policy
 ADR-022  Verified tenant context; host selects, membership authorises
+ADR-023  Membership resolution before a tenant context exists
 ```
 
 **Reopen a FROZEN decision only** on a failing qualification test, measured production evidence, a real second-domain contradiction, a regulatory or security requirement, or a provider limitation crossing an architectural boundary. **Preference, novelty and framework fashion are not sufficient.**
@@ -1259,6 +1260,7 @@ After adoption, **stop writing competing canonical drafts.**
 | Item | By | Note |
 |---|---|---|
 | Neon MCP auth failing (HTTP 401) | **Before Phase 1 PR qualification**, not before Phase 1 implementation | Refresh the token or provision Postgres via the Vercel Marketplace. Blocks branch-per-PR and preview-database qualification. Does **not** block RLS, `withTenant`, policy or membership correctness — those are proven against a local PostgreSQL with real roles and FORCE RLS. Neon is a provider choice, never the tenancy model, and a vendor credential must not stop architecture work |
+| One unexplained RED in the tenancy + policy stage | **Before Phase 1 certification** | Observed once on 31 August 2026, not reproduced in four subsequent full runs. The failure detail was lost: the gate printed it and the invocation piped through `tail`. Connection exhaustion was measured and ruled out -- peak 3 against `max_connections` 100. Cause unknown. Recorded rather than forgotten, because a suite that constitutes the entire isolation argument failing once is a finding, and it stopping is not an explanation |
 | Branch protection not active | **Before Phase 1 merges to main** | Phase 1 may be developed locally. It is where the isolation proof lands, and that proof most needs to have executed somewhere other than the machine that wrote it |
 | Vercel CLI not installed | Spine phase start | `npm i -g vercel` |
 | Durable executor: Trigger.dev vs Inngest | Spine phase end | Reversible — the outbox is the durable record either way |

@@ -21,6 +21,23 @@
  * one.
  */
 
+import { classify } from '../../source-universe.mjs'
+
+/**
+ * Test files, decided by the ONE classification authority rather than by each
+ * guard inventing a path regex -- the second time this repository has paid for
+ * two lists that were supposed to agree.
+ *
+ * Guards that police RUNTIME BEHAVIOUR compose this in. A test constructing an
+ * instant, or driving the tenancy resolution path directly, is doing its job;
+ * flagging it would train people to weaken the guard rather than fix the code,
+ * which is the failure a noisy guard actually causes.
+ *
+ * Guards about STRUCTURE keep applying to tests, because a test reaching into
+ * another module's internals is still coupling.
+ */
+const notATest = (f) => classify(f) !== 'test'
+
 const line = (src, idx) => src.slice(0, idx).split('\n').length
 
 function imports(src) {
@@ -264,7 +281,7 @@ export const guards = [
     law: 21,
     precision: 'text',
     title: 'Civil dates come from businessToday(legalEntityId), never the runtime clock (ADR-016)',
-    applies: (f) => /^modules\//.test(f),
+    applies: (f) => /^modules\//.test(f) && notATest(f),
     check(f, src) {
       const out = []
       for (const re of [/\bnew Date\s*\(\s*\)/g, /\bDate\.now\s*\(\s*\)/g, /\bnow\(\)::date\b/g]) {
@@ -390,6 +407,67 @@ export const guards = [
         })
       }
       return out
+    },
+  },
+
+  {
+    id: 'tenancy-primitives-confined',
+    law: 12,
+    precision: 'text',
+    title: 'The pre-context tenancy queries are confined to the resolution path',
+    // ADR-023. hasActiveMembership and resolveHostname reach the database
+    // BEFORE a tenant is bound, which is the one thing law 12 otherwise
+    // forbids. They are safe because neither hands out a client -- but only
+    // while they stay where they were reasoned about. A business module calling
+    // hasActiveMembership is a module deciding its own authority.
+    applies: (f) =>
+      notATest(f) &&
+      !/^packages[/]db[/]/.test(f) &&
+      !/^packages[/]tenancy[/]/.test(f) &&
+      !/^apps[/]web[/]app[/]api[/]/.test(f),
+    check(f, src) {
+      const out = []
+      const re = /(?<![.\w])(?:hasActiveMembership|resolveHostname|tenancyDriver)\s*[(]/g
+      let m
+      while ((m = re.exec(src)) !== null) {
+        if (isNonCallContext(src, m.index)) continue
+        out.push({
+          file: f,
+          line: line(src, m.index),
+          message:
+            'calls a pre-context tenancy query outside the resolution path -- ADR-023 ' +
+            'confines these to packages/tenancy and the composition root',
+        })
+      }
+      return out
+    },
+  },
+
+  {
+    id: 'db-access-outside-repository',
+    law: 12,
+    precision: 'text',
+    title: 'A business module reaches the database only from its repository layer',
+    // architecture-final.md 23.1 listed this guard. It was never implemented,
+    // and the matrix found the gap rather than a code review: T13 asks for a
+    // guard failure and there was no guard to fail.
+    //
+    // withTenant is the sanctioned chokepoint, but a chokepoint reachable from
+    // anywhere in a module is a chokepoint in name. Persistence belongs behind
+    // the repository, so a command or a UI file importing @xforge/db is
+    // reaching around the layer that owns the queries.
+    applies: (f) => /^modules[/]/.test(f) && notATest(f),
+    check(f, src) {
+      if (/^modules[/][^/]+[/]infrastructure[/]/.test(f)) return []
+      return imports(src)
+        .filter((i) => /^@xforge[/]db($|[/])|(^|[/])drizzle-orm($|[/])/.test(i.spec))
+        .map((i) => ({
+          file: f,
+          line: line(src, i.at),
+          message:
+            `database access outside the repository layer: ${i.spec} -- ` +
+            'queries live in infrastructure/, reached through withTenant',
+        }))
     },
   },
 ]

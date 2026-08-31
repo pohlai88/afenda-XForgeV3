@@ -25,7 +25,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        # MUST match compose.yaml. This said 16 while every local run was on 17,
+        # so the gate would have been qualifying a different database engine
+        # than the one the proof was written against -- and RLS semantics are
+        # precisely where major versions diverge.
+        image: postgres:17-alpine
         env:
           POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: xforge
@@ -38,15 +42,30 @@ jobs:
       # Injected, never committed. The local fixture credential exists only in
       # the approved fixture locations enforced by the no-shared-dev-secret
       # guard, and is not a working secret anywhere else.
+      #
+      # BOTH connections are required, and the suite declares which in
+      # REQUIRED_DATABASE_ENV (tests/fixtures/local-database.ts). The
+      # ci-provides-fixture-env guard reads that declaration and fails this
+      # workflow if one is missing -- which is how APP_DATABASE_URL came to be
+      # absent here while every local run was green.
+      #
+      # Use URL-SAFE secrets. These are embedded in connection strings, so a
+      # password containing @ : / or # silently produces a malformed URL and a
+      # connection error that looks like the database is down.
       DATABASE_URL: postgres://postgres:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/xforge
-      APP_USER_PASSWORD: ${{ secrets.CI_APP_USER_PASSWORD }}
+      APP_DATABASE_URL: postgres://app_user:${{ secrets.CI_APP_USER_PASSWORD }}@localhost:5432/xforge
 
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # READ from package.json's engines.node, never restated here. It said
+          # 22 while the project declares >=24 -- not a copy that drifted, a copy
+          # that contradicted the declaration outright.
+          #
+          # Eliminating the second home beats guarding the agreement between two.
+          node-version-file: package.json
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -54,8 +73,15 @@ jobs:
 
       # Provision the non-owner app_user role. RLS silently skips owners, so the
       # integration stage is only meaningful when it connects as this role.
+      # Provisions app_user with the INJECTED password, which APP_DATABASE_URL
+      # above then uses. The password used to be hardcoded in bootstrap.sql,
+      # which made CI_APP_USER_PASSWORD inert: set, referenced, and consumed by
+      # nothing. A secret that configures nothing is worse than no secret.
       - name: Bootstrap database roles
-        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f packages/db/bootstrap.sql
+        run: >-
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1
+          -v app_user_password="${{ secrets.CI_APP_USER_PASSWORD }}"
+          -f packages/db/bootstrap.sql
 
       - name: pnpm verify --ci
         run: pnpm verify --ci

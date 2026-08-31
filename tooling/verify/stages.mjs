@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import { scanConfig } from '../architecture/config-guards.mjs'
 import { scanContract } from '../architecture/contract-guards.mjs'
 import { mutationTest, scanWorkspace } from '../architecture/run-guards.mjs'
+import { GENERATED_PATHS } from '../source-universe.mjs'
 import {
   BLOCKED,
   EMPTY,
@@ -65,10 +66,11 @@ const TREE_AT_START = treeState()
 const _NL = String.fromCharCode(10)
 
 /**
- * Everything produced by `pnpm generate`. Derived state: never hand-edited,
- * and asserted byte-identical after regeneration.
+ * Everything produced by `pnpm generate` is imported from the source universe,
+ * not restated here. It was restated here once, identically, which is how two
+ * authorities for one question start -- and ADR-024 records that divergence as
+ * the reason the source universe module exists at all.
  */
-const GENERATED_PATHS = ['contracts/', 'packages/api-client/src/generated/']
 
 export const stages = [
   {
@@ -100,7 +102,7 @@ export const stages = [
     id: 'guards',
     phase: 'spine',
     title: 'architecture guards',
-    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30],
+    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30, 34],
     run() {
       const { files, checked, violations: sourceViolations } = scanWorkspace()
 
@@ -274,7 +276,7 @@ export const stages = [
   {
     id: 'rls',
     phase: 'tenancy',
-    title: 'RLS / security proof',
+    title: 'tenancy + policy proof',
     enforces: [11, 12, 13, 14],
     /**
      * The tenancy gate, measured against a specification that was frozen BEFORE
@@ -297,25 +299,43 @@ export const stages = [
       // and a number meaning two things carries neither.
       const rows = [
         ...readFileSync(spec, 'utf8').matchAll(
-          /^\|\s*(T\d\d)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/gm,
+          /^\|\s*([TP]\d\d)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/gm,
         ),
-      ].map((m) => ({ id: m[1], availableFrom: m[2] }))
+      ]
+        .map((m) => ({ id: m[1], availableFrom: m[2] }))
+        // Deduplicated: the document discusses cases in prose tables as well as
+        // declaring them, and a case mentioned twice was inflating the
+        // denominator. "29/30, complete" is a contradiction that should never
+        // have been printable.
+        .filter((row, i, all) => all.findIndex((r) => r.id === row.id) === i)
       const specified = rows.map((r) => r.id)
       const reachable = rows.filter((r) => r.availableFrom === 'now').map((r) => r.id)
 
-      const dir = join(ROOT, 'tests/architecture/tenancy')
-      const implemented = existsSync(dir)
-        ? [
-            ...new Set(
-              readdirSync(dir)
-                .filter((f) => /^T\d\d.*\.test\.ts$/.test(f))
-                .map((f) => f.slice(0, 3)),
-            ),
-          ]
-        : []
-      const missing = specified.filter((t) => !implemented.includes(t))
+      // Both matrices: tenancy (T) and policy (P). One case can cover a range,
+      // so 'P01-P05-...' registers all five.
+      const implemented = new Set()
+      for (const sub of ['tenancy', 'policy']) {
+        const dir = join(ROOT, 'tests/architecture', sub)
+        if (!existsSync(dir)) continue
+        for (const f of readdirSync(dir)) {
+          if (!/[.]test[.](ts|mjs)$/.test(f)) continue
+          // A file may declare a RANGE -- 'P01-P05-authorisation.test.ts' covers
+          // five cases. Reading only the endpoints would report the middle
+          // three as unwritten while they are asserted a few lines away, and
+          // the fix for a wrong number is never to rename files around it.
+          for (const m of f.matchAll(/([TP])(\d\d)(?:-[TP]?(\d\d))?/g)) {
+            const prefix = m[1]
+            const from = Number(m[2])
+            const to = m[3] ? Number(m[3]) : from
+            for (let n = from; n <= to; n++) {
+              implemented.add(`${prefix}${String(n).padStart(2, '0')}`)
+            }
+          }
+        }
+      }
+      const missing = specified.filter((t) => !implemented.has(t))
 
-      if (implemented.length === 0) return unmet(this, 'any implemented attack case')
+      if (implemented.size === 0) return unmet(this, 'any implemented attack case')
       if (!hasBin('vitest')) return unmet(this, 'vitest')
 
       const r = run('pnpm', ['-s', 'test:architecture:tenancy'])
@@ -324,10 +344,10 @@ export const stages = [
       // nothing, and must never read as a security proof that passed.
       const passed = Number(r.out.match(/Tests\s+(\d+) passed/)?.[1] ?? 0)
       if (passed === 0) return unmet(this, 'a reachable database for the attack suite')
-      const reachableDone = reachable.filter((t) => implemented.includes(t))
+      const reachableDone = reachable.filter((t) => implemented.has(t))
       const summary =
         `${passed} assertions, ${reachableDone.length}/${reachable.length} reachable, ` +
-        `${implemented.length}/${specified.length} of the matrix`
+        `${implemented.size}/${specified.length} of the matrix`
 
       if (missing.length > 0) {
         const unwritten = missing.filter((t) => reachable.includes(t))

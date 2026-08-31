@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
+  boolean,
   index,
   integer,
   pgPolicy,
@@ -84,4 +85,72 @@ export type NewEmergencyContact = typeof emergencyContact.$inferInsert
  * is exactly the case that must not escape. This exists so the gate can also
  * assert the reverse: everything declared tenant-owned really does carry RLS.
  */
-export const TENANT_OWNED_TABLES = ['emergency_contact'] as const
+export const TENANT_OWNED_TABLES = ['emergency_contact', 'tenant_membership'] as const
+
+/**
+ * Tenancy tables (ADR-022, ADR-023).
+ *
+ * `tenant` is a PLATFORM table: it has no `tenant_id` because it IS the tenant,
+ * so law 11 does not apply to it and the dynamic RLS enumeration must not
+ * expect a policy on it. `tenant_domain` and `tenant_membership` are
+ * tenant-owned and carry the standard treatment.
+ */
+export const tenant = pgTable('tenant', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  status: text('status').notNull().default('active'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const tenantDomain = pgTable(
+  'tenant_domain',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull(),
+    hostname: text('hostname').notNull().unique(),
+    kind: text('kind').notNull().default('subdomain'),
+    status: text('status').notNull().default('verified'),
+    isPrimary: boolean('is_primary').notNull().default(false),
+  },
+  (t) => [
+    index('tenant_domain_tenant_idx').on(t.tenantId),
+    /**
+     * Platform routing metadata, not tenant-owned data. Host resolution is the
+     * step that FINDS the tenant, so it cannot itself be tenant scoped; the
+     * mapping is disclosed by the URL anyway and grants nothing without the
+     * membership check. Reads only -- app_user holds no write grant here.
+     */
+    pgPolicy('tenant_domain_routing_lookup', {
+      as: 'permissive',
+      for: 'select',
+      to: appUser,
+      using: sql`true`,
+    }),
+  ],
+).enableRLS()
+
+export const tenantMembership = pgTable(
+  'tenant_membership',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id').notNull(),
+    principalId: text('principal_id').notNull(),
+    status: text('status').notNull().default('active'),
+    /** Half-open [valid_from, valid_to) -- law 20. NULL valid_to is open-ended. */
+    validFrom: timestamp('valid_from', { withTimezone: true }).notNull().defaultNow(),
+    validTo: timestamp('valid_to', { withTimezone: true }),
+    /** Transaction time, distinct from valid time -- law 20 / ADR-016. */
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('tenant_membership_tenant_principal_lookup').on(t.tenantId, t.principalId),
+    pgPolicy('tenant_membership_tenant_isolation', {
+      as: 'permissive',
+      for: 'all',
+      to: appUser,
+      using: tenantIsolation,
+      withCheck: tenantIsolation,
+    }),
+  ],
+).enableRLS()

@@ -106,20 +106,41 @@ export async function resolveTenantContext(
 }
 
 /**
- * A membership source backed by a fixed list.
+ * The membership source, backed by `tenant_membership` (ADR-023).
  *
- * SLICE 1 ONLY. The type boundary above is real from day one; this data source
- * is not. The `tenant_membership` table, its RLS treatment and the revocation
- * path land in slice 2, and this is deleted then. It is named so that nobody
- * mistakes it for the production path -- which is the whole failure mode this
- * phase is built to avoid.
+ * The queries are INJECTED rather than imported, so `packages/tenancy` keeps no
+ * runtime dependency on `packages/db` -- which would be a cycle, since
+ * `packages/db` type-imports the verified context from here.
  */
-export function staticMembershipSource(
-  rows: readonly { readonly principalId: string; readonly tenantId: string }[],
-): MembershipSource {
+export interface MembershipQueries {
+  hasActiveMembership(tenantId: string, principalId: string, asOf: Date): Promise<boolean>
+  resolveHostname(hostname: string): Promise<string | null>
+}
+
+/**
+ * Resolve a request end to end: hostname to candidate, candidate to context.
+ *
+ * `asOf` is passed in rather than read from a clock here (law 21), so the same
+ * instant governs host resolution, the membership window and everything the
+ * request goes on to do.
+ */
+export async function resolveRequestTenant(
+  hostname: string,
+  principal: Principal,
+  queries: MembershipQueries,
+  asOf: Date,
+): Promise<TenantResolution> {
+  const tenantId = await queries.resolveHostname(hostname)
+  if (!tenantId) return { kind: 'denied', reason: 'no-candidate' }
+  return resolveTenantContext(candidateFromHost(tenantId), principal, {
+    hasActiveMembership: (p, t) => queries.hasActiveMembership(t, p, asOf),
+  })
+}
+
+/** A membership source over the injected queries, at a fixed instant. */
+export function databaseMembershipSource(queries: MembershipQueries, asOf: Date): MembershipSource {
   return {
-    async hasActiveMembership(principalId, tenantId) {
-      return rows.some((r) => r.principalId === principalId && r.tenantId === tenantId)
-    },
+    hasActiveMembership: (principalId, tenantId) =>
+      queries.hasActiveMembership(tenantId, principalId, asOf),
   }
 }
