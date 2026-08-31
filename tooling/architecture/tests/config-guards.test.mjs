@@ -236,3 +236,59 @@ describe('the tenancy phase can be certified without tripping law 34', () => {
     expect(gaps).toEqual([])
   })
 })
+
+describe('ci-provides-fixture-env', () => {
+  const guard = byId('ci-provides-fixture-env')
+
+  const envWith = (workflowEnv) => ({
+    files: [
+      {
+        path: 'tests/fixtures/local-database.ts',
+        source: [
+          'export const REQUIRED_DATABASE_ENV = {',
+          "  DATABASE_URL: 'the owner connection',",
+          "  APP_DATABASE_URL: 'the application connection',",
+          '} as const',
+        ].join('\n'),
+      },
+      { path: '.github/workflows/verify.yml', source: workflowEnv },
+    ],
+  })
+
+  const bothSet = [
+    '    env:',
+    '      DATABASE_URL: postgres://postgres:x@localhost:5432/xforge',
+    '      APP_DATABASE_URL: postgres://app_user:x@localhost:5432/xforge',
+  ].join('\n')
+
+  it('permits a workflow that provides everything declared', () => {
+    expect(guard.check(envWith(bothSet))).toHaveLength(0)
+  })
+
+  it('REJECTS the omission that was actually in the workflow', () => {
+    const found = guard.check(
+      envWith('    env:\n      DATABASE_URL: postgres://postgres:x@localhost:5432/xforge'),
+    )
+    expect(found).toHaveLength(1)
+    expect(found[0]?.message).toMatch(/APP_DATABASE_URL/)
+  })
+
+  it('does not count a variable that is only MENTIONED in a comment', () => {
+    // The failure mode of a looser match: a workflow explaining why it does not
+    // set something would read as setting it.
+    const commented = [
+      '    env:',
+      '      DATABASE_URL: postgres://postgres:x@localhost:5432/xforge',
+      '      # APP_DATABASE_URL is deliberately omitted',
+    ].join('\n')
+    expect(guard.check(envWith(commented))).toHaveLength(1)
+  })
+
+  it('reports the declaration missing rather than passing vacuously', () => {
+    const env = envWith(bothSet)
+    env.files[0].source = 'export const something = 1'
+    const found = guard.check(env)
+    expect(found).toHaveLength(1)
+    expect(found[0]?.message).toMatch(/REQUIRED_DATABASE_ENV is missing/)
+  })
+})

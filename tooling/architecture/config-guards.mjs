@@ -296,6 +296,61 @@ export const configGuards = [
       return out
     },
   },
+  {
+    id: 'ci-provides-fixture-env',
+    law: 32,
+    title: 'CI supplies every environment variable the qualification suite declares',
+    /**
+     * The sixth appearance of one defect: a fact with two homes and no check
+     * that they agree.
+     *
+     * The suite needs DATABASE_URL and APP_DATABASE_URL. That requirement lived
+     * only inside `process.env.X ?? fallback` expressions, so the workflow
+     * restated it by hand -- and got it wrong. APP_DATABASE_URL was missing, the
+     * fallback pointed at a developer port, and every stage that connects as
+     * app_user would have reported BLOCKED. `--ci` turns that into a failure,
+     * so the gate was right; it just could not say why.
+     *
+     * `REQUIRED_DATABASE_ENV` in tests/fixtures/local-database.ts is now the one
+     * declaration, and this asserts the workflow provides all of it. Reading the
+     * declaration rather than restating the names is the whole point: a guard
+     * with its own copy of the list is the defect it is meant to catch.
+     */
+    check(env) {
+      const fixture = (env.files ?? []).find((f) => f.path === 'tests/fixtures/local-database.ts')
+      const workflow = (env.files ?? []).find((f) => f.path === '.github/workflows/verify.yml')
+      if (!fixture || !workflow) return []
+
+      const block = fixture.source.match(/REQUIRED_DATABASE_ENV\s*=\s*\{([\s\S]*?)\}\s*as const/)
+      if (!block) {
+        return [
+          {
+            where: 'tests/fixtures/local-database.ts',
+            message:
+              'REQUIRED_DATABASE_ENV is missing -- the environment contract must be ' +
+              'declared in one place or CI has to guess it',
+          },
+        ]
+      }
+
+      const required = [...block[1].matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:/gm)].map((m) => m[1])
+      // The workflow's own `env:` block, not the whole file: a variable named
+      // only in a comment is not a variable that is set.
+      const provided = new Set(
+        [...workflow.source.matchAll(/^\s{4,}([A-Z][A-Z0-9_]*)\s*:\s*\S/gm)].map((m) => m[1]),
+      )
+
+      return required
+        .filter((name) => !provided.has(name))
+        .map((name) => ({
+          where: '.github/workflows/verify.yml',
+          message:
+            `does not set ${name}, which the qualification suite requires. Without ` +
+            'it the suite falls back to a developer URL and reports an unreachable ' +
+            'database instead of a missing variable',
+        }))
+    },
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
