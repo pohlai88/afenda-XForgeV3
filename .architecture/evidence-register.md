@@ -371,6 +371,8 @@ rather than the article about it.
 | Tree-shakable | `sideEffects: false` in the installed `package.json`, plus the measurement below | Confirmed |
 | **No Table or DataGrid** | 83 subpath exports; nothing matching `table` or `grid` | Confirmed — the grid is ours to build, as the plan assumed |
 | Dialog owns focus and labelling | `dialog/index.parts.d.ts`: Root, Trigger, Portal, Backdrop, Viewport, Popup, Title, Description, Close | Confirmed |
+| `Input` wires itself to `Field` automatically | `input/Input.mjs` renders `Field.Control` internally | Confirmed by source, not by the doc comment beside it |
+| `Checkbox` participates in `Field` too | `checkbox/root/CheckboxRoot.mjs` calls `useFieldRootContext()` | Confirmed |
 
 **Adding Base UI cost the employee route nothing — measured, not assumed.**
 

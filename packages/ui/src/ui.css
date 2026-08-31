@@ -231,3 +231,95 @@
   gap: var(--semantic-space-inline);
   justify-content: flex-end;
 }
+
+/*
+ * Form controls.
+ *
+ * The ARIA wiring is Base UI's; what is here is appearance and target size.
+ * The control and the checkbox both meet the 24px floor in every density,
+ * which is asserted in a browser rather than inferred from these values --
+ * tokens cannot see the box that actually gets laid out.
+ */
+.xf-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack-tight);
+}
+
+.xf-field-label {
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-default);
+}
+
+.xf-field-description {
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-muted);
+}
+
+/*
+ * An error is not merely red text. Colour alone carries no meaning for anyone
+ * who cannot distinguish it, so the message itself has to say what is wrong --
+ * which is the author's job, and the reason this rule only colours it.
+ */
+.xf-field-error {
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-danger-text);
+}
+
+.xf-input {
+  min-block-size: var(--semantic-target-minimum);
+  padding: var(--semantic-control-padding-block)
+    var(--semantic-control-padding-inline);
+  font: inherit;
+  font-size: var(--semantic-type-body);
+  color: var(--semantic-text-default);
+  background: var(--semantic-surface-raised);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-strong);
+  border-radius: var(--semantic-radius-control);
+}
+.xf-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.xf-checkbox-row {
+  display: flex;
+  gap: var(--semantic-space-inline-tight);
+  align-items: center;
+}
+
+.xf-checkbox {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--semantic-target-minimum);
+  block-size: var(--semantic-target-minimum);
+  padding: 0;
+  cursor: pointer;
+  background: var(--semantic-surface-raised);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-strong);
+  border-radius: var(--semantic-radius-control);
+}
+.xf-checkbox[data-checked] {
+  background: var(--semantic-accent-default);
+  border-color: var(--semantic-accent-default);
+}
+.xf-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/*
+ * The mark is drawn rather than typed. A tick character would be a glyph the
+ * font may not have, and it would be read aloud; a border-only shape carries no
+ * text at all, leaving the checked state to `aria-checked` where it belongs.
+ */
+.xf-checkbox-mark {
+  inline-size: 0.35em;
+  block-size: 0.7em;
+  border-block-end: 2px solid var(--semantic-text-on-accent);
+  border-inline-end: 2px solid var(--semantic-text-on-accent);
+  rotate: 45deg;
+  translate: 0 -10%;
+}

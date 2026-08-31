@@ -120,10 +120,19 @@ describe('the grammar', () => {
     }
   })
 
-  // A leaf that declares no slot could hold no content at all. Every current
-  // contract is a container or a text leaf; if that ever stops being true the
-  // exception should be deliberate rather than a forgotten declaration.
-  it.each(entries)('%s declares at least one slot', (_id, contract) => {
+  /**
+   * A contract with no slots can hold no content, so it had better be a control
+   * that holds a VALUE instead. Input is the only one, and naming it here keeps
+   * the exception deliberate: the alternative was relaxing this test to
+   * "greater than or equal to zero", which asserts nothing and would let a
+   * forgotten slot declaration through on any future container.
+   */
+  it.each(entries)('%s declares a slot, or is a value-holding control', (id, contract) => {
+    if (slotsOf(contract).length === 0) {
+      expect(id, 'only a control may declare no slots').toBe('Input')
+      expect(contract.kind).toBe('field')
+      return
+    }
     expect(slotsOf(contract).length).toBeGreaterThan(0)
   })
 })
@@ -177,7 +186,12 @@ describe('accessibility obligations', () => {
         contracts[id].interaction.profile,
       ),
     )
-    expect(owing).toEqual(['Dialog'])
+    expect([...owing].sort()).toEqual(['Checkbox', 'Dialog', 'Field', 'Input'])
+
+    // The pair that makes the point. Dialog is `layout` and owes evidence
+    // because it traps focus; Alert is `feedback` and owes none because it only
+    // announces. Derived from `kind`, those would be exactly the wrong way
+    // round.
     expect(contracts.Dialog.kind).toBe('layout')
     expect(contracts.Alert.kind).toBe('feedback')
     expect(owing).not.toContain('Alert')
@@ -196,10 +210,13 @@ describe('accessibility obligations', () => {
         contracts[id].interaction.profile,
       ),
     )
-    // Dialog: modal. Its keyboard and focus behaviour is covered by a
-    // hand-authored conformance spec; the NVDA and VoiceOver runs are NOT, and
-    // the gate that would demand them is stage 8 work that does not exist yet.
-    expect(owing).toEqual(['Dialog'])
-    expect(contracts.Dialog.interaction.revision).toBe(1)
+    // Dialog is `modal`; Field, Input and Checkbox are `form-control`. None of
+    // them has recorded NVDA or VoiceOver evidence, and the gate that would
+    // demand it is stage 8 work that does not exist yet. Listing them is what
+    // stops the set growing while nobody is recording anything.
+    expect([...owing].sort()).toEqual(['Checkbox', 'Dialog', 'Field', 'Input'])
+    for (const id of owing) {
+      expect(contracts[id].interaction.revision, `${id} versions its behaviour`).toBe(1)
+    }
   })
 })

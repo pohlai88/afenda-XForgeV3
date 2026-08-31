@@ -16,13 +16,22 @@
           "$ref": "#/$defs/Card"
         },
         {
+          "$ref": "#/$defs/Checkbox"
+        },
+        {
           "$ref": "#/$defs/Code"
         },
         {
           "$ref": "#/$defs/Dialog"
         },
         {
+          "$ref": "#/$defs/Field"
+        },
+        {
           "$ref": "#/$defs/Heading"
+        },
+        {
+          "$ref": "#/$defs/Input"
         },
         {
           "$ref": "#/$defs/List"
@@ -229,6 +238,44 @@
       "title": "Card",
       "type": "object"
     },
+    "Checkbox": {
+      "additionalProperties": false,
+      "description": "field / form-control (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Checkbox"
+        },
+        "props": {
+          "properties": {
+            "disabled": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string"
+            },
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "label": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Checkbox",
+      "type": "object"
+    },
     "Code": {
       "additionalProperties": false,
       "description": "content / none (contract v1, interaction r0)",
@@ -346,6 +393,56 @@
       "title": "Dialog",
       "type": "object"
     },
+    "Field": {
+      "additionalProperties": false,
+      "description": "field / form-control (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Field"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "$ref": "#/$defs/Input"
+              },
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Field",
+      "type": "object"
+    },
     "Heading": {
       "additionalProperties": false,
       "description": "content / none (contract v1, interaction r0)",
@@ -383,6 +480,50 @@
         "component"
       ],
       "title": "Heading",
+      "type": "object"
+    },
+    "Input": {
+      "additionalProperties": false,
+      "description": "field / form-control (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Input"
+        },
+        "props": {
+          "properties": {
+            "disabled": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string"
+            },
+            "placeholder": {
+              "type": "string"
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "testId": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "text",
+                "email",
+                "tel",
+                "url",
+                "search"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Input",
       "type": "object"
     },
     "List": {

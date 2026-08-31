@@ -190,6 +190,20 @@ export const contracts = {
     },
   },
 
+  /** A boolean control that carries its own label -- see the note on Field. */
+  Checkbox: {
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'form-control', revision: 1 },
+    kind: 'field',
+    props: {
+      disabled: { type: 'boolean' },
+      name: { type: 'string' },
+      testId: { type: 'string' },
+    },
+    slots: { label: { text: true } },
+  },
+
   Code: {
     contractVersion: 1,
     exposure: 'metadata',
@@ -235,6 +249,34 @@ export const contracts = {
     },
   },
 
+  /**
+   * The labelling, description and validity wrapper for one control.
+   *
+   * Base UI's Field owns the wiring -- generated ids, `aria-describedby` to the
+   * description and the error, `aria-labelledby` to the label, and the validity
+   * state that flows to the control. Doing that by hand is how a form ends up
+   * with a label that reads correctly and an error message no screen reader
+   * ever announces.
+   *
+   * `children` accepts INPUT ONLY, not any `field` control. A Checkbox carries
+   * its own label, so putting one here would produce two labels for one
+   * control -- a defect the grammar can refuse outright rather than leave for a
+   * reviewer to notice.
+   */
+  Field: {
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'form-control', revision: 1 },
+    kind: 'field',
+    props: { testId: { type: 'string' } },
+    slots: {
+      children: { accepts: ['Input'], max: 1, min: 1 },
+      description: { min: 0, text: true },
+      error: { min: 0, text: true },
+      label: { text: true },
+    },
+  },
+
   Heading: {
     contractVersion: 1,
     exposure: 'metadata',
@@ -247,6 +289,36 @@ export const contracts = {
       level: { type: 'enum', values: [1, 2, 3] },
     },
     slots: { children: { text: true } },
+  },
+
+  /**
+   * A text control. THE ONE CONTRACT WITH NO SLOTS, deliberately.
+   *
+   * An input holds a value, not content: it has nothing to render inside it.
+   * Every other contract here is a container or a text leaf, and the test that
+   * asserts so now names this exception rather than being quietly relaxed --
+   * the difference between a considered leaf and a forgotten declaration.
+   *
+   * Its accessible name comes from the Field that wraps it. Base UI's Input
+   * renders `Field.Control` internally, which is what makes that automatic.
+   */
+  Input: {
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'form-control', revision: 1 },
+    kind: 'field',
+    props: {
+      disabled: { type: 'boolean' },
+      name: { type: 'string' },
+      placeholder: { type: 'string' },
+      required: { type: 'boolean' },
+      testId: { type: 'string' },
+      // Deliberately narrow. `type` changes the on-screen keyboard, the
+      // validation and the autofill behaviour, so it is a fixed vocabulary and
+      // not an arbitrary string -- and `password` is absent because a
+      // credential field needs decisions this contract does not make.
+      type: { type: 'enum', values: ['text', 'email', 'tel', 'url', 'search'] },
+    },
   },
 
   List: {

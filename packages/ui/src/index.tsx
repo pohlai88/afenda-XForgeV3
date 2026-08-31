@@ -15,7 +15,10 @@
  * a bare `<button>` inside a form submits it, which is a bug nobody writes on
  * purpose and everybody writes eventually.
  */
+import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
+import { Field as BaseField } from '@base-ui/react/field'
+import { Input as BaseInput } from '@base-ui/react/input'
 import type { ReactNode } from 'react'
 
 type Gap = 'tight' | 'normal' | 'loose'
@@ -233,5 +236,112 @@ export function Dialog({
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>
+  )
+}
+
+/**
+ * The labelling, description and validity wrapper for one control.
+ *
+ * Base UI's Field generates the ids and wires `aria-labelledby` and
+ * `aria-describedby` between the label, the description, the error and the
+ * control. Done by hand, this is where a form acquires a label that reads
+ * correctly and an error nobody ever hears.
+ *
+ * `Field.Error` takes `match` because it normally renders only when the browser
+ * reports a matching validity state. A server-supplied message is not a browser
+ * validity state -- a rejected write or a business rule -- so `match` is forced
+ * true when there is a message to show.
+ */
+export function Field({
+  label,
+  description,
+  error,
+  children,
+  testId,
+}: {
+  label: ReactNode
+  description?: ReactNode
+  error?: ReactNode
+  children: ReactNode
+  testId?: string
+}) {
+  return (
+    <BaseField.Root className="xf-field" data-testid={testId}>
+      <BaseField.Label className="xf-field-label">{label}</BaseField.Label>
+      {children}
+      {description ? (
+        <BaseField.Description className="xf-field-description">
+          {description}
+        </BaseField.Description>
+      ) : null}
+      {error ? (
+        <BaseField.Error className="xf-field-error" match={true}>
+          {error}
+        </BaseField.Error>
+      ) : null}
+    </BaseField.Root>
+  )
+}
+
+/** A text control. Its accessible name comes from the Field that wraps it. */
+export function Input({
+  name,
+  type = 'text',
+  placeholder,
+  required,
+  disabled,
+  testId,
+}: {
+  name?: string
+  type?: 'text' | 'email' | 'tel' | 'url' | 'search'
+  placeholder?: string
+  required?: boolean
+  disabled?: boolean
+  testId?: string
+}) {
+  return (
+    <BaseInput
+      className="xf-input xf-focusable"
+      data-testid={testId}
+      disabled={disabled}
+      name={name}
+      placeholder={placeholder}
+      required={required}
+      type={type}
+    />
+  )
+}
+
+/**
+ * A boolean control carrying its own label.
+ *
+ * The label is a required slot, not an optional courtesy: a checkbox without
+ * one is a control whose meaning exists only visually, next to text that is not
+ * associated with it. Base UI's Checkbox reads the Field context, so wrapping
+ * the pair in a Field is what associates them.
+ */
+export function Checkbox({
+  label,
+  name,
+  disabled,
+  testId,
+}: {
+  label: ReactNode
+  name?: string
+  disabled?: boolean
+  testId?: string
+}) {
+  return (
+    <BaseField.Root className="xf-checkbox-row">
+      <BaseCheckbox.Root
+        className="xf-checkbox xf-focusable"
+        data-testid={testId}
+        disabled={disabled}
+        name={name}
+      >
+        <BaseCheckbox.Indicator className="xf-checkbox-mark" keepMounted={false} />
+      </BaseCheckbox.Root>
+      <BaseField.Label className="xf-field-label">{label}</BaseField.Label>
+    </BaseField.Root>
   )
 }
