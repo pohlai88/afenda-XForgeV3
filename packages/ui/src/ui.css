@@ -1,10 +1,21 @@
 /*
  * The design system's only stylesheet.
  *
- * Every value here is a SEMANTIC token. No literal colour, spacing or size
- * appears below -- if one did, the token file would have stopped being the
- * authority and a theme change would need a sweep through this file instead of
- * an edit to one JSON. A guard asserts it.
+ * Every value here is a SEMANTIC or COMPONENT token. No literal colour, spacing
+ * or size appears below, and -- new in stage 2 -- no PRIMITIVE token either.
+ *
+ * The primitive rule is the one that took work. This file used to read
+ * `padding: var(--space-5)` and `font-size: var(--size-text-lg)`, which looked
+ * disciplined: no hex codes, everything from the token file. But a primitive is
+ * a raw value with no role, so there was nothing in between for a density mode
+ * to rebind. `[data-density='compact']` would have had to restate every rule in
+ * this file rather than rebind a handful of roles. The semantic layer existed
+ * for colour and simply did not exist for geometry, and that was invisible for
+ * as long as there was only one density.
+ *
+ * So geometry now has roles too -- `--semantic-space-stack`,
+ * `--semantic-control-padding-inline`, `--semantic-type-heading` -- and a guard
+ * fails this file if it names a primitive.
  *
  * Screens do not use these class names. They compose components from
  * @xforge/ui, and the `no-bespoke-styling` guard fails a business screen that
@@ -14,9 +25,9 @@
 
 .xf-page {
   min-height: 100vh;
-  padding: var(--space-5);
+  padding: var(--semantic-space-section);
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--semantic-font-body);
   color: var(--semantic-text-default);
   background: var(--semantic-surface-page);
 }
@@ -29,9 +40,9 @@
  * why the ring is a token: it cannot be styled away per screen.
  */
 .xf-focusable:focus-visible {
-  outline: var(--size-focus-ring) solid var(--semantic-focus-ring);
-  outline-offset: var(--size-focus-offset);
-  border-radius: var(--size-radius-sm);
+  outline: var(--semantic-stroke-focus-ring) solid var(--semantic-focus-ring);
+  outline-offset: var(--semantic-stroke-focus-offset);
+  border-radius: var(--semantic-radius-control);
 }
 
 .xf-stack {
@@ -40,13 +51,13 @@
   align-items: stretch;
 }
 .xf-stack[data-gap="tight"] {
-  gap: var(--space-2);
+  gap: var(--semantic-space-stack-tight);
 }
 .xf-stack[data-gap="normal"] {
-  gap: var(--space-4);
+  gap: var(--semantic-space-stack);
 }
 .xf-stack[data-gap="loose"] {
-  gap: var(--space-5);
+  gap: var(--semantic-space-stack-loose);
 }
 .xf-stack[data-direction="row"] {
   flex-direction: row;
@@ -55,44 +66,59 @@
 }
 
 .xf-card {
-  max-width: var(--size-measure);
-  padding: var(--space-5);
+  max-width: var(--semantic-container-measure);
+  padding: var(--component-card-padding);
   background: var(--semantic-surface-raised);
-  border: var(--size-border) solid var(--semantic-border-default);
-  border-radius: var(--size-radius-md);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-default);
+  border-radius: var(--semantic-radius-container);
 }
 
 .xf-heading {
   margin: 0;
-  font-size: var(--size-text-lg);
+  font-size: var(--semantic-type-heading);
   line-height: 1.3;
 }
 
 .xf-text {
   margin: 0;
-  font-size: var(--size-text-md);
+  font-size: var(--semantic-type-body);
   line-height: 1.5;
 }
 .xf-text[data-tone="muted"] {
-  font-size: var(--size-text-sm);
+  font-size: var(--semantic-type-label);
   color: var(--semantic-text-muted);
 }
 
 .xf-code {
-  padding: 0 var(--space-1);
-  font-family: var(--font-mono);
-  font-size: var(--size-text-sm);
+  padding: 0 var(--semantic-space-inline-tight);
+  font-family: var(--semantic-font-code);
+  font-size: var(--semantic-type-label);
   background: var(--semantic-surface-sunken);
-  border-radius: var(--size-radius-sm);
+  border-radius: var(--semantic-radius-control);
 }
 
+/*
+ * The minimum interactive target, as a floor rather than a fixed height, so a
+ * button with more content grows instead of clipping. Tokens can only guarantee
+ * this much: a smaller target is still constructible by putting a 16px icon in
+ * a box that overrides it, which is why the RENDERED check is owed by a later
+ * stage and is not claimed here.
+ *
+ * Written ABOVE the rule rather than inside it. A property sorter treats a
+ * comment as attached to the declaration below it, so an in-rule comment gets
+ * carried along -- and when the two min-* properties were reordered, this note
+ * was duplicated onto both of them.
+ */
 .xf-button {
-  padding: var(--space-2) var(--space-3);
+  min-inline-size: var(--component-button-min-size);
+  min-block-size: var(--component-button-min-size);
+  padding: var(--component-button-padding-block)
+    var(--component-button-padding-inline);
   font: inherit;
-  font-size: var(--size-text-sm);
+  font-size: var(--semantic-type-label);
   cursor: pointer;
-  border: var(--size-border) solid transparent;
-  border-radius: var(--size-radius-sm);
+  border: var(--semantic-stroke-width) solid transparent;
+  border-radius: var(--semantic-radius-control);
 }
 .xf-button[data-variant="primary"] {
   color: var(--semantic-text-on-accent);
@@ -120,9 +146,10 @@
 }
 
 .xf-alert {
-  padding: var(--space-3) var(--space-4);
-  border: var(--size-border) solid;
-  border-radius: var(--size-radius-md);
+  padding: var(--component-alert-padding-block)
+    var(--component-alert-padding-inline);
+  border: var(--semantic-stroke-width) solid;
+  border-radius: var(--semantic-radius-container);
 }
 .xf-alert[data-tone="danger"] {
   color: var(--semantic-danger-text);
@@ -143,7 +170,7 @@
 .xf-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--semantic-space-stack-tight);
   padding: 0;
   margin: 0;
   list-style: none;
@@ -151,11 +178,11 @@
 
 .xf-list-item {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--component-list-item-gap);
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3);
+  padding: var(--component-list-item-padding);
   background: var(--semantic-surface-raised);
-  border: var(--size-border) solid var(--semantic-border-default);
-  border-radius: var(--size-radius-sm);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-default);
+  border-radius: var(--semantic-radius-control);
 }

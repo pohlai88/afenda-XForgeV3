@@ -4,6 +4,9 @@
  * Law 27: generated state is never hand-edited. Change the token file and
  * run `pnpm generate`; editing this output makes the generate stage fail,
  * which asserts it is byte-identical after regeneration.
+ *
+ * Aliases are emitted as var() references rather than resolved values, so
+ * rebinding a semantic role below updates everything that references it.
  */
 :root {
   --color-neutral-0: #ffffff;
@@ -14,15 +17,21 @@
   --color-neutral-600: #475569;
   --color-neutral-800: #1e293b;
   --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
   --color-blue-100: #dbeafe;
   --color-blue-600: #2563eb;
   --color-blue-700: #1d4ed8;
+  --color-blue-950: #172554;
   --color-red-50: #fef2f2;
   --color-red-200: #fecaca;
+  --color-red-400: #f87171;
   --color-red-700: #b91c1c;
+  --color-red-950: #450a0a;
   --color-amber-50: #fffbeb;
   --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
   --color-amber-800: #92400e;
+  --color-amber-950: #451a03;
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -39,24 +48,56 @@
   --size-text-md: 1rem;
   --size-text-lg: 1.25rem;
   --size-measure: 42rem;
+  --size-target-min: 1.5rem;
   --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --semantic-surface-page: #f8fafc;
-  --semantic-surface-raised: #ffffff;
-  --semantic-surface-sunken: #f1f5f9;
-  --semantic-text-default: #0f172a;
-  --semantic-text-muted: #475569;
-  --semantic-text-on-accent: #ffffff;
-  --semantic-border-default: #e2e8f0;
-  --semantic-border-strong: #94a3b8;
-  --semantic-accent-default: #2563eb;
-  --semantic-accent-hover: #1d4ed8;
-  --semantic-accent-subtle: #dbeafe;
-  --semantic-danger-text: #b91c1c;
-  --semantic-danger-surface: #fef2f2;
-  --semantic-danger-border: #fecaca;
-  --semantic-warning-text: #92400e;
-  --semantic-warning-surface: #fffbeb;
-  --semantic-warning-border: #fde68a;
-  --semantic-focus-ring: #2563eb;
+  --semantic-surface-page: var(--color-neutral-50);
+  --semantic-surface-raised: var(--color-neutral-0);
+  --semantic-surface-sunken: var(--color-neutral-100);
+  --semantic-text-default: var(--color-neutral-900);
+  --semantic-text-muted: var(--color-neutral-600);
+  --semantic-text-on-accent: var(--color-neutral-0);
+  --semantic-border-default: var(--color-neutral-200);
+  --semantic-border-strong: var(--color-neutral-400);
+  --semantic-accent-default: var(--color-blue-600);
+  --semantic-accent-hover: var(--color-blue-700);
+  --semantic-accent-subtle: var(--color-blue-100);
+  --semantic-danger-text: var(--color-red-700);
+  --semantic-danger-surface: var(--color-red-50);
+  --semantic-danger-border: var(--color-red-200);
+  --semantic-warning-text: var(--color-amber-800);
+  --semantic-warning-surface: var(--color-amber-50);
+  --semantic-warning-border: var(--color-amber-200);
+  --semantic-focus-ring: var(--color-blue-600);
+  --semantic-space-stack-tight: var(--space-2);
+  --semantic-space-stack: var(--space-4);
+  --semantic-space-stack-loose: var(--space-5);
+  --semantic-space-inline: var(--space-4);
+  --semantic-space-inline-tight: var(--space-1);
+  --semantic-space-section: var(--space-5);
+  --semantic-control-padding-block: var(--space-2);
+  --semantic-control-padding-inline: var(--space-3);
+  --semantic-row-padding: var(--space-3);
+  --semantic-row-gap: var(--space-4);
+  --semantic-container-padding: var(--space-5);
+  --semantic-container-measure: var(--size-measure);
+  --semantic-type-label: var(--size-text-sm);
+  --semantic-type-body: var(--size-text-md);
+  --semantic-type-heading: var(--size-text-lg);
+  --semantic-radius-control: var(--size-radius-sm);
+  --semantic-radius-container: var(--size-radius-md);
+  --semantic-stroke-width: var(--size-border);
+  --semantic-stroke-focus-ring: var(--size-focus-ring);
+  --semantic-stroke-focus-offset: var(--size-focus-offset);
+  --semantic-font-body: var(--font-sans);
+  --semantic-font-code: var(--font-mono);
+  --semantic-target-minimum: var(--size-target-min);
+  --component-button-padding-block: var(--semantic-control-padding-block);
+  --component-button-padding-inline: var(--semantic-control-padding-inline);
+  --component-button-min-size: var(--semantic-target-minimum);
+  --component-card-padding: var(--semantic-container-padding);
+  --component-alert-padding-block: var(--semantic-control-padding-block);
+  --component-alert-padding-inline: var(--semantic-space-inline);
+  --component-list-item-padding: var(--semantic-row-padding);
+  --component-list-item-gap: var(--semantic-row-gap);
 }
