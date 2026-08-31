@@ -22,9 +22,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    // The preflight refuses an occupied port and names the process holding it.
-    // With reuse off, Playwright would otherwise report only that the port is
-    // busy -- true, and not the two-hour diagnosis it cost the first time.
+    // The preflight names whoever holds the port. It runs only when Playwright's
+    // own URL probe does NOT pre-empt it -- see the note in that file; for the
+    // pre-empted case the same diagnosis is available as `pnpm e2e:port`.
     command:
       'node tooling/e2e/preflight-port.mjs 3100 && pnpm --filter @xforge/web exec next start -p 3100',
     // The app has no credential fallback by design, so the harness supplies one

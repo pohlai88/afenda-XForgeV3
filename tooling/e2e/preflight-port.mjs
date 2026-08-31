@@ -2,15 +2,23 @@
 /**
  * Refuse to start the E2E server on an occupied port, and say WHO has it.
  *
- * With `reuseExistingServer: false`, an occupied port is now a failure rather
- * than a silent adoption -- which is the right direction, but Playwright's own
- * message says only that the port is in use. A leftover `next start` held 3100
- * for two hours here and the E2E stage tested that stale build the whole time;
- * the diagnosis cost far more than it should have, because nothing named the
- * process or said how long it had been there.
+ * WHEN THIS ACTUALLY FIRES, corrected after observing that it did not.
  *
- * The start time is the useful field. "Started two hours ago" identifies a
- * forgotten process instantly, where a bare PID does not.
+ * Playwright probes `webServer.url` BEFORE it runs `webServer.command`. With
+ * `reuseExistingServer: false`, anything answering that URL makes Playwright
+ * fail immediately with its own message, and this script never executes. So it
+ * does NOT cover the case it was written for -- a stale `next start` serving
+ * the health URL -- and the first version of this comment claimed otherwise.
+ *
+ * What it does cover is a port held by something that does not answer that URL:
+ * a half-dead server, an unrelated process, a container forwarding the port. In
+ * those cases Playwright's probe times out or errors without naming anything,
+ * and this says who has the port and since when.
+ *
+ * For the case Playwright pre-empts, `pnpm e2e:port` runs this on demand -- the
+ * diagnosis is then one command rather than a search. The start time is the
+ * useful field: "started two hours ago" identifies a forgotten process at a
+ * glance, where a bare PID does not.
  *
  * Best-effort by design: if the platform lookup fails, this still refuses to
  * start and still says the port is occupied. Losing the diagnosis is acceptable;
