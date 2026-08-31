@@ -1,0 +1,40 @@
+{
+  "name": "xforge",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "verify": "node tooling/verify/verify.mjs",
+    "verify:coverage": "node tooling/verify/verify.mjs --coverage",
+    "verify:list": "node tooling/verify/verify.mjs --list",
+    "guards": "node tooling/architecture/run-guards.mjs",
+    "guards:mutate": "node tooling/architecture/run-guards.mjs --mutation-test",
+    "gen:openapi": "tsx tooling/generate/emit-openapi.ts",
+    "gen:client": "orval --config orval.config.ts",
+    "generate": "pnpm -s gen:openapi && pnpm -s gen:client",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.11",
+    "@faker-js/faker": "^10.6.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@xforge/api": "workspace:*",
+    "@xforge/db": "workspace:*",
+    "@xforge/hr": "workspace:*",
+    "@xforge/policy": "workspace:*",
+    "drizzle-kit": "^0.31.10",
+    "msw": "^2.15.0",
+    "orval": "^8.27.0",
+    "postgres": "^3.4.9",
+    "tsx": "^4.23.13",
+    "turbo": "^2.10.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

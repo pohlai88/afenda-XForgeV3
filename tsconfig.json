@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@xforge/api": ["./packages/api/src/index.ts"],
+      "@xforge/api-client": ["./packages/api-client/src/index.ts"],
+      "@xforge/api-client/mocks": ["./packages/api-client/src/mocks.ts"],
+      "@xforge/db": ["./packages/db/src/index.ts"],
+      "@xforge/policy": ["./packages/policy/src/index.ts"],
+      "@xforge/hr": ["./modules/hr/index.ts"]
+    }
+  },
+  "include": [
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "modules/**/*.ts",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "tooling/**/*.ts"
+  ],
+  "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist"]
+}

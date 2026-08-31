@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "allowJs": true,
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@xforge/api": ["../../packages/api/src/index.ts"],
+      "@xforge/api-client": ["../../packages/api-client/src/index.ts"],
+      "@xforge/api-client/mocks": ["../../packages/api-client/src/mocks.ts"],
+      "@xforge/db": ["../../packages/db/src/index.ts"],
+      "@xforge/policy": ["../../packages/policy/src/index.ts"],
+      "@xforge/hr": ["../../modules/hr/index.ts"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/**/*.ts",
+    "../../packages/**/*.tsx",
+    "../../modules/**/*.ts"
+  ],
+  "exclude": ["node_modules", "**/node_modules", "../../**/node_modules", ".next"]
+}
