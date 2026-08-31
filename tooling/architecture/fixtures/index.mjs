@@ -335,6 +335,19 @@ export async function save(input: unknown) {
 `,
     },
   },
+  'stylesheet-names-roles-not-primitives': {
+    clean: {
+      path: 'packages/ui/src/ui.css',
+      source: `/* --space-5 is a primitive; this rule names the role instead */
+.xf-card { padding: var(--component-card-padding); gap: var(--semantic-space-stack); }
+`,
+    },
+    violating: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-card { padding: var(--space-5); }
+`,
+    },
+  },
 
   'tenancy-primitives-confined': {
     clean: {

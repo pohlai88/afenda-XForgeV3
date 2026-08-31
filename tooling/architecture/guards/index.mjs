@@ -601,6 +601,47 @@ export const guards = [
     precision: 'text',
     title: 'The design system stylesheet holds no literal design values',
   },
+
+  {
+    // Law 8: the planes are joined by stable semantic identifiers. A primitive
+    // is a raw value with NO role -- `--space-5` says how far, never what for --
+    // so a stylesheet naming one has reached past the layer that gives it
+    // meaning, and there is nothing left in between for a mode to rebind.
+    //
+    // This is not hypothetical tidiness. Before stage 2 this file read
+    // `padding: var(--space-5)` throughout and looked disciplined, because no
+    // hex code appeared anywhere. Density then had nowhere to attach: compact
+    // would have had to restate every rule here instead of rebinding a handful
+    // of roles. The semantic layer existed for colour and, unnoticed, did not
+    // exist for geometry at all.
+    //
+    // Checked on DECLARATIONS only, so the comment above may name `--space-5`
+    // while explaining why it is not used.
+    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    check(f, src) {
+      const out = []
+      const withoutComments = src.replace(/[/][*][\s\S]*?[*][/]/g, '')
+      const re = /var\([\s]*--([a-z0-9-]+)[\s]*\)/g
+      let m
+      while ((m = re.exec(withoutComments)) !== null) {
+        if (/^(semantic|component)-/.test(m[1])) {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(src, src.indexOf(m[0])),
+          message:
+            `primitive token '--${m[1]}' -- a primitive carries a value and no role, ` +
+            'so a mode has nothing to rebind. Name the semantic or component role instead',
+        })
+      }
+      return out
+    },
+    id: 'stylesheet-names-roles-not-primitives',
+    law: 8,
+    precision: 'text',
+    title: 'The stylesheet consumes semantic and component tokens, never primitives',
+  },
 ]
 
 export const guardById = Object.fromEntries(guards.map((g) => [g.id, g]))
