@@ -31,6 +31,7 @@ export {
 } from './platform-access'
 export * as schema from './schema/index'
 export { TENANT_OWNED_TABLES } from './schema/index'
+export { hasActiveMembership, resolveHostname } from './tenancy-queries'
 
 export interface TenantSession {
   /** Every statement runs inside the transaction that set app.tenant_id. */
@@ -78,6 +79,15 @@ let driver: Driver | null = null
 
 export function setDriver(d: Driver): void {
   driver = d
+}
+
+/**
+ * Exposed for the tenancy resolution path only (ADR-023), which runs before a
+ * tenant context exists and therefore cannot go through withTenant. A guard
+ * confines callers to packages/tenancy and the composition root.
+ */
+export function tenancyDriver(): Driver {
+  return requireDriver()
 }
 
 function requireDriver(): Driver {

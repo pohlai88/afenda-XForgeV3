@@ -18,7 +18,8 @@
       "@xforge/hr": ["../../modules/hr/index.ts"],
       "@xforge/tenancy": ["../../packages/tenancy/src/index.ts"],
       "@xforge/db/postgres": ["../../packages/db/src/postgres-driver.ts"],
-      "@xforge/fixtures/local-database": ["../../tests/fixtures/local-database.ts"]
+      "@xforge/fixtures/local-database": ["../../tests/fixtures/local-database.ts"],
+      "@xforge/fixtures/tenancy": ["../../tests/fixtures/tenancy.ts"]
     }
   },
   "include": [

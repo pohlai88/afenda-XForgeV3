@@ -43,8 +43,8 @@ or the proof is about a program nobody runs.
 | T03 | A updates B | deny | now |
 | T04 | A deletes B | deny | an HR delete operation |
 | T05 | A inserts a row claiming B | deny | now |
-| T06 | valid A session presented at B's host, no B membership | deny | slice 2 |
-| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | slice 2 |
+| T06 | valid A session presented at B's host, no B membership | deny | now |
+| T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | now |
 | T08 | raw tenant UUID passed to `withTenant` | compile / architecture failure | now |
 | T09 | application role owns a tenant table | verify failure | now |
 | T10 | application role holds `BYPASSRLS` | verify failure | now |
@@ -54,6 +54,14 @@ or the proof is about a program nobody runs.
 | T14 | `withPlatformAccess` called from an HR module | guard failure | now |
 | T15 | the platform audit sink is unavailable | privileged work does not run | now |
 | T16 | a privileged operation crashes mid-flight | the ATTEMPT remains observable | now |
+| T17 | a forged `x-tenant-id` header at another tenant's host | the header decides nothing | now |
+| T18 | membership revoked between two requests | the second is denied | now |
+
+**T17 and T18 are amendments**, added during slice 2 because review named them
+and both are cheap once membership is real. A frozen specification may be
+EXTENDED -- what it must never be is quietly narrowed to match what the code
+turned out to do, which is the only direction that flatters anyone. Both are
+recorded here rather than appearing as extra green tests nobody asked for.
 
 **The fourth column exists so the ratio carries information.** A single figure
 mixes *not written yet* with *cannot be written yet*, and a number that means
@@ -61,10 +69,10 @@ two things means neither -- the same defect as counting unenforced laws without
 saying which are deliberate. `pnpm verify` reports both: progress against what
 is reachable at this slice, and progress against the whole matrix.
 
-Only three cases are genuinely blocked. T06 and T07 need real membership data,
-which arrives in slice 2. T04 needs the HR module to have a delete operation at
-all, which is product scope rather than a tenancy dependency. Everything else is
-reachable today and simply unwritten.
+One case is genuinely blocked: T04 needs the HR module to have a delete
+operation at all, which is product scope rather than a tenancy dependency. T06
+and T07 were blocked on real membership data and were unblocked by slice 2.
+Everything else is reachable today and simply unwritten.
 
 **T02 is Mutation A.** **T11 is Mutation B seen from the gate's side.**
 

@@ -1231,6 +1231,7 @@ ADR-019  Permission-code lifecycle and fail-closed policy compilation
 ADR-020  Data retention, erasure and tenant offboarding
 ADR-021  Production migration compatibility policy
 ADR-022  Verified tenant context; host selects, membership authorises
+ADR-023  Membership resolution before a tenant context exists
 ```
 
 **Reopen a FROZEN decision only** on a failing qualification test, measured production evidence, a real second-domain contradiction, a regulatory or security requirement, or a provider limitation crossing an architectural boundary. **Preference, novelty and framework fashion are not sufficient.**

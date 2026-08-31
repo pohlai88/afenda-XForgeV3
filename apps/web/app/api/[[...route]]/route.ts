@@ -6,11 +6,11 @@
  * apps/api later is a second mount of the same composition, not a rewrite.
  */
 import { createApp } from '@xforge/api'
-import { setDriver } from '@xforge/db'
+import { hasActiveMembership, resolveHostname, setDriver, tenancyDriver } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { hrModuleRoutes } from '@xforge/hr'
 import type { Principal } from '@xforge/policy'
-import { candidateFromHost, resolveTenantContext, staticMembershipSource } from '@xforge/tenancy'
+import { type MembershipQueries, resolveRequestTenant } from '@xforge/tenancy'
 import { handle } from 'hono/vercel'
 
 // Composition root: the ONE place a driver is chosen. Nothing else may
@@ -75,25 +75,30 @@ const devPrincipal: Principal = {
 }
 
 /**
- * Membership store.
- *
- * SLICE 1: a fixed list. The `tenant_membership` table lands in slice 2 and
- * deletes this. The resolution SHAPE below is the real one from day one --
- * host proposes, membership authorises, session identifies (ADR-022) -- because
- * that is the part a later change could quietly get wrong.
+ * The tenancy queries (ADR-023). Both run before any tenant is bound, and
+ * neither hands out a database client.
  */
-const memberships = staticMembershipSource([{ principalId: devPrincipal.id, tenantId: DEV_TENANT }])
+const queries: MembershipQueries = {
+  hasActiveMembership: (tenantId, principalId, asOf) =>
+    hasActiveMembership(tenancyDriver(), tenantId, principalId, asOf),
+  resolveHostname: (hostname) => resolveHostname(tenancyDriver(), hostname),
+}
 
 const app = createApp(hrModuleRoutes, {
   basePath: '/api',
   middleware: [
     async (c, next) => {
       ensureDriver()
-      // The host PROPOSES; it never grants. Slice 2 resolves a real hostname
-      // through tenant_domain; slice 1 proposes the development tenant so the
-      // pipeline is exercised rather than skipped.
-      const candidate = candidateFromHost(DEV_TENANT)
-      const resolved = await resolveTenantContext(candidate, devPrincipal, memberships)
+      // ADR-022, end to end: the Host header PROPOSES a tenant, tenant_domain
+      // turns it into a candidate, and tenant_membership decides whether the
+      // candidate becomes authority. The port is stripped because a browser
+      // sends `localhost:3100` and a hostname is not a socket address.
+      //
+      // One instant governs host resolution, the membership window and the rest
+      // of the request, rather than three reads of a moving clock.
+      const asOf = new Date()
+      const hostname = (c.req.header('host') ?? '').split(':')[0] ?? ''
+      const resolved = await resolveRequestTenant(hostname, devPrincipal, queries, asOf)
       if (resolved.kind !== 'verified') {
         return c.json(
           {
@@ -110,7 +115,7 @@ const app = createApp(hrModuleRoutes, {
       }
       c.set('tenant', resolved.context)
       c.set('principal', devPrincipal)
-      c.set('asOf', new Date().toISOString())
+      c.set('asOf', asOf.toISOString())
       c.set('requestId', crypto.randomUUID())
       await next()
     },

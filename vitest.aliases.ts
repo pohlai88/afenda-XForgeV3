@@ -22,6 +22,7 @@ export const aliases = {
   '@xforge/policy': r('./packages/policy/src/index.ts'),
   '@xforge/tenancy': r('./packages/tenancy/src/index.ts'),
   '@xforge/fixtures/local-database': r('./tests/fixtures/local-database.ts'),
+  '@xforge/fixtures/tenancy': r('./tests/fixtures/tenancy.ts'),
   '@xforge/hr/repository': r('./modules/hr/infrastructure/repository/emergency-contact.ts'),
   '@xforge/hr': r('./modules/hr/index.ts'),
 }

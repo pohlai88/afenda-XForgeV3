@@ -288,4 +288,19 @@ export const go = () => ctx
 `,
     },
   },
+
+  'tenancy-primitives-confined': {
+    violating: {
+      path: 'modules/payroll/application/run.ts',
+      source: `import { hasActiveMembership } from '@xforge/db'
+export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Date())
+`,
+    },
+    clean: {
+      path: 'modules/payroll/application/run.ts',
+      source: `import { withTenant } from '@xforge/db'
+export const go = (ctx: VerifiedTenantContext) => withTenant(ctx, async () => 1)
+`,
+    },
+  },
 }
