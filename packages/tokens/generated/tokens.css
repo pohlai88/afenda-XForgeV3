@@ -13,6 +13,7 @@
  * match -- theme and density are document-level modes by construction.
  */
 :root {
+  --color-scrim: #0f172a99;
   --color-neutral-0: #ffffff;
   --color-neutral-50: #f8fafc;
   --color-neutral-100: #f1f5f9;
@@ -72,6 +73,7 @@
   --semantic-warning-text: var(--color-amber-800);
   --semantic-warning-surface: var(--color-amber-50);
   --semantic-warning-border: var(--color-amber-200);
+  --semantic-overlay-scrim: var(--color-scrim);
   --semantic-focus-ring: var(--color-blue-600);
   --semantic-space-stack-tight: var(--space-2);
   --semantic-space-stack: var(--space-4);

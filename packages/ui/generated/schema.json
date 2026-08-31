@@ -19,6 +19,9 @@
           "$ref": "#/$defs/Code"
         },
         {
+          "$ref": "#/$defs/Dialog"
+        },
+        {
           "$ref": "#/$defs/Heading"
         },
         {
@@ -182,6 +185,9 @@
                     "$ref": "#/$defs/Code"
                   },
                   {
+                    "$ref": "#/$defs/Dialog"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
@@ -246,6 +252,100 @@
       "title": "Code",
       "type": "object"
     },
+    "Dialog": {
+      "additionalProperties": false,
+      "description": "layout / modal (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Dialog"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "actions": {
+              "items": {
+                "$ref": "#/$defs/Button"
+              },
+              "type": "array",
+              "minItems": 0
+            },
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Dialog"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/List"
+                  },
+                  {
+                    "$ref": "#/$defs/ListItem"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "trigger": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Dialog",
+      "type": "object"
+    },
     "Heading": {
       "additionalProperties": false,
       "description": "content / none (contract v1, interaction r0)",
@@ -308,15 +408,19 @@
                 "$ref": "#/$defs/ListItem"
               },
               "type": "array",
-              "minItems": 0
+              "minItems": 1
             }
           },
           "type": "object",
+          "required": [
+            "children"
+          ],
           "additionalProperties": false
         }
       },
       "required": [
-        "component"
+        "component",
+        "slots"
       ],
       "title": "List",
       "type": "object"
@@ -347,6 +451,9 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Dialog"
                   },
                   {
                     "$ref": "#/$defs/Heading"
@@ -407,6 +514,9 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Dialog"
                   },
                   {
                     "$ref": "#/$defs/Heading"
@@ -495,6 +605,9 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Dialog"
                   },
                   {
                     "$ref": "#/$defs/Heading"

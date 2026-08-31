@@ -111,10 +111,11 @@ export type PropSpec =
  * depends on which case a document happened to use is not one worth having.
  */
 export type SlotSpec =
-  | { text: true }
+  | { text: true; min?: number }
   | {
       accepts?: readonly string[]
       acceptsKinds?: readonly Kind[]
+      /** Omitted means 1: a slot is required unless it says otherwise. */
       min?: number
       /** `null` means unbounded, and is written rather than left off. */
       max?: number | null
@@ -197,6 +198,43 @@ export const contracts = {
     slots: { children: { text: true } },
   },
 
+  /**
+   * The reason `kind` and `interaction.profile` are separate dimensions.
+   *
+   * Dialog is `layout` -- it is a region that holds other things, and the
+   * grammar treats it as one. It also carries the most consequential focus
+   * management in the system: a focus trap, an initial focus target, a return
+   * target on close, and Escape to dismiss. Gating accessibility evidence on
+   * `kind` would have exempted exactly this component while demanding an NVDA
+   * scenario for a Skeleton.
+   *
+   * This is the first contract whose profile owes recorded screen-reader
+   * evidence, so it is the first that can be shipped wrong in a way no
+   * automated check here would notice. The keyboard and focus behaviour is
+   * covered by a hand-authored conformance spec; the AT evidence itself is
+   * owed and not yet recorded.
+   */
+  Dialog: {
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'modal', revision: 1 },
+    kind: 'layout',
+    props: { testId: { type: 'string' } },
+    slots: {
+      actions: { accepts: ['Button'], max: null, min: 0 },
+      children: {
+        acceptsKinds: ['layout', 'content', 'collection', 'feedback'],
+        max: null,
+        min: 1,
+      },
+      description: { min: 0, text: true },
+      // A dialog without a name is an unnamed region, so `title` is required
+      // and `description` is not.
+      title: { text: true },
+      trigger: { min: 0, text: true },
+    },
+  },
+
   Heading: {
     contractVersion: 1,
     exposure: 'metadata',
@@ -220,7 +258,13 @@ export const contracts = {
     // Only ListItem, because a <ul> whose children are not <li> is invalid
     // markup and reads as an empty list. The grammar refuses what the
     // accessibility tree would silently discard.
-    slots: { children: { accepts: ['ListItem'], max: null, min: 0 } },
+    //
+    // `min: 1`, not 0. This said 0 until the slot-to-prop derivation made the
+    // disagreement a compile error: the contract permitted an empty list while
+    // the component required children. An empty collection is an EMPTY STATE --
+    // a different component, saying something useful -- and never a `<ul>` with
+    // nothing in it, which is what the screen already does.
+    slots: { children: { accepts: ['ListItem'], max: null, min: 1 } },
   },
 
   ListItem: {
@@ -337,11 +381,27 @@ type RequiredNames<P> = {
 type SlotsOf<Id extends ContractId> = (typeof contracts)[Id] extends { slots: infer S } ? S : never
 
 /**
+ * A slot is REQUIRED unless it says otherwise, which is `min: 0`.
+ *
+ * Required is the right default. A Button with no label has no accessible name;
+ * a Dialog with no title is an unnamed region. The slots that are genuinely
+ * optional -- a list that may be empty, a dialog's description -- say so with
+ * `min: 0`, and saying it is cheaper than the alternative, which is every
+ * component quietly permitting its own most important content to be absent.
+ */
+type OptionalSlotNames<S> = {
+  [K in keyof S]: S[K] extends { min: 0 } ? K : never
+}[keyof S]
+
+/**
  * The props a component MUST accept for its contract to be honest.
  *
- * Required where the contract says required, optional otherwise, and `children`
- * whenever the contract declares any slot -- a component that declares a slot
- * and accepts no children could never render what configuration puts in it.
+ * EVERY SLOT IS A PROP, one for one, and a slot named `children` is React's
+ * `children`. This was `children` alone regardless of how many slots a contract
+ * declared, which held for as long as every component had exactly one. Dialog
+ * has five -- trigger, title, description, content, actions -- and a component
+ * cannot render five distinct regions from a single `children`. The contract
+ * would have gone on describing slots the component had no way to receive.
  *
  * `Children` is a PARAMETER rather than React's `ReactNode`, because this file
  * is imported by the JSON Schema generator, architecture guards and eventually
@@ -353,4 +413,8 @@ export type DeclaredProps<Id extends ContractId, Children = unknown> = {
   [K in RequiredNames<PropsOf<Id>>]: PropValue<PropsOf<Id>[K]>
 } & {
   [K in Exclude<keyof PropsOf<Id>, RequiredNames<PropsOf<Id>>>]?: PropValue<PropsOf<Id>[K]>
-} & ([SlotsOf<Id>] extends [never] ? unknown : { children: Children })
+} & {
+  [K in Exclude<keyof SlotsOf<Id>, OptionalSlotNames<SlotsOf<Id>>>]: Children
+} & {
+  [K in OptionalSlotNames<SlotsOf<Id>>]?: Children
+}

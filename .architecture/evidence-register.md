@@ -356,3 +356,55 @@ and Stage 1 were unaffected is luck, not design. Stage 2 is the first commit to
 change an app-bundle input — `ui.css` and the generated `tokens.css` — and it is
 exactly the commit whose specs caught the problem. Reverse the order and three
 green runs would have been reporting on code nobody had executed.
+
+---
+
+## Stage 3 — Base UI verified against the installed artefact, 1 September 2026
+
+Grade **X** for the measurements, **V** for the capability check. E18 recorded
+that shadcn defaults to Base UI; this checks the package we actually depend on
+rather than the article about it.
+
+| Claim | Checked against | Outcome |
+|---|---|---|
+| `@base-ui/react` is the current package at v1.7.0 | npm registry, `dist-tags.latest` | Confirmed. The older `@base-ui-components/react` is stuck at `1.0.0-rc.0`, so the rename is real |
+| Tree-shakable | `sideEffects: false` in the installed `package.json`, plus the measurement below | Confirmed |
+| **No Table or DataGrid** | 83 subpath exports; nothing matching `table` or `grid` | Confirmed — the grid is ours to build, as the plan assumed |
+| Dialog owns focus and labelling | `dialog/index.parts.d.ts`: Root, Trigger, Portal, Backdrop, Viewport, Popup, Title, Description, Close | Confirmed |
+
+**Adding Base UI cost the employee route nothing — measured, not assumed.**
+
+| | `/employees/[employeeId]` |
+|---|---|
+| Before `@base-ui/react` + Dialog | 146330 B |
+| After | 146330 B |
+
+Byte-identical. The barrel file does not force unused primitives into a route,
+so the remaining stage 3 primitives can be added without spending any of the
+33.6 kB headroom until a route actually uses one. **What this does not prove:**
+what Dialog costs when a route *does* use it. That number does not exist yet
+because nothing renders one, and the budget gate is what will measure it.
+
+**Two defects found in the wrapper by checking rather than trusting:**
+
+1. *The trigger was not a button.* It was written as
+   `<Dialog.Trigger render={<span />}>` with a `Button` inside. Reading
+   `DialogTrigger.js` shows the default element is already `'button'`, so the
+   override replaced real button semantics with a `<span>` carrying the handler,
+   and nested one interactive element inside another. The trigger slot now takes
+   TEXT, because there is no correct way to put a control in it.
+2. *The `List` contract permitted what its component forbade.* Deriving one prop
+   per slot turned a latent disagreement into a compile error: the contract said
+   `min: 0` while the component required children. An empty collection is an
+   EMPTY STATE — a different component that says something useful — never a
+   `<ul>` with nothing in it, which is what the screen already does.
+
+**The debt this stage creates, stated rather than discovered later.** Dialog is
+the first contract whose `interaction.profile` is in
+`PROFILES_REQUIRING_AT_EVIDENCE`. Its keyboard and focus behaviour is delegated
+to Base UI and **is not yet verified in a browser here**, because nothing mounts
+a Dialog: the conformance harness that would mount one is stage 5, and building
+a second mounting mechanism now would be the two-sources defect again. No
+metadata renderer exists either, so nothing can reach the contract yet. A unit
+test names the owed evidence so the list cannot grow while nobody records
+anything.

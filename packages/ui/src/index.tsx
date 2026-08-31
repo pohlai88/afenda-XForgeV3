@@ -15,6 +15,7 @@
  * a bare `<button>` inside a form submits it, which is a bug nobody writes on
  * purpose and everybody writes eventually.
  */
+import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import type { ReactNode } from 'react'
 
 type Gap = 'tight' | 'normal' | 'loose'
@@ -162,4 +163,75 @@ export function List({ children, testId }: { children: ReactNode; testId?: strin
 
 export function ListItem({ children }: { children: ReactNode }) {
   return <li className="xf-list-item">{children}</li>
+}
+
+/**
+ * A modal dialog, on Base UI.
+ *
+ * WHAT IS DELEGATED, and why that is the point. Base UI's Dialog owns the focus
+ * trap, the initial focus target, the return of focus to the trigger on close,
+ * Escape to dismiss, `aria-modal`, the `aria-labelledby`/`aria-describedby`
+ * wiring between Popup, Title and Description, and inert-ing the rest of the
+ * page. Every one of those is a thing this repository would otherwise get
+ * subtly wrong and not find out about, because a broken focus trap looks
+ * completely normal to anyone using a mouse.
+ *
+ * WHAT IS NOT DELEGATED. The vocabulary. `title` is a required slot rather than
+ * an optional convenience, because a dialog without one is an unnamed region
+ * and the whole labelling chain silently degrades. `description` is optional
+ * because a dialog with nothing further to say should not be made to invent
+ * something.
+ *
+ * `open`/`onOpenChange` are OPTIONAL: uncontrolled by default, so the contract
+ * -- which can carry neither a function nor a piece of application state -- can
+ * still describe a Dialog completely. `onOpenChange` is a function and could
+ * never appear in a contract, exactly as `Button.onClick` cannot.
+ */
+export function Dialog({
+  title,
+  description,
+  trigger,
+  children,
+  actions,
+  open,
+  onOpenChange,
+  testId,
+}: {
+  title: ReactNode
+  description?: ReactNode
+  trigger?: ReactNode
+  children: ReactNode
+  actions?: ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  testId?: string
+}) {
+  return (
+    <BaseDialog.Root onOpenChange={onOpenChange} open={open}>
+      {trigger ? (
+        // The default Trigger IS a <button>, so it carries the role, the Enter
+        // and Space handling and the expanded state for free. An earlier version
+        // passed `render={<span />}` and put a Button inside it: that strips the
+        // button semantics from the thing that opens the dialog and nests one
+        // interactive element inside another. The slot takes TEXT for exactly
+        // that reason -- there is no correct way to put a control in it.
+        <BaseDialog.Trigger className="xf-button xf-focusable" data-variant="secondary">
+          {trigger}
+        </BaseDialog.Trigger>
+      ) : null}
+      <BaseDialog.Portal>
+        <BaseDialog.Backdrop className="xf-dialog-backdrop" />
+        <BaseDialog.Popup className="xf-dialog" data-testid={testId}>
+          <BaseDialog.Title className="xf-heading">{title}</BaseDialog.Title>
+          {description ? (
+            <BaseDialog.Description className="xf-text" data-tone="muted">
+              {description}
+            </BaseDialog.Description>
+          ) : null}
+          <div className="xf-dialog-content">{children}</div>
+          {actions ? <div className="xf-dialog-actions">{actions}</div> : null}
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
+  )
 }

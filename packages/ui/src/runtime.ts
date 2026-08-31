@@ -47,6 +47,7 @@ export const runtime: { [Id in MetadataContractId]: Loader<Id> } = {
   Button: () => import('./index').then((m) => m.Button),
   Card: () => import('./index').then((m) => m.Card),
   Code: () => import('./index').then((m) => m.Code),
+  Dialog: () => import('./index').then((m) => m.Dialog),
   Heading: () => import('./index').then((m) => m.Heading),
   List: () => import('./index').then((m) => m.List),
   ListItem: () => import('./index').then((m) => m.ListItem),

@@ -12,6 +12,7 @@
   },
   "main": "./src/index.tsx",
   "dependencies": {
+    "@base-ui/react": "1.7.0",
     "@xforge/tokens": "workspace:*",
     "react": "^19.0.0"
   }

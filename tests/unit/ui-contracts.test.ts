@@ -162,19 +162,44 @@ describe('accessibility obligations', () => {
     ])
   })
 
-  // The point of gating on profile rather than kind, stated as a test so the
-  // reasoning survives the next person to read the registry: a `layout`
-  // component can owe evidence (Dialog will), and a `feedback` component can
-  // owe none (Alert does not).
+  /**
+   * The point of gating on profile rather than kind, now with a real case.
+   *
+   * Dialog is `layout` and owes screen-reader evidence, because its profile is
+   * `modal`. Alert is `feedback` and owes none, because its profile is
+   * `live-region`. Had the obligation been derived from `kind`, those two would
+   * be the wrong way round -- the component with a focus trap exempted, and the
+   * one that only announces asked for an NVDA scenario.
+   */
   it('derives the obligation from profile, never from kind', () => {
     const owing = contractIds.filter((id) =>
       (PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).includes(
         contracts[id].interaction.profile,
       ),
     )
-    // Nothing shipped yet has a gating profile -- Dialog, Combobox and DataGrid
-    // are the first that will. Asserting the empty set now means the day one
-    // arrives, this test is what notices.
-    expect(owing).toEqual([])
+    expect(owing).toEqual(['Dialog'])
+    expect(contracts.Dialog.kind).toBe('layout')
+    expect(contracts.Alert.kind).toBe('feedback')
+    expect(owing).not.toContain('Alert')
+  })
+
+  /**
+   * The obligation itself, recorded as a failing expectation would be dishonest
+   * and a passing one would be a lie: there is no evidence file yet and no gate
+   * reading it. So this asserts only what is true today -- which components owe
+   * evidence -- and names what is missing, so the list cannot grow silently
+   * while nobody is recording anything.
+   */
+  it('names every contract that owes assistive-technology evidence', () => {
+    const owing = contractIds.filter((id) =>
+      (PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).includes(
+        contracts[id].interaction.profile,
+      ),
+    )
+    // Dialog: modal. Its keyboard and focus behaviour is covered by a
+    // hand-authored conformance spec; the NVDA and VoiceOver runs are NOT, and
+    // the gate that would demand them is stage 8 work that does not exist yet.
+    expect(owing).toEqual(['Dialog'])
+    expect(contracts.Dialog.interaction.revision).toBe(1)
   })
 })

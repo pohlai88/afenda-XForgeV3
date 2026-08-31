@@ -186,3 +186,48 @@
   border: var(--semantic-stroke-width) solid var(--semantic-border-default);
   border-radius: var(--semantic-radius-control);
 }
+
+/*
+ * The modal layer.
+ *
+ * Base UI owns the behaviour -- focus trap, initial and returned focus, Escape,
+ * aria-modal, and the labelling chain between popup, title and description.
+ * What is here is only appearance, and it deliberately uses no primitive: the
+ * scrim is a ROLE, so a theme rebinds it without this rule changing.
+ */
+.xf-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--semantic-overlay-scrim);
+}
+
+.xf-dialog {
+  position: fixed;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack);
+  width: calc(100vw - var(--semantic-space-section) * 2);
+  max-width: var(--semantic-container-measure);
+  max-height: calc(100vh - var(--semantic-space-section) * 2);
+  padding: var(--semantic-container-padding);
+  overflow: auto;
+  background: var(--semantic-surface-raised);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-default);
+  border-radius: var(--semantic-radius-container);
+  translate: -50% -50%;
+}
+
+.xf-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack-tight);
+}
+
+.xf-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--semantic-space-inline);
+  justify-content: flex-end;
+}
