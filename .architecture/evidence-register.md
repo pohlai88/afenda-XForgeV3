@@ -283,3 +283,76 @@ branch selection is a lookup rather than a search.
   express a recursion bound. `MAX_NESTING_DEPTH` remains a validator obligation
   and no validator implements it yet, because no metadata renderer exists to
   own one. Recorded here rather than left to be discovered.
+
+---
+
+## Correction — the E2E stage was testing a stale build, 31 August 2026
+
+**Three verify runs reported "5 flagship E2E specs passed" against a build that
+was not the one the gate had just produced.** Recorded as a correction rather
+than a fix note, because the claim was made in this register's own commits.
+
+A `next start -p 3100`, launched at 23:00:12 to check the Stage 0 route-size
+metric against ground truth, outlived the task that started it — `TaskStop`
+killed the wrapper shell, not the `next` child. Playwright's
+`reuseExistingServer: !process.env.CI` then reused it on every subsequent run.
+
+`pnpm verify` runs `build` and then `e2e`. For two hours the `e2e` stage
+therefore exercised an artefact from before two rebuilds, and passed each time.
+
+**Why nothing noticed.** Not one of the five existing specs depended on anything
+the rebuilds changed — they assert DOM structure, keyboard behaviour and API
+transport, all of which were identical in the stale build. The specs were
+correct, the app was correct, and the gate was green; only the *subject* was
+wrong. The first spec to read a computed style found the server returning
+Internal Server Error for a CSS chunk whose filename no longer existed.
+
+This is the repository's recurring defect in a new costume, and worth naming
+precisely: a fact acquired a second source — "the build on disk" and "the build
+being served" — the two agreed for as long as nothing rebuilt, and agreement is
+indistinguishable from correctness right up until it ends.
+
+**Fix.** `reuseExistingServer: false`, unconditionally. A gate that builds and
+then tests must test what it built; a second of startup is not a reason to
+leave that to chance.
+
+**What this does NOT invalidate.** The unit, contract, tenancy, integration and
+migration stages never touched the server. The Stage 0 route measurement read
+build manifests from disk, not from that process, and its ground-truth check ran
+against the server while it was fresh.
+
+**And the affected E2E runs turn out to have been valid — measured, not argued.**
+
+The first version of this entry reasoned that Stage 0 and Stage 1 touch no file
+reaching the app bundle. That is an inspection claim about an import graph, and
+`packages/ui` *is* imported by the application, so it rested on the index not
+re-exporting the registry. The instrument that settles it without inspection is
+the one we would demand of anyone else's claim: build both commits and compare
+the client output.
+
+| Commit | Client output, `BUILD_ID` normalised |
+|---|---|
+| `68b2184` — pre-Stage-0 baseline | `dce331e8224dc157…` |
+| `464b2b5` — Stage 1 | `dce331e8224dc157…` |
+
+Identical, 12 files each. The stale server was serving a client bundle
+byte-identical to what those commits build, so their E2E results stand.
+
+**The normalisation is itself a finding.** Two builds of identical source do NOT
+produce identical output: three filenames carry a per-build random `BUILD_ID`.
+Their *contents* are identical — 9 of 12 files match exactly, and the other 3
+match in content and differ only in name. So `next build` is content-
+deterministic, and a naive hash comparison reports a difference that is not one.
+The first comparison run did exactly that and would have supported the opposite
+conclusion.
+
+That random id is also what makes build freshness checkable rather than
+assumed, and `e2e/build-freshness.spec.ts` now asserts the served document
+carries the `BUILD_ID` on disk and that every static asset it references exists
+in this build and serves.
+
+**Why the fix is unconditional rather than a note in a runbook.** That Stage 0
+and Stage 1 were unaffected is luck, not design. Stage 2 is the first commit to
+change an app-bundle input — `ui.css` and the generated `tokens.css` — and it is
+exactly the commit whose specs caught the problem. Reverse the order and three
+green runs would have been reporting on code nobody had executed.
