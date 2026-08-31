@@ -152,6 +152,30 @@ So currentPhase reads "the furthest phase this architecture has CERTIFIED", not
 phase is a failure, which is what makes the local raise real evidence rather
 than a quiet PENDING discovered at merge.
 
+# The defect this project keeps having
+
+A fact acquires a second source. The two agree, and go on agreeing, until they
+do not -- and nothing complains in between, because agreement is indistinguishable
+from correctness right up to the moment it ends.
+
+  next-env.d.ts          classify() knew generated DIRECTORIES; this was a file
+  behaviour guards       each invented a path regex instead of asking classify()
+  Principal.tenantId     policy's tenant vs the database's verified context
+  tenant_domain policy   a comment saying it could not be tenant-scoped, above a
+                         tenant-scoped policy
+  branches: [master]     the rename landed on main and not on the trees pushed
+
+Five appearances. Every one was caught by something else -- a red build, a
+compiler, a reviewer's question -- and none by a guard aimed at the category,
+because the manifestations have nothing in common at the level a guard can see.
+
+No check is proposed. This is a REVIEW PROMPT, and the prompt is:
+
+  having fixed something in one place, ask what else holds a copy of that fact.
+
+It is the first question to ask of any fix, and the last one to ask of any new
+subsystem.
+
 # Verification
 
   pnpm verify      local. BLOCKED stages are reported loudly and tolerated.
