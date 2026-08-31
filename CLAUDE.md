@@ -64,6 +64,18 @@ ceremony, not architecture.
 Recorded here so it is not re-litigated, and so "the last change went straight
 to master" is never cited as precedent.
 
+master is protected. Once a remote exists, apply exactly this -- a protection
+rule that is weaker than the local gate teaches people the gate is optional:
+
+  required check        verify / verify  (pnpm verify --ci)
+  pull request          required, no direct push, no force push
+  up to date            branch must be current with master before merge
+  BLOCKED stages        a failure, which --ci already enforces
+
+There is no remote yet, so this is a specification rather than a setting. The
+one open item that blocks it is a provisioning decision, not an architectural
+one.
+
 # Verification
 
   pnpm verify      local. BLOCKED stages are reported loudly and tolerated.
