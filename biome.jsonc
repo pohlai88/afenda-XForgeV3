@@ -1,10 +1,25 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 
+  // THE root configuration. ultracite/biome/core declares `root: false` --
+  // correct for a preset, which is always extended from somewhere -- and
+  // extending it without saying otherwise leaves this config marked non-root.
+  // Biome then traverses UPWARD looking for a parent, and could find one
+  // outside the repository on somebody's machine. Behaviour that depends on
+  // what sits above the checkout is the defect this repository keeps having.
+  "root": true,
+
   // Ultracite supplies the rule set. `ultracite init --hooks claude` rewrites
   // this file and preserves every rule, exclusion and override -- but strips
   // the comments. If you run it again, restore them.
   //
+  // THE root configuration. ultracite/biome/core declares `root: false` --
+  // correct for a preset, which is always extended from somewhere -- and
+  // extending it without saying otherwise leaves this config marked non-root.
+  // Biome then traverses UPWARD looking for a parent, and could find one
+  // outside the repository on somebody's machine. Behaviour that depends on
+  // what sits above the checkout is the defect this repository keeps having.
+
   // Ultracite supplies the rule set. This file keeps only what is specific to
   // this repository, and the reasons for it.
   "extends": [
@@ -21,10 +36,21 @@
     "ultracite/biome/type-aware"
   ],
 
+  // VCS integration ON. It was `enabled: false` beside `useIgnoreFile: true`,
+  // which reads as "respect .gitignore" and does nothing -- useIgnoreFile has no
+  // effect unless the integration is enabled. Proven: a gitignored file was
+  // linted anyway.
+  //
+  // With it on, .gitignore becomes the authority for what is ignored and the
+  // exclusions below are belt-and-braces. That direction matters: the
+  // deterministic-source-set guard already checks .gitignore for every
+  // non-source directory, so the two now agree by construction rather than by
+  // someone maintaining both.
   "vcs": {
-    "enabled": false,
+    "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": true
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
   },
 
   // OUR exclusions, retained deliberately, and FORCE ignores (`!!`) rather than
