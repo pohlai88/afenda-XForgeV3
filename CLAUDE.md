@@ -61,12 +61,19 @@ was a one-time exception: with zero commits there is nothing to branch from,
 and reconstructing history to satisfy a branch-first rule would have bought
 ceremony, not architecture.
 
-  From master onward: feature/* -> PR -> master. No direct commits to master.
+  From here onward: feature/* -> PR -> main. No direct commits to main.
 
 Recorded here so it is not re-litigated, and so "the last change went straight
-to master" is never cited as precedent.
+to main" is never cited as precedent.
 
-master is NOT protected. Being precise about that matters, because a policy
+The default branch was renamed master -> main when the remote was created. The
+rename is only safe because .github/workflows/verify.yml was renamed with it: it
+triggered on `branches: [master]`, so on a repository whose default branch is
+`main` the required check would never have run. A required check that cannot
+fire is worse than no check, because the branch protection UI reports it as
+configured.
+
+main is NOT protected. Being precise about that matters, because a policy
 written down reads exactly like a policy enforced:
 
   branch policy         DEFINED     this file
@@ -79,11 +86,11 @@ local gate teaches people the gate is optional:
 
   required check        verify / verify  (pnpm verify --ci)
   pull request          required, no direct push, no force push
-  up to date            branch must be current with master before merge
+  up to date            branch must be current with main before merge
   BLOCKED stages        a failure, which --ci already enforces
 
   Until then: Phase 1 may be DEVELOPED locally, and may not be MERGED to
-  master. Phase 1 is where the tenant isolation proof lands, and that is the
+  main. Phase 1 is where the tenant isolation proof lands, and that is the
   one check that most needs to have actually executed somewhere other than the
   machine that wrote it.
 
