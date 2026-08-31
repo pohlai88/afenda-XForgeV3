@@ -13,15 +13,15 @@ export interface UpdateEmergencyContact {
      */
   name?: string;
   /**
-     * @minLength 1
-     * @maxLength 80
-     */
-  relationship?: string;
-  /**
      * @minLength 3
      * @maxLength 40
      */
   phone?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  relationship?: string;
   /** @exclusiveMinimum 0 */
   version: number;
 }

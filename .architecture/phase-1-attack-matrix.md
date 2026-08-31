@@ -161,6 +161,7 @@ thing.
 | P06 | an unregistered permission code | build or startup failure | a permission registry |
 | P07 | a grant whose window has closed | deny | now |
 | P08 | the evaluator cannot decide | fail closed | now |
+| P09 | a route mounted without a policy declaration | build or mount failure | now |
 
 **P04 is the one that changes what the others prove.** Policy's guarantee is not
 *"my check fired"* but *"no path granted"* — different claims that a test

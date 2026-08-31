@@ -8,7 +8,8 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "strictNullChecks": true
   },
   "include": [
     "next-env.d.ts",
@@ -19,5 +20,10 @@
     "../../packages/**/*.tsx",
     "../../modules/**/*.ts"
   ],
-  "exclude": ["node_modules", "**/node_modules", "../../**/node_modules", ".next"]
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "../../**/node_modules",
+    ".next"
+  ]
 }

@@ -26,7 +26,9 @@ const OUTPUT = join(ROOT, 'packages/tokens/generated/tokens.css')
 /** Every token as a flat path -> raw value, keeping `$`-prefixed metadata out. */
 function flatten(node, path = [], out = new Map()) {
   for (const [key, value] of Object.entries(node)) {
-    if (key.startsWith('$')) continue
+    if (key.startsWith('$')) {
+      continue
+    }
     if (value && typeof value === 'object' && '$value' in value) {
       out.set([...path, key].join('.'), value.$value)
     } else if (value && typeof value === 'object') {
@@ -47,8 +49,10 @@ function resolve(tokens) {
   const resolved = new Map()
   for (const [name, raw] of tokens) {
     let value = raw
-    for (let depth = 0; typeof value === 'string' && value.startsWith('{'); depth++) {
-      if (depth > 10) throw new Error(`token alias cycle at '${name}'`)
+    for (let depth = 0; typeof value === 'string' && value.startsWith('{'); depth += 1) {
+      if (depth > 10) {
+        throw new Error(`token alias cycle at '${name}'`)
+      }
       const target = value.slice(1, -1)
       if (!tokens.has(target)) {
         throw new Error(`token '${name}' aliases '${target}', which does not exist`)

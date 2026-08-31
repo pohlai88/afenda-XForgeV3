@@ -20,13 +20,15 @@ import {
 } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { HOST_A, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+
+export { HOST_A, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+
 import { hrModuleRoutes } from '@xforge/hr'
 import type { Grant, Principal } from '@xforge/policy'
 import { type MembershipQueries, resolveRequestTenant } from '@xforge/tenancy'
 import postgres from 'postgres'
 import { appUrl, ownerUrl } from '../../fixtures/local-database'
 
-export { HOST_A, TENANT_A, TENANT_B }
 export const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 export const READ = 'hr.employee.read'
 export const UPDATE = 'hr.employee.update'
@@ -36,7 +38,7 @@ export let pg!: ReturnType<typeof createPostgresDriver>
 export let reachable = false
 
 try {
-  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  owner = postgres(ownerUrl(), { connect_timeout: 5, max: 2, prepare: false })
   await owner`select 1`
   pg = createPostgresDriver(appUrl())
   reachable = true
@@ -49,13 +51,13 @@ export const transactions: string[] = []
 
 if (reachable) {
   const recording: Driver = {
-    transactionWithTenant(tenantId, fn) {
-      transactions.push(tenantId)
-      return pg.transactionWithTenant(tenantId, fn)
-    },
     transactionAsPlatform(fn) {
       transactions.push('__platform__')
       return pg.transactionAsPlatform(fn)
+    },
+    transactionWithTenant(tenantId, fn) {
+      transactions.push(tenantId)
+      return pg.transactionWithTenant(tenantId, fn)
     },
   }
   setDriver(recording)
@@ -68,9 +70,9 @@ const queries: MembershipQueries = {
 }
 
 export const principalWith = (grants: Grant[], id = 'p1'): Principal => ({
+  grants,
   id,
   kind: 'user',
-  grants,
 })
 
 /**
@@ -92,7 +94,9 @@ export async function request(
       async (c, next) => {
         if (principal) {
           const resolved = await resolveRequestTenant(HOST_A, principal, queries, new Date())
-          if (resolved.kind === 'verified') c.set('tenant', resolved.context)
+          if (resolved.kind === 'verified') {
+            c.set('tenant', resolved.context)
+          }
           c.set('principal', principal)
         }
         c.set('asOf', '2026-08-31T00:00:00.000Z')
@@ -121,7 +125,9 @@ export async function seed(): Promise<void> {
 }
 
 export async function closeAll(): Promise<void> {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await owner.end({ timeout: 5 })
   await pg.close()
 }

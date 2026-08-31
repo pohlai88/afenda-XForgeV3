@@ -26,6 +26,15 @@
             "statusMessage": "architecture guards"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "pnpm run fix --skip=correctness/noUnusedImports",
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit"
       }
     ]
   }

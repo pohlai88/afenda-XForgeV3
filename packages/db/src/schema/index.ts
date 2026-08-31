@@ -32,16 +32,18 @@ const tenantIsolation = sql`tenant_id = current_setting('app.tenant_id', true)::
 export const emergencyContact = pgTable(
   'emergency_contact',
   {
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+
+    employeeId: uuid('employee_id').notNull(),
     id: uuid('id').primaryKey().defaultRandom(),
+
+    name: text('name').notNull(),
+    phone: text('phone').notNull(),
+    relationship: text('relationship').notNull(),
 
     /** Law 11: every tenant-owned table carries tenant_id. */
     tenantId: uuid('tenant_id').notNull(),
-
-    employeeId: uuid('employee_id').notNull(),
-
-    name: text('name').notNull(),
-    relationship: text('relationship').notNull(),
-    phone: text('phone').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 
     /**
      * Law 22 / ADR-013: optimistic concurrency. Update commands carry this and
@@ -50,9 +52,6 @@ export const emergencyContact = pgTable(
      * correctly-guarded `updated_at` predicate.
      */
     version: integer('version').notNull().default(1),
-
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     /** Tenant-leading indexes. Business identity is unique PER TENANT, never globally. */
@@ -96,22 +95,22 @@ export const TENANT_OWNED_TABLES = ['emergency_contact', 'tenant_membership'] as
  * tenant-owned and carry the standard treatment.
  */
 export const tenant = pgTable('tenant', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  slug: text('slug').notNull().unique(),
-  name: text('name').notNull(),
-  status: text('status').notNull().default('active'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  status: text('status').notNull().default('active'),
 })
 
 export const tenantDomain = pgTable(
   'tenant_domain',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    tenantId: uuid('tenant_id').notNull(),
     hostname: text('hostname').notNull().unique(),
+    id: uuid('id').primaryKey().defaultRandom(),
+    isPrimary: boolean('is_primary').notNull().default(false),
     kind: text('kind').notNull().default('subdomain'),
     status: text('status').notNull().default('verified'),
-    isPrimary: boolean('is_primary').notNull().default(false),
+    tenantId: uuid('tenant_id').notNull(),
   },
   (t) => [
     index('tenant_domain_tenant_idx').on(t.tenantId),
@@ -134,14 +133,14 @@ export const tenantMembership = pgTable(
   'tenant_membership',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    tenantId: uuid('tenant_id').notNull(),
     principalId: text('principal_id').notNull(),
+    /** Transaction time, distinct from valid time -- law 20 / ADR-016. */
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
     status: text('status').notNull().default('active'),
+    tenantId: uuid('tenant_id').notNull(),
     /** Half-open [valid_from, valid_to) -- law 20. NULL valid_to is open-ended. */
     validFrom: timestamp('valid_from', { withTimezone: true }).notNull().defaultNow(),
     validTo: timestamp('valid_to', { withTimezone: true }),
-    /** Transaction time, distinct from valid time -- law 20 / ADR-016. */
-    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('tenant_membership_tenant_principal_lookup').on(t.tenantId, t.principalId),

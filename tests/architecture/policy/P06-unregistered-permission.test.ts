@@ -30,11 +30,11 @@ describe('P06 -- unregistered permission codes fail closed', () => {
     const r = evaluate(
       { permission: 'hr.employee.obliterate', scopeType: 'tenant' },
       {
+        asOf: at,
         principal: principalWith([
-          { permission: 'hr.employee.obliterate', scopeType: 'tenant', scopeId: TENANT_A },
+          { permission: 'hr.employee.obliterate', scopeId: TENANT_A, scopeType: 'tenant' },
         ]),
         tenantId: TENANT_A,
-        asOf: at,
       },
     )
     expect(r).toMatchObject({ allowed: false, reason: 'permission_unregistered' })

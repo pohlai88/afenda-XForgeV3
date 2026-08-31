@@ -11,7 +11,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeAll, contextFor, EMPLOYEE, reachable, seed, TENANT_A, TENANT_B } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 

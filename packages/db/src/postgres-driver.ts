@@ -21,7 +21,7 @@ import type { Driver, TenantClient } from './index'
 export function createPostgresDriver(
   url: string,
   options: { readonly max?: number } = {},
-): Driver & { close(): Promise<void> } {
+): Driver & { close: () => Promise<void> } {
   // `max` is configurable ONLY so the pooled-reuse proof can force a pool of
   // one and guarantee the same physical connection is handed back. Building a
   // separate client for that test would prove connection reuse is safe on a
@@ -29,6 +29,13 @@ export function createPostgresDriver(
   const sql = postgres(url, { max: options.max ?? 5, prepare: false })
 
   return {
+    async close() {
+      await sql.end({ timeout: 5 })
+    },
+
+    async transactionAsPlatform(fn) {
+      return sql.begin(async (tx) => fn(tx as unknown as TenantClient)) as never
+    },
     async transactionWithTenant(tenantId, fn) {
       return sql.begin(async (tx) => {
         // set_config(..., true) is SET LOCAL: scoped to this transaction and
@@ -40,14 +47,6 @@ export function createPostgresDriver(
         // connection with no tenant context.
         return fn(tx as unknown as TenantClient)
       }) as never
-    },
-
-    async transactionAsPlatform(fn) {
-      return sql.begin(async (tx) => fn(tx as unknown as TenantClient)) as never
-    },
-
-    async close() {
-      await sql.end({ timeout: 5 })
     },
   }
 }

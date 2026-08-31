@@ -59,33 +59,33 @@ export type PolicyDeclaration =
  * tenant now reaches policy from the request's VerifiedTenantContext.
  */
 export interface Principal {
+  readonly grants: readonly Grant[]
   readonly id: string
   /** ADR-018: a machine or agent is a first-class principal, never a user with a key. */
   readonly kind: 'user' | 'machine' | 'agent'
-  readonly grants: readonly Grant[]
 }
 
 export interface Grant {
   readonly permission: string
-  readonly scopeType: ScopeType
   readonly scopeId: string
+  readonly scopeType: ScopeType
   /** ADR-018: validity is evaluated on every request, so delegation expires by construction. */
   readonly validFrom?: string
   readonly validTo?: string
 }
 
 export interface PolicyContext {
+  /** Injected so evaluation never reads a clock directly (ADR-016). */
+  readonly asOf: string
   readonly principal: Principal
+  /** The scope the operation targets, e.g. the legal entity a payroll run belongs to. */
+  readonly scopeId?: string
   /**
    * The verified tenant, passed from the request's VerifiedTenantContext.
    * Policy answers "what may this principal do INSIDE this tenant"; it never
    * decides which tenant that is.
    */
   readonly tenantId: string
-  /** The scope the operation targets, e.g. the legal entity a payroll run belongs to. */
-  readonly scopeId?: string
-  /** Injected so evaluation never reads a clock directly (ADR-016). */
-  readonly asOf: string
 }
 
 /**
@@ -122,9 +122,9 @@ export type PolicyDecision =
 export type PolicyResult = PolicyDecision
 
 export interface PolicyIntegrityFinding {
-  readonly principalId: string
-  readonly malformedGrants: number
   readonly detail: string
+  readonly malformedGrants: number
+  readonly principalId: string
 }
 
 /**
@@ -144,13 +144,19 @@ function onPolicyIntegrityFinding(f: PolicyIntegrityFinding): void {
   try {
     integrityListener(f)
   } catch {
-    // Reporting a defect must never become a second defect.
+    // Reporting a defect must never become a second defect. Deliberately
+    // swallowed: an integrity finding is diagnostic, and a listener that throws
+    // must not take down the request that noticed the problem.
   }
 }
 
 function isValidNow(g: Grant, asOf: string): boolean {
-  if (g.validFrom && asOf < g.validFrom) return false
-  if (g.validTo && asOf >= g.validTo) return false
+  if (g.validFrom && asOf < g.validFrom) {
+    return false
+  }
+  if (g.validTo && asOf >= g.validTo) {
+    return false
+  }
   return true
 }
 
@@ -164,7 +170,7 @@ function isValidNow(g: Grant, asOf: string): boolean {
  */
 export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyDecision {
   if (policy === 'public') {
-    return { allowed: true, grant: { permission: 'public', scopeType: 'tenant', scopeId: '' } }
+    return { allowed: true, grant: { permission: 'public', scopeId: '', scopeType: 'tenant' } }
   }
 
   if (!isRegisteredPermission(policy.permission)) {
@@ -174,16 +180,16 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
     // silently opens an endpoint.
     return {
       allowed: false,
-      reason: 'permission_unregistered',
       detail: `'${policy.permission}' is not in PERMISSIONS -- failing closed`,
+      reason: 'permission_unregistered',
     }
   }
 
   if (!SCOPE_TYPES.includes(policy.scopeType)) {
     return {
       allowed: false,
-      reason: 'scope_type_unknown',
       detail: `unrecognised scopeType '${policy.scopeType}' -- failing closed`,
+      reason: 'scope_type_unknown',
     }
   }
 
@@ -206,9 +212,9 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
   const malformed = ctx.principal.grants.length - grants.length
   if (malformed > 0) {
     onPolicyIntegrityFinding({
-      principalId: ctx.principal.id,
-      malformedGrants: malformed,
       detail: 'grants that are not well-formed were discarded before evaluation',
+      malformedGrants: malformed,
+      principalId: ctx.principal.id,
     })
   }
   const byPermission = grants.filter((g) => g.permission === policy.permission)
@@ -219,8 +225,8 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
   if (byPermission.length === 0) {
     return {
       allowed: false,
-      reason: 'permission_missing',
       detail: `principal ${ctx.principal.id} holds no grant for ${policy.permission}`,
+      reason: 'permission_missing',
     }
   }
 
@@ -230,10 +236,10 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
   if (inScope.length === 0) {
     return {
       allowed: false,
-      reason: 'scope_mismatch',
       detail:
         `principal ${ctx.principal.id} holds ${policy.permission} but not at ` +
         `${policy.scopeType} ${wanted ?? '(none supplied)'}`,
+      reason: 'scope_mismatch',
     }
   }
 
@@ -241,8 +247,8 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
   if (!valid) {
     return {
       allowed: false,
-      reason: 'grant_expired',
       detail: `every ${policy.permission} grant is outside its validity window at ${ctx.asOf}`,
+      reason: 'grant_expired',
     }
   }
 
@@ -251,8 +257,12 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
 
 /** Type guard used by the API adapter's mount-time check (ADR-014). */
 export function isPolicyDeclaration(v: unknown): v is PolicyDeclaration {
-  if (v === 'public') return true
-  if (typeof v !== 'object' || v === null) return false
+  if (v === 'public') {
+    return true
+  }
+  if (typeof v !== 'object' || v === null) {
+    return false
+  }
   const p = v as Record<string, unknown>
   return (
     typeof p.permission === 'string' &&

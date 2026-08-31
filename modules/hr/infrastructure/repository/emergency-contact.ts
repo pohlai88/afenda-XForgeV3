@@ -17,12 +17,12 @@ import { withTenant } from '@xforge/db'
 import type { VerifiedTenantContext } from '@xforge/tenancy'
 
 export interface EmergencyContactRow {
-  id: string
-  tenantId: string
   employeeId: string
+  id: string
   name: string
-  relationship: string
   phone: string
+  relationship: string
+  tenantId: string
   version: number
 }
 
@@ -64,7 +64,9 @@ export function create(
     const [row] = rows
     // An INSERT ... RETURNING that yields nothing means the WITH CHECK policy
     // refused the row. Failing loudly beats returning a half-built object.
-    if (!row) throw new Error('insert returned no row -- tenant policy refused the write')
+    if (!row) {
+      throw new Error('insert returned no row -- tenant policy refused the write')
+    }
     return row
   })
 }
@@ -87,9 +89,11 @@ export function update(
       where id = ${id} and tenant_id = ${ctx.tenantId}
     `
     const [existing] = current
-    if (!existing) return { kind: 'not-found' as const }
+    if (!existing) {
+      return { kind: 'not-found' as const }
+    }
     if (existing.version !== input.version) {
-      return { kind: 'conflict' as const, currentVersion: existing.version }
+      return { currentVersion: existing.version, kind: 'conflict' as const }
     }
 
     const rows = await sql<EmergencyContactRow>`
@@ -106,7 +110,9 @@ export function update(
     // Zero rows here means another writer committed between the SELECT and the
     // UPDATE. Report the conflict rather than reporting success on no change.
     const [row] = rows
-    if (!row) return { kind: 'conflict' as const, currentVersion: input.version }
+    if (!row) {
+      return { currentVersion: input.version, kind: 'conflict' as const }
+    }
     return { kind: 'updated' as const, row }
   })
 }

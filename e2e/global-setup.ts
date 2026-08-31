@@ -15,7 +15,7 @@ const DEV_TENANT = process.env.DEV_TENANT_ID ?? TENANT_A
  * is not true of a table that persists between runs.
  */
 export default async function globalSetup(): Promise<void> {
-  const owner = postgres(ownerUrl(), { max: 1, prepare: false, connect_timeout: 5 })
+  const owner = postgres(ownerUrl(), { connect_timeout: 5, max: 1, prepare: false })
   try {
     await seedTenancy(owner, [{ principalId: DEV_PRINCIPAL, tenantId: DEV_TENANT }])
     // Unscoped: this connection is a superuser and bypasses RLS regardless of

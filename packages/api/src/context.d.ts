@@ -15,18 +15,18 @@ import type { VerifiedTenantContext } from '@xforge/tenancy'
 
 declare module 'hono' {
   interface ContextVariableMap {
-    principal: Principal
-    tenant: VerifiedTenantContext
     /** Injected rather than read from a clock, so handlers stay deterministic (ADR-016). */
     asOf: string
-    requestId: string
+    /** Test seam for deterministic ids. */
+    newId: string | undefined
     /**
      * Why policy refused, for audit and logs. Never serialised into a response:
      * the caller gets one flat refusal, because a specific reason is an
      * enumeration oracle.
      */
     policyDenial: PolicyDecision | undefined
-    /** Test seam for deterministic ids. */
-    newId: string | undefined
+    principal: Principal
+    requestId: string
+    tenant: VerifiedTenantContext
   }
 }

@@ -11,8 +11,10 @@ export function Providers({ children }: { children: ReactNode }) {
           queries: {
             // A 403 is an answer, not a transient failure -- retrying it is noise.
             retry: (count, error) => {
-              const status = (error as { status?: number })?.status
-              if (status === 403 || status === 404 || status === 409) return false
+              const status = (error as { status?: number } | undefined)?.status
+              if (status === 403 || status === 404 || status === 409) {
+                return false
+              }
               return count < 2
             },
           },

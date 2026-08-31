@@ -8,8 +8,8 @@ describe('generated client sends a body', () => {
 
     await createEmergencyContact('33333333-3333-4333-8333-333333333333', {
       name: 'Siti',
-      relationship: 'Spouse',
       phone: '+60 12-345 6789',
+      relationship: 'Spouse',
     })
 
     const call = spy.mock.calls[0] as unknown as [string, RequestInit]

@@ -45,7 +45,7 @@ test.describe('emergency contacts', () => {
     // Someone else saves first, advancing the version behind this page's back.
     const listed = await request.get(`/api/v1/employees/${EMPLOYEE}/emergency-contacts`)
     const { items } = await listed.json()
-    const target = items[0]
+    const [target] = items
     const other = await request.patch(`/api/v1/emergency-contacts/${target.id}`, {
       data: { phone: '+60 11-111 1111', version: target.version },
     })
@@ -78,14 +78,18 @@ test.describe('keyboard-only operation', () => {
     // Walk the tab order and collect what receives focus, rather than asserting
     // a fixed index -- an index would pass while the order became nonsense.
     const reached: string[] = []
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 12; i += 1) {
       await page.keyboard.press('Tab')
       const label = await page.evaluate(() => {
         const el = document.activeElement
-        if (!el || el === document.body) return null
+        if (!el || el === document.body) {
+          return null
+        }
         return `${el.tagName.toLowerCase()}:${(el.textContent ?? '').trim().slice(0, 20)}`
       })
-      if (label && !reached.includes(label)) reached.push(label)
+      if (label && !reached.includes(label)) {
+        reached.push(label)
+      }
     }
 
     expect(reached.some((r) => r.includes('Add contact'))).toBe(true)
@@ -97,9 +101,11 @@ test.describe('keyboard-only operation', () => {
     await page.getByRole('button', { name: 'Add contact' }).focus()
     const outline = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null
-      if (!el) return null
+      if (!el) {
+        return null
+      }
       const s = getComputedStyle(el)
-      return { text: (el.textContent ?? '').trim(), style: s.outlineStyle, width: s.outlineWidth }
+      return { style: s.outlineStyle, text: (el.textContent ?? '').trim(), width: s.outlineWidth }
     })
 
     // The ring is a token and cannot be styled away per screen. If it ever is,
@@ -114,11 +120,13 @@ test.describe('keyboard-only operation', () => {
     const before = await page.getByTestId('contacts').locator('li').count()
 
     // Tab until the primary action holds focus, then activate it.
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 12; i += 1) {
       const onAdd = await page.evaluate(() =>
         (document.activeElement?.textContent ?? '').includes('Add contact'),
       )
-      if (onAdd) break
+      if (onAdd) {
+        break
+      }
       await page.keyboard.press('Tab')
     }
     await page.keyboard.press('Enter')

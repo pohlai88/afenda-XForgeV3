@@ -12,15 +12,15 @@ import { hrModuleRoutes } from '@xforge/hr'
 const app = createApp(hrModuleRoutes)
 
 const doc = app.getOpenAPI31Document({
-  openapi: '3.1.0',
   info: {
-    title: 'Xforge API',
-    version: '0.1.0',
     description:
       'Multi-tenant HRMS and payroll platform. Every operation declares a policy; ' +
       'see .architecture/adr/ADR-014-policy-declaration.md.',
+    title: 'Xforge API',
+    version: '0.1.0',
   },
-  servers: [{ url: 'https://api.xforge.app', description: 'production' }],
+  openapi: '3.1.0',
+  servers: [{ description: 'production', url: 'https://api.xforge.app' }],
 })
 
 mkdirSync('contracts', { recursive: true })
@@ -33,4 +33,6 @@ const ops = Object.values(doc.paths ?? {}).flatMap((p) =>
 )
 
 console.log(`contracts/openapi.generated.json  ${ops.length} operations`)
-for (const id of ops) console.log(`  ${id}`)
+for (const id of ops) {
+  console.log(`  ${id}`)
+}

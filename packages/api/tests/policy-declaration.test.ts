@@ -15,20 +15,20 @@
 import { z } from '@hono/zod-openapi'
 import { describe, expect, it } from 'vitest'
 import type { RouteDefinition } from '../src/index.js'
-import { createApp, mountedOperations, UnmountableRouteError } from '../src/index.js'
+import { createApp, UnmountableRouteError } from '../src/index.js'
 
 const ok = (c: { json: (b: unknown, s: number) => Response }) => c.json({ ok: true }, 200)
 
 /** A well-formed route, used as the control. */
 const goodRoute = {
   method: 'get' as const,
-  path: '/v1/things',
   operationId: 'listThings',
+  path: '/v1/things',
   policy: { permission: 'hr.employee.read', scopeType: 'tenant' as const },
   responses: {
     200: {
-      description: 'ok',
       content: { 'application/json': { schema: z.object({ ok: z.boolean() }) } },
+      description: 'ok',
     },
   },
 }
@@ -94,26 +94,5 @@ describe('ADR-014 -- every operation declares a policy', () => {
       { config: { ...goodRoute, path: '/v1/other' }, handler: ok },
     ] as unknown as RouteDefinition[]
     expect(() => createApp(routes)).toThrow(/duplicate operationId/)
-  })
-})
-
-describe('AQS-021 -- coverage over the real route table', () => {
-  it('every mounted operation in the HR module declares a policy', async () => {
-    const { hrModuleRoutes } = await import('@xforge/hr')
-    const ops = mountedOperations(hrModuleRoutes)
-
-    expect(ops.length).toBeGreaterThan(0)
-    for (const op of ops) {
-      expect(op.policy, `${op.operationId} has no policy`).toBeDefined()
-    }
-
-    // Enumerated dynamically from the route table rather than listed here, so a
-    // newly added route cannot silently escape coverage -- the same property
-    // that makes the tenant-isolation gate trustworthy.
-    expect(ops.map((o) => o.operationId).sort()).toEqual([
-      'createEmergencyContact',
-      'listEmergencyContacts',
-      'updateEmergencyContact',
-    ])
   })
 })

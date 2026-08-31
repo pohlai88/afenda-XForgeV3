@@ -34,9 +34,9 @@ export { TENANT_OWNED_TABLES } from './schema/index'
 export { hasActiveMembership, resolveHostname } from './tenancy-queries'
 
 export interface TenantSession {
+  execute: <T>(fn: () => Promise<T>) => Promise<T>
   /** Every statement runs inside the transaction that set app.tenant_id. */
   readonly tenantId: string
-  execute<T>(fn: () => Promise<T>): Promise<T>
 }
 
 /**
@@ -63,6 +63,7 @@ export type TenantClient = <T = Record<string, unknown>>(
 ) => Promise<T[]>
 
 export interface Driver {
+  transactionAsPlatform: <T>(fn: (tx: TenantClient) => Promise<T>) => Promise<T>
   /**
    * MUST open a transaction, issue `SET LOCAL app.tenant_id`, run `fn` WITH THE
    * TRANSACTION'S OWN CLIENT, and commit.
@@ -71,8 +72,7 @@ export interface Driver {
    * session-scoped variable leaks to whichever tenant borrows the connection
    * next. AQS-022 proves the selected driver honours this.
    */
-  transactionWithTenant<T>(tenantId: string, fn: (tx: TenantClient) => Promise<T>): Promise<T>
-  transactionAsPlatform<T>(fn: (tx: TenantClient) => Promise<T>): Promise<T>
+  transactionWithTenant: <T>(tenantId: string, fn: (tx: TenantClient) => Promise<T>) => Promise<T>
 }
 
 let driver: Driver | null = null
@@ -91,8 +91,9 @@ export function tenancyDriver(): Driver {
 }
 
 function requireDriver(): Driver {
-  if (!driver)
+  if (!driver) {
     throw new Error('no database driver configured -- call setDriver() at composition root')
+  }
   return driver
 }
 
@@ -117,7 +118,13 @@ export async function withTenant<T>(
   // a Promise-returning function. A synchronous throw from an async-shaped API
   // slips straight past `withTenant(...).catch(handle)`, which is precisely
   // where a caller expects to see it.
-  if (!ctx?.tenantId) throw new Error('withTenant requires a verified tenant context')
+  // The type says this cannot be null. The type is not what arrives from a
+  // deserialised session, an untyped library, or an `any` at a boundary the
+  // compiler never saw -- and this is the fail-closed check that matters.
+  // biome-ignore lint/suspicious/noUnnecessaryConditions: defensive by intent, see above
+  if (!ctx?.tenantId) {
+    throw new Error('withTenant requires a verified tenant context')
+  }
   return requireDriver().transactionWithTenant(ctx.tenantId, fn)
 }
 

@@ -86,7 +86,9 @@ export const COMMITTED_PHASE = readCommittedPhase()
  */
 export function resolvePhase({ ci = false } = {}) {
   const requested = process.env.XFORGE_PHASE
-  if (!requested || ci) return COMMITTED_PHASE
+  if (!requested || ci) {
+    return COMMITTED_PHASE
+  }
 
   if (!PHASES.includes(requested)) {
     throw new Error(`XFORGE_PHASE='${requested}' is not a known phase. Known: ${PHASES.join(', ')}`)
@@ -109,7 +111,9 @@ export const CURRENT_PHASE = resolvePhase({
 export function phaseHasStarted(phase) {
   const at = PHASES.indexOf(CURRENT_PHASE)
   const of = PHASES.indexOf(phase)
-  if (of === -1) throw new Error(`unknown phase '${phase}'`)
+  if (of === -1) {
+    throw new Error(`unknown phase '${phase}'`)
+  }
   return of <= at
 }
 
@@ -125,18 +129,33 @@ const IGNORED_DIRS = new Set([...NON_SOURCE_DIRS, '.architecture'])
 /** Recursively collect files under `dir` matching `exts`. */
 export function walk(dir, exts = ['.ts', '.tsx', '.mts', '.js', '.mjs'], acc = []) {
   const abs = join(ROOT, dir)
-  if (!existsSync(abs)) return acc
+  if (!existsSync(abs)) {
+    return acc
+  }
   for (const entry of readdirSync(abs)) {
-    if (IGNORED_DIRS.has(entry)) continue
+    if (IGNORED_DIRS.has(entry)) {
+      continue
+    }
     const full = join(abs, entry)
     const st = statSync(full)
-    if (st.isDirectory()) walk(relative(ROOT, full), exts, acc)
-    else if (exts.some((e) => entry.endsWith(e))) acc.push(relative(ROOT, full))
+    if (st.isDirectory()) {
+      walk(relative(ROOT, full), exts, acc)
+    } else if (exts.some((e) => entry.endsWith(e))) {
+      acc.push(relative(ROOT, full))
+    }
   }
   return acc
 }
 
-/** Source files across the workspace roots that guards police. */
+/**
+ * Source files across the workspace roots that guards police.
+ *
+ * `roots` KEEPS ITS DEFAULT. run-guards.mjs calls `sourceFiles()` with no
+ * arguments, so removing it makes every source guard crash on
+ * `undefined.flatMap`. An automatic lint fix has now done exactly that three
+ * times, which is why the suppression is here rather than in a commit message.
+ */
+// biome-ignore lint/style/useDefaultParameterLast: run-guards.mjs calls this with no arguments
 export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
   return roots.flatMap((r) => (exts ? walk(r, exts) : walk(r)))
 }
@@ -153,10 +172,12 @@ export function posix(p) {
 /** Is a CLI tool resolvable? Used to distinguish PENDING from FAIL. */
 export function hasBin(bin) {
   const probe = spawnSync(process.platform === 'win32' ? 'where' : 'which', [bin], {
-    stdio: 'ignore',
     shell: process.platform === 'win32',
+    stdio: 'ignore',
   })
-  if (probe.status === 0) return true
+  if (probe.status === 0) {
+    return true
+  }
   return existsSync(join(ROOT, 'node_modules', '.bin', bin))
 }
 
@@ -200,13 +221,17 @@ export function treeState() {
  * immediately, rather than at merge.
  */
 export function settleStatus(stage, result) {
-  if (result.status !== PENDING) return result
-  if (!phaseHasStarted(stage.phase)) return result
+  if (result.status !== PENDING) {
+    return result
+  }
+  if (!phaseHasStarted(stage.phase)) {
+    return result
+  }
   return {
-    status: FAIL,
     detail:
       `stage reported PENDING during its own '${stage.phase}' phase, which has started. ` +
-      `Implement it, or report BLOCKED with the missing prerequisite.` +
+      'Implement it, or report BLOCKED with the missing prerequisite.' +
       `${String.fromCharCode(10)}  it said: ${result.detail}`,
+    status: FAIL,
   }
 }

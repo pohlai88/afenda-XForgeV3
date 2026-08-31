@@ -32,7 +32,9 @@ const PHASE_AUTHORITY = '.architecture/state.json'
 
 const read = async (stream) => {
   let s = ''
-  for await (const chunk of stream) s += chunk
+  for await (const chunk of stream) {
+    s += chunk
+  }
   return s
 }
 
@@ -45,14 +47,18 @@ const main = async () => {
   }
 
   const filePath = payload?.tool_input?.file_path
-  if (typeof filePath !== 'string' || filePath === '') return 0
+  if (typeof filePath !== 'string' || filePath === '') {
+    return 0
+  }
 
   // classify() speaks repo-relative POSIX paths; the hook is handed an absolute
   // one, and on Windows it arrives with backslashes.
   const rel = relative(ROOT, resolve(ROOT, filePath)).split('\\').join('/')
 
   // Outside the repository entirely -- not this hook's business.
-  if (rel === '' || rel.startsWith('../')) return 0
+  if (rel === '' || rel.startsWith('../')) {
+    return 0
+  }
 
   if (rel === PHASE_AUTHORITY) {
     process.stderr.write(

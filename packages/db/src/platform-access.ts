@@ -40,8 +40,8 @@ import type { TenantClient } from './index'
  * of privileged accesses unknowable without grepping the whole codebase.
  */
 export const PLATFORM_OPERATIONS = {
-  'admin.tenant-list': 'List tenants in the platform console',
   'admin.tenant-detail': 'Inspect one tenant from the platform console',
+  'admin.tenant-list': 'List tenants in the platform console',
   'billing.usage-rollup': 'Aggregate usage across tenants for invoicing',
   'ops.reconcile-tenant-domains': 'Repair orphaned tenant-domain associations',
 } as const
@@ -81,10 +81,10 @@ export interface PlatformAccessRequest {
 export type PlatformAuditOutcome = 'ATTEMPTED' | 'SUCCEEDED' | 'FAILED'
 
 export interface PlatformAuditRecord extends PlatformAccessRequest, ExecutionContext {
-  readonly id: string
-  readonly outcome: PlatformAuditOutcome
   readonly at: string
   readonly error?: string
+  readonly id: string
+  readonly outcome: PlatformAuditOutcome
 }
 
 /**
@@ -96,13 +96,13 @@ export interface PlatformAuditRecord extends PlatformAccessRequest, ExecutionCon
  * path that failed.
  */
 export interface PlatformAuditSink {
-  recordAttempt(record: Omit<PlatformAuditRecord, 'outcome'>): Promise<void>
-  recordOutcome(
+  read: () => readonly PlatformAuditRecord[]
+  recordAttempt: (record: Omit<PlatformAuditRecord, 'outcome'>) => Promise<void>
+  recordOutcome: (
     id: string,
     outcome: Exclude<PlatformAuditOutcome, 'ATTEMPTED'>,
     error?: string,
-  ): Promise<void>
-  read(): readonly PlatformAuditRecord[]
+  ) => Promise<void>
 }
 
 /**
@@ -115,17 +115,19 @@ export interface PlatformAuditSink {
 export function createMemoryAuditSink(): PlatformAuditSink {
   const rows: PlatformAuditRecord[] = []
   return {
+    read() {
+      // A copy. An audit trail must not hand out a mutable reference to itself.
+      return [...rows]
+    },
     async recordAttempt(record) {
       rows.push({ ...record, outcome: 'ATTEMPTED' })
     },
     async recordOutcome(id, outcome, error) {
       const attempt = rows.find((r) => r.id === id)
-      if (!attempt) throw new Error(`no audit attempt ${id} to append an outcome to`)
-      rows.push({ ...attempt, outcome, at: new Date(0).toISOString(), ...(error ? { error } : {}) })
-    },
-    read() {
-      // A copy. An audit trail must not hand out a mutable reference to itself.
-      return [...rows]
+      if (!attempt) {
+        throw new Error(`no audit attempt ${id} to append an outcome to`)
+      }
+      rows.push({ ...attempt, at: new Date(0).toISOString(), outcome, ...(error ? { error } : {}) })
     },
   }
 }
@@ -159,7 +161,10 @@ export function currentExecutionContext(): ExecutionContext | null {
 }
 
 let counter = 0
-const nextAuditId = () => `pa_${++counter}`
+const nextAuditId = () => {
+  counter += 1
+  return `pa_${counter}`
+}
 
 /**
  * The only sanctioned path to cross-tenant data.
@@ -171,9 +176,15 @@ export async function performPlatformAccess<T>(
   transact: (fn: (tx: TenantClient) => Promise<T>) => Promise<T>,
   fn: (tx: TenantClient) => Promise<T>,
 ): Promise<T> {
-  if (!(request?.operation in PLATFORM_OPERATIONS)) {
+  // Read once. A privileged-access request may arrive from a job payload or a
+  // CLI argument, neither of which the compiler checked, so the optional chain
+  // is defensive by intent rather than redundant.
+  // biome-ignore lint/suspicious/noUnnecessaryConditions: defensive by intent, see above
+  const operation = request?.operation
+
+  if (!(operation in PLATFORM_OPERATIONS)) {
     throw new Error(
-      `'${request?.operation}' is not a registered platform operation. Add it to ` +
+      `'${operation}' is not a registered platform operation. Add it to ` +
         'PLATFORM_OPERATIONS in a reviewed change -- privileged access must be enumerable.',
     )
   }
@@ -209,6 +220,7 @@ export async function performPlatformAccess<T>(
       `refusing privileged access: the attempt could not be audited (${
         cause instanceof Error ? cause.message : String(cause)
       })`,
+      { cause },
     )
   }
 

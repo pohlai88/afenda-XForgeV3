@@ -33,12 +33,14 @@ import {
 } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 
 /** What a session may legitimately carry: identity, and a UX preference. */
-const session = { principalId: MEMBER_OF_BOTH, activeTenantId: TENANT_B }
+const session = { activeTenantId: TENANT_B, principalId: MEMBER_OF_BOTH }
 
 describe.skipIf(!reachable)('T07 -- host decides, whatever the session prefers', () => {
   it("at A's host the context is A, even though the preference says B", async () => {
@@ -50,7 +52,9 @@ describe.skipIf(!reachable)('T07 -- host decides, whatever the session prefers',
 
   it('and the HR repository sees only A', async () => {
     const resolved = await resolveFor(HOST_A, session.principalId)
-    if (resolved.kind !== 'verified') throw new Error('fixture failed')
+    if (resolved.kind !== 'verified') {
+      throw new Error('fixture failed')
+    }
     const rows = await repo.listByEmployee(resolved.context, EMPLOYEE)
     expect(rows.map((r) => r.id)).toEqual([A_ROW])
   })
@@ -62,7 +66,9 @@ describe.skipIf(!reachable)('T07 -- host decides, whatever the session prefers',
       resolveFor(HOST_A, session.principalId),
       resolveFor(HOST_B, session.principalId),
     ])
-    if (a.kind !== 'verified' || b.kind !== 'verified') throw new Error('fixture failed')
+    if (a.kind !== 'verified' || b.kind !== 'verified') {
+      throw new Error('fixture failed')
+    }
     expect(a.context.tenantId).toBe(TENANT_A)
     expect(b.context.tenantId).toBe(TENANT_B)
 

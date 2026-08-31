@@ -1,0 +1,187 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+
+  // Ultracite supplies the rule set. `ultracite init --hooks claude` rewrites
+  // this file and preserves every rule, exclusion and override -- but strips
+  // the comments. If you run it again, restore them.
+  //
+  // Ultracite supplies the rule set. This file keeps only what is specific to
+  // this repository, and the reasons for it.
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next",
+    // Type-aware rules, adopted under ADR-024's rule: a governance tool earns
+    // authority by REJECTING A KNOWN VIOLATION, not by exiting 0. Proven with a
+    // deliberate import cycle in packages/policy, which noImportCycles caught.
+    //
+    // That closes a gap ADR-024 recorded as open: dependency-cruiser would have
+    // given us cycle detection and cannot parse TypeScript 7, so we had none.
+    // This runs in a tool already in the gate, and adds ~1s.
+    "ultracite/biome/type-aware"
+  ],
+
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+
+  // OUR exclusions, retained deliberately, and FORCE ignores (`!!`) rather than
+  // plain negations. Adding `extends` merged the preset's `**` after our `!`
+  // patterns, which re-included apps/web/.next -- the order-dependent lint bug
+  // returning through the fix for something else. `!!` is not overridable.
+  //
+  // OUR exclusions, retained deliberately. The deterministic-source-set guard
+  // requires every non-source directory and build-output file to be listed
+  // here -- without them the lint stage becomes order-dependent, which it was
+  // twice. Ultracite's presets use `!!` force-ignores precisely so a
+  // consumer's own includes survive the merge rather than replacing theirs.
+  "files": {
+    "includes": [
+      // NO catch-all here. Biome's guidance is that a config needs a positive
+      // glob to start from -- but ultracite/biome/core already supplies `**`,
+      // and adding a second one trips noBiomeFirstException. So this list is
+      // purely subtractive, which is what it should have been: the four
+      // extensions it used to enumerate silently excluded the design system's
+      // stylesheet, the one file tokens-are-the-authority exists to police.
+      "!!**/node_modules",
+      "!!**/.git",
+      "!!**/.next",
+      "!!**/.turbo",
+      "!!**/dist",
+      "!!**/build",
+      "!!**/coverage",
+      "!!**/test-results",
+      "!!**/playwright-report",
+      "!!**/blob-report",
+      "!!**/.playwright",
+      "!!**/storybook-static",
+      "!!**/generated",
+      "!!contracts",
+      "!!**/next-env.d.ts",
+      "!!pnpm-lock.yaml",
+
+      // Biome's own config, excluded from Biome. `**/*.json` above would
+      // otherwise have it lint itself as strict JSON, where the comments
+      // explaining each disabled rule are a parse error. The alternative was
+      // deleting the reasons, and a rule turned off without a reason is
+      // indistinguishable from one nobody understood.
+      "!!biome.jsonc"
+    ]
+  },
+
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
+    }
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noAssignInExpressions": "off",
+        "noUndeclaredEnvVars": "off",
+
+        // The Driver interface returns Promises. An implementation with
+        // nothing to await still has to satisfy the signature, and rewriting
+        // it to non-async would change a contract to suit a linter.
+        "useAwait": "off",
+
+        // A deliberate no-op is a legitimate value: the default policy-integrity
+        // listener, and test doubles that must satisfy an interface without
+        // doing anything. Filling them with a `return` to satisfy this rule just
+        // trades it for noUselessReturn, which is the sign of a rule that does
+        // not fit rather than code that needs changing.
+        "noEmptyBlockStatements": "off"
+      },
+      "correctness": {
+        // Our module resolution is bundler-style: tsconfig has no
+        // allowImportingTsExtensions, so writing `./thing.ts` in an import is a
+        // type error. The rule targets ESM-strict resolution, which this
+        // repository does not use.
+        "useImportExtensions": "off",
+
+        // Biome's resolver cannot follow pnpm's symlinked node_modules through
+        // the `exports` maps of postgres, hono and orval, and reports all three
+        // as unresolved. tsc resolves them, the tests import them, and the
+        // build ships them -- so this is the resolver disagreeing with the
+        // compiler, and the compiler is the authority on resolution.
+        "noUnresolvedImports": "off"
+      },
+      "style": {
+        "useConst": "error",
+
+        // The attack-case filenames are an INTERFACE, not a preference. The
+        // tenancy + policy stage parses case ids out of them -- T04, P01-P05 --
+        // and reports coverage against the frozen matrix. Renaming them to
+        // kebab-case would silently drop cases from the count, which is the
+        // failure the matrix exists to prevent.
+        "useFilenamingConvention": "off"
+      },
+      "performance": {
+        // Our packages expose ONE entry point on purpose. The
+        // module-boundaries and kernel-independence guards depend on a package
+        // having a public surface rather than deep-importable internals, which
+        // is the opposite of what this rule optimises for.
+        "noBarrelFile": "off",
+
+        // E2E keyboard navigation is sequential BY NATURE: Tab, observe, Tab
+        // again. Running it in parallel would test something that cannot
+        // happen to a real user.
+        "noAwaitInLoops": "off",
+
+        // Inline handlers in JSX. The fix is useCallback everywhere, and law 30
+        // says infrastructure needs a NAMED, MEASURED pain -- there is no
+        // measurement here, and the architecture's performance budget is about
+        // critical-path JS and route metrics, not re-render counts on a screen
+        // with two buttons. Revisit when a dense grid exists and a profile says
+        // it matters.
+        "noJsxPropsBind": "off",
+
+        // `import * as repo from '@xforge/hr/repository'` is deliberate: the
+        // call site reads `repo.listByEmployee`, which NAMES THE LAYER being
+        // crossed. Flattening it to named imports makes a repository call look
+        // like any other function call, in a codebase whose guards exist to keep
+        // that boundary visible.
+        "noNamespaceImport": "off",
+
+        // Regexes hoisted out of tests. In a test the pattern belongs beside
+        // the assertion that uses it: moving it to module scope to save an
+        // allocation trades readability of the thing under test for nothing
+        // measurable.
+        "useTopLevelRegex": "off"
+      }
+    },
+    "domains": {}
+  },
+
+  "overrides": [
+    {
+      // Guard and stage definitions are deliberately LINEAR and exhaustive: a
+      // check function enumerates every condition in one readable place, and
+      // splitting it to satisfy a complexity metric hides the enumeration
+      // behind indirection. The rule stays ON for product code, where the same
+      // shape usually is a problem.
+      "includes": ["tooling/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    }
+  ]
+}

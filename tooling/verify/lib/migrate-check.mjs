@@ -15,7 +15,7 @@ const dir = join(process.cwd(), 'packages/db/migrations')
 
 let admin
 try {
-  admin = postgres(ADMIN, { max: 1, prepare: false, connect_timeout: 5, onnotice: () => {} })
+  admin = postgres(ADMIN, { connect_timeout: 5, max: 1, onnotice: () => {}, prepare: false })
   await admin`select 1`
 } catch {
   process.exit(2)
@@ -26,7 +26,7 @@ try {
   await admin.unsafe(`create database ${SCRATCH}`)
 
   const scratchUrl = ADMIN.replace(/\/[^/?]+(\?|$)/, `/${SCRATCH}$1`)
-  const db = postgres(scratchUrl, { max: 1, prepare: false, onnotice: () => {} })
+  const db = postgres(scratchUrl, { max: 1, onnotice: () => {}, prepare: false })
 
   const files = readdirSync(dir)
     .filter((f) => f.endsWith('.sql'))
@@ -35,7 +35,9 @@ try {
     const sql = readFileSync(join(dir, f), 'utf8')
     for (const stmt of sql.split('--> statement-breakpoint')) {
       const trimmed = stmt.trim()
-      if (trimmed) await db.unsafe(trimmed)
+      if (trimmed) {
+        await db.unsafe(trimmed)
+      }
     }
   }
 
@@ -49,7 +51,7 @@ try {
       on col.table_name = c.relname and col.column_name = 'tenant_id'
     where n.nspname = 'public' and c.relkind = 'r'
   `
-  const bad = rows.filter((r) => !r.relrowsecurity || !r.relforcerowsecurity)
+  const bad = rows.filter((r) => !(r.relrowsecurity && r.relforcerowsecurity))
   await db.end({ timeout: 5 })
 
   if (bad.length) {

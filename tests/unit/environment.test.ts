@@ -16,7 +16,12 @@ afterEach(() => {
 
 describe('the environment contract', () => {
   it('declares every variable the suite needs, with what each is for', () => {
-    expect(Object.keys(REQUIRED_DATABASE_ENV)).toEqual(['DATABASE_URL', 'APP_DATABASE_URL'])
+    // A SET, not a sequence. The declaration order carries no meaning, and
+    // asserting it made the test fail the moment a linter sorted the keys --
+    // a test asserting something the code never promised.
+    expect(Object.keys(REQUIRED_DATABASE_ENV).sort()).toEqual(
+      ['APP_DATABASE_URL', 'DATABASE_URL'].sort(),
+    )
     for (const [name, why] of Object.entries(REQUIRED_DATABASE_ENV)) {
       expect(why.length, `${name} needs a reason a reviewer can judge`).toBeGreaterThan(20)
     }
@@ -24,7 +29,6 @@ describe('the environment contract', () => {
 
   it('uses the developer fallback on a workstation', () => {
     process.env.CI = undefined
-    // biome-ignore lint/performance/noDelete: the absence is the condition under test
     delete process.env.CI
     delete process.env.APP_DATABASE_URL
     expect(appUrl()).toBe(LOCAL_APP_URL)

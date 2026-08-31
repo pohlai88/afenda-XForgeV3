@@ -36,8 +36,8 @@ declare const verified: unique symbol
 
 /** What the host or route PROPOSED. Untrusted, and typed to say so. */
 export interface CandidateTenant {
-  readonly tenantId: string
   readonly source: 'host' | 'route'
+  readonly tenantId: string
 }
 
 /** Who the session says is calling. Identity only -- never which tenant. */
@@ -51,8 +51,8 @@ export interface Principal {
  * The only value `withTenant` accepts. Constructible only by `verify()`.
  */
 export interface VerifiedTenantContext {
-  readonly tenantId: string
   readonly principalId: string
+  readonly tenantId: string
   readonly [verified]: true
 }
 
@@ -64,7 +64,7 @@ export interface VerifiedTenantContext {
  * the context from here.
  */
 export interface MembershipSource {
-  hasActiveMembership(principalId: string, tenantId: string): Promise<boolean>
+  hasActiveMembership: (principalId: string, tenantId: string) => Promise<boolean>
 }
 
 export type TenantResolution =
@@ -73,18 +73,18 @@ export type TenantResolution =
 
 /** The one cast in the codebase that produces a branded context. */
 const verify = (tenantId: string, principalId: string): VerifiedTenantContext =>
-  ({ tenantId, principalId }) as VerifiedTenantContext
+  ({ principalId, tenantId }) as VerifiedTenantContext
 
 /** A candidate proposed by the hostname. Carries no authority whatsoever. */
 export const candidateFromHost = (tenantId: string): CandidateTenant => ({
-  tenantId,
   source: 'host',
+  tenantId,
 })
 
 /** A candidate proposed by `/app/t/{slug}` where no tenant hostname exists. */
 export const candidateFromRoute = (tenantId: string): CandidateTenant => ({
-  tenantId,
   source: 'route',
+  tenantId,
 })
 
 /**
@@ -99,10 +99,14 @@ export async function resolveTenantContext(
   principal: Principal,
   memberships: MembershipSource,
 ): Promise<TenantResolution> {
-  if (!candidate?.tenantId) return { kind: 'denied', reason: 'no-candidate' }
+  if (!candidate?.tenantId) {
+    return { kind: 'denied', reason: 'no-candidate' }
+  }
   const member = await memberships.hasActiveMembership(principal.id, candidate.tenantId)
-  if (!member) return { kind: 'denied', reason: 'no-membership' }
-  return { kind: 'verified', context: verify(candidate.tenantId, principal.id) }
+  if (!member) {
+    return { kind: 'denied', reason: 'no-membership' }
+  }
+  return { context: verify(candidate.tenantId, principal.id), kind: 'verified' }
 }
 
 /**
@@ -113,8 +117,8 @@ export async function resolveTenantContext(
  * `packages/db` type-imports the verified context from here.
  */
 export interface MembershipQueries {
-  hasActiveMembership(tenantId: string, principalId: string, asOf: Date): Promise<boolean>
-  resolveHostname(hostname: string): Promise<string | null>
+  hasActiveMembership: (tenantId: string, principalId: string, asOf: Date) => Promise<boolean>
+  resolveHostname: (hostname: string) => Promise<string | null>
 }
 
 /**
@@ -131,7 +135,9 @@ export async function resolveRequestTenant(
   asOf: Date,
 ): Promise<TenantResolution> {
   const tenantId = await queries.resolveHostname(hostname)
-  if (!tenantId) return { kind: 'denied', reason: 'no-candidate' }
+  if (!tenantId) {
+    return { kind: 'denied', reason: 'no-candidate' }
+  }
   return resolveTenantContext(candidateFromHost(tenantId), principal, {
     hasActiveMembership: (p, t) => queries.hasActiveMembership(t, p, asOf),
   })

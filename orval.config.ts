@@ -15,24 +15,24 @@ export default defineConfig({
   xforge: {
     input: { target: './contracts/openapi.generated.json' },
     output: {
-      mode: 'split',
-      target: './packages/api-client/src/generated/xforge.ts',
-      schemas: './packages/api-client/src/generated/model',
+      baseUrl: '/api',
       client: 'react-query',
       httpClient: 'fetch',
-      baseUrl: '/api',
       mock: { generators: [{ type: 'msw' }], useExamples: false },
-      prettier: false,
+      mode: 'split',
       override: {
         // Our fetcher throws ApiProblem on !ok and returns parsed JSON on
         // success, so the {data,status,headers} envelope would be a second
         // representation of the same fact. One shape, not two.
         fetch: { includeHttpResponseReturnType: false },
         mutator: {
-          path: './packages/api-client/src/fetcher.ts',
           name: 'apiFetch',
+          path: './packages/api-client/src/fetcher.ts',
         },
       },
+      prettier: false,
+      schemas: './packages/api-client/src/generated/model',
+      target: './packages/api-client/src/generated/xforge.ts',
     },
   },
 })

@@ -25,8 +25,8 @@
  * The `ci-provides-fixture-env` guard asserts the workflow supplies all of it.
  */
 export const REQUIRED_DATABASE_ENV = {
-  DATABASE_URL: 'the OWNER connection: seeds fixtures and performs the T09/T11/T20 mutations',
   APP_DATABASE_URL: 'the APPLICATION connection: non-owner app_user, no BYPASSRLS',
+  DATABASE_URL: 'the OWNER connection: seeds fixtures and performs the T09/T11/T20 mutations',
 } as const
 
 export const LOCAL_OWNER_URL = 'postgres://postgres:xforge@127.0.0.1:55432/xforge'
@@ -41,7 +41,9 @@ export const LOCAL_APP_URL = 'postgres://app_user:app_user_dev_only@127.0.0.1:55
  */
 function url(name: keyof typeof REQUIRED_DATABASE_ENV, developerFallback: string): string {
   const value = process.env[name]
-  if (value) return value
+  if (value) {
+    return value
+  }
   if (process.env.CI === 'true') {
     throw new Error(
       `${name} is not set. ${REQUIRED_DATABASE_ENV[name]}. There is no developer ` +

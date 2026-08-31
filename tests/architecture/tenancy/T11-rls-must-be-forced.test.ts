@@ -28,7 +28,9 @@ import {
 } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 
@@ -103,7 +105,9 @@ describe.skipIf(!reachable)('T11 -- the boundary is RLS, and it is load-bearing'
    * table it has disarmed.
    */
   afterAll(async () => {
-    if (!reachable) return
+    if (!reachable) {
+      return
+    }
     await owner`alter table emergency_contact enable row level security`
     await owner`alter table emergency_contact force row level security`
     await assertBoundaryIntact()

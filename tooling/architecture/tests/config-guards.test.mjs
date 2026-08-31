@@ -30,7 +30,9 @@ import {
 
 const byId = (id) => {
   const g = configGuards.find((x) => x.id === id)
-  if (!g) throw new Error(`no config guard '${id}'`)
+  if (!g) {
+    throw new Error(`no config guard '${id}'`)
+  }
   return g
 }
 
@@ -46,9 +48,9 @@ const goodEnv = () => ({
       ],
     },
   },
-  tsconfig: { exclude: ['node_modules', '**/node_modules', '**/.next', '**/dist'] },
-  gitignore: NON_SOURCE_DIRS.map((d) => `${d}/`).join('\n'),
   files: [],
+  gitignore: NON_SOURCE_DIRS.map((d) => `${d}/`).join('\n'),
+  tsconfig: { exclude: ['node_modules', '**/node_modules', '**/.next', '**/dist'] },
 })
 
 describe('deterministic-source-set', () => {
@@ -231,13 +233,21 @@ describe('the tenancy phase can be certified without tripping law 34', () => {
     // under pressure or waiving the law -- and a law waived once is a law.
     const gaps = []
     for (const a of adrs) {
-      if (stillGrandfathered(a.name, 'tenancy')) continue
-      if (!/FROZEN/.test(a.source)) continue
-      if (!/^##\s+Prior art/m.test(a.source)) gaps.push(`${a.name}: no Prior art section`)
-      if (!/\|\s*20\d\d-\d\d-\d\d\s*\|/.test(a.source) && !/no-direct-match/.test(a.source)) {
+      if (stillGrandfathered(a.name, 'tenancy')) {
+        continue
+      }
+      if (!/FROZEN/.test(a.source)) {
+        continue
+      }
+      if (!/^##\s+Prior art/m.test(a.source)) {
+        gaps.push(`${a.name}: no Prior art section`)
+      }
+      if (!(/\|\s*20\d\d-\d\d-\d\d\s*\|/.test(a.source) || /no-direct-match/.test(a.source))) {
         gaps.push(`${a.name}: no dated source`)
       }
-      if (!/does NOT prove/i.test(a.source)) gaps.push(`${a.name}: no "does NOT prove" section`)
+      if (!/does NOT prove/i.test(a.source)) {
+        gaps.push(`${a.name}: no "does NOT prove" section`)
+      }
     }
     expect(gaps).toEqual([])
   })

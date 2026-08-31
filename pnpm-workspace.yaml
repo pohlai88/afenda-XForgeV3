@@ -2,6 +2,11 @@ packages:
   - 'apps/*'
   - 'modules/*'
   - 'packages/*'
+  # The shared test fixtures are a real workspace package, not a bare tsconfig
+  # path alias. They were the latter, and nothing could DECLARE a dependency on
+  # them -- which is how three packages came to import something the workspace
+  # did not contain. Biome's noUndeclaredDependencies reported it.
+  - 'tests/fixtures'
 
 allowBuilds:
   esbuild: set this to true or false

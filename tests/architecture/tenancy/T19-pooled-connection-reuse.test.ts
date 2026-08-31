@@ -31,16 +31,22 @@ import {
 const single = reachable ? createPostgresDriver(appUrl(), { max: 1 }) : null
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(async () => {
-  if (single) await single.close()
+  if (single) {
+    await single.close()
+  }
   await closeAll()
 })
 
 describe.skipIf(!reachable)('T19 -- no tenant context survives a checkout', () => {
   it('two tenants over ONE connection see only their own rows', async () => {
-    if (!single) return
+    if (!single) {
+      return
+    }
     setDriver(single)
     try {
       const a = await withTenant(await contextFor(TENANT_A), async (sql) => [
@@ -57,7 +63,9 @@ describe.skipIf(!reachable)('T19 -- no tenant context survives a checkout', () =
   })
 
   it('and between them the connection carries no tenant at all', async () => {
-    if (!single) return
+    if (!single) {
+      return
+    }
     setDriver(single)
     try {
       await withTenant(await contextFor(TENANT_A), async (sql) => {
@@ -71,6 +79,12 @@ describe.skipIf(!reachable)('T19 -- no tenant context survives a checkout', () =
           select current_setting('app.tenant_id', true) as t
         `),
       ])
+      // Deliberately loose: `== null` matches undefined too, and an unset
+      // setting arrives as either. Narrowing this to `=== null` -- which a
+      // linter's automatic fix did -- makes the assertion pass only for one of
+      // the two shapes of "no tenant context", in the test whose whole subject
+      // is that there is none.
+      // biome-ignore lint/suspicious/noEqualsToNull: matches undefined too, see above
       expect(row?.t == null || row.t === '').toBe(true)
     } finally {
       setDriver(driver)

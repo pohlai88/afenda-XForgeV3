@@ -17,7 +17,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeAll, HOST_A, MEMBER_OF_BOTH, reachable, resolveFor, seed, TENANT_A } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 
@@ -25,10 +27,15 @@ const ROOT = join(import.meta.dirname, '../../..')
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    if (entry === 'node_modules' || entry === '.next' || entry === '.turbo') continue
+    if (entry === 'node_modules' || entry === '.next' || entry === '.turbo') {
+      continue
+    }
     const full = join(dir, entry)
-    if (statSync(full).isDirectory()) sourceFiles(full, out)
-    else if (/\.tsx?$/.test(entry)) out.push(full)
+    if (statSync(full).isDirectory()) {
+      sourceFiles(full, out)
+    } else if (/\.tsx?$/.test(entry)) {
+      out.push(full)
+    }
   }
   return out
 }
@@ -55,7 +62,7 @@ describe('T17 -- the header is a hint, not a claim', () => {
 
   it.skipIf(!reachable)("a session claiming tenant B does not move A's host to B", async () => {
     const resolved = await resolveFor(HOST_A, MEMBER_OF_BOTH)
-    expect(resolved).toMatchObject({ kind: 'verified', context: { tenantId: TENANT_A } })
+    expect(resolved).toMatchObject({ context: { tenantId: TENANT_A }, kind: 'verified' })
   })
 
   it('no application code reads a tenant-bearing header', () => {
@@ -63,7 +70,9 @@ describe('T17 -- the header is a hint, not a claim', () => {
     for (const dir of ['apps', 'modules', 'packages']) {
       for (const file of sourceFiles(join(ROOT, dir))) {
         const src = readFileSync(file, 'utf8')
-        if (readsTenantHeader(src)) offenders.push(file.slice(ROOT.length + 1))
+        if (readsTenantHeader(src)) {
+          offenders.push(file.slice(ROOT.length + 1))
+        }
       }
     }
     expect(offenders).toEqual([])

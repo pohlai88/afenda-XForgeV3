@@ -1,0 +1,9 @@
+{
+  "$comment": "Project-scoped MCP servers. The Next.js dev server exposes one at /_next/mcp while `next dev` is running -- it surfaces runtime errors, route and build state from the live server rather than from a log scrape. It is a DEVELOPMENT aid and nothing in `pnpm verify` depends on it: a gate that needed a dev server running would be a gate that cannot run in CI.",
+  "mcpServers": {
+    "nextjs": {
+      "type": "http",
+      "url": "http://localhost:3000/_next/mcp"
+    }
+  }
+}

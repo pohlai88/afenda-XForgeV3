@@ -16,13 +16,13 @@ const T = '11111111-1111-1111-1111-111111111111'
 const OTHER = '22222222-2222-2222-2222-222222222222'
 const READ = 'hr.employee.read'
 
-const principal = (grants: Grant[]): Principal => ({ id: 'u1', kind: 'user', grants })
+const principal = (grants: Grant[]): Principal => ({ grants, id: 'u1', kind: 'user' })
 const at = '2026-08-31T00:00:00.000Z'
 const ctx = (grants: Grant[], scopeId?: string) => ({
-  principal: principal(grants),
-  tenantId: T,
-  scopeId,
   asOf: at,
+  principal: principal(grants),
+  scopeId,
+  tenantId: T,
 })
 
 describe('evaluate', () => {
@@ -33,7 +33,7 @@ describe('evaluate', () => {
   it('allows a matching tenant-scoped grant', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'tenant' },
-      ctx([{ permission: READ, scopeType: 'tenant', scopeId: T }]),
+      ctx([{ permission: READ, scopeId: T, scopeType: 'tenant' }]),
     )
     expect(r.allowed).toBe(true)
     // The grant that allowed it, so an audit record can name the authority
@@ -52,7 +52,7 @@ describe('evaluate', () => {
     // and conflating them is how a scope bug gets fixed by widening a role.
     const r = evaluate(
       { permission: READ, scopeType: 'legal_entity' },
-      ctx([{ permission: READ, scopeType: 'legal_entity', scopeId: 'MY01' }], 'MY02'),
+      ctx([{ permission: READ, scopeId: 'MY01', scopeType: 'legal_entity' }], 'MY02'),
     )
     expect(r).toMatchObject({ allowed: false, reason: 'scope_mismatch' })
   })
@@ -60,7 +60,7 @@ describe('evaluate', () => {
   it('scope_mismatch for a tenant grant issued to a DIFFERENT tenant', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'tenant' },
-      ctx([{ permission: READ, scopeType: 'tenant', scopeId: OTHER }]),
+      ctx([{ permission: READ, scopeId: OTHER, scopeType: 'tenant' }]),
     )
     expect(r).toMatchObject({ allowed: false, reason: 'scope_mismatch' })
   })
@@ -68,7 +68,7 @@ describe('evaluate', () => {
   it('scope_mismatch when a non-tenant scope has no scopeId supplied', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'legal_entity' },
-      ctx([{ permission: READ, scopeType: 'legal_entity', scopeId: 'MY01' }]),
+      ctx([{ permission: READ, scopeId: 'MY01', scopeType: 'legal_entity' }]),
     )
     expect(r).toMatchObject({ allowed: false, reason: 'scope_mismatch' })
   })
@@ -79,8 +79,8 @@ describe('evaluate', () => {
       ctx([
         {
           permission: READ,
-          scopeType: 'tenant',
           scopeId: T,
+          scopeType: 'tenant',
           validTo: '2026-08-30T00:00:00.000Z',
         },
       ]),
@@ -94,8 +94,8 @@ describe('evaluate', () => {
       ctx([
         {
           permission: READ,
-          scopeType: 'tenant',
           scopeId: T,
+          scopeType: 'tenant',
           validFrom: '2026-09-01T00:00:00.000Z',
         },
       ]),
@@ -106,13 +106,13 @@ describe('evaluate', () => {
   it('scope_type_unknown DENIES rather than ignoring the check', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'galaxy' as never },
-      ctx([{ permission: READ, scopeType: 'tenant', scopeId: T }]),
+      ctx([{ permission: READ, scopeId: T, scopeType: 'tenant' }]),
     )
     expect(r).toMatchObject({ allowed: false, reason: 'scope_type_unknown' })
   })
 
   it('allows a legal-entity grant only for the matching entity', () => {
-    const grants: Grant[] = [{ permission: READ, scopeType: 'legal_entity', scopeId: 'MY01' }]
+    const grants: Grant[] = [{ permission: READ, scopeId: 'MY01', scopeType: 'legal_entity' }]
     const decl = { permission: READ, scopeType: 'legal_entity' } as const
     expect(evaluate(decl, ctx(grants, 'MY01')).allowed).toBe(true)
     expect(evaluate(decl, ctx(grants, 'MY02')).allowed).toBe(false)
@@ -122,13 +122,13 @@ describe('evaluate', () => {
     // The regression that matters: policy must not carry its own opinion about
     // which tenant this is. A grant for tenant T is worthless when the verified
     // context says the request is in OTHER.
-    const grants: Grant[] = [{ permission: READ, scopeType: 'tenant', scopeId: T }]
+    const grants: Grant[] = [{ permission: READ, scopeId: T, scopeType: 'tenant' }]
     const decl = { permission: READ, scopeType: 'tenant' } as const
-    expect(evaluate(decl, { principal: principal(grants), tenantId: T, asOf: at }).allowed).toBe(
+    expect(evaluate(decl, { asOf: at, principal: principal(grants), tenantId: T }).allowed).toBe(
       true,
     )
     expect(
-      evaluate(decl, { principal: principal(grants), tenantId: OTHER, asOf: at }).allowed,
+      evaluate(decl, { asOf: at, principal: principal(grants), tenantId: OTHER }).allowed,
     ).toBe(false)
   })
 })

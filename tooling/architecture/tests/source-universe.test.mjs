@@ -20,7 +20,9 @@ import { configGuards } from '../config-guards.mjs'
 
 const guard = (id) => {
   const g = configGuards.find((x) => x.id === id)
-  if (!g) throw new Error(`no config guard '${id}'`)
+  if (!g) {
+    throw new Error(`no config guard '${id}'`)
+  }
   return g
 }
 
@@ -46,7 +48,7 @@ describe('tests and config are classified, not treated as output', () => {
     ['packages/api/tests/policy-declaration.test.ts', 'test'],
     ['modules/hr/tests/emergency-contacts.contract.test.ts', 'test'],
     ['e2e/emergency-contacts.spec.ts', 'test'],
-    ['biome.json', 'config'],
+    ['biome.jsonc', 'config'],
     ['tsconfig.json', 'config'],
     ['vitest.config.ts', 'config'],
     ['.gitignore', 'config'],
@@ -78,7 +80,9 @@ describe('generated source is classified explicitly, not as output', () => {
   })
 
   it('every declared generated file classifies as generated', () => {
-    for (const f of GENERATED_FILES) expect(classify(`apps/web/${f}`)).toBe('generated')
+    for (const f of GENERATED_FILES) {
+      expect(classify(`apps/web/${f}`)).toBe('generated')
+    }
   })
 
   it('a source file merely NAMED like generated state stays source', () => {

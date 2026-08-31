@@ -21,7 +21,32 @@
  * one.
  */
 
+import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { classify } from '../../source-universe.mjs'
+
+/**
+ * Business module names, read from the filesystem.
+ *
+ * Not a pattern, and not a list. This guard used to match specifiers
+ * containing `modules/` -- and modules are imported by PACKAGE NAME,
+ * `@xforge/hr`, so it had never caught a real violation. Its fixture used
+ * `@xforge/modules/payroll/...`, a shape nothing in this repository writes, and
+ * passed happily against it.
+ *
+ * The directory is the authority: a module added tomorrow is covered without
+ * anyone remembering to extend a pattern.
+ */
+const MODULES_DIR = join(import.meta.dirname, '../../../modules')
+const BUSINESS_MODULES = existsSync(MODULES_DIR)
+  ? readdirSync(MODULES_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+  : []
+
+const isBusinessModule = (spec) =>
+  /(?:^|@xforge[/])modules?[/]/.test(spec) ||
+  BUSINESS_MODULES.some((m) => spec === `@xforge/${m}` || spec.startsWith(`@xforge/${m}/`))
 
 /**
  * Test files, decided by the ONE classification authority rather than by each
@@ -44,9 +69,22 @@ function imports(src) {
   const out = []
   const re = /(?:^|\n)\s*(?:import\b[^;]*?from\s*|import\s*|export\b[^;]*?from\s*)['"]([^'"]+)['"]/g
   let m
-  while ((m = re.exec(src)) !== null) out.push({ spec: m[1], at: m.index })
+  while ((m = re.exec(src)) !== null) {
+    out.push({ at: m.index, spec: m[1] })
+  }
   const req = /require\(\s*['"]([^'"]+)['"]\s*\)/g
-  while ((m = req.exec(src)) !== null) out.push({ spec: m[1], at: m.index })
+  while ((m = req.exec(src)) !== null) {
+    out.push({ at: m.index, spec: m[1] })
+  }
+
+  // DYNAMIC imports. This helper matched only static forms and `require`, so a
+  // platform package could `await import('@xforge/hr')` and kernel-independence
+  // would say nothing. Biome's noUndeclaredDependencies found the gap by
+  // reporting a dependency the guard had never noticed.
+  const dyn = /(?<![.$\w])import\s*[(]\s*['"]([^'"]+)['"]/g
+  while ((m = dyn.exec(src)) !== null) {
+    out.push({ at: m.index, spec: m[1] })
+  }
   return out
 }
 
@@ -75,10 +113,6 @@ const moduleOf = (f) => (f.match(/^modules\/([^/]+)\//) || [])[1]
 
 export const guards = [
   {
-    id: 'ui-no-data-imports',
-    law: 6,
-    precision: 'text',
-    title: 'UI never imports repositories, Drizzle or a DB handle',
     applies: (f) => isUiFile(f),
     check(f, src) {
       const bad =
@@ -91,12 +125,12 @@ export const guards = [
           message: `UI imports data layer: ${i.spec}`,
         }))
     },
+    id: 'ui-no-data-imports',
+    law: 6,
+    precision: 'text',
+    title: 'UI never imports repositories, Drizzle or a DB handle',
   },
   {
-    id: 'module-boundaries',
-    law: 16,
-    precision: 'text',
-    title: 'Modules never import another module private internals',
     applies: (f) => !!moduleOf(f),
     check(f, src) {
       const self = moduleOf(f)
@@ -105,12 +139,17 @@ export const guards = [
           const m =
             i.spec.match(/(?:^|@xforge\/)modules?\/([^/]+)\/(.+)$/) ||
             i.spec.match(/^\.\.\/\.\.\/([^/]+)\/(.+)$/)
-          if (!m) return null
-          const other = m[1]
-          const rest = m[2]
-          if (other === self) return null
+          if (!m) {
+            return null
+          }
+          const [, other, rest] = m
+          if (other === self) {
+            return null
+          }
           // Public surface only: contract, application interface, events, manifest.
-          if (/^(contract|application|events|manifest)/.test(rest)) return null
+          if (/^(contract|application|events|manifest)/.test(rest)) {
+            return null
+          }
           return {
             file: f,
             line: line(src, i.at),
@@ -119,28 +158,31 @@ export const guards = [
         })
         .filter(Boolean)
     },
-  },
-  {
-    id: 'kernel-independence',
+    id: 'module-boundaries',
     law: 16,
     precision: 'text',
-    title: 'Platform packages never import a business module',
-    applies: (f) => /^packages\//.test(f),
+    title: 'Modules never import another module private internals',
+  },
+  {
+    // Tests are exempt, deliberately: packages/api's policy-coverage test
+    // mounts the REAL hr routes, because a coverage proof against invented
+    // routes proves nothing about the ones that ship.
+    applies: (f) => /^packages\//.test(f) && notATest(f),
     check(f, src) {
       return imports(src)
-        .filter((i) => /(?:^|@xforge\/)modules?\//.test(i.spec))
+        .filter((i) => isBusinessModule(i.spec))
         .map((i) => ({
           file: f,
           line: line(src, i.at),
           message: `platform package imports business module: ${i.spec}`,
         }))
     },
+    id: 'kernel-independence',
+    law: 16,
+    precision: 'text',
+    title: 'Platform packages never import a business module',
   },
   {
-    id: 'route-policy-declaration',
-    law: 4,
-    precision: 'text',
-    title: 'Every route contract declares a policy (ADR-014)',
     applies: (f) => /^modules\/[^/]+\/contract\/.*routes?\.(ts|mts)$/.test(f),
     check(f, src) {
       const out = []
@@ -150,11 +192,14 @@ export const guards = [
         let depth = 0
         let i = m.index + m[0].length - 1
         const start = i
-        for (; i < src.length; i++) {
-          if (src[i] === '{') depth++
-          else if (src[i] === '}') {
-            depth--
-            if (depth === 0) break
+        for (; i < src.length; i += 1) {
+          if (src[i] === '{') {
+            depth += 1
+          } else if (src[i] === '}') {
+            depth -= 1
+            if (depth === 0) {
+              break
+            }
           }
         }
         if (!/\bpolicy\s*:/.test(src.slice(start, i + 1))) {
@@ -167,12 +212,12 @@ export const guards = [
       }
       return out
     },
+    id: 'route-policy-declaration',
+    law: 4,
+    precision: 'text',
+    title: 'Every route contract declares a policy (ADR-014)',
   },
   {
-    id: 'country-branching-in-core',
-    law: 23,
-    precision: 'text',
-    title: 'No country conditionals outside localisation and compliance',
     applies: (f) => !/^packages\/(localisation|compliance)\//.test(f),
     check(f, src) {
       const re = /\b(?:country|jurisdiction)\w*\s*(?:===|!==|==)\s*['"](MY|SG|VN|ID|TH|PH)['"]/g
@@ -187,19 +232,21 @@ export const guards = [
       }
       return out
     },
+    id: 'country-branching-in-core',
+    law: 23,
+    precision: 'text',
+    title: 'No country conditionals outside localisation and compliance',
   },
   {
-    id: 'money-float',
-    law: 19,
-    precision: 'text',
-    title: 'No float arithmetic in money code paths',
     applies: (f) => /(^packages\/money\/)|(^modules\/payroll\/)|money|amount|payslip/i.test(f),
     check(f, src) {
       const out = []
       for (const re of [/\bparseFloat\s*\(/g, /\.toFixed\s*\(/g]) {
         let m
         while ((m = re.exec(src)) !== null) {
-          if (isNonCallContext(src, m.index)) continue
+          if (isNonCallContext(src, m.index)) {
+            continue
+          }
           out.push({
             file: f,
             line: line(src, m.index),
@@ -209,15 +256,17 @@ export const guards = [
       }
       return out
     },
+    id: 'money-float',
+    law: 19,
+    precision: 'text',
+    title: 'No float arithmetic in money code paths',
   },
   {
-    id: 'server-action-business-mutation',
-    law: 5,
-    precision: 'text',
-    title: 'No business mutation through a Server Action',
     applies: (f) => /^(apps|modules)\//.test(f),
     check(f, src) {
-      if (!/^\s*['"]use server['"]/m.test(src)) return []
+      if (!/^\s*['"]use server['"]/m.test(src)) {
+        return []
+      }
       const re = /\b(insert|update|delete|repository|command)\b\s*[.(]/g
       const out = []
       let m
@@ -233,12 +282,12 @@ export const guards = [
       }
       return out.slice(0, 1)
     },
+    id: 'server-action-business-mutation',
+    law: 5,
+    precision: 'text',
+    title: 'No business mutation through a Server Action',
   },
   {
-    id: 'job-sdk-in-domain',
-    law: 30,
-    precision: 'text',
-    title: 'Business modules never import a job-provider SDK',
     applies: (f) => /^modules\//.test(f),
     check(f, src) {
       return imports(src)
@@ -249,19 +298,19 @@ export const guards = [
           message: `job-provider SDK in a business module: ${i.spec} -- use packages/jobs`,
         }))
     },
+    id: 'job-sdk-in-domain',
+    law: 30,
+    precision: 'text',
+    title: 'Business modules never import a job-provider SDK',
   },
   {
-    id: 'effective-dated-recorded-at',
-    law: 20,
-    precision: 'text',
-    title: 'Effective-dated tables carry recorded_at (ADR-016)',
     applies: (f) => /^packages\/db\//.test(f) || /schema.*\.(ts|mts)$/.test(f),
     check(f, src) {
       const out = []
       const re = /export\s+const\s+(\w+)\s*=\s*pgTable[\s\S]{0,4000}?\n\}/g
       let m
       while ((m = re.exec(src)) !== null) {
-        const block = m[0]
+        const [block] = m
         if (/effective_?[Ff]rom/.test(block) && !/recorded_?[Aa]t/.test(block)) {
           out.push({
             file: f,
@@ -275,19 +324,21 @@ export const guards = [
       }
       return out
     },
+    id: 'effective-dated-recorded-at',
+    law: 20,
+    precision: 'text',
+    title: 'Effective-dated tables carry recorded_at (ADR-016)',
   },
   {
-    id: 'no-wall-clock-in-modules',
-    law: 21,
-    precision: 'text',
-    title: 'Civil dates come from businessToday(legalEntityId), never the runtime clock (ADR-016)',
     applies: (f) => /^modules\//.test(f) && notATest(f),
     check(f, src) {
       const out = []
       for (const re of [/\bnew Date\s*\(\s*\)/g, /\bDate\.now\s*\(\s*\)/g, /\bnow\(\)::date\b/g]) {
         let m
         while ((m = re.exec(src)) !== null) {
-          if (isNonCallContext(src, m.index)) continue
+          if (isNonCallContext(src, m.index)) {
+            continue
+          }
           out.push({
             file: f,
             line: line(src, m.index),
@@ -300,12 +351,12 @@ export const guards = [
       }
       return out
     },
+    id: 'no-wall-clock-in-modules',
+    law: 21,
+    precision: 'text',
+    title: 'Civil dates come from businessToday(legalEntityId), never the runtime clock (ADR-016)',
   },
   {
-    id: 'ai-tool-no-data-access',
-    law: 26,
-    precision: 'text',
-    title: 'AI tools never reach a repository or a database handle',
     applies: (f) => /^packages\/ai\//.test(f),
     check(f, src) {
       const bad = /(^|\/)(drizzle-orm)($|\/)|^@xforge\/db($|\/)|(^|\/)(infrastructure|repository)\//
@@ -317,19 +368,21 @@ export const guards = [
           message: `AI package imports a data path: ${i.spec} -- tools call application commands`,
         }))
     },
+    id: 'ai-tool-no-data-access',
+    law: 26,
+    precision: 'text',
+    title: 'AI tools never reach a repository or a database handle',
   },
   {
-    id: 'legal-entity-binding',
-    law: 15,
-    precision: 'text',
-    title: 'Payroll repository calls bind legalEntityId (ADR-009)',
     applies: (f) => /^modules\/payroll\/infrastructure\//.test(f),
     check(f, src) {
       const out = []
       const re = /export\s+(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/g
       let m
       while ((m = re.exec(src)) !== null) {
-        if (m[1].startsWith('__')) continue // test seams
+        if (m[1].startsWith('__')) {
+          continue // test seams
+        }
         if (!/legalEntityId/.test(m[2])) {
           out.push({
             file: f,
@@ -343,28 +396,32 @@ export const guards = [
       }
       return out
     },
+    id: 'legal-entity-binding',
+    law: 15,
+    precision: 'text',
+    title: 'Payroll repository calls bind legalEntityId (ADR-009)',
   },
   {
-    id: 'platform-access-outside-admin',
-    law: 12,
-    precision: 'text',
-    title: 'withPlatformAccess is confined to explicitly privileged locations',
     // packages/db DEFINES it, and a declaration is not a call. The allowlist is
     // deliberately short and enumerable: ordinary HR and payroll code must never
     // discover this as "the convenient helper that fixes my RLS error". If
     // platform access becomes the answer whenever a query is inconvenient, the
     // RLS architecture becomes decorative one call site at a time.
     applies: (f) =>
-      !/^packages\/db\//.test(f) &&
-      !/^apps\/admin\//.test(f) &&
-      !/^packages\/tenancy\/platform\//.test(f) &&
-      !/^tooling\/operations\//.test(f),
+      !(
+        /^packages\/db\//.test(f) ||
+        /^apps\/admin\//.test(f) ||
+        /^packages\/tenancy\/platform\//.test(f) ||
+        /^tooling\/operations\//.test(f)
+      ),
     check(f, src) {
       const out = []
       const re = /(?<![.\w])withPlatformAccess\s*\(/g
       let m
       while ((m = re.exec(src)) !== null) {
-        if (isNonCallContext(src, m.index)) continue
+        if (isNonCallContext(src, m.index)) {
+          continue
+        }
         out.push({
           file: f,
           line: line(src, m.index),
@@ -374,13 +431,13 @@ export const guards = [
       }
       return out
     },
+    id: 'platform-access-outside-admin',
+    law: 12,
+    precision: 'text',
+    title: 'withPlatformAccess is confined to explicitly privileged locations',
   },
 
   {
-    id: 'no-forged-tenant-context',
-    law: 13,
-    precision: 'text',
-    title: 'VerifiedTenantContext is constructed only inside packages/tenancy',
     // ADR-022. The branded type makes `withTenant(request.body.tenantId, ...)`
     // a compile error -- but only while the brand cannot be forged. One
     // exported cast helper, or one `as VerifiedTenantContext` in a handler that
@@ -408,13 +465,13 @@ export const guards = [
       }
       return out
     },
+    id: 'no-forged-tenant-context',
+    law: 13,
+    precision: 'text',
+    title: 'VerifiedTenantContext is constructed only inside packages/tenancy',
   },
 
   {
-    id: 'tenancy-primitives-confined',
-    law: 12,
-    precision: 'text',
-    title: 'The pre-context tenancy queries are confined to the resolution path',
     // ADR-023. hasActiveMembership and resolveHostname reach the database
     // BEFORE a tenant is bound, which is the one thing law 12 otherwise
     // forbids. They are safe because neither hands out a client -- but only
@@ -430,7 +487,9 @@ export const guards = [
       const re = /(?<![.\w])(?:hasActiveMembership|resolveHostname|tenancyDriver)\s*[(]/g
       let m
       while ((m = re.exec(src)) !== null) {
-        if (isNonCallContext(src, m.index)) continue
+        if (isNonCallContext(src, m.index)) {
+          continue
+        }
         out.push({
           file: f,
           line: line(src, m.index),
@@ -441,13 +500,13 @@ export const guards = [
       }
       return out
     },
+    id: 'tenancy-primitives-confined',
+    law: 12,
+    precision: 'text',
+    title: 'The pre-context tenancy queries are confined to the resolution path',
   },
 
   {
-    id: 'db-access-outside-repository',
-    law: 12,
-    precision: 'text',
-    title: 'A business module reaches the database only from its repository layer',
     // architecture-final.md 23.1 listed this guard. It was never implemented,
     // and the matrix found the gap rather than a code review: T13 asks for a
     // guard failure and there was no guard to fail.
@@ -458,7 +517,9 @@ export const guards = [
     // reaching around the layer that owns the queries.
     applies: (f) => /^modules[/]/.test(f) && notATest(f),
     check(f, src) {
-      if (/^modules[/][^/]+[/]infrastructure[/]/.test(f)) return []
+      if (/^modules[/][^/]+[/]infrastructure[/]/.test(f)) {
+        return []
+      }
       return imports(src)
         .filter((i) => /^@xforge[/]db($|[/])|(^|[/])drizzle-orm($|[/])/.test(i.spec))
         .map((i) => ({
@@ -469,13 +530,13 @@ export const guards = [
             'queries live in infrastructure/, reached through withTenant',
         }))
     },
+    id: 'db-access-outside-repository',
+    law: 12,
+    precision: 'text',
+    title: 'A business module reaches the database only from its repository layer',
   },
 
   {
-    id: 'no-bespoke-styling',
-    law: 6,
-    precision: 'text',
-    title: 'Business screens compose primitives; they do not style',
     // Phase 2's exit criterion is a screen built entirely from system
     // primitives with NO BESPOKE CSS. That is a habit until something checks
     // it, and habits are what the first urgent screen abandons -- one
@@ -505,13 +566,13 @@ export const guards = [
       }
       return out
     },
+    id: 'no-bespoke-styling',
+    law: 6,
+    precision: 'text',
+    title: 'Business screens compose primitives; they do not style',
   },
 
   {
-    id: 'tokens-are-the-authority',
-    law: 7,
-    precision: 'text',
-    title: 'The design system stylesheet holds no literal design values',
     // Law 7: every fact has one authoritative source. A hex code in the
     // stylesheet is a colour with two homes -- the token file and here -- and
     // the eighth instance of the defect this repository keeps having.
@@ -535,6 +596,10 @@ export const guards = [
       }
       return out
     },
+    id: 'tokens-are-the-authority',
+    law: 7,
+    precision: 'text',
+    title: 'The design system stylesheet holds no literal design values',
   },
 ]
 

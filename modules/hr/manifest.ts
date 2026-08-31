@@ -6,22 +6,22 @@
  * without a tombstone fails CI too.
  */
 export default {
-  id: 'hr',
-  version: '0.1.0',
+  /** ADR-008: which country-pack contributions this module consumes. */
+  countryContributions: [] as const,
   dependencies: [] as const,
+  entities: ['emergency_contact'] as const,
+  eventsConsumed: [] as const,
+  eventsEmitted: [] as const,
+  featureFlags: [] as const,
+  id: 'hr',
+  navigation: [{ id: 'hr.employees', label: 'Employees', path: '/employees' }] as const,
   optionalIntegrations: [] as const,
+  /** ADR-017: effective-dated facts payroll treats as inputs. None yet. */
+  payrollInputs: [] as const,
   permissions: [
     { code: 'hr.employee.read', status: 'active' },
     { code: 'hr.employee.update', status: 'active' },
   ] as const,
-  navigation: [{ id: 'hr.employees', path: '/employees', label: 'Employees' }] as const,
-  entities: ['emergency_contact'] as const,
-  eventsEmitted: [] as const,
-  eventsConsumed: [] as const,
+  version: '0.1.0',
   workflows: [] as const,
-  /** ADR-008: which country-pack contributions this module consumes. */
-  countryContributions: [] as const,
-  /** ADR-017: effective-dated facts payroll treats as inputs. None yet. */
-  payrollInputs: [] as const,
-  featureFlags: [] as const,
 } as const

@@ -9,21 +9,24 @@
 import type { RouteDefinition } from '@xforge/api'
 import type { VerifiedTenantContext } from '@xforge/tenancy'
 import type { Context } from 'hono'
+
+export { hrRoutes } from './contract/routes'
+
 import { hrRoutes } from './contract/routes'
 import * as repo from './infrastructure/repository/emergency-contact'
 
 const toContact = (r: repo.EmergencyContactRow) => ({
-  id: r.id,
   employeeId: r.employeeId,
+  id: r.id,
   name: r.name,
-  relationship: r.relationship,
   phone: r.phone,
+  relationship: r.relationship,
   version: r.version,
 })
 
 const problem = (c: Context, status: 404 | 409 | 422, title: string, detail: string) =>
   c.json(
-    { type: 'about:blank', title, status, detail, instance: c.req.path, request_id: null },
+    { detail, instance: c.req.path, request_id: null, status, title, type: 'about:blank' },
     status,
     { 'content-type': 'application/problem+json' },
   )
@@ -35,7 +38,9 @@ const problem = (c: Context, status: 404 | 409 | 422, title: string, detail: str
  */
 const tenantOf = (c: Context): VerifiedTenantContext => {
   const ctx = c.get('tenant')
-  if (!ctx) throw new Error('no verified tenant context on request')
+  if (!ctx) {
+    throw new Error('no verified tenant context on request')
+  }
   return ctx
 }
 
@@ -86,5 +91,3 @@ export const hrModuleRoutes: RouteDefinition[] = [
     },
   },
 ]
-
-export { hrRoutes }

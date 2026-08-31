@@ -24,12 +24,16 @@ const TENANT_TABLES = ['emergency_contact', 'tenant_membership'] as const
 let app!: ReturnType<typeof postgres>
 
 beforeAll(async () => {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await seed()
   app = postgres(appUrl(), { max: 1, prepare: false })
 })
 afterAll(async () => {
-  if (reachable) await app.end({ timeout: 5 })
+  if (reachable) {
+    await app.end({ timeout: 5 })
+  }
   await closeAll()
 })
 

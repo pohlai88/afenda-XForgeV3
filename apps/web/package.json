@@ -4,21 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start"
   },
   "dependencies": {
-    "next": "^16.2.11",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@tanstack/react-query": "^5.60.0",
     "@xforge/api": "workspace:*",
     "@xforge/api-client": "workspace:*",
-    "hono": "^4.9.0",
+    "@xforge/db": "workspace:*",
+    "@xforge/hr": "workspace:*",
     "@xforge/policy": "workspace:*",
     "@xforge/tenancy": "workspace:*",
+    "@xforge/tokens": "workspace:*",
     "@xforge/ui": "workspace:*",
-    "@xforge/tokens": "workspace:*"
+    "hono": "^4.9.0",
+    "next": "^16.2.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

@@ -7,11 +7,11 @@
  */
 
 export interface Problem {
-  type: string;
-  title: string;
-  status: number;
   detail: string;
   instance?: string;
   /** @nullable */
   request_id?: string | null;
+  status: number;
+  title: string;
+  type: string;
 }

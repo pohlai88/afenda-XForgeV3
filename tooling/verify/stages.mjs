@@ -50,8 +50,8 @@ import {
  */
 const unmet = (stage, needs) =>
   phaseHasStarted(stage.phase)
-    ? { status: BLOCKED, detail: `${stage.phase} phase has started but ${needs} is missing` }
-    : { status: PENDING, detail: `activates in the ${stage.phase} phase (needs ${needs})` }
+    ? { detail: `${stage.phase} phase has started but ${needs} is missing`, status: BLOCKED }
+    : { detail: `activates in the ${stage.phase} phase (needs ${needs})`, status: PENDING }
 
 const hasGit = () => existsSync(join(ROOT, '.git'))
 
@@ -74,35 +74,38 @@ const _NL = String.fromCharCode(10)
 
 export const stages = [
   {
+    enforces: [27],
     id: 'generate',
     phase: 'spine',
-    title: 'generate cleanliness',
-    enforces: [27],
     run() {
       if (!existsSync(join(ROOT, 'contracts'))) {
         return {
-          status: BLOCKED,
           detail: 'spine phase has started but contracts/ or the generator is missing',
+          status: BLOCKED,
         }
       }
-      if (!hasGit()) return unmet(this, 'a git repository to diff generated output')
+      if (!hasGit()) {
+        return unmet(this, 'a git repository to diff generated output')
+      }
       const gen = run('pnpm', ['-s', 'generate'])
-      if (gen.code !== 0) return { status: FAIL, detail: `pnpm generate failed\n${gen.out}` }
+      if (gen.code !== 0) {
+        return { detail: `pnpm generate failed\n${gen.out}`, status: FAIL }
+      }
       // Scoped to GENERATED paths only. Diffing the whole tree would fail on
       // any uncommitted hand-written work, making the gate unusable during
       // development -- and an ignored gate is the same as no gate.
       const diff = run('git', ['diff', '--exit-code', '--stat', '--', ...GENERATED_PATHS])
       return diff.code === 0
-        ? { status: PASS, detail: 'generated state is clean' }
-        : { status: FAIL, detail: `generated state drifted:\n${diff.out}` }
+        ? { detail: 'generated state is clean', status: PASS }
+        : { detail: `generated state drifted:\n${diff.out}`, status: FAIL }
     },
+    title: 'generate cleanliness',
   },
 
   {
+    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30, 34],
     id: 'guards',
     phase: 'spine',
-    title: 'architecture guards',
-    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30, 34],
     run() {
       const { files, checked, violations: sourceViolations } = scanWorkspace()
 
@@ -130,33 +133,33 @@ export const stages = [
         const detail = violations
           .map((v) => `  ${v.guard} (law ${v.law})  ${v.file}:${v.line}  ${v.message}`)
           .join('\n')
-        return { status: FAIL, detail: `${violations.length} violation(s):\n${detail}` }
+        return { detail: `${violations.length} violation(s):\n${detail}`, status: FAIL }
       }
       const mut = mutationTest()
       const broken = mut.filter((r) => r.status === 'BROKEN')
       if (broken.length > 0) {
         return {
-          status: FAIL,
           detail: `guard(s) no longer reject their own violation fixture:\n${broken
             .map((b) => `  ${b.guard}: ${b.detail}`)
             .join('\n')}`,
+          status: FAIL,
         }
       }
       const proven = mut.filter((r) => r.status === 'PROVEN').length
       const unproven = mut.filter((r) => r.status === 'UNPROVEN')
       if (unproven.length > 0) {
         return {
-          status: FAIL,
           detail:
             'guard(s) without a mutation fixture -- unproven guards are not trusted:' +
             '\n' +
             unproven.map((u) => `  ${u.guard}`).join('\n'),
+          status: FAIL,
         }
       }
       if (files === 0) {
         return {
-          status: EMPTY,
           detail: `no source files yet; ${proven} guards proven against fixtures`,
+          status: EMPTY,
         }
       }
       const contractNote = contract.present
@@ -164,47 +167,57 @@ export const stages = [
         : ', no contract yet'
       const configNote = `, ${config.checked} config guards`
       return {
-        status: PASS,
         detail: `${checked} file-checks${contractNote}${configNote}, ${proven} guards proven`,
+        status: PASS,
       }
     },
+    title: 'architecture guards',
   },
 
   {
+    enforces: [9],
     id: 'typecheck',
     phase: 'spine',
-    title: 'typecheck',
-    enforces: [9],
     run() {
-      if (!workspaceHasPackages()) return { status: EMPTY, detail: 'no packages to typecheck' }
-      if (!hasBin('tsc')) return unmet(this, 'typescript')
+      if (!workspaceHasPackages()) {
+        return { detail: 'no packages to typecheck', status: EMPTY }
+      }
+      if (!hasBin('tsc')) {
+        return unmet(this, 'typescript')
+      }
       const r = run('pnpm', ['-s', 'exec', 'tsc', '--noEmit'])
       return r.code === 0
-        ? { status: PASS, detail: 'no type errors' }
-        : { status: FAIL, detail: r.out }
+        ? { detail: 'no type errors', status: PASS }
+        : { detail: r.out, status: FAIL }
     },
+    title: 'typecheck',
   },
 
   {
+    enforces: [],
     id: 'lint',
     phase: 'spine',
-    title: 'format / lint',
-    enforces: [],
     run() {
-      if (!workspaceHasPackages()) return { status: EMPTY, detail: 'no packages to lint' }
-      if (!hasBin('biome')) return unmet(this, '@biomejs/biome')
+      if (!workspaceHasPackages()) {
+        return { detail: 'no packages to lint', status: EMPTY }
+      }
+      if (!hasBin('biome')) {
+        return unmet(this, '@biomejs/biome')
+      }
       const r = run('pnpm', ['-s', 'exec', 'biome', 'ci', '.'])
-      return r.code === 0 ? { status: PASS, detail: 'clean' } : { status: FAIL, detail: r.out }
+      return r.code === 0 ? { detail: 'clean', status: PASS } : { detail: r.out, status: FAIL }
     },
+    title: 'format / lint',
   },
 
   {
+    enforces: [],
     id: 'unit',
     phase: 'spine',
-    title: 'unit tests',
-    enforces: [],
     run() {
-      if (!hasBin('vitest')) return unmet(this, 'vitest')
+      if (!hasBin('vitest')) {
+        return unmet(this, 'vitest')
+      }
       const r = run('pnpm', [
         '-s',
         'exec',
@@ -214,27 +227,29 @@ export const stages = [
         '--exclude',
         '**/*.contract.test.ts',
       ])
-      if (r.code !== 0) return { status: FAIL, detail: r.out }
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
       const m = r.out.match(/Tests\s+(\d+) passed/)
-      return { status: PASS, detail: `${m ? m[1] : '?'} tests passed` }
+      return { detail: `${m ? m[1] : '?'} tests passed`, status: PASS }
     },
+    title: 'unit tests',
   },
 
   {
+    enforces: [18, 19],
     id: 'property',
     phase: 'payroll',
-    title: 'property tests',
-    enforces: [18, 19],
     run() {
       return unmet(this, 'fast-check and the money and ledger invariants')
     },
+    title: 'property tests',
   },
 
   {
+    enforces: [2, 3, 4],
     id: 'contract',
     phase: 'spine',
-    title: 'contract tests',
-    enforces: [2, 3, 4],
     run() {
       const spec = join(ROOT, 'contracts/openapi.generated.json')
       if (!existsSync(spec)) {
@@ -246,38 +261,46 @@ export const stages = [
       // and every partner SDK are keyed to.
       const doc = JSON.parse(readFileSync(spec, 'utf8'))
       if (doc.openapi !== '3.1.0') {
-        return { status: FAIL, detail: `spec declares openapi ${doc.openapi}, expected 3.1.0` }
+        return { detail: `spec declares openapi ${doc.openapi}, expected 3.1.0`, status: FAIL }
       }
       const verbs = ['get', 'post', 'put', 'patch', 'delete']
       const missing = []
       let ops = 0
       for (const [path, item] of Object.entries(doc.paths ?? {})) {
         for (const v of verbs) {
-          if (!item[v]) continue
-          ops++
-          if (!item[v].operationId) missing.push(`${v.toUpperCase()} ${path}`)
+          if (!item[v]) {
+            continue
+          }
+          ops += 1
+          if (!item[v].operationId) {
+            missing.push(`${v.toUpperCase()} ${path}`)
+          }
         }
       }
       if (missing.length) {
-        return { status: FAIL, detail: `operations without operationId: ${missing.join(', ')}` }
+        return { detail: `operations without operationId: ${missing.join(', ')}`, status: FAIL }
       }
 
-      if (!hasBin('vitest')) return unmet(this, 'vitest for boundary-hardening tests')
+      if (!hasBin('vitest')) {
+        return unmet(this, 'vitest for boundary-hardening tests')
+      }
       const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'contract.test'])
-      if (r.code !== 0) return { status: FAIL, detail: r.out }
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
       const m = r.out.match(/Tests\s+(\d+) passed/)
       return {
-        status: PASS,
         detail: `${ops} operations, ${m ? m[1] : '?'} contract tests passed`,
+        status: PASS,
       }
     },
+    title: 'contract tests',
   },
 
   {
+    enforces: [11, 12, 13, 14],
     id: 'rls',
     phase: 'tenancy',
-    title: 'tenancy + policy proof',
-    enforces: [11, 12, 13, 14],
     /**
      * The tenancy gate, measured against a specification that was frozen BEFORE
      * the implementation: .architecture/phase-1-attack-matrix.md.
@@ -293,7 +316,9 @@ export const stages = [
      */
     run() {
       const spec = join(ROOT, '.architecture/phase-1-attack-matrix.md')
-      if (!existsSync(spec)) return unmet(this, 'the frozen attack matrix')
+      if (!existsSync(spec)) {
+        return unmet(this, 'the frozen attack matrix')
+      }
       // id plus the availability column, so the report can separate 'not written'
       // from 'cannot be written yet'. One combined ratio means two things at once,
       // and a number meaning two things carries neither.
@@ -302,32 +327,36 @@ export const stages = [
           /^\|\s*([TP]\d\d)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/gm,
         ),
       ]
-        .map((m) => ({ id: m[1], availableFrom: m[2] }))
+        .map(([, id, availableFrom]) => ({ availableFrom, id }))
         // Deduplicated: the document discusses cases in prose tables as well as
         // declaring them, and a case mentioned twice was inflating the
         // denominator. "29/30, complete" is a contradiction that should never
         // have been printable.
-        .filter((row, i, all) => all.findIndex((r) => r.id === row.id) === i)
-      const specified = rows.map((r) => r.id)
-      const reachable = rows.filter((r) => r.availableFrom === 'now').map((r) => r.id)
+        .filter((row, i, all) => all.findIndex((seen) => seen.id === row.id) === i)
+      const specified = rows.map((row) => row.id)
+      const reachable = rows.filter((row) => row.availableFrom === 'now').map((row) => row.id)
 
       // Both matrices: tenancy (T) and policy (P). One case can cover a range,
       // so 'P01-P05-...' registers all five.
       const implemented = new Set()
       for (const sub of ['tenancy', 'policy']) {
         const dir = join(ROOT, 'tests/architecture', sub)
-        if (!existsSync(dir)) continue
+        if (!existsSync(dir)) {
+          continue
+        }
         for (const f of readdirSync(dir)) {
-          if (!/[.]test[.](ts|mjs)$/.test(f)) continue
+          if (!/[.]test[.](ts|mjs)$/.test(f)) {
+            continue
+          }
           // A file may declare a RANGE -- 'P01-P05-authorisation.test.ts' covers
           // five cases. Reading only the endpoints would report the middle
           // three as unwritten while they are asserted a few lines away, and
           // the fix for a wrong number is never to rename files around it.
           for (const m of f.matchAll(/([TP])(\d\d)(?:-[TP]?(\d\d))?/g)) {
-            const prefix = m[1]
-            const from = Number(m[2])
-            const to = m[3] ? Number(m[3]) : from
-            for (let n = from; n <= to; n++) {
+            const [, prefix, first, last] = m
+            const from = Number(first)
+            const to = last ? Number(last) : from
+            for (let n = from; n <= to; n += 1) {
               implemented.add(`${prefix}${String(n).padStart(2, '0')}`)
             }
           }
@@ -335,15 +364,23 @@ export const stages = [
       }
       const missing = specified.filter((t) => !implemented.has(t))
 
-      if (implemented.size === 0) return unmet(this, 'any implemented attack case')
-      if (!hasBin('vitest')) return unmet(this, 'vitest')
+      if (implemented.size === 0) {
+        return unmet(this, 'any implemented attack case')
+      }
+      if (!hasBin('vitest')) {
+        return unmet(this, 'vitest')
+      }
 
       const r = run('pnpm', ['-s', 'test:architecture:tenancy'])
-      if (r.code !== 0) return { status: FAIL, detail: r.out }
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
       // A suite that skipped because no database was reachable has proven
       // nothing, and must never read as a security proof that passed.
       const passed = Number(r.out.match(/Tests\s+(\d+) passed/)?.[1] ?? 0)
-      if (passed === 0) return unmet(this, 'a reachable database for the attack suite')
+      if (passed === 0) {
+        return unmet(this, 'a reachable database for the attack suite')
+      }
       const reachableDone = reachable.filter((t) => implemented.has(t))
       const summary =
         `${passed} assertions, ${reachableDone.length}/${reachable.length} reachable, ` +
@@ -351,25 +388,35 @@ export const stages = [
 
       if (missing.length > 0) {
         const unwritten = missing.filter((t) => reachable.includes(t))
-        const blocked = rows.filter((r) => missing.includes(r.id) && r.availableFrom !== 'now')
+        const blocked = rows.filter(
+          (row) => missing.includes(row.id) && row.availableFrom !== 'now',
+        )
         const parts = []
-        if (unwritten.length) parts.push(`unwritten: ${unwritten.join(', ')}`)
-        for (const r of blocked) parts.push(`${r.id} needs ${r.availableFrom}`)
-        return { status: PENDING, detail: `${summary} -- ${parts.join('; ')}` }
+        if (unwritten.length) {
+          parts.push(`unwritten: ${unwritten.join(', ')}`)
+        }
+        for (const row of blocked) {
+          parts.push(`${row.id} needs ${row.availableFrom}`)
+        }
+        return { detail: `${summary} -- ${parts.join('; ')}`, status: PENDING }
       }
-      return { status: PASS, detail: `${summary}, complete` }
+      return { detail: `${summary}, complete`, status: PASS }
     },
+    title: 'tenancy + policy proof',
   },
 
   {
+    enforces: [11, 12],
     id: 'integration',
     phase: 'spine',
-    title: 'integration tests',
-    enforces: [11, 12],
     run() {
-      if (!hasBin('vitest')) return unmet(this, 'vitest')
+      if (!hasBin('vitest')) {
+        return unmet(this, 'vitest')
+      }
       const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'integration.test'])
-      if (r.code !== 0) return { status: FAIL, detail: r.out }
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
       // A suite that skips because the database is unreachable has proven
       // nothing, and must not be reported as a pass.
       if (/skipped/.test(r.out) && !/\d+ passed/.test(r.out)) {
@@ -377,17 +424,17 @@ export const stages = [
       }
       const m = r.out.match(/Tests\s+(\d+) passed/)
       return {
-        status: PASS,
         detail: `${m ? m[1] : '?'} integration tests passed against real PostgreSQL`,
+        status: PASS,
       }
     },
+    title: 'integration tests',
   },
 
   {
+    enforces: [28],
     id: 'migration',
     phase: 'spine',
-    title: 'migration compatibility',
-    enforces: [28],
     run() {
       const dir = join(ROOT, 'packages/db/migrations')
       if (!existsSync(dir)) {
@@ -396,7 +443,9 @@ export const stages = [
       const files = readdirSync(dir)
         .filter((f) => f.endsWith('.sql'))
         .sort()
-      if (files.length === 0) return { status: EMPTY, detail: 'no migrations yet' }
+      if (files.length === 0) {
+        return { detail: 'no migrations yet', status: EMPTY }
+      }
 
       // What this proves: every migration applies cleanly, in order, to a
       // FRESH database. What it does not yet prove is AQS-018 -- the
@@ -407,54 +456,62 @@ export const stages = [
       const probe = run('node', [join(ROOT, 'tooling/verify/lib/migrate-check.mjs')])
       if (probe.code === 2) {
         return {
-          status: BLOCKED,
           detail: `${files.length} migrations, but no database is reachable to apply them`,
+          status: BLOCKED,
         }
       }
-      if (probe.code !== 0) return { status: FAIL, detail: probe.out }
+      if (probe.code !== 0) {
+        return { detail: probe.out, status: FAIL }
+      }
       return {
-        status: PASS,
         detail:
           files.length +
           ' migrations apply cleanly to a fresh database (AQS-018 rollout proof still pending)',
+        status: PASS,
       }
     },
+    title: 'migration compatibility',
   },
 
   {
+    enforces: [],
     id: 'build',
     phase: 'spine',
-    title: 'build',
-    enforces: [],
     run() {
-      if (!workspaceHasPackages()) return { status: EMPTY, detail: 'nothing to build' }
-      if (!hasBin('turbo')) return unmet(this, 'turbo')
+      if (!workspaceHasPackages()) {
+        return { detail: 'nothing to build', status: EMPTY }
+      }
+      if (!hasBin('turbo')) {
+        return unmet(this, 'turbo')
+      }
       const r = run('pnpm', ['-s', 'exec', 'turbo', 'run', 'build'])
-      return r.code === 0 ? { status: PASS, detail: 'built' } : { status: FAIL, detail: r.out }
+      return r.code === 0 ? { detail: 'built', status: PASS } : { detail: r.out, status: FAIL }
     },
+    title: 'build',
   },
 
   {
+    enforces: [],
     id: 'e2e',
     phase: 'spine',
-    title: 'selected E2E',
-    enforces: [],
     run() {
       if (!hasBin('playwright')) {
         return unmet(this, 'Playwright')
       }
       const r = run('pnpm', ['-s', 'exec', 'playwright', 'test'])
-      if (r.code !== 0) return { status: FAIL, detail: r.out }
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
       const m = r.out.match(/(\d+) passed/)
-      return { status: PASS, detail: `${m ? m[1] : '?'} flagship E2E specs passed` }
+      return { detail: `${m ? m[1] : '?'} flagship E2E specs passed`, status: PASS }
     },
+    title: 'selected E2E',
   },
 
   {
+    enforces: [33],
     id: 'idempotence',
     phase: 'spine',
-    title: 'gate leaves no trace',
-    enforces: [33],
     /**
      * LAST, and the only check here that does not depend on the source
      * universe's vocabulary being complete.
@@ -472,13 +529,15 @@ export const stages = [
      * definition is not enumerable in advance.
      */
     run() {
-      if (!hasGit()) return unmet(this, 'a git repository to compare tree state against')
+      if (!hasGit()) {
+        return unmet(this, 'a git repository to compare tree state against')
+      }
       if (TREE_AT_START === null) {
-        return { status: BLOCKED, detail: 'could not read the working tree before the run' }
+        return { detail: 'could not read the working tree before the run', status: BLOCKED }
       }
       const now = treeState()
       if (now === TREE_AT_START) {
-        return { status: PASS, detail: 'the working tree is exactly as the run found it' }
+        return { detail: 'the working tree is exactly as the run found it', status: PASS }
       }
       const before = new Set(TREE_AT_START.split(_NL).filter(Boolean))
       const touched = now
@@ -486,12 +545,13 @@ export const stages = [
         .filter(Boolean)
         .filter((line) => !before.has(line))
       return {
-        status: FAIL,
         detail:
           'the gate mutated the repository -- a green run must leave the checkout as it ' +
           `found it:${_NL}${touched.map((t) => `  ${t}`).join(_NL)}`,
+        status: FAIL,
       }
     },
+    title: 'gate leaves no trace',
   },
 ]
 

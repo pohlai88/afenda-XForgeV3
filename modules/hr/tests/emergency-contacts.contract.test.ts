@@ -41,7 +41,7 @@ let pg!: ReturnType<typeof createPostgresDriver>
 let reachable = false
 
 try {
-  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  owner = postgres(ownerUrl(), { connect_timeout: 5, max: 2, prepare: false })
   await owner`select 1`
   pg = createPostgresDriver(appUrl())
   reachable = true
@@ -57,13 +57,13 @@ try {
 const tenantsSeen: string[] = []
 if (reachable) {
   const recording: Driver = {
-    transactionWithTenant(tenantId, fn) {
-      tenantsSeen.push(tenantId)
-      return pg.transactionWithTenant(tenantId, fn)
-    },
     transactionAsPlatform(fn) {
       tenantsSeen.push('__platform__')
       return pg.transactionAsPlatform(fn)
+    },
+    transactionWithTenant(tenantId, fn) {
+      tenantsSeen.push(tenantId)
+      return pg.transactionWithTenant(tenantId, fn)
     },
   }
   setDriver(recording)
@@ -76,7 +76,9 @@ const queries: MembershipQueries = {
 }
 
 afterAll(async () => {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await owner.end({ timeout: 5 })
   await pg.close()
 })
@@ -86,12 +88,12 @@ function req(
   path: string,
   init: RequestInit = {},
   principal: Principal | null = {
+    grants: [
+      { permission: 'hr.employee.read', scopeId: TENANT, scopeType: 'tenant' },
+      { permission: 'hr.employee.update', scopeId: TENANT, scopeType: 'tenant' },
+    ],
     id: 'u1',
     kind: 'user',
-    grants: [
-      { permission: 'hr.employee.read', scopeType: 'tenant', scopeId: TENANT },
-      { permission: 'hr.employee.update', scopeType: 'tenant', scopeId: TENANT },
-    ],
   },
 ) {
   // Middleware must be passed to createApp, not added afterwards: Hono applies
@@ -105,7 +107,9 @@ function req(
           // Exactly the composition root's sequence: hostname -> candidate ->
           // membership -> verified context (ADR-022).
           const resolved = await resolveRequestTenant(HOST_A, principal, queries, new Date())
-          if (resolved.kind === 'verified') c.set('tenant', resolved.context)
+          if (resolved.kind === 'verified') {
+            c.set('tenant', resolved.context)
+          }
           c.set('principal', principal)
         }
         c.set('asOf', '2026-08-31T00:00:00.000Z')
@@ -121,7 +125,9 @@ function req(
 }
 
 beforeEach(async () => {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await seedTenancy(owner, [
     { principalId: 'u1', tenantId: TENANT },
     { principalId: 'u2', tenantId: TENANT },
@@ -150,9 +156,9 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       `/v1/employees/${EMPLOYEE}/emergency-contacts`,
       {},
       {
+        grants: [],
         id: 'u2',
         kind: 'user',
-        grants: [],
       },
     )
     expect(res.status).toBe(403)
@@ -168,9 +174,9 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       `/v1/employees/${EMPLOYEE}/emergency-contacts`,
       {},
       {
+        grants: [{ permission: 'hr.employee.read', scopeId: OTHER_TENANT, scopeType: 'tenant' }],
         id: 'u3',
         kind: 'user',
-        grants: [{ permission: 'hr.employee.read', scopeType: 'tenant', scopeId: OTHER_TENANT }],
       },
     )
     expect(res.status).toBe(403)
@@ -186,8 +192,8 @@ describe.skipIf(!reachable)('the vertical slice', () => {
 
   it('creates, then lists', async () => {
     const created = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
+      body: JSON.stringify({ name: 'Siti', phone: '+60 12-345 6789', relationship: 'Spouse' }),
       method: 'POST',
-      body: JSON.stringify({ name: 'Siti', relationship: 'Spouse', phone: '+60 12-345 6789' }),
     })
     expect(created.status).toBe(201)
     const contact = await created.json()
@@ -220,13 +226,13 @@ describe.skipIf(!reachable)('the vertical slice', () => {
 describe.skipIf(!reachable)('optimistic concurrency (ADR-013)', () => {
   it('updates when the version matches', async () => {
     await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
+      body: JSON.stringify({ name: 'Siti', phone: '+60 12-345 6789', relationship: 'Spouse' }),
       method: 'POST',
-      body: JSON.stringify({ name: 'Siti', relationship: 'Spouse', phone: '+60 12-345 6789' }),
     })
 
     const res = await req(`/v1/emergency-contacts/${CONTACT}`, {
-      method: 'PATCH',
       body: JSON.stringify({ phone: '+60 19-999 9999', version: 1 }),
+      method: 'PATCH',
     })
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -236,22 +242,22 @@ describe.skipIf(!reachable)('optimistic concurrency (ADR-013)', () => {
 
   it('REJECTS a stale write with 409 rather than merging it', async () => {
     await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
+      body: JSON.stringify({ name: 'Siti', phone: '+60 12-345 6789', relationship: 'Spouse' }),
       method: 'POST',
-      body: JSON.stringify({ name: 'Siti', relationship: 'Spouse', phone: '+60 12-345 6789' }),
     })
 
     // Admin A saves first and wins.
     await req(`/v1/emergency-contacts/${CONTACT}`, {
-      method: 'PATCH',
       body: JSON.stringify({ phone: '+60 11-111 1111', version: 1 }),
+      method: 'PATCH',
     })
 
     // Admin B saves second, still holding version 1 from their earlier read.
     // Last-write-wins would silently discard A's change -- and when the field is
     // a bank account, nobody finds out until payday.
     const stale = await req(`/v1/emergency-contacts/${CONTACT}`, {
-      method: 'PATCH',
       body: JSON.stringify({ phone: '+60 22-222 2222', version: 1 }),
+      method: 'PATCH',
     })
     expect(stale.status).toBe(409)
     const problem = await stale.json()
@@ -266,8 +272,8 @@ describe.skipIf(!reachable)('optimistic concurrency (ADR-013)', () => {
 
   it('404 for a contact that does not exist', async () => {
     const res = await req(`/v1/emergency-contacts/${CONTACT}`, {
-      method: 'PATCH',
       body: JSON.stringify({ phone: '+60 12-000 0000', version: 1 }),
+      method: 'PATCH',
     })
     expect(res.status).toBe(404)
   })
@@ -276,8 +282,8 @@ describe.skipIf(!reachable)('optimistic concurrency (ADR-013)', () => {
 describe('boundary hardening (architecture-final.md 6.4)', () => {
   it('rejects a body that violates the schema', async () => {
     const res = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
+      body: JSON.stringify({ name: '', phone: '+60 12-345 6789', relationship: 'Spouse' }),
       method: 'POST',
-      body: JSON.stringify({ name: '', relationship: 'Spouse', phone: '+60 12-345 6789' }),
     })
     expect(res.status).toBeGreaterThanOrEqual(400)
     expect(res.status).toBeLessThan(500)
@@ -285,8 +291,8 @@ describe('boundary hardening (architecture-final.md 6.4)', () => {
 
   it('rejects malformed JSON rather than crashing', async () => {
     const res = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`, {
-      method: 'POST',
       body: '{not json',
+      method: 'POST',
     })
     expect(res.status).toBeGreaterThanOrEqual(400)
     expect(res.status).toBeLessThan(500)
@@ -294,8 +300,8 @@ describe('boundary hardening (architecture-final.md 6.4)', () => {
 
   it('rejects an update with no version token', async () => {
     const res = await req(`/v1/emergency-contacts/${CONTACT}`, {
-      method: 'PATCH',
       body: JSON.stringify({ phone: '+60 12-000 0000' }),
+      method: 'PATCH',
     })
     // The contract marks version required, so this never reaches the handler.
     expect(res.status).toBeGreaterThanOrEqual(400)

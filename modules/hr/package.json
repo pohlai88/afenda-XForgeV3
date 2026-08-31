@@ -3,20 +3,25 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./index.ts",
   "exports": {
     ".": "./index.ts",
     "./contract": "./contract/routes.ts",
     "./manifest": "./manifest.ts",
     "./repository": "./infrastructure/repository/emergency-contact.ts"
   },
+  "main": "./index.ts",
   "dependencies": {
     "@hono/zod-openapi": "^1.6.1",
-    "zod": "^4.0.0",
     "@xforge/api": "workspace:*",
     "@xforge/db": "workspace:*",
+    "@xforge/fixtures": "workspace:*",
     "@xforge/policy": "workspace:*",
+    "@xforge/tenancy": "workspace:*",
     "hono": "^4.9.0",
-    "@xforge/tenancy": "workspace:*"
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "postgres": "^3.4.5",
+    "vitest": "^4.0.0"
   }
 }

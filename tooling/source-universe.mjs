@@ -83,19 +83,33 @@ export function classify(path) {
   const p = path.replace(/\\/g, '/').replace(/^\.\//, '')
 
   for (const d of NON_SOURCE_DIRS) {
-    if (p === d || p.startsWith(`${d}/`) || p.includes(`/${d}/`)) return 'output'
+    if (p === d || p.startsWith(`${d}/`) || p.includes(`/${d}/`)) {
+      return 'output'
+    }
   }
   for (const d of GENERATED_DIRS) {
-    if (p.includes(`/${d}/`) || p.startsWith(`${d}/`)) return 'generated'
+    if (p.includes(`/${d}/`) || p.startsWith(`${d}/`)) {
+      return 'generated'
+    }
   }
   const base = p.slice(p.lastIndexOf('/') + 1)
-  if (OUTPUT_FILES.includes(base)) return 'output'
-  if (GENERATED_FILES.includes(base)) return 'generated'
-  if (p.startsWith('contracts/')) return 'generated'
-  if (/(^|\/)(tests?|e2e)\//.test(p) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(p)) return 'test'
-  if (/(^|\/)\.architecture\//.test(p) || /\.md$/.test(p)) return 'documentation'
+  if (OUTPUT_FILES.includes(base)) {
+    return 'output'
+  }
+  if (GENERATED_FILES.includes(base)) {
+    return 'generated'
+  }
+  if (p.startsWith('contracts/')) {
+    return 'generated'
+  }
+  if (/(^|\/)(tests?|e2e)\//.test(p) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(p)) {
+    return 'test'
+  }
+  if (/(^|\/)\.architecture\//.test(p) || /\.md$/.test(p)) {
+    return 'documentation'
+  }
   if (
-    /(^|\/)(package\.json|tsconfig[^/]*\.json|biome\.json|turbo\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml|\.gitignore|\.npmrc|\.env\.example)$/.test(
+    /(^|\/)(package\.json|tsconfig[^/]*\.json|biome\.jsonc|turbo\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml|\.gitignore|\.npmrc|\.env\.example)$/.test(
       p,
     ) ||
     /\.config\.(ts|mjs|js)$/.test(p)

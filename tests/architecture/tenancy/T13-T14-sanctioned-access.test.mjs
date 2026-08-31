@@ -19,18 +19,18 @@ const rejects = (id) => {
   const g = guardById[id]
   const f = fixtures[id]
   return {
-    violating: g.check(f.violating.path, f.violating.source).length,
-    clean: g.check(f.clean.path, f.clean.source).length,
     appliesToViolating: g.applies(f.violating.path),
+    clean: g.check(f.clean.path, f.clean.source).length,
+    violating: g.check(f.violating.path, f.violating.source).length,
   }
 }
 
 describe('T13 -- a database handle acquired outside the repository layer', () => {
   it('is rejected by the guard', () => {
     expect(rejects('db-access-outside-repository')).toEqual({
-      violating: 1,
-      clean: 0,
       appliesToViolating: true,
+      clean: 0,
+      violating: 1,
     })
   })
 
@@ -45,8 +45,8 @@ describe('T13 -- a database handle acquired outside the repository layer', () =>
 describe('T14 -- withPlatformAccess called from a business module', () => {
   it('is rejected by the guard', () => {
     expect(rejects('platform-access-outside-admin')).toMatchObject({
-      violating: 1,
       appliesToViolating: true,
+      violating: 1,
     })
   })
 

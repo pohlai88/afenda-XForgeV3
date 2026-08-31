@@ -33,7 +33,7 @@ export function Stack({
   direction?: 'column' | 'row'
 }) {
   return (
-    <div className="xf-stack" data-gap={gap} data-direction={direction}>
+    <div className="xf-stack" data-direction={direction} data-gap={gap}>
       {children}
     </div>
   )
@@ -41,7 +41,7 @@ export function Stack({
 
 export function Card({ children, labelledBy }: { children: ReactNode; labelledBy?: string }) {
   return (
-    <section className="xf-card" aria-labelledby={labelledBy}>
+    <section aria-labelledby={labelledBy} className="xf-card">
       {children}
     </section>
   )
@@ -100,12 +100,12 @@ export function Button({
 }) {
   return (
     <button
-      type="button"
       className="xf-button xf-focusable"
-      data-variant={variant}
       data-testid={testId}
+      data-variant={variant}
       disabled={disabled}
       onClick={onClick}
+      type="button"
     >
       {children}
     </button>
@@ -132,11 +132,11 @@ export function Alert({
 }) {
   return (
     <div
-      className="xf-alert"
-      data-tone={tone}
-      data-testid={testId}
-      role={tone === 'info' ? 'status' : 'alert'}
       aria-live={tone === 'info' ? 'polite' : 'assertive'}
+      className="xf-alert"
+      data-testid={testId}
+      data-tone={tone}
+      role={tone === 'info' ? 'status' : 'alert'}
     >
       {children}
     </div>
@@ -146,7 +146,7 @@ export function Alert({
 /** A live region for work in progress. Polite: it must not interrupt. */
 export function Status({ children }: { children: ReactNode }) {
   return (
-    <p className="xf-text" role="status" aria-live="polite">
+    <p aria-live="polite" className="xf-text" role="status">
       {children}
     </p>
   )

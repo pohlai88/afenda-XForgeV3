@@ -29,38 +29,51 @@ describe('the repository owns the phase', () => {
 
   it('ignores the environment entirely under --ci', () => {
     const prev = process.env.XFORGE_PHASE
-    process.env.XFORGE_PHASE = PHASES[PHASES.length - 1]
+    process.env.XFORGE_PHASE = PHASES.at(-1)
     try {
       expect(resolvePhase({ ci: true })).toBe(COMMITTED_PHASE)
     } finally {
-      if (prev === undefined) delete process.env.XFORGE_PHASE
-      else process.env.XFORGE_PHASE = prev
+      if (prev === undefined) {
+        delete process.env.XFORGE_PHASE
+      } else {
+        process.env.XFORGE_PHASE = prev
+      }
     }
   })
 
   it('lets the environment RAISE the phase locally', () => {
     const ahead = PHASES[PHASES.indexOf(COMMITTED_PHASE) + 1]
-    if (!ahead) return
+    if (!ahead) {
+      return
+    }
     const prev = process.env.XFORGE_PHASE
     process.env.XFORGE_PHASE = ahead
     try {
       expect(resolvePhase({ ci: false })).toBe(ahead)
     } finally {
-      if (prev === undefined) delete process.env.XFORGE_PHASE
-      else process.env.XFORGE_PHASE = prev
+      if (prev === undefined) {
+        delete process.env.XFORGE_PHASE
+      } else {
+        process.env.XFORGE_PHASE = prev
+      }
     }
   })
 
   it('REJECTS an environment phase behind the committed one', () => {
     const behindIndex = PHASES.indexOf(COMMITTED_PHASE) - 1
-    if (behindIndex < 0) return // nothing is behind 'spine'
+    if (behindIndex < 0) {
+      return // nothing is behind 'spine'
+    }
     const prev = process.env.XFORGE_PHASE
     process.env.XFORGE_PHASE = PHASES[behindIndex]
     try {
       expect(() => resolvePhase({ ci: false })).toThrow(/BEHIND the committed phase/)
     } finally {
-      if (prev === undefined) delete process.env.XFORGE_PHASE
-      else process.env.XFORGE_PHASE = prev
+      if (prev === undefined) {
+        delete process.env.XFORGE_PHASE
+      } else {
+        process.env.XFORGE_PHASE = prev
+      }
     }
   })
 
@@ -70,8 +83,11 @@ describe('the repository owns the phase', () => {
     try {
       expect(() => resolvePhase({ ci: false })).toThrow(/not a known phase/)
     } finally {
-      if (prev === undefined) delete process.env.XFORGE_PHASE
-      else process.env.XFORGE_PHASE = prev
+      if (prev === undefined) {
+        delete process.env.XFORGE_PHASE
+      } else {
+        process.env.XFORGE_PHASE = prev
+      }
     }
   })
 })
@@ -127,7 +143,7 @@ describe('phase ordering', () => {
  * forever while the gate reported green.
  */
 describe('PENDING expires when its phase starts', () => {
-  const pending = { status: PENDING, detail: 'activates in the tenancy phase' }
+  const pending = { detail: 'activates in the tenancy phase', status: PENDING }
 
   it('is allowed for a stage whose phase has NOT started', () => {
     const settled = settleStatus({ id: 'x', phase: 'payroll' }, pending)
@@ -147,7 +163,7 @@ describe('PENDING expires when its phase starts', () => {
 
   it('leaves every other status untouched', () => {
     for (const status of [PASS, FAIL, EMPTY, BLOCKED]) {
-      const r = { status, detail: 'd' }
+      const r = { detail: 'd', status }
       expect(settleStatus({ id: 'x', phase: 'spine' }, r)).toBe(r)
     }
   })
@@ -158,7 +174,7 @@ describe('PENDING expires when its phase starts', () => {
     // which is how a fast feedback loop stops being one.
     const rls = stages.find((s) => s.id === 'rls')
     expect(rls.phase).toBe('tenancy')
-    const incomplete = { status: PENDING, detail: '13 assertions, 5/16 cases' }
+    const incomplete = { detail: '13 assertions, 5/16 cases', status: PENDING }
     // Phases named explicitly, never the ambient one. This asserted that the
     // tenancy stage stays PENDING -- true at the committed phase and false
     // under `XFORGE_PHASE=tenancy`, so a local qualification run failed on the

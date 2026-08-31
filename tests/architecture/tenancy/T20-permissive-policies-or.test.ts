@@ -28,7 +28,9 @@ import {
 } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 
 const visibleToA = async () =>
@@ -61,7 +63,9 @@ describe.skipIf(!reachable)('T20 -- a second permissive policy grants, never res
   })
 
   afterAll(async () => {
-    if (!reachable) return
+    if (!reachable) {
+      return
+    }
     await owner`drop policy if exists "t20_widening" on emergency_contact`
     await assertBoundaryIntact()
     await closeAll()

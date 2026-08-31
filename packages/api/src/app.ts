@@ -26,12 +26,12 @@ export interface RouteDefinition<C extends XforgeRouteConfig = XforgeRouteConfig
 function problem(c: Context, status: number, title: string, detail: string) {
   return c.json(
     {
-      type: 'about:blank',
-      title,
-      status,
       detail,
       instance: c.req.path,
       request_id: c.get('requestId') ?? null,
+      status,
+      title,
+      type: 'about:blank',
     },
     status as 400 | 401 | 403 | 404 | 409 | 422,
     { 'content-type': 'application/problem+json' },
@@ -50,6 +50,16 @@ export class UnmountableRouteError extends Error {}
  */
 export interface AppOptions {
   /**
+   * Mount prefix, e.g. '/api'.
+   *
+   * Owned here for the same reason as `middleware`: `app.basePath()` returns a
+   * NEW Hono instance, so calling it on a built app silently discards every
+   * route already registered. Two different Hono APIs share that shape, and
+   * both produced a working-looking app that served 404s. Neither footgun is
+   * reachable through this factory.
+   */
+  readonly basePath?: string
+  /**
    * Middleware applied BEFORE any route is registered.
    *
    * This is an option rather than something a caller adds afterwards because
@@ -60,17 +70,6 @@ export interface AppOptions {
    * be installed and is not.
    */
   readonly middleware?: readonly MiddlewareHandler[]
-
-  /**
-   * Mount prefix, e.g. '/api'.
-   *
-   * Owned here for the same reason as `middleware`: `app.basePath()` returns a
-   * NEW Hono instance, so calling it on a built app silently discards every
-   * route already registered. Two different Hono APIs share that shape, and
-   * both produced a working-looking app that served 404s. Neither footgun is
-   * reachable through this factory.
-   */
-  readonly basePath?: string
 }
 
 export function createApp(
@@ -80,7 +79,9 @@ export function createApp(
   const base = new OpenAPIHono()
   const app = options.basePath ? base.basePath(options.basePath) : base
 
-  for (const mw of options.middleware ?? []) app.use('*', mw)
+  for (const mw of options.middleware ?? []) {
+    app.use('*', mw)
+  }
 
   const seen = new Set<string>()
   for (const def of routes) {
@@ -97,7 +98,7 @@ export function createApp(
     if (!isPolicyDeclaration(policy)) {
       throw new UnmountableRouteError(
         `route ${config.method} ${config.path} has no valid policy declaration -- ` +
-          `refusing to mount. Expected { permission, scopeType } with scopeType in the ` +
+          'refusing to mount. Expected { permission, scopeType } with scopeType in the ' +
           `frozen enum, or the literal 'public' (ADR-014).`,
       )
     }
@@ -105,7 +106,7 @@ export function createApp(
     // AQS-003: operationIds are the contract's stable identity, so they must be
     // unique -- and present. Checked here rather than asserted, because an
     // architecture built on failing closed should not contain a `!`.
-    const operationId = config.operationId
+    const { operationId } = config
     if (!operationId) {
       throw new UnmountableRouteError(
         `route ${config.method} ${config.path} has no operationId -- refusing to mount`,
@@ -140,10 +141,10 @@ export function createApp(
           }
           const scopeId = def.scopeParam ? c.req.param(def.scopeParam) : undefined
           const verdict = evaluate(policy, {
-            principal,
-            tenantId: tenant.tenantId,
-            scopeId,
             asOf: (c.get('asOf') as string | undefined) ?? new Date(0).toISOString(),
+            principal,
+            scopeId,
+            tenantId: tenant.tenantId,
           })
           if (!verdict.allowed) {
             // RICH INSIDE, FLAT OUTSIDE. The reason is put on the request for

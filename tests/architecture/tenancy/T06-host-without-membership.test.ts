@@ -19,7 +19,9 @@ import {
 } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 

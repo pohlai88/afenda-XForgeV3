@@ -12,14 +12,16 @@
  */
 import { hasActiveMembership, resolveHostname, setDriver, tenancyDriver } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
-import {
+import { HOST_A, HOST_B, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+
+export {
   HOST_A,
   HOST_B,
   revokeMembership,
-  seedTenancy,
   TENANT_A,
   TENANT_B,
 } from '@xforge/fixtures/tenancy'
+
 import {
   type MembershipQueries,
   resolveRequestTenant,
@@ -28,8 +30,6 @@ import {
 } from '@xforge/tenancy'
 import postgres from 'postgres'
 import { appUrl, ownerUrl } from '../../fixtures/local-database'
-
-export { HOST_A, HOST_B, revokeMembership, TENANT_A, TENANT_B }
 
 export const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 export const A_ROW = '55555555-5555-4555-8555-555555555555'
@@ -50,8 +50,8 @@ export const MEMBER_OF_A_ONLY = 'user-only-a'
  */
 export const EXPECTED_POLICIES: Record<string, readonly string[]> = {
   emergency_contact: ['emergency_contact_tenant_isolation'],
-  tenant_membership: ['tenant_membership_tenant_isolation'],
   tenant_domain: ['tenant_domain_routing_lookup'],
+  tenant_membership: ['tenant_membership_tenant_isolation'],
 }
 
 /**
@@ -65,8 +65,8 @@ export const EXPECTED_POLICIES: Record<string, readonly string[]> = {
  */
 export const EXPECTED_GRANTS: Record<string, readonly string[]> = {
   emergency_contact: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
-  tenant_membership: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
   tenant_domain: ['SELECT'],
+  tenant_membership: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
 }
 
 export let owner!: ReturnType<typeof postgres>
@@ -74,7 +74,7 @@ export let driver!: ReturnType<typeof createPostgresDriver>
 export let reachable = false
 
 try {
-  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  owner = postgres(ownerUrl(), { connect_timeout: 5, max: 2, prepare: false })
   await owner`select 1`
   driver = createPostgresDriver(appUrl())
   setDriver(driver)
@@ -130,7 +130,7 @@ export async function assertBoundaryIntact(): Promise<void> {
     const [state] = await owner<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       select relrowsecurity, relforcerowsecurity from pg_class where relname = ${table}
     `
-    if (!state?.relrowsecurity || !state?.relforcerowsecurity) {
+    if (!(state?.relrowsecurity && state?.relforcerowsecurity)) {
       throw new Error(
         [
           `REFUSING TO RUN: ${table} does not have row-level security enabled AND forced.`,
@@ -203,7 +203,9 @@ export async function seed(): Promise<void> {
 }
 
 export async function closeAll(): Promise<void> {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await owner.end({ timeout: 5 })
   await driver.close()
 }

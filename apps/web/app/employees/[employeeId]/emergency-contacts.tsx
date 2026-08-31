@@ -36,10 +36,6 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
 
   const update = useUpdateEmergencyContact({
     mutation: {
-      onSuccess: () => {
-        setConflict(null)
-        list.refetch()
-      },
       onError: (err: unknown) => {
         // ADR-013: a stale write is rejected, never merged. The user is told
         // what happened and shown current state -- silently losing their edit
@@ -50,6 +46,10 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
           )
           list.refetch()
         }
+      },
+      onSuccess: () => {
+        setConflict(null)
+        list.refetch()
       },
     },
   })
@@ -99,17 +99,17 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
       <Stack gap="loose">
         <Heading id="emergency-contacts-heading">Emergency contacts</Heading>
 
-        {conflict && (
+        {conflict ? (
           // WARNING, not danger: nothing is broken. The write was refused and
           // the user has a decision to make, which is a different thing to tell
           // somebody than "this failed".
-          <Alert tone="warning" testId="conflict">
+          <Alert testId="conflict" tone="warning">
             <Text>{conflict}</Text>
           </Alert>
-        )}
+        ) : null}
 
         {items.length === 0 ? (
-          <Alert tone="info" testId="empty">
+          <Alert testId="empty" tone="info">
             <Text>No emergency contacts yet. Add one so we know who to call.</Text>
           </Alert>
         ) : (
@@ -125,9 +125,9 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
                 <Button
                   onClick={() =>
                     update.mutate({
-                      id: c.id,
                       // The version the client READ. The server rejects if it has moved on.
                       data: { phone: c.phone, version: c.version },
+                      id: c.id,
                     })
                   }
                 >
@@ -140,14 +140,14 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
 
         <Stack direction="row">
           <Button
-            variant="primary"
             disabled={create.isPending}
             onClick={() =>
               create.mutate({
+                data: { name: 'New contact', phone: '+60 12-000 0000', relationship: 'Spouse' },
                 employeeId,
-                data: { name: 'New contact', relationship: 'Spouse', phone: '+60 12-000 0000' },
               })
             }
+            variant="primary"
           >
             {create.isPending ? 'Adding…' : 'Add contact'}
           </Button>

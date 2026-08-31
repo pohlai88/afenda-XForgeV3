@@ -43,7 +43,9 @@ import {
  */
 function readJsonc(rel) {
   const p = join(ROOT, rel)
-  if (!existsSync(p)) return null
+  if (!existsSync(p)) {
+    return null
+  }
   const raw = readFileSync(p, 'utf8')
   try {
     return JSON.parse(raw)
@@ -81,43 +83,46 @@ export const SECRET_FIXTURE_ALLOWLIST = [
  */
 const EVIDENCE_REQUIRED_BY_PHASE = {
   '003': 'tenancy', // shared-schema RLS, two chokepoints
-  '010': 'tenancy', // all authorisation in packages/policy
-  '015': 'tenancy', // one bound tenant per request
-  '018': 'tenancy', // machine principals, revocation
-  '019': 'tenancy', // permission lifecycle, fail-closed compilation
-  '013': 'hr', // optimistic concurrency
   '006': 'payroll', // money representation
+  '007': 'async', // transactional outbox
+  '010': 'tenancy', // all authorisation in packages/policy
+  '011': 'ai', // bounded AI tool generation
+  '013': 'hr', // optimistic concurrency
+  '015': 'tenancy', // one bound tenant per request
   '016': 'payroll', // time model
   '017': 'payroll', // period lock and retro adjustment
-  '007': 'async', // transactional outbox
-  '011': 'ai', // bounded AI tool generation
+  '018': 'tenancy', // machine principals, revocation
+  '019': 'tenancy', // permission lifecycle, fail-closed compilation
 }
 
 /** True while the phase that depends on this decision has not been certified. */
 export function stillGrandfathered(name, committedPhase = COMMITTED_PHASE) {
-  const n = (name.match(/^ADR-(\d{3})/) || [])[1]
-  if (!n) return false
+  const [, n] = name.match(/^ADR-(\d{3})/) ?? []
+  if (!n) {
+    return false
+  }
   const required = EVIDENCE_REQUIRED_BY_PHASE[n]
-  if (!required) return Number(n) <= 22 // pre-law, nothing depends on it yet
+  if (!required) {
+    return Number(n) <= 22 // pre-law, nothing depends on it yet
+  }
   return PHASES.indexOf(committedPhase) < PHASES.indexOf(required)
 }
 
 export const configGuards = [
   {
-    id: 'deterministic-source-set',
-    law: 29,
-    title: 'Build and cache output can never enter source discovery',
     check(env) {
       const out = []
 
       if (env.biome) {
         const includes = (env.biome.files?.includes ?? []).join(' ')
         for (const d of NON_SOURCE_DIRS) {
-          if (d === '.git') continue // biome never walks it
-          if (!includes.includes(`!**/${d}`) && !includes.includes(`!${d}`)) {
+          if (d === '.git') {
+            continue // biome never walks it
+          }
+          if (!(includes.includes(`!**/${d}`) || includes.includes(`!${d}`))) {
             out.push({
-              where: 'biome.json files.includes',
               message: `'${d}' is not excluded -- lint would depend on whether a build ran first`,
+              where: 'biome.jsonc files.includes',
             })
           }
         }
@@ -131,22 +136,22 @@ export const configGuards = [
         // list exists beside the generated directory list.
         const includes = (env.biome.files?.includes ?? []).join(' ')
         const required = [
-          ...GENERATED_DIRS.map((d) => ({ what: `generated directory '${d}'`, token: d })),
-          ...GENERATED_FILES.map((f) => ({ what: `generated file '${f}'`, token: f })),
+          ...GENERATED_DIRS.map((d) => ({ token: d, what: `generated directory '${d}'` })),
+          ...GENERATED_FILES.map((f) => ({ token: f, what: `generated file '${f}'` })),
           // Output FILES too. next-env.d.ts moved from generated to output when
           // it turned out its content records which command last ran -- and the
           // exclusion requirement moved with it, or the formatter would start
           // rewriting it again, which is the original ordering bug.
-          ...OUTPUT_FILES.map((f) => ({ what: `build-output file '${f}'`, token: f })),
+          ...OUTPUT_FILES.map((f) => ({ token: f, what: `build-output file '${f}'` })),
           ...GENERATED_PATHS.filter(
             (g) => !GENERATED_DIRS.some((d) => g.split('/').includes(d)),
-          ).map((g) => ({ what: `generated path '${g}'`, token: g.split('/')[0] })),
+          ).map((g) => ({ token: g.split('/')[0], what: `generated path '${g}'` })),
         ]
         for (const { what, token } of required) {
-          if (!includes.includes(`!**/${token}`) && !includes.includes(`!${token}`)) {
+          if (!(includes.includes(`!**/${token}`) || includes.includes(`!${token}`))) {
             out.push({
-              where: 'biome.json files.includes',
               message: `${what} is not excluded -- the formatter would rewrite generated state`,
+              where: 'biome.jsonc files.includes',
             })
           }
         }
@@ -157,32 +162,34 @@ export const configGuards = [
         for (const d of ['node_modules', '.next', 'dist']) {
           if (!exclude.includes(d)) {
             out.push({
-              where: 'tsconfig.json exclude',
               message: `'${d}' is not excluded -- typecheck would read build output`,
+              where: 'tsconfig.json exclude',
             })
           }
         }
       }
 
       for (const d of NON_SOURCE_DIRS) {
-        if (d === '.git') continue
+        if (d === '.git') {
+          continue
+        }
         const re = new RegExp(`(^|\\n)/?${d.replace('.', '\\.')}/?\\s*($|\\n)`)
         if (!re.test(env.gitignore ?? '')) {
           out.push({
-            where: '.gitignore',
             message: `'${d}' is not ignored -- build output could be committed`,
+            where: '.gitignore',
           })
         }
       }
 
       return out
     },
+    id: 'deterministic-source-set',
+    law: 29,
+    title: 'Build and cache output can never enter source discovery',
   },
 
   {
-    id: 'no-committed-build-output',
-    law: 29,
-    title: 'No git-tracked file is classified as build or cache output',
     check(env) {
       // The decisive invariant, and the one that would have caught the
       // Playwright test-results incident from the same classification system
@@ -190,16 +197,16 @@ export const configGuards = [
       return (env.trackedFiles ?? [])
         .filter((f) => UNCOMMITTABLE.includes(classify(f)))
         .map((f) => ({
-          where: f,
           message: `tracked in git but classified as '${classify(f)}' -- build output must never be committed`,
+          where: f,
         }))
     },
+    id: 'no-committed-build-output',
+    law: 29,
+    title: 'No git-tracked file is classified as build or cache output',
   },
 
   {
-    id: 'no-shared-dev-secret',
-    law: 29,
-    title: 'The local fixture credential never escapes approved fixture locations',
     check(env) {
       // The danger is not the string. It is the string quietly becoming the
       // application's real credential because nobody remembered the warning.
@@ -207,17 +214,17 @@ export const configGuards = [
         .filter((f) => !SECRET_FIXTURE_ALLOWLIST.includes(f.path))
         .filter((f) => f.source.includes(FIXTURE_SECRET))
         .map((f) => ({
-          where: f.path,
           message:
             'contains the local fixture credential outside an approved location -- ' +
             'everywhere else must read it from managed secret storage',
+          where: f.path,
         }))
     },
+    id: 'no-shared-dev-secret',
+    law: 29,
+    title: 'The local fixture credential never escapes approved fixture locations',
   },
   {
-    id: 'database-image-matches-ci',
-    law: 32,
-    title: 'The local fixture and the gate run the same database image',
     /**
      * `pnpm verify` cannot be the canonical definition of green while it means
      * two different things in two places. This diverged silently -- compose on
@@ -231,7 +238,9 @@ export const configGuards = [
     check(env) {
       const imagesIn = (path) => {
         const f = (env.files ?? []).find((x) => x.path === path)
-        if (!f) return null
+        if (!f) {
+          return null
+        }
         return [...f.source.matchAll(/^\s*image:\s*['"]?(postgres:[A-Za-z0-9._-]+)/gm)].map(
           (m) => m[1],
         )
@@ -239,26 +248,30 @@ export const configGuards = [
       const local = imagesIn('compose.yaml')
       const ci = imagesIn('.github/workflows/verify.yml')
       // Either side absent is a different problem than the two disagreeing.
-      if (local === null || ci === null) return []
-      if (local.length === 0 || ci.length === 0) return []
+      if (local === null || ci === null) {
+        return []
+      }
+      if (local.length === 0 || ci.length === 0) {
+        return []
+      }
 
       const distinct = [...new Set([...local, ...ci])]
       return distinct.length === 1
         ? []
         : [
             {
-              where: 'compose.yaml',
               message:
                 `the local fixture and .github/workflows/verify.yml disagree on the database image (${distinct.join(' vs ')}) -- ` +
                 'a local green the gate cannot reproduce is not a green',
+              where: 'compose.yaml',
             },
           ]
     },
+    id: 'database-image-matches-ci',
+    law: 32,
+    title: 'The local fixture and the gate run the same database image',
   },
   {
-    id: 'adr-has-evidence',
-    law: 34,
-    title: 'A FROZEN decision records the prior art it was checked against',
     /**
      * NAMED FOR WHAT IT DOES. It checks that fields are PRESENT. It cannot tell
      * whether a source is good, whether it supports the claim, or whether
@@ -272,40 +285,44 @@ export const configGuards = [
     check(env) {
       const out = []
       for (const { name, source } of env.adrs ?? []) {
-        if (stillGrandfathered(name)) continue
-        if (!/FROZEN/.test(source)) continue
+        if (stillGrandfathered(name)) {
+          continue
+        }
+        if (!/FROZEN/.test(source)) {
+          continue
+        }
 
         if (!/^##\s+Prior art/m.test(source)) {
           out.push({
-            where: `.architecture/adr/${name}`,
             message: 'FROZEN with no Prior art section',
+            where: `.architecture/adr/${name}`,
           })
           continue
         }
         const hasDated = /\|\s*20\d\d-\d\d-\d\d\s*\|/.test(source)
         const noMatch = /no-direct-match/.test(source)
-        if (!hasDated && !noMatch) {
+        if (!(hasDated || noMatch)) {
           out.push({
-            where: `.architecture/adr/${name}`,
             message: 'Prior art records no dated source and no explicit no-direct-match finding',
+            where: `.architecture/adr/${name}`,
           })
         }
         if (!/does NOT prove/i.test(source)) {
           out.push({
-            where: `.architecture/adr/${name}`,
             message:
               'no "what prior art does NOT prove" section -- precedent qualifies the ' +
               'pattern, never this implementation',
+            where: `.architecture/adr/${name}`,
           })
         }
       }
       return out
     },
+    id: 'adr-has-evidence',
+    law: 34,
+    title: 'A FROZEN decision records the prior art it was checked against',
   },
   {
-    id: 'ci-provides-fixture-env',
-    law: 32,
-    title: 'CI supplies every environment variable the qualification suite declares',
     /**
      * The sixth appearance of one defect: a fact with two homes and no check
      * that they agree.
@@ -325,16 +342,18 @@ export const configGuards = [
     check(env) {
       const fixture = (env.files ?? []).find((f) => f.path === 'tests/fixtures/local-database.ts')
       const workflow = (env.files ?? []).find((f) => f.path === '.github/workflows/verify.yml')
-      if (!fixture || !workflow) return []
+      if (!(fixture && workflow)) {
+        return []
+      }
 
       const block = fixture.source.match(/REQUIRED_DATABASE_ENV\s*=\s*\{([\s\S]*?)\}\s*as const/)
       if (!block) {
         return [
           {
-            where: 'tests/fixtures/local-database.ts',
             message:
               'REQUIRED_DATABASE_ENV is missing -- the environment contract must be ' +
               'declared in one place or CI has to guess it',
+            where: 'tests/fixtures/local-database.ts',
           },
         ]
       }
@@ -349,13 +368,16 @@ export const configGuards = [
       return required
         .filter((name) => !provided.has(name))
         .map((name) => ({
-          where: '.github/workflows/verify.yml',
           message:
             `does not set ${name}, which the qualification suite requires. Without ` +
             'it the suite falls back to a developer URL and reports an unreachable ' +
             'database instead of a missing variable',
+          where: '.github/workflows/verify.yml',
         }))
     },
+    id: 'ci-provides-fixture-env',
+    law: 32,
+    title: 'CI supplies every environment variable the qualification suite declares',
   },
 ]
 
@@ -365,10 +387,6 @@ export function scanConfig() {
   const exts = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.sql', '.json', '.yaml', '.yml']
   const tracked = run('git', ['ls-files'])
   const env = {
-    // Empty when git is unavailable; the guard then simply has nothing to check
-    // rather than silently passing on a wrong assumption.
-    trackedFiles:
-      tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
     adrs: existsSync(join(ROOT, '.architecture/adr'))
       ? readdirSync(join(ROOT, '.architecture/adr'))
           .filter((f) => /^ADR-\d{3}.*\.md$/.test(f))
@@ -377,9 +395,7 @@ export function scanConfig() {
             source: readFileSync(join(ROOT, '.architecture/adr', name), 'utf8'),
           }))
       : [],
-    biome: readJsonc('biome.json'),
-    tsconfig: readJsonc('tsconfig.json'),
-    gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
+    biome: readJsonc('biome.jsonc'),
     // THE WHOLE REPOSITORY, not a list of roots someone must remember to
     // extend. A credential guard that cannot see a directory is a credential
     // guard that approves it, and the directory it cannot see is always the one
@@ -388,11 +404,19 @@ export function scanConfig() {
     files: sourceFiles(['.'], exts)
       .map(posix)
       .map((path) => ({ path, source: read(path) })),
+    gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
+    // Empty when git is unavailable; the guard then simply has nothing to check
+    // rather than silently passing on a wrong assumption.
+    trackedFiles:
+      tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
+    tsconfig: readJsonc('tsconfig.json'),
   }
 
   const violations = []
   for (const g of configGuards) {
-    for (const v of g.check(env)) violations.push({ guard: g.id, law: g.law, ...v })
+    for (const v of g.check(env)) {
+      violations.push({ guard: g.id, law: g.law, ...v })
+    }
   }
-  return { violations, checked: configGuards.length }
+  return { checked: configGuards.length, violations }
 }

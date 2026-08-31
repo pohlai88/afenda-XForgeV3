@@ -26,11 +26,16 @@ const VERBS = ['get', 'post', 'put', 'patch', 'delete']
 
 /** Resolve a local $ref against the document. */
 function deref(doc, node, depth = 0) {
-  if (!node || depth > 10) return node
+  if (!node || depth > 10) {
+    return node
+  }
   if (node.$ref?.startsWith('#/')) {
     const target = node.$ref
       .slice(2)
       .split('/')
+      // `== null`, not `=== null`: a $ref that does not resolve yields
+      // undefined, and dereferencing it throws inside a guard.
+      // biome-ignore lint/suspicious/noEqualsToNull: matches undefined too, see above
       .reduce((acc, k) => (acc == null ? acc : acc[k.replace(/~1/g, '/').replace(/~0/g, '~')]), doc)
     return deref(doc, target, depth + 1)
   }
@@ -45,57 +50,56 @@ function requestBodySchema(doc, op) {
 
 export const contractGuards = [
   {
-    id: 'operation-id-required',
-    law: 3,
-    title: 'Every operation has a stable operationId',
     check(doc) {
       const out = []
       for (const [path, item] of Object.entries(doc.paths ?? {})) {
         for (const verb of VERBS) {
           const op = item[verb]
           if (op && !op.operationId) {
-            out.push({ where: `${verb.toUpperCase()} ${path}`, message: 'no operationId' })
+            out.push({ message: 'no operationId', where: `${verb.toUpperCase()} ${path}` })
           }
         }
       }
       return out
     },
+    id: 'operation-id-required',
+    law: 3,
+    title: 'Every operation has a stable operationId',
   },
   {
-    id: 'version-token-on-updates',
-    law: 22,
-    title: 'Update operations carry a version token (ADR-013)',
     check(doc) {
       const out = []
       for (const [path, item] of Object.entries(doc.paths ?? {})) {
         for (const verb of ['put', 'patch']) {
           const op = item[verb]
-          if (!op) continue
+          if (!op) {
+            continue
+          }
           const schema = requestBodySchema(doc, op)
           const props = schema?.properties ?? {}
           if (!('version' in props)) {
             out.push({
-              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
               message:
                 'update operation has no version token in its request body -- ' +
                 'a stale write would be merged rather than rejected with 409',
+              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
             })
           } else if (!(schema.required ?? []).includes('version')) {
             out.push({
-              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
               message:
                 'version is present but optional -- an omitted version disables the staleness check',
+              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
             })
           }
         }
       }
       return out
     },
+    id: 'version-token-on-updates',
+    law: 22,
+    title: 'Update operations carry a version token (ADR-013)',
   },
   {
-    id: 'conflict-response-declared',
-    law: 22,
-    title: 'Update operations declare 409 (ADR-013)',
     check(doc) {
       const out = []
       for (const [path, item] of Object.entries(doc.paths ?? {})) {
@@ -103,50 +107,59 @@ export const contractGuards = [
           const op = item[verb]
           if (op && !op.responses?.['409']) {
             out.push({
-              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
               message:
                 'no 409 response declared -- the client cannot distinguish a conflict from a generic error',
+              where: op.operationId ?? `${verb.toUpperCase()} ${path}`,
             })
           }
         }
       }
       return out
     },
+    id: 'conflict-response-declared',
+    law: 22,
+    title: 'Update operations declare 409 (ADR-013)',
   },
   {
-    id: 'commands-not-status-patches',
-    law: 17,
-    title: 'Consequential transitions are commands, never status patches',
     check(doc) {
       const out = []
       for (const [path, item] of Object.entries(doc.paths ?? {})) {
         const op = item.patch
-        if (!op) continue
+        if (!op) {
+          continue
+        }
         const schema = requestBodySchema(doc, op)
         if (schema?.properties && 'status' in schema.properties) {
           out.push({
-            where: op.operationId ?? `PATCH ${path}`,
             message:
               'PATCH carries a status field -- use an explicit command endpoint (POST .../approve)',
+            where: op.operationId ?? `PATCH ${path}`,
           })
         }
       }
       return out
     },
+    id: 'commands-not-status-patches',
+    law: 17,
+    title: 'Consequential transitions are commands, never status patches',
   },
 ]
 
 export function scanContract() {
   const path = join(ROOT, SPEC)
-  if (!existsSync(path)) return { present: false, violations: [], checked: 0 }
+  if (!existsSync(path)) {
+    return { checked: 0, present: false, violations: [] }
+  }
   const doc = JSON.parse(readFileSync(path, 'utf8'))
   const violations = []
   for (const g of contractGuards) {
-    for (const v of g.check(doc)) violations.push({ guard: g.id, law: g.law, ...v })
+    for (const v of g.check(doc)) {
+      violations.push({ guard: g.id, law: g.law, ...v })
+    }
   }
   const checked = Object.values(doc.paths ?? {}).reduce(
     (n, item) => n + VERBS.filter((v) => item[v]).length,
     0,
   )
-  return { present: true, violations, checked }
+  return { checked, present: true, violations }
 }

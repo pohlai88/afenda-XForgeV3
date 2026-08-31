@@ -25,10 +25,12 @@ import {
 
 const LIST = `/v1/employees/${EMPLOYEE}/emergency-contacts`
 const tenantGrant = (permission: string, scopeId = TENANT_A) =>
-  ({ permission, scopeType: 'tenant', scopeId }) as const
+  ({ permission, scopeId, scopeType: 'tenant' }) as const
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 

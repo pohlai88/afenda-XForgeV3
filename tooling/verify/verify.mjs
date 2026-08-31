@@ -34,13 +34,13 @@ import { reviewOnly, stages } from './stages.mjs'
 
 const ESC = String.fromCharCode(27)
 const C = {
-  reset: `${ESC}[0m`,
-  dim: `${ESC}[2m`,
-  red: `${ESC}[31m`,
-  green: `${ESC}[32m`,
-  yellow: `${ESC}[33m`,
   blue: `${ESC}[36m`,
   bold: `${ESC}[1m`,
+  dim: `${ESC}[2m`,
+  green: `${ESC}[32m`,
+  red: `${ESC}[31m`,
+  reset: `${ESC}[0m`,
+  yellow: `${ESC}[33m`,
 }
 const tty = process.stdout.isTTY
 const paint = (c, s) => (tty ? c + s + C.reset : s)
@@ -83,7 +83,9 @@ function coverage() {
   const byLaw = new Map()
   for (const s of stages) {
     for (const l of s.enforces) {
-      if (!byLaw.has(l)) byLaw.set(l, [])
+      if (!byLaw.has(l)) {
+        byLaw.set(l, [])
+      }
       byLaw.get(l).push(s.id)
     }
   }
@@ -96,7 +98,7 @@ function coverage() {
     let label
     if (st) {
       label = paint(C.green, st.join(', '))
-      staged++
+      staged += 1
     } else if (reviewOnly[n]) {
       label = paint(C.blue, 'review / phase gate')
     } else {
@@ -138,8 +140,12 @@ function coverage() {
 }
 
 function main() {
-  if (process.argv.includes('--list')) return list()
-  if (process.argv.includes('--coverage')) return coverage()
+  if (process.argv.includes('--list')) {
+    return list()
+  }
+  if (process.argv.includes('--coverage')) {
+    return coverage()
+  }
 
   const ci = process.argv.includes('--ci') || process.env.CI === 'true'
 
@@ -152,7 +158,11 @@ function main() {
     try {
       r = stage.run()
     } catch (err) {
-      r = { status: FAIL, detail: `stage threw: ${err?.message}` }
+      // A thrown value is not necessarily an Error: a stage can reject with
+      // anything, and `err.message` on a string would be undefined rather than
+      // a failure anyone can read.
+      const reason = err instanceof Error ? err.message : String(err)
+      r = { detail: `stage threw: ${reason}`, status: FAIL }
     }
 
     r = settleStatus(stage, r)
@@ -165,7 +175,9 @@ function main() {
     if (r.status === FAIL) {
       failed = true
       const rest = r.detail.split('\n').slice(1)
-      if (rest.length) console.log(rest.map((l) => `           ${l}`).join('\n'))
+      if (rest.length) {
+        console.log(rest.map((l) => `           ${l}`).join('\n'))
+      }
       break // fail fast: a red build is a stop, not a discussion
     }
   }
@@ -230,4 +242,6 @@ function main() {
 
 // argv[1] is absent when this module is imported (node -e, a test), so the
 // entry check must tolerate it rather than throwing on import.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+}

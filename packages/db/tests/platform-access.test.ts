@@ -24,10 +24,10 @@ const noSql = (() => {
 }) as unknown as TenantClient
 
 setDriver({
-  async transactionWithTenant(_t, fn) {
+  async transactionAsPlatform(fn) {
     return fn(noSql)
   },
-  async transactionAsPlatform(fn) {
+  async transactionWithTenant(_t, fn) {
     return fn(noSql)
   },
 })
@@ -114,11 +114,11 @@ describe('audit durability', () => {
     // would give exactly the accesses most worth investigating no trace at all.
     let workRan = false
     const brokenSink: PlatformAuditSink = {
+      read: () => [],
       async recordAttempt() {
         throw new Error('audit store unavailable')
       },
       async recordOutcome() {},
-      read: () => [],
     }
     setPlatformAuditSink(brokenSink)
 

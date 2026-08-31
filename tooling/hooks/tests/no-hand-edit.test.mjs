@@ -16,13 +16,13 @@ const HOOK = join(ROOT, 'tooling/hooks/no-hand-edit.mjs')
 /** @returns {{code: number, stderr: string}} */
 const runHook = (input) => {
   const r = spawnSync(process.execPath, [HOOK], {
-    input: typeof input === 'string' ? input : JSON.stringify(input),
     encoding: 'utf8',
+    input: typeof input === 'string' ? input : JSON.stringify(input),
   })
   return { code: r.status, stderr: r.stderr }
 }
 
-const edit = (file_path) => ({ tool_name: 'Edit', tool_input: { file_path } })
+const edit = (file_path) => ({ tool_input: { file_path }, tool_name: 'Edit' })
 
 describe('law 27: generated state is refused at authorship time', () => {
   it('blocks the generated contract', () => {
@@ -79,7 +79,7 @@ describe('it fails open on anything it does not understand', () => {
   })
 
   it('allows a payload with no file_path', () => {
-    expect(runHook({ tool_name: 'Bash', tool_input: { command: 'ls' } }).code).toBe(0)
+    expect(runHook({ tool_input: { command: 'ls' }, tool_name: 'Bash' }).code).toBe(0)
   })
 
   it('allows a path outside the repository', () => {

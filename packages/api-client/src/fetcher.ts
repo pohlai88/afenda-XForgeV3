@@ -8,19 +8,28 @@
  * a second path in behaviour, which an operationId parity guard cannot detect.
  */
 
+/** RFC 9457 Problem Details, as this API emits them. */
+export interface ProblemDetails {
+  detail?: string
+  instance?: string
+  request_id?: string | null
+  title?: string
+  type?: string
+}
+
 export class ApiProblem extends Error {
-  constructor(
-    readonly status: number,
-    readonly problem: {
-      type?: string
-      title?: string
-      detail?: string
-      instance?: string
-      request_id?: string | null
-    },
-  ) {
+  readonly status: number
+  readonly problem: ProblemDetails
+
+  constructor(status: number, problem: ProblemDetails) {
     super(problem.title ? `${problem.title}: ${problem.detail ?? ''}`.trim() : `HTTP ${status}`)
     this.name = 'ApiProblem'
+    // Assigned explicitly. These were `readonly` constructor parameters, and
+    // dropping that modifier to satisfy noParameterProperties silently removed
+    // the assignment TypeScript was generating -- every ApiProblem would have
+    // carried an undefined status.
+    this.status = status
+    this.problem = problem
   }
 
   /** ADR-013: the UI must treat a stale write as a first-class state, not an error blob. */
@@ -65,8 +74,8 @@ export const apiFetch = async <T>(
     throw new ApiProblem(res.status, problem)
   }
 
-  if (res.status === 204) return undefined as T
+  if (res.status === 204) {
+    return undefined as T
+  }
   return (await res.json()) as T
 }
-
-export default apiFetch

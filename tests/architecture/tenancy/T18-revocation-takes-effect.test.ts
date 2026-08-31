@@ -23,14 +23,16 @@ import {
 } from './harness'
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 
 describe.skipIf(!reachable)('T18 -- revocation takes effect on the next request', () => {
   it('admits the principal, then refuses once the membership is closed', async () => {
     const before = await resolveFor(HOST_B, MEMBER_OF_BOTH)
-    expect(before).toMatchObject({ kind: 'verified', context: { tenantId: TENANT_B } })
+    expect(before).toMatchObject({ context: { tenantId: TENANT_B }, kind: 'verified' })
 
     const at = new Date()
     await revokeMembership(owner, MEMBER_OF_BOTH, TENANT_B, at)

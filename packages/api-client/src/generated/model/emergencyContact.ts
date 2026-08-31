@@ -7,23 +7,23 @@
  */
 
 export interface EmergencyContact {
-  id: string;
   employeeId: string;
+  id: string;
   /**
      * @minLength 1
      * @maxLength 200
      */
   name: string;
   /**
-     * @minLength 1
-     * @maxLength 80
-     */
-  relationship: string;
-  /**
      * @minLength 3
      * @maxLength 40
      */
   phone: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  relationship: string;
   /** @exclusiveMinimum 0 */
   version: number;
 }

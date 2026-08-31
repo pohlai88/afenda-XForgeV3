@@ -13,13 +13,13 @@ export interface NewEmergencyContact {
      */
   name: string;
   /**
-     * @minLength 1
-     * @maxLength 80
-     */
-  relationship: string;
-  /**
      * @minLength 3
      * @maxLength 40
      */
   phone: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  relationship: string;
 }

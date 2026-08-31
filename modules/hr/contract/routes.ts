@@ -14,11 +14,11 @@ import { createRoute } from '@xforge/api'
 
 export const EmergencyContact = z
   .object({
-    id: z.uuid(),
     employeeId: z.uuid(),
+    id: z.uuid(),
     name: z.string().min(1).max(200),
-    relationship: z.string().min(1).max(80),
     phone: z.string().min(3).max(40),
+    relationship: z.string().min(1).max(80),
     /** ADR-013: the client round-trips this so a stale write can be rejected. */
     version: z.number().int().positive(),
   })
@@ -27,16 +27,16 @@ export const EmergencyContact = z
 export const NewEmergencyContact = z
   .object({
     name: z.string().min(1).max(200),
-    relationship: z.string().min(1).max(80),
     phone: z.string().min(3).max(40),
+    relationship: z.string().min(1).max(80),
   })
   .openapi('NewEmergencyContact')
 
 export const UpdateEmergencyContact = z
   .object({
     name: z.string().min(1).max(200).optional(),
-    relationship: z.string().min(1).max(80).optional(),
     phone: z.string().min(3).max(40).optional(),
+    relationship: z.string().min(1).max(80).optional(),
     /** Required, not optional: an update without it cannot be checked for staleness. */
     version: z.number().int().positive(),
   })
@@ -45,12 +45,12 @@ export const UpdateEmergencyContact = z
 /** RFC 9457 Problem Details -- one error shape for the whole API. */
 export const Problem = z
   .object({
-    type: z.string(),
-    title: z.string(),
-    status: z.number().int(),
     detail: z.string(),
     instance: z.string().optional(),
     request_id: z.string().nullable().optional(),
+    status: z.number().int(),
+    title: z.string(),
+    type: z.string(),
   })
   .openapi('Problem')
 
@@ -58,10 +58,8 @@ const json = (schema: z.ZodTypeAny) => ({ content: { 'application/json': { schem
 
 export const listEmergencyContacts = createRoute({
   method: 'get',
-  path: '/v1/employees/{employeeId}/emergency-contacts',
   operationId: 'listEmergencyContacts',
-  tags: ['HR'],
-  summary: 'List an employee emergency contacts',
+  path: '/v1/employees/{employeeId}/emergency-contacts',
   policy: { permission: 'hr.employee.read', scopeType: 'tenant' },
   request: { params: z.object({ employeeId: z.uuid() }) },
   responses: {
@@ -69,18 +67,18 @@ export const listEmergencyContacts = createRoute({
     401: { description: 'Unauthenticated', ...json(Problem) },
     403: { description: 'Forbidden', ...json(Problem) },
   },
+  summary: 'List an employee emergency contacts',
+  tags: ['HR'],
 })
 
 export const createEmergencyContact = createRoute({
   method: 'post',
-  path: '/v1/employees/{employeeId}/emergency-contacts',
   operationId: 'createEmergencyContact',
-  tags: ['HR'],
-  summary: 'Add an emergency contact',
+  path: '/v1/employees/{employeeId}/emergency-contacts',
   policy: { permission: 'hr.employee.update', scopeType: 'tenant' },
   request: {
-    params: z.object({ employeeId: z.uuid() }),
     body: { required: true, ...json(NewEmergencyContact) },
+    params: z.object({ employeeId: z.uuid() }),
   },
   responses: {
     201: { description: 'Created', ...json(EmergencyContact) },
@@ -88,18 +86,18 @@ export const createEmergencyContact = createRoute({
     403: { description: 'Forbidden', ...json(Problem) },
     422: { description: 'Invalid', ...json(Problem) },
   },
+  summary: 'Add an emergency contact',
+  tags: ['HR'],
 })
 
 export const updateEmergencyContact = createRoute({
   method: 'patch',
-  path: '/v1/emergency-contacts/{id}',
   operationId: 'updateEmergencyContact',
-  tags: ['HR'],
-  summary: 'Update an emergency contact',
+  path: '/v1/emergency-contacts/{id}',
   policy: { permission: 'hr.employee.update', scopeType: 'tenant' },
   request: {
-    params: z.object({ id: z.uuid() }),
     body: { required: true, ...json(UpdateEmergencyContact) },
+    params: z.object({ id: z.uuid() }),
   },
   responses: {
     200: { description: 'Updated', ...json(EmergencyContact) },
@@ -109,10 +107,12 @@ export const updateEmergencyContact = createRoute({
     /** ADR-013: a stale write is rejected explicitly, never merged. */
     409: { description: 'Version conflict', ...json(Problem) },
   },
+  summary: 'Update an emergency contact',
+  tags: ['HR'],
 })
 
 export const hrRoutes = {
-  listEmergencyContacts,
   createEmergencyContact,
+  listEmergencyContacts,
   updateEmergencyContact,
 } as const

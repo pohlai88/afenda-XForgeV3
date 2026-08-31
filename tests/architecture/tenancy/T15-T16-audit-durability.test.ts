@@ -24,10 +24,10 @@ const noSql = (() => {
 }) as unknown as TenantClient
 
 setDriver({
-  async transactionWithTenant(_t, fn) {
+  async transactionAsPlatform(fn) {
     return fn(noSql)
   },
-  async transactionAsPlatform(fn) {
+  async transactionWithTenant(_t, fn) {
     return fn(noSql)
   },
 })
@@ -45,11 +45,11 @@ describe('T15 -- work that cannot be audited does not happen', () => {
   it('refuses when the attempt cannot be persisted, and never runs the work', async () => {
     let ran = false
     const broken: PlatformAuditSink = {
+      read: () => [],
       recordAttempt: async () => {
         throw new Error('audit store unreachable')
       },
       recordOutcome: async () => {},
-      read: () => [],
     }
     setPlatformAuditSink(broken)
 

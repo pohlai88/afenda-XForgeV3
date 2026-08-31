@@ -36,9 +36,9 @@ let driver!: ReturnType<typeof createPostgresDriver>
 let reachable = false
 
 try {
-  owner = postgres(ownerUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  owner = postgres(ownerUrl(), { connect_timeout: 5, max: 2, prepare: false })
   await owner`select 1`
-  app = postgres(appUrl(), { max: 2, prepare: false, connect_timeout: 5 })
+  app = postgres(appUrl(), { connect_timeout: 5, max: 2, prepare: false })
   await app`select 1`
   driver = createPostgresDriver(appUrl())
   reachable = true
@@ -47,7 +47,9 @@ try {
 }
 
 beforeAll(async () => {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
 
   // Seed as owner: RLS is FORCED, so the owner is subject to policy too and
   // cannot insert rows for arbitrary tenants without setting the context.
@@ -67,7 +69,9 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  if (!reachable) return
+  if (!reachable) {
+    return
+  }
   await driver.close()
   await app.end({ timeout: 5 })
   await owner.end({ timeout: 5 })
@@ -119,24 +123,28 @@ describe.skipIf(!reachable)('AQS-006 -- cross-tenant denial as the real app role
   it('a query with NO tenant predicate returns only the bound tenant rows', async () => {
     // This is the property that makes agent-written code safe: correctness does
     // not depend on the author remembering to filter.
-    const rows = await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`select tenant_id, name from emergency_contact`
-    })
+    const rows = await driver.transactionWithTenant(
+      TENANT_A,
+      async (tx) => tx`select tenant_id, name from emergency_contact`,
+    )
     expect(rows).toHaveLength(1)
     expect(rows[0]?.tenant_id).toBe(TENANT_A)
   })
 
   it('tenant A cannot read tenant B even when asking for it explicitly', async () => {
-    const rows = await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`select * from emergency_contact where tenant_id = ${TENANT_B}`
-    })
+    const rows = await driver.transactionWithTenant(
+      TENANT_A,
+      async (tx) => tx`select * from emergency_contact where tenant_id = ${TENANT_B}`,
+    )
     expect(rows).toHaveLength(0)
   })
 
   it('tenant A cannot UPDATE tenant B rows', async () => {
-    await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`update emergency_contact set name = 'hijacked' where tenant_id = ${TENANT_B}`
-    })
+    await driver.transactionWithTenant(
+      TENANT_A,
+      async (tx) =>
+        tx`update emergency_contact set name = 'hijacked' where tenant_id = ${TENANT_B}`,
+    )
     const [b] = await owner.begin(async (tx) => {
       await tx`select set_config('app.tenant_id', ${TENANT_B}, true)`
       return tx`select name from emergency_contact where tenant_id = ${TENANT_B}`
@@ -145,9 +153,10 @@ describe.skipIf(!reachable)('AQS-006 -- cross-tenant denial as the real app role
   })
 
   it('tenant A cannot DELETE tenant B rows', async () => {
-    await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`delete from emergency_contact where tenant_id = ${TENANT_B}`
-    })
+    await driver.transactionWithTenant(
+      TENANT_A,
+      async (tx) => tx`delete from emergency_contact where tenant_id = ${TENANT_B}`,
+    )
     const rows = await owner.begin(async (tx) => {
       await tx`select set_config('app.tenant_id', ${TENANT_B}, true)`
       return tx`select 1 from emergency_contact where tenant_id = ${TENANT_B}`
@@ -159,28 +168,28 @@ describe.skipIf(!reachable)('AQS-006 -- cross-tenant denial as the real app role
     // USING governs what is visible; WITH CHECK governs what may be written.
     // Omitting WITH CHECK would leave this hole wide open.
     await expect(
-      driver.transactionWithTenant(TENANT_A, async (tx) => {
-        return tx`
+      driver.transactionWithTenant(
+        TENANT_A,
+        async (tx) => tx`
           insert into emergency_contact (tenant_id, employee_id, name, relationship, phone)
           values (${TENANT_B}, ${EMPLOYEE}, 'spoofed', 'Spouse', '+60 12-000 0000')
-        `
-      }),
+        `,
+      ),
     ).rejects.toThrow(/row-level security/i)
   })
 })
 
 describe.skipIf(!reachable)('AQS-022 -- tenant context is transaction-scoped', () => {
   it('SET LOCAL is visible inside the transaction', async () => {
-    const [row] = await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`select current_setting('app.tenant_id', true) as t`
-    })
+    const [row] = await driver.transactionWithTenant(
+      TENANT_A,
+      async (tx) => tx`select current_setting('app.tenant_id', true) as t`,
+    )
     expect(row?.t).toBe(TENANT_A)
   })
 
   it('and is GONE after the transaction commits', async () => {
-    await driver.transactionWithTenant(TENANT_A, async (tx) => {
-      return tx`select 1`
-    })
+    await driver.transactionWithTenant(TENANT_A, async (tx) => tx`select 1`)
     // A session-wide SET would leak this value to whichever tenant borrows the
     // connection next -- the defect that makes pooled RLS silently unsafe.
     const [row] = await app`select current_setting('app.tenant_id', true) as t`

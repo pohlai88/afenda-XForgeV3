@@ -16,8 +16,8 @@ type Sql = ReturnType<typeof postgres>
 
 export interface Finding {
   readonly check: string
-  readonly subject: string
   readonly detail: string
+  readonly subject: string
 }
 
 /** Tables carrying a `tenant_id` column, discovered from the catalogue. */
@@ -44,11 +44,11 @@ export async function checkRlsCoverage(sql: Sql): Promise<Finding[]> {
     const [state] = await sql<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       select relrowsecurity, relforcerowsecurity from pg_class where relname = ${table}
     `
-    if (!state?.relrowsecurity || !state?.relforcerowsecurity) {
+    if (!(state?.relrowsecurity && state?.relforcerowsecurity)) {
       out.push({
         check: 'rls-coverage',
-        subject: table,
         detail: `enabled=${state?.relrowsecurity} forced=${state?.relforcerowsecurity}`,
+        subject: table,
       })
     }
   }
@@ -68,16 +68,22 @@ export async function checkApplicationRole(sql: Sql, role = 'app_user'): Promise
   const [attrs] = await sql<{ rolsuper: boolean; rolbypassrls: boolean }[]>`
     select rolsuper, rolbypassrls from pg_roles where rolname = ${role}
   `
-  if (!attrs) return [{ check: 'app-role', subject: role, detail: 'role does not exist' }]
-  if (attrs.rolsuper) out.push({ check: 'app-role', subject: role, detail: 'is a superuser' })
-  if (attrs.rolbypassrls) out.push({ check: 'app-role', subject: role, detail: 'holds BYPASSRLS' })
+  if (!attrs) {
+    return [{ check: 'app-role', detail: 'role does not exist', subject: role }]
+  }
+  if (attrs.rolsuper) {
+    out.push({ check: 'app-role', detail: 'is a superuser', subject: role })
+  }
+  if (attrs.rolbypassrls) {
+    out.push({ check: 'app-role', detail: 'holds BYPASSRLS', subject: role })
+  }
 
   for (const table of await discoverTenantTables(sql)) {
     const [owned] = await sql<{ owner: string }[]>`
       select pg_get_userbyid(c.relowner) as owner from pg_class c where c.relname = ${table}
     `
     if (owned?.owner === role) {
-      out.push({ check: 'app-role', subject: table, detail: `owned by ${role}` })
+      out.push({ check: 'app-role', detail: `owned by ${role}`, subject: table })
     }
   }
   return out
@@ -99,7 +105,7 @@ export async function checkDeclaredTablesCarryTenantId(
     .filter((t) => !discovered.has(t))
     .map((t) => ({
       check: 'tenant-id-present',
-      subject: t,
       detail: 'declared tenant-owned but has no tenant_id column',
+      subject: t,
     }))
 }

@@ -3,13 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./mocks": "./src/mocks.ts"
   },
+  "main": "./src/index.ts",
   "dependencies": {
     "@tanstack/react-query": "^5.60.0",
     "msw": "^2.15.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.0"
   }
 }

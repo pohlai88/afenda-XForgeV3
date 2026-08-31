@@ -17,14 +17,16 @@ import {
 const LIST = `/v1/employees/${EMPLOYEE}/emergency-contacts`
 
 beforeAll(async () => {
-  if (reachable) await seed()
+  if (reachable) {
+    await seed()
+  }
 })
 afterAll(closeAll)
 
 describe.skipIf(!reachable)('P07 -- a grant that has expired stops working', () => {
   it('allows inside the window and denies outside it, same principal', async () => {
     const scoped = (validTo?: string) =>
-      principalWith([{ permission: READ, scopeType: 'tenant', scopeId: TENANT_A, validTo }])
+      principalWith([{ permission: READ, scopeId: TENANT_A, scopeType: 'tenant', validTo }])
 
     expect((await request(LIST, scoped())).status).toBe(200)
     // ADR-018: delegation expires by construction rather than by someone
@@ -40,9 +42,9 @@ describe('P08 -- an evaluator that cannot decide must not allow', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'galaxy' as never },
       {
-        principal: principalWith([{ permission: READ, scopeType: 'tenant', scopeId: TENANT_A }]),
-        tenantId: TENANT_A,
         asOf: '2026-08-31T00:00:00.000Z',
+        principal: principalWith([{ permission: READ, scopeId: TENANT_A, scopeType: 'tenant' }]),
+        tenantId: TENANT_A,
       },
     )
     expect(r).toMatchObject({ allowed: false, reason: 'scope_type_unknown' })
@@ -52,9 +54,9 @@ describe('P08 -- an evaluator that cannot decide must not allow', () => {
     const r = evaluate(
       { permission: READ, scopeType: 'tenant' },
       {
-        principal: { id: 'x', kind: 'user', grants: [null as never] },
-        tenantId: TENANT_A,
         asOf: '2026-08-31T00:00:00.000Z',
+        principal: { grants: [null as never], id: 'x', kind: 'user' },
+        tenantId: TENANT_A,
       },
     )
     expect(r.allowed).toBe(false)
@@ -70,16 +72,16 @@ describe('P08 -- a malformed grant is ignored as authority, but not in silence',
       const r = evaluate(
         { permission: READ, scopeType: 'tenant' },
         {
-          principal: { id: 'corrupt', kind: 'user', grants: [null as never] },
-          tenantId: TENANT_A,
           asOf: '2026-08-31T00:00:00.000Z',
+          principal: { grants: [null as never], id: 'corrupt', kind: 'user' },
+          tenantId: TENANT_A,
         },
       )
       expect(r.allowed).toBe(false)
       // Discarding it quietly would let the request behave correctly while the
       // underlying corruption went unnoticed for months.
       expect(findings).toHaveLength(1)
-      expect(findings[0]).toMatchObject({ principalId: 'corrupt', malformedGrants: 1 })
+      expect(findings[0]).toMatchObject({ malformedGrants: 1, principalId: 'corrupt' })
     } finally {
       onPolicyIntegrity(() => {})
     }
@@ -91,13 +93,13 @@ describe('P08 -- a malformed grant is ignored as authority, but not in silence',
     const r = evaluate(
       { permission: READ, scopeType: 'tenant' },
       {
+        asOf: '2026-08-31T00:00:00.000Z',
         principal: {
+          grants: [null as never, { permission: READ, scopeId: TENANT_A, scopeType: 'tenant' }],
           id: 'mixed',
           kind: 'user',
-          grants: [null as never, { permission: READ, scopeType: 'tenant', scopeId: TENANT_A }],
         },
         tenantId: TENANT_A,
-        asOf: '2026-08-31T00:00:00.000Z',
       },
     )
     expect(r.allowed).toBe(true)
