@@ -1,0 +1,10 @@
+{
+  "name": "@xforge/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./generated/tokens.css",
+    "./tokens.json": "./tokens.json"
+  }
+}

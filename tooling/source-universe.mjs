@@ -44,7 +44,11 @@ export const NON_SOURCE_DIRS = [
 export const GENERATED_DIRS = ['generated']
 
 /** Repo-relative paths produced by `pnpm generate`, asserted clean after regeneration. */
-export const GENERATED_PATHS = ['contracts/', 'packages/api-client/src/generated/']
+export const GENERATED_PATHS = [
+  'contracts/',
+  'packages/api-client/src/generated/',
+  'packages/tokens/generated/',
+]
 
 /**
  * Generated FILES, which the directory rules above cannot express.

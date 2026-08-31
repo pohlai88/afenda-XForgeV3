@@ -470,6 +470,72 @@ export const guards = [
         }))
     },
   },
+
+  {
+    id: 'no-bespoke-styling',
+    law: 6,
+    precision: 'text',
+    title: 'Business screens compose primitives; they do not style',
+    // Phase 2's exit criterion is a screen built entirely from system
+    // primitives with NO BESPOKE CSS. That is a habit until something checks
+    // it, and habits are what the first urgent screen abandons -- one
+    // `style={{ marginTop: 8 }}` at a time, each individually reasonable.
+    //
+    // packages/ui is where styling lives, so it is exempt. Everywhere else, a
+    // className or a style attribute means a screen has an opinion the design
+    // system was supposed to own.
+    applies: (f) =>
+      notATest(f) &&
+      !/^packages[/]ui[/]/.test(f) &&
+      ((/^apps[/]web[/]app[/]/.test(f) && !/^apps[/]web[/]app[/]api[/]/.test(f)) ||
+        /^modules[/][^/]+[/]ui[/]/.test(f)),
+    check(f, src) {
+      const out = []
+      for (const re of [/className\s*=/g, /(?<![.\w])style\s*=\s*[{"']/g]) {
+        let m
+        while ((m = re.exec(src)) !== null) {
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message:
+              'business screens do not style: compose primitives from @xforge/ui, ' +
+              'and add a variant there if none fits',
+          })
+        }
+      }
+      return out
+    },
+  },
+
+  {
+    id: 'tokens-are-the-authority',
+    law: 7,
+    precision: 'text',
+    title: 'The design system stylesheet holds no literal design values',
+    // Law 7: every fact has one authoritative source. A hex code in the
+    // stylesheet is a colour with two homes -- the token file and here -- and
+    // the eighth instance of the defect this repository keeps having.
+    //
+    // Checked on DECLARATIONS only, so a comment may still name a colour while
+    // explaining why it is not used.
+    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    check(f, src) {
+      const out = []
+      const withoutComments = src.replace(/[/][*][\s\S]*?[*][/]/g, '')
+      const re = /:[^;{}]*(#[0-9a-fA-F]{3,8}|rgba?[(]|hsla?[(])/g
+      let m
+      while ((m = re.exec(withoutComments)) !== null) {
+        out.push({
+          file: f,
+          line: line(src, src.indexOf(m[0])),
+          message:
+            `literal design value '${m[1]}' -- every value comes from a semantic ` +
+            'token, or packages/tokens has stopped being the authority',
+        })
+      }
+      return out
+    },
+  },
 ]
 
 export const guardById = Object.fromEntries(guards.map((g) => [g.id, g]))

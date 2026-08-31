@@ -319,4 +319,52 @@ export const list = (ctx) => withTenant(ctx, async (sql) => sql\`select 1\`)
 `,
     },
   },
+
+  'no-bespoke-styling': {
+    violating: {
+      path: 'apps/web/app/employees/page.tsx',
+      source: `export default function Page() {
+  return <div className="grid gap-4">nope</div>
+}
+`,
+    },
+    // The same screen, composing a primitive. Must NOT be flagged, or the guard
+    // makes the design system unusable and gets removed.
+    clean: {
+      path: 'apps/web/app/employees/page.tsx',
+      source: `import { Stack } from '@xforge/ui'
+export default function Page() {
+  return <Stack gap="tight">fine</Stack>
+}
+`,
+    },
+  },
+
+  'no-bespoke-styling-inline': {
+    violating: {
+      path: 'modules/hr/ui/contact-row.tsx',
+      source: `export const Row = () => <div style={{ marginTop: 8 }}>nope</div>
+`,
+    },
+    clean: {
+      path: 'modules/hr/ui/contact-row.tsx',
+      source: `import { Text } from '@xforge/ui'
+export const Row = () => <Text tone="muted">fine</Text>
+`,
+    },
+  },
+
+  'tokens-are-the-authority': {
+    violating: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-button { background: #2563eb; }
+`,
+    },
+    clean: {
+      path: 'packages/ui/src/ui.css',
+      source: `/* #2563eb lives in tokens.json, not here */
+.xf-button { background: var(--semantic-accent-default); }
+`,
+    },
+  },
 }

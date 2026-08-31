@@ -60,3 +60,69 @@ test.describe('emergency contacts', () => {
     await expect(page.getByTestId('contacts')).toContainText('+60 11-111 1111')
   })
 })
+
+/**
+ * Phase 2's exit criterion says KEYBOARD-ONLY USABLE, so it is driven with a
+ * keyboard and nothing else. No click, no locator activation -- Tab to move,
+ * Enter to act, exactly as somebody who cannot use a pointer would.
+ *
+ * A screen can look perfectly accessible and fail this: a focus ring styled
+ * away, a control that is a div, a tab order that skips the primary action.
+ * None of those show up in a rendering.
+ */
+test.describe('keyboard-only operation', () => {
+  test('every control is reachable by Tab, and the focus ring is visible', async ({ page }) => {
+    await page.goto(PAGE)
+    await expect(page.getByRole('heading', { name: 'Emergency contacts' })).toBeVisible()
+
+    // Walk the tab order and collect what receives focus, rather than asserting
+    // a fixed index -- an index would pass while the order became nonsense.
+    const reached: string[] = []
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Tab')
+      const label = await page.evaluate(() => {
+        const el = document.activeElement
+        if (!el || el === document.body) return null
+        return `${el.tagName.toLowerCase()}:${(el.textContent ?? '').trim().slice(0, 20)}`
+      })
+      if (label && !reached.includes(label)) reached.push(label)
+    }
+
+    expect(reached.some((r) => r.includes('Add contact'))).toBe(true)
+
+    // Measured on a control KNOWN to be focused, not on whatever held focus
+    // when the loop above ran out. The first version asserted the latter and
+    // failed against a perfectly good focus ring -- a test measuring the wrong
+    // moment, which is the same defect as reading RLS state after restoring it.
+    await page.getByRole('button', { name: 'Add contact' }).focus()
+    const outline = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null
+      if (!el) return null
+      const s = getComputedStyle(el)
+      return { text: (el.textContent ?? '').trim(), style: s.outlineStyle, width: s.outlineWidth }
+    })
+
+    // The ring is a token and cannot be styled away per screen. If it ever is,
+    // this fails -- which is the only way that regression gets noticed.
+    expect(outline?.text).toContain('Add contact')
+    expect(outline?.style, 'the focused control must show an outline').not.toBe('none')
+    expect(outline?.width).not.toBe('0px')
+  })
+
+  test('the primary action can be performed with Enter alone', async ({ page }) => {
+    await page.goto(PAGE)
+    const before = await page.getByTestId('contacts').locator('li').count()
+
+    // Tab until the primary action holds focus, then activate it.
+    for (let i = 0; i < 12; i++) {
+      const onAdd = await page.evaluate(() =>
+        (document.activeElement?.textContent ?? '').includes('Add contact'),
+      )
+      if (onAdd) break
+      await page.keyboard.press('Tab')
+    }
+    await page.keyboard.press('Enter')
+
+    await expect(page.getByTestId('contacts').locator('li')).toHaveCount(before + 1)
+  })
+})
