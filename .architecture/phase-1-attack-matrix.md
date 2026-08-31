@@ -125,6 +125,43 @@ it cannot do on its own is distinguish *still running* from *process died* from
 *the outcome write itself failed* — so the admin and operations surface owes an
 explicit view, not a query someone remembers to write during an incident.
 
+## The policy matrix
+
+Same phase, different mechanism, and the distinction is the point:
+
+```
+RLS     answers  which tenant's rows can this request EVER see?
+policy  answers  what may this principal do INSIDE that tenant?
+```
+
+Cases where both deny at once prove neither. Each of these varies exactly one
+thing.
+
+| ID | Attack | Expected | Available from |
+|---|---|---|---|
+| P01 | same tenant, correct permission | allow | now |
+| P02 | same tenant, permission absent | deny, and the response says nothing useful | now |
+| P03 | permission held, but for another scope | deny | now |
+| P04 | a denied request | never reaches the business query | now |
+| P05 | client calls the API directly, bypassing the UI | deny | now |
+| P06 | an unregistered permission code | build or startup failure | a permission registry |
+| P07 | a grant whose window has closed | deny | now |
+| P08 | the evaluator cannot decide | fail closed | now |
+
+**P04 is the one that changes what the others prove.** Policy's guarantee is not
+*"my check fired"* but *"no path granted"* — different claims that a test
+conflates easily. A suite where the handler still runs and RLS happens to return
+nothing looks identical to one where authorisation worked, so the denial is
+asserted by the absence of the business transaction, not by the status code.
+
+**Internally rich, externally flat.** `permission_missing`, `scope_mismatch`,
+`grant_expired` and `scope_type_unknown` are distinguishable to the evaluator,
+to logs and to audit, and indistinguishable to the caller. "You lack
+`hr.employee.read` at `legal_entity MY02`" confirms MY02 exists and names the
+grant to go phishing for; repeated across identifiers, the API becomes an
+enumeration oracle one helpful error message at a time. The response carries a
+`request_id` so support can correlate without the caller learning anything.
+
 ## Order of work
 
 ```

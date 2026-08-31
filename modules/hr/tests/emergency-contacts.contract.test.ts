@@ -88,7 +88,6 @@ function req(
   principal: Principal | null = {
     id: 'u1',
     kind: 'user',
-    tenantId: TENANT,
     grants: [
       { permission: 'hr.employee.read', scopeType: 'tenant', scopeId: TENANT },
       { permission: 'hr.employee.update', scopeType: 'tenant', scopeId: TENANT },
@@ -153,13 +152,15 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       {
         id: 'u2',
         kind: 'user',
-        tenantId: TENANT,
         grants: [],
       },
     )
     expect(res.status).toBe(403)
     const body = await res.json()
-    expect(body.detail).toMatch(/hr\.employee\.read/)
+    // FLAT OUTSIDE. Naming the missing permission tells a caller exactly which
+    // grant to go phishing for, and confirms the resource was there to protect.
+    expect(body.detail).toBe('you do not have access to this operation')
+    expect(JSON.stringify(body)).not.toMatch(/hr\.employee\.read/)
   })
 
   it('403 when the grant belongs to a different tenant', async () => {
@@ -169,7 +170,6 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
       {
         id: 'u3',
         kind: 'user',
-        tenantId: TENANT,
         grants: [{ permission: 'hr.employee.read', scopeType: 'tenant', scopeId: OTHER_TENANT }],
       },
     )

@@ -17,6 +17,7 @@ import {
   FIXTURE_SECRET,
   SECRET_FIXTURE_ALLOWLIST,
   scanConfig,
+  stillGrandfathered,
 } from '../config-guards.mjs'
 
 const byId = (id) => {
@@ -128,5 +129,24 @@ describe('no-shared-dev-secret', () => {
 describe('the real repository satisfies both guards', () => {
   it('scanConfig reports no violations', () => {
     expect(scanConfig().violations).toEqual([])
+  })
+})
+
+describe('evidence backfill is lazy, and triggered by dependency', () => {
+  it('grandfathers a pre-law decision while nothing depends on it', () => {
+    expect(stillGrandfathered('ADR-003-rls-tenancy.md', 'spine')).toBe(true)
+    expect(stillGrandfathered('ADR-006-money.md', 'tenancy')).toBe(true)
+  })
+
+  it('STOPS grandfathering once the phase that rests on it is certified', () => {
+    // The point: committing `currentPhase: tenancy` demands evidence for the
+    // decisions the tenancy proof actually rests on -- and only those.
+    expect(stillGrandfathered('ADR-003-rls-tenancy.md', 'tenancy')).toBe(false)
+    expect(stillGrandfathered('ADR-015-bound-tenant.md', 'tenancy')).toBe(false)
+    expect(stillGrandfathered('ADR-006-money.md', 'payroll')).toBe(false)
+  })
+
+  it('never grandfathers a decision written after the law', () => {
+    expect(stillGrandfathered('ADR-024-structural-guards-stay-custom.md', 'spine')).toBe(false)
   })
 })

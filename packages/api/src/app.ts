@@ -131,14 +131,31 @@ export function createApp(
           if (!principal) {
             return problem(c, 401, 'Unauthenticated', 'no principal on this request')
           }
+          // The tenant comes from the VERIFIED context, never from the
+          // principal. Policy answers "what may this principal do inside this
+          // tenant"; it is not a second opinion about which tenant that is.
+          const tenant = c.get('tenant')
+          if (!tenant) {
+            return problem(c, 403, 'Forbidden', 'no verified tenant context on this request')
+          }
           const scopeId = def.scopeParam ? c.req.param(def.scopeParam) : undefined
           const verdict = evaluate(policy, {
             principal,
+            tenantId: tenant.tenantId,
             scopeId,
             asOf: (c.get('asOf') as string | undefined) ?? new Date(0).toISOString(),
           })
           if (!verdict.allowed) {
-            return problem(c, 403, 'Forbidden', verdict.reason)
+            // RICH INSIDE, FLAT OUTSIDE. The reason is put on the request for
+            // audit and logging; the response says only that access was
+            // refused, and carries the request id so support can correlate.
+            //
+            // "You lack hr.employee.read at legal_entity MY02" confirms MY02
+            // exists and that the permission is the only thing missing. Repeat
+            // it across identifiers and the API is an enumeration oracle -- one
+            // helpful error message at a time.
+            c.set('policyDenial', verdict)
+            return problem(c, 403, 'Forbidden', 'you do not have access to this operation')
           }
         }
         return def.handler(c)

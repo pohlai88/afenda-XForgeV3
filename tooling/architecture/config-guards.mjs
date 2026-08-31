@@ -21,7 +21,15 @@ import {
   NON_SOURCE_DIRS,
   UNCOMMITTABLE,
 } from '../source-universe.mjs'
-import { posix, ROOT, read, run, sourceFiles } from '../verify/lib/util.mjs'
+import {
+  COMMITTED_PHASE,
+  PHASES,
+  posix,
+  ROOT,
+  read,
+  run,
+  sourceFiles,
+} from '../verify/lib/util.mjs'
 
 /**
  * Read JSON, tolerating comments only when genuinely needed.
@@ -58,14 +66,40 @@ export const SECRET_FIXTURE_ALLOWLIST = [
 ]
 
 /**
- * ADRs written BEFORE law 34 existed. Exempt, deliberately.
+ * ADRs written BEFORE law 34 existed.
  *
- * Backfilling twenty-two decisions would cost days and mostly produce citations
- * for choices that are already working -- the standing-audit treadmill this law
- * is specifically not meant to become. The gate applies to new and reopened
- * decisions, where the search can still change the answer.
+ * Grandfathered from immediate backfill -- re-citing twenty-two working
+ * decisions is the standing audit this law is specifically not meant to become.
+ * But NOT exempt forever: a decision that a phase materially depends on must be
+ * evidence-backed before that phase is CERTIFIED.
+ *
+ * So the backfill is lazy and triggered by actual dependency. Committing
+ * `currentPhase: tenancy` will demand evidence for the five decisions the
+ * tenancy proof rests on, and not for the payroll ones, which nothing yet
+ * relies on.
  */
-const PRE_LAW_ADRS = Array.from({ length: 22 }, (_, i) => String(i + 1).padStart(3, '0'))
+const EVIDENCE_REQUIRED_BY_PHASE = {
+  '003': 'tenancy', // shared-schema RLS, two chokepoints
+  '010': 'tenancy', // all authorisation in packages/policy
+  '015': 'tenancy', // one bound tenant per request
+  '018': 'tenancy', // machine principals, revocation
+  '019': 'tenancy', // permission lifecycle, fail-closed compilation
+  '013': 'hr', // optimistic concurrency
+  '006': 'payroll', // money representation
+  '016': 'payroll', // time model
+  '017': 'payroll', // period lock and retro adjustment
+  '007': 'async', // transactional outbox
+  '011': 'ai', // bounded AI tool generation
+}
+
+/** True while the phase that depends on this decision has not been certified. */
+export function stillGrandfathered(name, committedPhase = COMMITTED_PHASE) {
+  const n = (name.match(/^ADR-(\d{3})/) || [])[1]
+  if (!n) return false
+  const required = EVIDENCE_REQUIRED_BY_PHASE[n]
+  if (!required) return Number(n) <= 22 // pre-law, nothing depends on it yet
+  return PHASES.indexOf(committedPhase) < PHASES.indexOf(required)
+}
 
 export const configGuards = [
   {
@@ -191,7 +225,7 @@ export const configGuards = [
     check(env) {
       const out = []
       for (const { name, source } of env.adrs ?? []) {
-        if (PRE_LAW_ADRS.some((n) => name.startsWith(`ADR-${n}`))) continue
+        if (stillGrandfathered(name)) continue
         if (!/FROZEN/.test(source)) continue
 
         if (!/^##\s+Prior art/m.test(source)) {

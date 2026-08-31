@@ -82,6 +82,13 @@ Where nothing comparable exists, record `no-direct-match` with the sources
 examined. That is stronger than pretending a loosely related article proves
 the design.
 
+A governance tool earns authority by rejecting a known violation and by showing
+it inspected the expected source population -- never by exiting 0. depcruise
+reported "no violations found" against this repository having cruised 1 module
+and 0 dependencies, because it cannot parse TypeScript 7. Installed, configured,
+green, and blind. Any replacement must pass both proofs before it is adopted,
+and the guard it replaces is deleted in the same commit (ADR-024).
+
 The verify stage checks only that these fields are PRESENT. It cannot tell
 whether a source is good, relevant, or was read -- that is review. A guard whose
 name overclaims is worse than none, which is why it is called

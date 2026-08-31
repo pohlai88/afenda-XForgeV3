@@ -67,7 +67,6 @@ const DEV_TENANT = process.env.DEV_TENANT_ID ?? '11111111-1111-4111-8111-1111111
 const devPrincipal: Principal = {
   id: 'dev-user',
   kind: 'user',
-  tenantId: DEV_TENANT,
   grants: [
     { permission: 'hr.employee.read', scopeType: 'tenant', scopeId: DEV_TENANT },
     { permission: 'hr.employee.update', scopeType: 'tenant', scopeId: DEV_TENANT },
