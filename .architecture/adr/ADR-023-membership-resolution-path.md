@@ -83,6 +83,34 @@ RLS-protected data, and it is the check the whole tenant boundary rests on.
 Exempting it would put the most security-critical table in the system outside
 the mechanism protecting everything else.
 
+## Prior art
+
+Checked after this decision was drafted, which is the wrong order and is why
+the prior-art law now exists.
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [PostgreSQL 18, Row Security Policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) | 2026-08-31 | Superusers and `BYPASSRLS` roles always bypass RLS; `FORCE` subjects only the table OWNER |
+| [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html) | 2026-08-31 | Client-supplied tenant identifiers are SELECTORS ONLY, verified against membership; ordinary requests must not use a privileged connection |
+| [Postgres RLS in practice](https://queryplane.com/blog/postgres-row-level-security-in-practice/) | 2026-08-31 | Permissive policies OR together; `SECURITY DEFINER` evaluates the OWNER's policies; `pg_dump` without `BYPASSRLS` exports zero rows |
+
+### What prior art does NOT prove
+
+No source found addresses the bootstrap
+circularity directly — how to read the tables that decide the tenant before a
+tenant is decided. OWASP describes the verification, not where the membership
+row comes from. The closed-primitive answer is therefore an Xforge synthesis,
+qualified by T06, T07 and T18 rather than by precedent, and it is labelled that
+way instead of borrowing authority from sources that do not cover it.
+
+**SECURITY DEFINER doctrine.** A PostgreSQL function is the obvious next step if
+this lookup ever needs more privilege than a plain SELECT, and it is a trap: a
+`SECURITY DEFINER` function evaluates the OWNER's policies, not the caller's, so
+it can hand back cross-tenant rows while every policy above it looks correct. If
+one is ever introduced here it requires a fixed `search_path`, fully qualified
+objects, no dynamic SQL, `REVOKE EXECUTE FROM PUBLIC`, a non-superuser owner,
+and the smallest possible return shape. Until then, no function.
+
 ## Consequences
 
 **Positive.** The circularity is resolved without widening any general-purpose

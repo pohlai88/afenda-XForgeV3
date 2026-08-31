@@ -100,7 +100,7 @@ export const stages = [
     id: 'guards',
     phase: 'spine',
     title: 'architecture guards',
-    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30],
+    enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30, 34],
     run() {
       const { files, checked, violations: sourceViolations } = scanWorkspace()
 

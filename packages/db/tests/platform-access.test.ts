@@ -133,3 +133,30 @@ describe('audit durability', () => {
     expect(workRan).toBe(false)
   })
 })
+
+describe('the audit records where the privileged call came from', () => {
+  it('carries the server-verified tenant from the execution context', async () => {
+    const sink = createMemoryAuditSink()
+    setPlatformAuditSink(sink)
+    await withExecutionContext(
+      {
+        actor: 'admin@xforge',
+        correlationId: 'req-9',
+        origin: 'request',
+        tenantId: '11111111-1111-4111-8111-111111111111',
+      },
+      () =>
+        withPlatformAccess(
+          { operation: 'admin.tenant-list', reason: 'support ticket 41' },
+          async () => 'ok',
+        ),
+    )
+    // Not scoping the access -- platform access is cross-tenant by definition.
+    // Recording which tenant's console the operator was in when they reached
+    // across, which is where an investigation starts.
+    expect(sink.read().map((r) => r.tenantId)).toEqual([
+      '11111111-1111-4111-8111-111111111111',
+      '11111111-1111-4111-8111-111111111111',
+    ])
+  })
+})

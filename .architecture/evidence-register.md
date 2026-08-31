@@ -108,3 +108,39 @@ Every entry carries a URL. Entries without a verifiable retrieval are marked **U
 Predecessor drafts argued the custom-field case twice using **fabricated statistics stated as fact** — "20,000 employees, 400 tenants, hundreds of generated columns, each NULL for 99.75% of rows." No measurement supports these numbers. The argument for the three-rung ladder holds on the structural point alone (a shared-schema table serves every tenant, so a column added for one is added for all), and the numbers have been removed rather than repeated.
 
 Two predecessor documents reported desk analysis in PASS/FAIL tables with headline defect counts, which reads as test output. It was reasoning on paper. `architecture-final.md` Part II states this explicitly and drops the counts — the two documents that both claimed to have "validated the architecture" reported different totals, which is why the count is not the evidence.
+
+
+## Verified 31 August 2026
+
+Added after law 34, which exists because this register was built to grade
+external precedent and then went unused -- 2 of 21 entries were ever verified,
+while sessions were spent deriving what PostgreSQL documents in a sentence.
+
+Not a backfill of the original 21. Those stay as they are until a decision is
+reopened; re-verifying them on a schedule is the standing audit this register
+is meant to prevent.
+
+| # | Source | Retrieved | Grade | Supports | Outcome |
+|---|---|---|---|---|---|
+| E22 | [PostgreSQL, Row Security Policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) | 2026-08-31 | S | Superusers and `BYPASSRLS` roles ALWAYS bypass RLS; `FORCE` subjects only the table owner; TRUNCATE and REFERENCES are not subject to row security | ADOPT |
+| E23 | [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html) | 2026-08-31 | S | Client-supplied tenant ids are selectors only, verified against membership; transaction-local context per request; schema-derived RLS coverage over hand-maintained lists; request role must lack `rolsuper`/`rolbypassrls`; prove connection reuse cannot leak | ADOPT |
+| E24 | [Postgres RLS in practice](https://queryplane.com/blog/postgres-row-level-security-in-practice/) | 2026-08-31 | P | Permissive policies OR together; `SECURITY DEFINER` evaluates the owner's policies; `pg_dump` without `BYPASSRLS` exports zero rows under FORCE | ADOPT |
+| E25 | [dependency-cruiser CLI](https://github.com/sverweij/dependency-cruiser/blob/main/doc/cli.md) + `depcruise` 18.2.0 run locally | 2026-08-31 | V | Forbidden rules and cycle detection are first-class -- and it refuses `typescript >=7`, cruising 0 dependencies here | REJECT (deferred, ADR-024) |
+| E26 | [typescript-eslint custom rules](https://typescript-eslint.io/developers/custom-rules/) | 2026-08-31 | V | Typed AST rules with a testing harness -- the target for semantic guards when touched | ADAPT (ADR-024) |
+
+**What E23 confirmed we had already derived independently**, at considerably
+greater cost than reading it: host-as-selector, `FORCE ROW LEVEL SECURITY`, a
+non-owner request role, `SET LOCAL` per transaction, dynamic table enumeration
+over a maintained list, and `rolsuper`/`rolbypassrls` assertions. ADR-022's
+"Host selects. Membership authorises. Session identifies." is a restatement of
+its first recommendation.
+
+**What it gave us that reasoning had not**: the pooled-connection reuse proof
+(T19), permissive-policy OR-stacking (T20), the `pg_dump` hazard (T21), audit
+rows carrying the server-verified tenant, and the `SECURITY DEFINER` doctrine
+now recorded in ADR-023.
+
+**Freshness.** STANDARD sources (PostgreSQL, OWASP, OpenAPI) are re-checked when
+the architecture or a major version changes. PRODUCTION precedent stays valid as
+precedent. PROVIDER capability (E25, E26, Neon, Vercel) is freshness-sensitive
+and re-checked when depended upon -- E25 in particular carries a revisit trigger.

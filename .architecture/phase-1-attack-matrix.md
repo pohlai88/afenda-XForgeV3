@@ -56,12 +56,30 @@ or the proof is about a program nobody runs.
 | T16 | a privileged operation crashes mid-flight | the ATTEMPT remains observable | now |
 | T17 | a forged `x-tenant-id` header at another tenant's host | the header decides nothing | now |
 | T18 | membership revoked between two requests | the second is denied | now |
+| T19 | two tenants over one pooled connection | no context survives the checkout | now |
+| T20 | a second permissive policy is added | access WIDENS, never narrows | now |
+| T21 | a backup taken with the application role | sees nothing, silently | now |
 
-**T17 and T18 are amendments**, added during slice 2 because review named them
-and both are cheap once membership is real. A frozen specification may be
-EXTENDED -- what it must never be is quietly narrowed to match what the code
-turned out to do, which is the only direction that flatters anyone. Both are
-recorded here rather than appearing as extra green tests nobody asked for.
+**T17-T21 are amendments.** A frozen specification may be EXTENDED; what it must
+never be is quietly narrowed to match what the code turned out to do, which is
+the only direction that flatters anyone.
+
+T17 and T18 came from review. **T19, T20 and T21 came from published prior art**,
+after this matrix had been written and declared frozen -- which is the finding,
+not a footnote. All three describe hazards no amount of reasoning from our own
+code would have surfaced:
+
+- **T19** is the adversarial sequence the [OWASP Multi-Tenant Security Cheat
+  Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html)
+  asks for: two tenants over reused connections, proving the second cannot
+  observe the first. We had tested that `SET LOCAL` expires, which is a
+  different and weaker claim.
+- **T20**: permissive policies combine with OR, so adding one only ever grants.
+  We came within a design decision of adding a second policy to
+  `tenant_membership` believing it would narrow access.
+- **T21**: `FORCE ROW LEVEL SECURITY` applies to `pg_dump`. A backup taken by a
+  role without `BYPASSRLS` succeeds, is a plausible size, and contains no rows.
+  The failure surfaces during a restore.
 
 **The fourth column exists so the ratio carries information.** A single figure
 mixes *not written yet* with *cannot be written yet*, and a number that means

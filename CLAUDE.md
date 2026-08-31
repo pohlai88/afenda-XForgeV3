@@ -48,11 +48,44 @@
 31. Generalise a platform abstraction only after a second real use case proves it.
 32. pnpm verify is the canonical definition of repository green.
 33. A green verification run leaves the checkout exactly as it found it.
+34. Search prior art before proposing an architectural pattern. Record what
+    was found, what was rejected, and what it does not prove. Do not build
+    infrastructure a mature tool already provides.
 
 Canonical architecture: .architecture/architecture-final.md
 Decisions:              .architecture/adr/
 Evidence:               .architecture/evidence-register.md
 Next phase's spec:      .architecture/phase-1-attack-matrix.md
+
+# Prior art
+
+Law 34 exists because it lapsed once already. The evidence register was built to
+grade external precedent and then went unused: 2 of 21 entries were ever
+verified, while sessions were spent deriving what PostgreSQL documents in one
+sentence and OWASP publishes as a cheat sheet.
+
+  search BEFORE designing.  gate BEFORE freezing.
+
+An exploratory sketch needs no evidence record. A FROZEN decision needs:
+sources with retrieval dates and the claim each supports, the alternatives
+reviewed, and -- the load-bearing part -- what the prior art does NOT prove.
+"AWS recommends RLS" establishes that the pattern is credible. It says nothing
+about whether ours is correct; only the qualification suite does that.
+
+Three outcomes are all valid, and REJECT is evidence too:
+
+  ADOPT   the pattern fits as published
+  ADAPT   sound, but needs Xforge constraints
+  REJECT  conflicts with a requirement here -- record why
+
+Where nothing comparable exists, record `no-direct-match` with the sources
+examined. That is stronger than pretending a loosely related article proves
+the design.
+
+The verify stage checks only that these fields are PRESENT. It cannot tell
+whether a source is good, relevant, or was read -- that is review. A guard whose
+name overclaims is worse than none, which is why it is called
+`adr-has-evidence`.
 
 # Repository workflow
 

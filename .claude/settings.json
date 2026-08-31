@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "$comment": "Law 29: architecture invariants are enforced by guards, not prose. pnpm verify runs the guards at gate time; this hook runs them at authorship time, so a violation is reported against the edit that caused it rather than against a batch. Read-only and ~1.4s over the whole workspace. Exit 2 is the blocking-error protocol: the guard output is fed back to the agent, which then fixes it before continuing.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(pnpm -s guards 2>&1) || { echo \"$out\" >&2; exit 2; }",
+            "timeout": 60,
+            "statusMessage": "architecture guards"
+          }
+        ]
+      }
+    ]
+  }
+}

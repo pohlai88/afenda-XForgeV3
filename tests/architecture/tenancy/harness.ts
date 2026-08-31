@@ -44,6 +44,16 @@ export const B_ROW = '66666666-6666-4666-8666-666666666666'
 export const MEMBER_OF_BOTH = 'user-a'
 export const MEMBER_OF_A_ONLY = 'user-only-a'
 
+/**
+ * Exactly the policies each tenant-owned table should carry. Checked as a SET:
+ * a missing one removes protection, an extra permissive one adds access.
+ */
+export const EXPECTED_POLICIES: Record<string, readonly string[]> = {
+  emergency_contact: ['emergency_contact_tenant_isolation'],
+  tenant_membership: ['tenant_membership_tenant_isolation'],
+  tenant_domain: ['tenant_domain_routing_lookup'],
+}
+
 export let owner!: ReturnType<typeof postgres>
 export let driver!: ReturnType<typeof createPostgresDriver>
 export let reachable = false
@@ -101,7 +111,7 @@ export async function contextFor(
  * of flattering the suite for the rest of the week.
  */
 export async function assertBoundaryIntact(): Promise<void> {
-  for (const table of ['emergency_contact', 'tenant_membership', 'tenant_domain']) {
+  for (const [table, expected] of Object.entries(EXPECTED_POLICIES)) {
     const [state] = await owner<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       select relrowsecurity, relforcerowsecurity from pg_class where relname = ${table}
     `
@@ -109,11 +119,29 @@ export async function assertBoundaryIntact(): Promise<void> {
       throw new Error(
         [
           `REFUSING TO RUN: ${table} does not have row-level security enabled AND forced.`,
-          'A previous run of T11 was probably interrupted while the boundary was down.',
+          'A destructive mutation case was probably interrupted while the boundary was down.',
           'Restore it before trusting anything this suite says:',
           `  alter table ${table} enable row level security;`,
           `  alter table ${table} force row level security;`,
         ].join(' '),
+      )
+    }
+
+    // The POLICY SET, not just the flags. Permissive policies combine with OR,
+    // so a leftover policy from T20 would WIDEN access while every flag still
+    // read as healthy -- a poisoned database that looks perfect.
+    const found = (
+      await owner<{ policyname: string }[]>`
+        select policyname from pg_policies where tablename = ${table} order by policyname
+      `
+    ).map((r) => r.policyname)
+    const missing = expected.filter((e) => !found.includes(e))
+    const extra = found.filter((f) => !expected.includes(f))
+    if (missing.length || extra.length) {
+      throw new Error(
+        `REFUSING TO RUN: ${table} has an unexpected policy set. ` +
+          `missing=[${missing.join(', ')}] unexpected=[${extra.join(', ')}]. ` +
+          'An unexpected PERMISSIVE policy widens access, because policies OR together.',
       )
     }
   }

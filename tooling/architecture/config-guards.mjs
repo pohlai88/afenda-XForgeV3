@@ -11,7 +11,7 @@
  * config guard never observed to reject a bad config is exactly as
  * untrustworthy as a source guard never observed to reject bad source.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   classify,
@@ -56,6 +56,16 @@ export const SECRET_FIXTURE_ALLOWLIST = [
   'packages/db/bootstrap.sql',
   'tooling/verify/lib/migrate-check.mjs',
 ]
+
+/**
+ * ADRs written BEFORE law 34 existed. Exempt, deliberately.
+ *
+ * Backfilling twenty-two decisions would cost days and mostly produce citations
+ * for choices that are already working -- the standing-audit treadmill this law
+ * is specifically not meant to become. The gate applies to new and reopened
+ * decisions, where the search can still change the answer.
+ */
+const PRE_LAW_ADRS = Array.from({ length: 22 }, (_, i) => String(i + 1).padStart(3, '0'))
 
 export const configGuards = [
   {
@@ -164,6 +174,53 @@ export const configGuards = [
         }))
     },
   },
+  {
+    id: 'adr-has-evidence',
+    law: 34,
+    title: 'A FROZEN decision records the prior art it was checked against',
+    /**
+     * NAMED FOR WHAT IT DOES. It checks that fields are PRESENT. It cannot tell
+     * whether a source is good, whether it supports the claim, or whether
+     * anyone read it -- that is review. `prior-art-verified` would have been a
+     * guard whose green light meant more than it can deliver, and an
+     * overclaiming name is worse than no guard at all.
+     *
+     * It catches the failure that actually happened: a decision frozen with no
+     * evidence recorded anywhere.
+     */
+    check(env) {
+      const out = []
+      for (const { name, source } of env.adrs ?? []) {
+        if (PRE_LAW_ADRS.some((n) => name.startsWith(`ADR-${n}`))) continue
+        if (!/FROZEN/.test(source)) continue
+
+        if (!/^##\s+Prior art/m.test(source)) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message: 'FROZEN with no Prior art section',
+          })
+          continue
+        }
+        const hasDated = /\|\s*20\d\d-\d\d-\d\d\s*\|/.test(source)
+        const noMatch = /no-direct-match/.test(source)
+        if (!hasDated && !noMatch) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message: 'Prior art records no dated source and no explicit no-direct-match finding',
+          })
+        }
+        if (!/does NOT prove/i.test(source)) {
+          out.push({
+            where: `.architecture/adr/${name}`,
+            message:
+              'no "what prior art does NOT prove" section -- precedent qualifies the ' +
+              'pattern, never this implementation',
+          })
+        }
+      }
+      return out
+    },
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
@@ -176,6 +233,14 @@ export function scanConfig() {
     // rather than silently passing on a wrong assumption.
     trackedFiles:
       tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
+    adrs: existsSync(join(ROOT, '.architecture/adr'))
+      ? readdirSync(join(ROOT, '.architecture/adr'))
+          .filter((f) => /^ADR-\d{3}.*\.md$/.test(f))
+          .map((name) => ({
+            name,
+            source: readFileSync(join(ROOT, '.architecture/adr', name), 'utf8'),
+          }))
+      : [],
     biome: readJsonc('biome.json'),
     tsconfig: readJsonc('tsconfig.json'),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
