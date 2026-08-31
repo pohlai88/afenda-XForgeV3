@@ -45,6 +45,16 @@ const C = {
 const tty = process.stdout.isTTY
 const paint = (c, s) => (tty ? c + s + C.reset : s)
 
+/**
+ * Wide enough for the longest stage title, DERIVED rather than guessed.
+ *
+ * It was 26, written when the longest title was shorter than that, and the
+ * first stage added afterwards printed its title and its detail with no space
+ * between them. A constant that has to be revisited every time the list grows
+ * is a second place the stage list is described.
+ */
+const TITLE_WIDTH = Math.max(...stages.map((s) => s.title.length)) + 1
+
 const COLOUR = {
   [PASS]: C.green,
   [FAIL]: C.red,
@@ -70,7 +80,7 @@ function list() {
   stages.forEach((s, i) => {
     const laws = s.enforces.length ? `laws ${s.enforces.join(', ')}` : 'no law directly'
     console.log(
-      `  ${String(i + 1).padStart(2)}. ${s.title.padEnd(26)}${paint(C.dim, `${s.phase.padEnd(9)} ${laws}`)}`,
+      `  ${String(i + 1).padStart(2)}. ${s.title.padEnd(TITLE_WIDTH)}${paint(C.dim, `${s.phase.padEnd(9)} ${laws}`)}`,
     )
   })
   console.log(
@@ -170,7 +180,7 @@ function main() {
     results.push({ stage, ...r })
     const c = COLOUR[r.status] || C.reset
     console.log(
-      `  ${paint(c, r.status.padEnd(8))} ${stage.title.padEnd(26)}${paint(C.dim, r.detail.split('\n')[0])}`,
+      `  ${paint(c, r.status.padEnd(8))} ${stage.title.padEnd(TITLE_WIDTH)}${paint(C.dim, r.detail.split('\n')[0])}`,
     )
     if (r.status === FAIL) {
       failed = true

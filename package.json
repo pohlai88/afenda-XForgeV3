@@ -12,6 +12,8 @@
     "generate": "pnpm -s gen:tokens && pnpm -s gen:openapi && pnpm -s gen:client",
     "guards": "node tooling/architecture/run-guards.mjs",
     "guards:mutate": "node tooling/architecture/run-guards.mjs --mutation-test",
+    "perf:budgets": "node tooling/perf/check-budgets.mjs",
+    "perf:measure": "node tooling/perf/route-bundle-size.mjs",
     "test:architecture:tenancy": "vitest run --config vitest.architecture.config.ts",
     "verify": "node tooling/verify/verify.mjs",
     "verify:ci": "node tooling/verify/verify.mjs --ci",

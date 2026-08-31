@@ -1,0 +1,77 @@
+{
+  "$comment": [
+    "Per-route performance budgets. The single authority for the build gate and,",
+    "when it lands, the Lighthouse CI assertion config -- section 22 requires the",
+    "budget to live in configuration, and two configuration files would be the",
+    "two-sources defect wearing another costume.",
+    "",
+    "Section 22: 'every route in the CI budget file carries a numeric threshold',",
+    "with 180KB critical-path JS and LCP under 2.5s on throttled 4G as the default",
+    "for any route that has not ratified its own. So `status` records PROVENANCE --",
+    "where a number came from -- and never replaces the number. A route whose",
+    "status is `inherited` still states its threshold explicitly, because a reader",
+    "checking compliance must not have to resolve a default in their head.",
+    "",
+    "180KB is read as 180000 bytes, not 184320. The conservative reading.",
+    "",
+    "status:",
+    "  inherited   takes the default; the number is copied here deliberately",
+    "  explicit    ratified its own ceiling; `reason` is mandatory",
+    "  exempt      not gated; `reason` is mandatory",
+    "",
+    "Raising a threshold is its own commit, carrying the measured number and the",
+    "reason. Never in the commit that made it red."
+  ],
+  "metric": {
+    "initialClientJsGzipBytes": {
+      "tool": "tooling/perf/route-bundle-size.mjs",
+      "gzipLevel": 9,
+      "$comment": [
+        "A stable proxy for transfer size, not a prediction of it: a real CDN may",
+        "use a different level or Brotli and will land lower. Validated against",
+        "the running production server at 0.25% difference.",
+        "",
+        "Excludes the legacy `noModule` polyfill bundle, which no browser that",
+        "understands ES modules ever requests. Including it cost 39520 B and put",
+        "the employee route over the default on the first measurement -- an",
+        "exemption earned by bytes nobody downloads."
+      ]
+    },
+    "largestContentfulPaintMs": {
+      "tool": "not yet implemented -- Lighthouse CI, 5 runs, median",
+      "$comment": [
+        "Section 22's 'throttled 4G' is the condition. Recorded here so the",
+        "threshold is not mistaken for one measured on an unthrottled desktop.",
+        "Lighthouse cannot measure INP -- it is a navigation test with no real",
+        "interaction -- so TBT stands in there and interaction latency is",
+        "measured in Playwright instead."
+      ]
+    }
+  },
+  "defaults": {
+    "initialClientJsGzipBytes": 180000,
+    "largestContentfulPaintMs": 2500
+  },
+  "routes": {
+    "/_global-error": {
+      "status": "inherited",
+      "initialClientJsGzipBytes": 180000,
+      "largestContentfulPaintMs": 2500,
+      "$comment": [
+        "Framework routes, carrying almost no application code. They are here as",
+        "the cheapest early warning that exists: when the Next or React baseline",
+        "grows, these move first and for a reason that is not our doing."
+      ]
+    },
+    "/_not-found": {
+      "status": "inherited",
+      "initialClientJsGzipBytes": 180000,
+      "largestContentfulPaintMs": 2500
+    },
+    "/employees/[employeeId]": {
+      "status": "inherited",
+      "initialClientJsGzipBytes": 180000,
+      "largestContentfulPaintMs": 2500
+    }
+  }
+}

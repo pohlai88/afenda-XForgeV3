@@ -178,3 +178,61 @@ than smoothed over:
 the architecture or a major version changes. PRODUCTION precedent stays valid as
 precedent. PROVIDER capability (E25, E26, Neon, Vercel) is freshness-sensitive
 and re-checked when depended upon -- E25 in particular carries a revisit trigger.
+
+---
+
+## Stage 0 baseline — route JavaScript, measured 31 August 2026
+
+Grade **X**. This is an Xforge measurement, not external precedent: it grades
+nothing and proves only what this build does on this commit.
+
+Section 22 requires per-route budgets. The design-system plan requires the
+measurement to come *before* the budget, because a threshold written first is a
+number somebody invented, and the first reader to grep it treats it as evidence.
+
+Measured by `tooling/perf/route-bundle-size.mjs` at commit `68b2184`, Next
+16.3.3 with Turbopack, production build, gzip level 9:
+
+| Route | Initial client JS | Spare under 180000 B |
+|---|---|---|
+| `/_global-error` | 133120 B (130.0 kB) | 46880 B |
+| `/_not-found` | 140838 B (137.5 kB) | 39162 B |
+| `/employees/[employeeId]` | 146330 B (142.9 kB) | 33670 B |
+
+**The framework floor is 130 kB.** Roughly 89% of every route's budget is spent
+before any Xforge code runs. The entire design system — tokens, primitives,
+command palette, data grid — is being built into **33.6 kB of headroom** on the
+only real screen. That number is the constraint Stage 6 is designed against, and
+it is why the palette is dynamically imported rather than bundled.
+
+**Checked against ground truth**, because manifest archaeology is exactly the
+kind of measurement that is confidently wrong. The tool predicted 180358 B of
+JavaScript for `/_not-found`; the running production server transferred
+180803 B — 0.25%, attributable to its gzip level. (Both figures predate the
+`noModule` correction below, which applies equally to each.)
+
+**Two defects the first measurement caught, recorded because both would have
+set a wrong budget silently:**
+
+1. *Shared chunks counted twice.* `entryJSFiles` spells a chunk
+   `static/chunks/a.js` and `clientModules` spells the same chunk
+   `/_next/static/chunks/a.js`. Deduplicating the strings inflated the employee
+   route by 16857 B. Fixed by deduplicating resolved paths on disk.
+2. *The legacy polyfill bundle counted as initial.* Next loads it with
+   `noModule`, so no browser supporting ES modules ever requests it — 39520 B
+   that nobody downloads. Counting it put the employee route at 185850 B,
+   **over** section 22's default, and the honest-looking response would have
+   been to record an `explicit` exemption on the only real route in the
+   repository, on day one, for bytes that do not exist. It is now measured and
+   reported separately rather than dropped, so the exclusion stays visible.
+
+**What this does NOT prove.** Nothing about runtime performance: no LCP, no CLS,
+no TBT, no interaction latency. Those are the NAVIGATION and INTERACTION lanes
+and are not yet implemented, so section 22's `largestContentfulPaintMs` sits in
+the budget file with a threshold and no tool behind it — stated in the file
+rather than left to be discovered. It also proves nothing about a CDN: the gate
+is a stable proxy at a pinned gzip level, and real transfer will be lower.
+
+**The gate.** `tooling/perf/check-budgets.mjs`, wired as the `perf-budgets`
+verify stage and covered by 15 unit tests, 8 of which assert it *rejects* a
+violation — ADR-024's rule, applied to the tool that enforces this table.

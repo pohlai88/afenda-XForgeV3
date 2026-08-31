@@ -1,0 +1,163 @@
+/**
+ * The performance budget gate, proved against violations it must reject.
+ *
+ * ADR-024: a governance tool is not adopted until it rejects a known violation
+ * and demonstrates it inspected the expected source population. dependency-
+ * cruiser reported this repository green having cruised zero dependencies, and
+ * a budget gate can fail exactly the same way -- passing because it compared
+ * nothing, on a build that produced no routes.
+ *
+ * So every rule below is stated as a violation first. A gate is only known to
+ * work at the point something has failed it.
+ */
+import { describe, expect, it } from 'vitest'
+// @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
+import { evaluateBudgets, summarise } from '../../tooling/perf/check-budgets.mjs'
+
+interface Measured {
+  initialClientJsGzipBytes: number
+  route: string
+}
+
+const config = (routes: Record<string, unknown>, defaults = 180_000) => ({
+  defaults: { initialClientJsGzipBytes: defaults },
+  routes,
+})
+
+const measured = (...rs: [string, number][]): Measured[] =>
+  rs.map(([route, initialClientJsGzipBytes]) => ({ initialClientJsGzipBytes, route }))
+
+const inherited = { initialClientJsGzipBytes: 180_000, status: 'inherited' }
+
+describe('the performance budget gate', () => {
+  it('passes a route inside its inherited budget', () => {
+    const { checked, problems } = evaluateBudgets(
+      config({ '/a': inherited }),
+      measured(['/a', 146_330]),
+    )
+    expect(problems).toEqual([])
+    expect(checked).toEqual([
+      { actual: 146_330, route: '/a', status: 'inherited', threshold: 180_000 },
+    ])
+  })
+
+  it('rejects a route that exceeds its budget, and says by how much', () => {
+    const { problems } = evaluateBudgets(config({ '/a': inherited }), measured(['/a', 180_001]))
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('exceeds its 180000 B budget by 1 B')
+  })
+
+  // The rule that makes the gate more than decoration. Without it a new route
+  // escapes the budget by the simple expedient of existing.
+  it('rejects a built route that nobody budgeted', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': inherited }),
+      measured(['/a', 100], ['/b', 100]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('/b: built but has no budget entry')
+  })
+
+  // The other direction. A stale entry stops gating anything, and reads as
+  // coverage that is not there.
+  it('rejects a budgeted route that was never built', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': inherited, '/gone': inherited }),
+      measured(['/a', 100]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('/gone: budgeted but not built')
+  })
+
+  it('rejects an entry with no numeric threshold, as section 22 requires', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': { status: 'inherited' } }),
+      measured(['/a', 100]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('section 22 requires one on every route')
+  })
+
+  // An exception must announce itself. Raising the number while leaving the
+  // label at `inherited` is precisely how one stops being visible.
+  it('rejects a raised threshold still labelled inherited', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': { initialClientJsGzipBytes: 250_000, status: 'inherited' } }),
+      measured(['/a', 200_000]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('labelled inherited but its threshold is 250000')
+  })
+
+  it('accepts a raised threshold once it is labelled explicit, with a reason', () => {
+    const entry = {
+      initialClientJsGzipBytes: 250_000,
+      reason: 'the grid ships TanStack Table; measured 214kB on 2026-08-31',
+      status: 'explicit',
+    }
+    const { problems } = evaluateBudgets(config({ '/a': entry }), measured(['/a', 200_000]))
+    expect(problems).toEqual([])
+  })
+
+  it.each(['explicit', 'exempt'])('rejects %s without a recorded reason', (status) => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': { initialClientJsGzipBytes: 999_999, status } }),
+      measured(['/a', 100]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('requires a recorded reason')
+  })
+
+  it('rejects a status it does not recognise, rather than ignoring the route', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': { initialClientJsGzipBytes: 1, status: 'todo' } }),
+      measured(['/a', 100]),
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('is not one of')
+  })
+
+  it('lets exempt skip the comparison, which is the whole point of exempt', () => {
+    const entry = {
+      initialClientJsGzipBytes: 1,
+      reason: 'a print-only route with no interactive budget',
+      status: 'exempt',
+    }
+    const { checked, problems } = evaluateBudgets(
+      config({ '/a': entry }),
+      measured(['/a', 999_999]),
+    )
+    expect(problems).toEqual([])
+    expect(checked[0].threshold).toBeNull()
+  })
+
+  it('reports every problem at once, not merely the first', () => {
+    const { problems } = evaluateBudgets(
+      config({ '/a': inherited, '/stale': inherited }),
+      measured(['/a', 999_999], ['/unbudgeted', 1]),
+    )
+    expect(problems).toHaveLength(3)
+  })
+
+  it('refuses a configuration with no default rather than treating it as unlimited', () => {
+    expect(() => evaluateBudgets({ routes: {} }, measured())).toThrow(/no numeric defaults/)
+  })
+
+  describe('the summary', () => {
+    it('names the tightest route, which is the one worth watching', () => {
+      const { checked } = evaluateBudgets(
+        config({ '/roomy': inherited, '/tight': inherited }),
+        measured(['/roomy', 100], ['/tight', 179_000]),
+      )
+      expect(summarise(checked)).toBe('2 routes within budget, tightest /tight with 1000 B spare')
+    })
+
+    // A summary that says "all routes within budget" when it compared nothing
+    // is the exact failure ADR-024 exists to prevent.
+    it('does not claim routes are within budget when every route is exempt', () => {
+      const entry = { initialClientJsGzipBytes: 1, reason: 'stated', status: 'exempt' }
+      const { checked } = evaluateBudgets(config({ '/a': entry }), measured(['/a', 5]))
+      expect(summarise(checked)).toBe('no gated routes')
+    })
+  })
+})

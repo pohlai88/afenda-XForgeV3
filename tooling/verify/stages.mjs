@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import { scanConfig } from '../architecture/config-guards.mjs'
 import { scanContract } from '../architecture/contract-guards.mjs'
 import { mutationTest, scanWorkspace } from '../architecture/run-guards.mjs'
+import { checkBudgets, summarise } from '../perf/check-budgets.mjs'
 import { GENERATED_PATHS } from '../source-universe.mjs'
 import {
   BLOCKED,
@@ -488,6 +489,40 @@ export const stages = [
       return r.code === 0 ? { detail: 'built', status: PASS } : { detail: r.out, status: FAIL }
     },
     title: 'build',
+  },
+
+  {
+    enforces: [],
+    id: 'perf-budgets',
+    phase: 'spine',
+    /**
+     * Section 22's per-route budgets, against the build the previous stage just
+     * produced. Deliberately NOT deferred to the design-system phase: the
+     * routes exist, the build exists, and the check runs today. `unmet()` is
+     * for obligations that genuinely cannot be evaluated yet, not for ones it
+     * would be more comfortable to postpone.
+     */
+    run() {
+      if (!existsSync(join(ROOT, 'apps/web/.next/server/app'))) {
+        return unmet(this, 'a production build of apps/web')
+      }
+      let result
+      try {
+        result = checkBudgets()
+      } catch (err) {
+        // A budget gate that cannot measure has not passed. Reporting FAIL
+        // rather than swallowing this is the whole lesson of ADR-024.
+        return { detail: `budgets could not be evaluated: ${err?.message}`, status: FAIL }
+      }
+      const { checked, problems } = result
+      if (problems.length > 0) {
+        return { detail: problems.join(_NL), status: FAIL }
+      }
+      return checked.length === 0
+        ? { detail: 'no routes ship client JavaScript', status: EMPTY }
+        : { detail: summarise(checked), status: PASS }
+    },
+    title: 'per-route performance budgets',
   },
 
   {
