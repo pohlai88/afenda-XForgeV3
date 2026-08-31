@@ -60,3 +60,46 @@ describe('P08 -- an evaluator that cannot decide must not allow', () => {
     expect(r.allowed).toBe(false)
   })
 })
+
+describe('P08 -- a malformed grant is ignored as authority, but not in silence', () => {
+  it('reports a policy-integrity finding while still denying', async () => {
+    const { onPolicyIntegrity } = await import('@xforge/policy')
+    const findings: unknown[] = []
+    onPolicyIntegrity((f) => findings.push(f))
+    try {
+      const r = evaluate(
+        { permission: READ, scopeType: 'tenant' },
+        {
+          principal: { id: 'corrupt', kind: 'user', grants: [null as never] },
+          tenantId: TENANT_A,
+          asOf: '2026-08-31T00:00:00.000Z',
+        },
+      )
+      expect(r.allowed).toBe(false)
+      // Discarding it quietly would let the request behave correctly while the
+      // underlying corruption went unnoticed for months.
+      expect(findings).toHaveLength(1)
+      expect(findings[0]).toMatchObject({ principalId: 'corrupt', malformedGrants: 1 })
+    } finally {
+      onPolicyIntegrity(() => {})
+    }
+  })
+
+  it('a well-formed grant still allows even when a sibling row is corrupt', async () => {
+    // Fail closed on the bad row, not on the request. One corrupt grant must
+    // not deny a principal everything they legitimately hold.
+    const r = evaluate(
+      { permission: READ, scopeType: 'tenant' },
+      {
+        principal: {
+          id: 'mixed',
+          kind: 'user',
+          grants: [null as never, { permission: READ, scopeType: 'tenant', scopeId: TENANT_A }],
+        },
+        tenantId: TENANT_A,
+        asOf: '2026-08-31T00:00:00.000Z',
+      },
+    )
+    expect(r.allowed).toBe(true)
+  })
+})

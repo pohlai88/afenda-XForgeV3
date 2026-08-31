@@ -54,6 +54,21 @@ export const EXPECTED_POLICIES: Record<string, readonly string[]> = {
   tenant_domain: ['tenant_domain_routing_lookup'],
 }
 
+/**
+ * What app_user must be able to do. Checked because a destructive case can take
+ * it away without touching a single policy.
+ *
+ * T09 changes table OWNERSHIP and changes it back. That does not restore the
+ * grants the previous owner had made, so the table came back protected,
+ * policied -- and unreadable. Every later case failed with "permission denied",
+ * which points at authorisation rather than at a fixture that half-restored.
+ */
+export const EXPECTED_GRANTS: Record<string, readonly string[]> = {
+  emergency_contact: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+  tenant_membership: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+  tenant_domain: ['SELECT'],
+}
+
 export let owner!: ReturnType<typeof postgres>
 export let driver!: ReturnType<typeof createPostgresDriver>
 export let reachable = false
@@ -142,6 +157,22 @@ export async function assertBoundaryIntact(): Promise<void> {
         `REFUSING TO RUN: ${table} has an unexpected policy set. ` +
           `missing=[${missing.join(', ')}] unexpected=[${extra.join(', ')}]. ` +
           'An unexpected PERMISSIVE policy widens access, because policies OR together.',
+      )
+    }
+
+    const grants = (
+      await owner<{ privilege_type: string }[]>`
+        select privilege_type from information_schema.role_table_grants
+        where grantee = 'app_user' and table_name = ${table}
+      `
+    ).map((r) => r.privilege_type)
+    const lostGrants = (EXPECTED_GRANTS[table] ?? []).filter((g) => !grants.includes(g))
+    if (lostGrants.length) {
+      throw new Error(
+        `REFUSING TO RUN: app_user has lost [${lostGrants.join(', ')}] on ${table}. ` +
+          'An ownership mutation was probably interrupted, or restored the owner ' +
+          'without restoring the grants. Restore with: grant ' +
+          `${(EXPECTED_GRANTS[table] ?? []).join(', ').toLowerCase()} on ${table} to app_user;`,
       )
     }
   }

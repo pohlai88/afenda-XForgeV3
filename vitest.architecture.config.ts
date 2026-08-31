@@ -18,7 +18,7 @@ import { aliases } from './vitest.aliases.ts'
 export default defineConfig({
   resolve: { alias: aliases },
   test: {
-    include: ['tests/architecture/**/*.test.ts'],
+    include: ['tests/architecture/**/*.test.ts', 'tests/architecture/**/*.test.mjs'],
     exclude: ['**/node_modules/**'],
     environment: 'node',
     fileParallelism: false,

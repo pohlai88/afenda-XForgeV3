@@ -442,6 +442,34 @@ export const guards = [
       return out
     },
   },
+
+  {
+    id: 'db-access-outside-repository',
+    law: 12,
+    precision: 'text',
+    title: 'A business module reaches the database only from its repository layer',
+    // architecture-final.md 23.1 listed this guard. It was never implemented,
+    // and the matrix found the gap rather than a code review: T13 asks for a
+    // guard failure and there was no guard to fail.
+    //
+    // withTenant is the sanctioned chokepoint, but a chokepoint reachable from
+    // anywhere in a module is a chokepoint in name. Persistence belongs behind
+    // the repository, so a command or a UI file importing @xforge/db is
+    // reaching around the layer that owns the queries.
+    applies: (f) => /^modules[/]/.test(f) && notATest(f),
+    check(f, src) {
+      if (/^modules[/][^/]+[/]infrastructure[/]/.test(f)) return []
+      return imports(src)
+        .filter((i) => /^@xforge[/]db($|[/])|(^|[/])drizzle-orm($|[/])/.test(i.spec))
+        .map((i) => ({
+          file: f,
+          line: line(src, i.at),
+          message:
+            `database access outside the repository layer: ${i.spec} -- ` +
+            'queries live in infrastructure/, reached through withTenant',
+        }))
+    },
+  },
 ]
 
 export const guardById = Object.fromEntries(guards.map((g) => [g.id, g]))

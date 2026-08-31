@@ -41,7 +41,7 @@ or the proof is about a program nobody runs.
 | T01 | A reads B by id | deny | now |
 | T02 | A lists rows when the repository forgets the tenant predicate | only A's rows | now |
 | T03 | A updates B | deny | now |
-| T04 | A deletes B | deny | an HR delete operation |
+| T04 | A deletes B | deny | now |
 | T05 | A inserts a row claiming B | deny | now |
 | T06 | valid A session presented at B's host, no B membership | deny | now |
 | T07 | principal in A and B, at A's host, `activeTenantId = B` | A's context | now |
@@ -87,10 +87,24 @@ two things means neither -- the same defect as counting unenforced laws without
 saying which are deliberate. `pnpm verify` reports both: progress against what
 is reachable at this slice, and progress against the whole matrix.
 
-One case is genuinely blocked: T04 needs the HR module to have a delete
-operation at all, which is product scope rather than a tenancy dependency. T06
-and T07 were blocked on real membership data and were unblocked by slice 2.
-Everything else is reachable today and simply unwritten.
+**T04 was misclassified as blocked.** It was listed as needing an HR delete
+operation, which inverts the dependency: exposing `DELETE /employees/:id` so an
+architecture test can call it would add product surface to satisfy a test. The
+claim is that tenant A cannot delete tenant B's row, and that is a property of
+the database boundary reached through `withTenant(A)` on the application role.
+It needs no product verb and is reachable now.
+
+**Nothing is blocked any more.** Every case that was ever listed as blocked was
+blocked on our own next step, never on an external dependency:
+
+- T06 and T07 needed real membership data; slice 2 supplied it.
+- P06 needed a permission registry; slice 3 supplied it.
+- T04 was never blocked at all. It was filed as needing an HR delete operation,
+  which inverted the dependency -- the claim is about the database boundary, not
+  about a product verb.
+
+That is worth stating rather than quietly closing out, because "blocked" was
+carrying three different meanings while reading as one number.
 
 **T02 is Mutation A.** **T11 is Mutation B seen from the gate's side.**
 

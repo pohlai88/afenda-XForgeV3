@@ -159,7 +159,11 @@ describe('PENDING expires when its phase starts', () => {
     const rls = stages.find((s) => s.id === 'rls')
     expect(rls.phase).toBe('tenancy')
     const incomplete = { status: PENDING, detail: '13 assertions, 5/16 cases' }
-    expect(settleStatus(rls, incomplete).status).toBe(PENDING)
+    // Phases named explicitly, never the ambient one. This asserted that the
+    // tenancy stage stays PENDING -- true at the committed phase and false
+    // under `XFORGE_PHASE=tenancy`, so a local qualification run failed on the
+    // test rather than on the thing being qualified.
+    expect(settleStatus({ ...rls, phase: 'second-country' }, incomplete).status).toBe(PENDING)
     expect(settleStatus({ ...rls, phase: 'spine' }, incomplete).status).toBe(FAIL)
   })
 })

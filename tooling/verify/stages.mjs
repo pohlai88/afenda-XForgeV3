@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import { scanConfig } from '../architecture/config-guards.mjs'
 import { scanContract } from '../architecture/contract-guards.mjs'
 import { mutationTest, scanWorkspace } from '../architecture/run-guards.mjs'
+import { GENERATED_PATHS } from '../source-universe.mjs'
 import {
   BLOCKED,
   EMPTY,
@@ -65,10 +66,11 @@ const TREE_AT_START = treeState()
 const _NL = String.fromCharCode(10)
 
 /**
- * Everything produced by `pnpm generate`. Derived state: never hand-edited,
- * and asserted byte-identical after regeneration.
+ * Everything produced by `pnpm generate` is imported from the source universe,
+ * not restated here. It was restated here once, identically, which is how two
+ * authorities for one question start -- and ADR-024 records that divergence as
+ * the reason the source universe module exists at all.
  */
-const GENERATED_PATHS = ['contracts/', 'packages/api-client/src/generated/']
 
 export const stages = [
   {
@@ -299,7 +301,13 @@ export const stages = [
         ...readFileSync(spec, 'utf8').matchAll(
           /^\|\s*([TP]\d\d)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/gm,
         ),
-      ].map((m) => ({ id: m[1], availableFrom: m[2] }))
+      ]
+        .map((m) => ({ id: m[1], availableFrom: m[2] }))
+        // Deduplicated: the document discusses cases in prose tables as well as
+        // declaring them, and a case mentioned twice was inflating the
+        // denominator. "29/30, complete" is a contradiction that should never
+        // have been printable.
+        .filter((row, i, all) => all.findIndex((r) => r.id === row.id) === i)
       const specified = rows.map((r) => r.id)
       const reachable = rows.filter((r) => r.availableFrom === 'now').map((r) => r.id)
 
@@ -310,7 +318,7 @@ export const stages = [
         const dir = join(ROOT, 'tests/architecture', sub)
         if (!existsSync(dir)) continue
         for (const f of readdirSync(dir)) {
-          if (!/[.]test[.]ts$/.test(f)) continue
+          if (!/[.]test[.](ts|mjs)$/.test(f)) continue
           // A file may declare a RANGE -- 'P01-P05-authorisation.test.ts' covers
           // five cases. Reading only the endpoints would report the middle
           // three as unwritten while they are asserted a few lines away, and

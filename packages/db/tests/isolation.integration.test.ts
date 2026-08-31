@@ -13,6 +13,7 @@
  */
 
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
+import { checkApplicationRole, checkRlsCoverage } from '@xforge/fixtures/rls-checks'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createPostgresDriver } from '../src/postgres-driver'
@@ -189,5 +190,22 @@ describe.skipIf(!reachable)('AQS-022 -- tenant context is transaction-scoped', (
   it('with no tenant context set, the policy returns nothing rather than everything', async () => {
     const rows = await app`select * from emergency_contact`
     expect(rows).toHaveLength(0)
+  })
+})
+
+/**
+ * The same functions T09, T10 and T12 break the database to exercise.
+ *
+ * Written twice these would drift, and the copy the mutations tested would be
+ * the one nobody trusted. Here they assert the healthy state; there they assert
+ * the checks NOTICE when it stops being healthy.
+ */
+describe.skipIf(!reachable)('AQS-005/007 through the shared checks', () => {
+  it('every tenant-owned table has RLS enabled and forced', async () => {
+    expect(await checkRlsCoverage(owner)).toEqual([])
+  })
+
+  it('the application role owns nothing and bypasses nothing', async () => {
+    expect(await checkApplicationRole(owner)).toEqual([])
   })
 })

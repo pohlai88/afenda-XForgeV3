@@ -6,6 +6,27 @@
  * exists to prevent.
  */
 
+/**
+ * The permission registry (ADR-019).
+ *
+ * One authority for what a permission code IS. Deliberately a flat map: this is
+ * the point where a policy DSL, a role hierarchy and an expression engine all
+ * start looking reasonable, and none of them is earned by two permissions.
+ *
+ * Codes are `module.resource.action`. Adding one is a reviewable diff, which is
+ * the entire mechanism -- a code that exists nowhere cannot become a grant, and
+ * a typo in a handler is a type error rather than a silent denial.
+ */
+export const PERMISSIONS = {
+  'hr.employee.read': 'Read employee records and their emergency contacts',
+  'hr.employee.update': 'Amend employee records',
+} as const
+
+export type Permission = keyof typeof PERMISSIONS
+
+export const isRegisteredPermission = (code: string): code is Permission =>
+  Object.hasOwn(PERMISSIONS, code)
+
 /** ADR-010. `team` is deliberately absent until a real use case earns it. */
 export const SCOPE_TYPES = [
   'tenant',
@@ -77,6 +98,8 @@ export interface PolicyContext {
  * inside, one flat refusal outside.
  */
 export type PolicyDenialReason =
+  /** The declaration named a code that is not in the registry (ADR-019). */
+  | 'permission_unregistered'
   /** No grant for this permission at all. */
   | 'permission_missing'
   /** The grant exists, but for a different scope than the one being acted on. */
@@ -98,6 +121,33 @@ export type PolicyDecision =
 /** @deprecated retained only until callers migrate; use PolicyDecision. */
 export type PolicyResult = PolicyDecision
 
+export interface PolicyIntegrityFinding {
+  readonly principalId: string
+  readonly malformedGrants: number
+  readonly detail: string
+}
+
+/**
+ * Where policy-integrity findings go.
+ *
+ * A no-op by default so a bad row cannot take down a request path -- the
+ * request must still fail closed, not explode. The composition root replaces
+ * this with real telemetry.
+ */
+let integrityListener: (f: PolicyIntegrityFinding) => void = () => {}
+
+export function onPolicyIntegrity(listener: (f: PolicyIntegrityFinding) => void): void {
+  integrityListener = listener
+}
+
+function onPolicyIntegrityFinding(f: PolicyIntegrityFinding): void {
+  try {
+    integrityListener(f)
+  } catch {
+    // Reporting a defect must never become a second defect.
+  }
+}
+
 function isValidNow(g: Grant, asOf: string): boolean {
   if (g.validFrom && asOf < g.validFrom) return false
   if (g.validTo && asOf >= g.validTo) return false
@@ -115,6 +165,18 @@ function isValidNow(g: Grant, asOf: string): boolean {
 export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyDecision {
   if (policy === 'public') {
     return { allowed: true, grant: { permission: 'public', scopeType: 'tenant', scopeId: '' } }
+  }
+
+  if (!isRegisteredPermission(policy.permission)) {
+    // ADR-019: an unknown or retired code compiles to DENY, never to "no
+    // restriction". The permissive reading is the natural one -- there is no
+    // rule, so nothing forbids it -- and it is how a renamed permission
+    // silently opens an endpoint.
+    return {
+      allowed: false,
+      reason: 'permission_unregistered',
+      detail: `'${policy.permission}' is not in PERMISSIONS -- failing closed`,
+    }
   }
 
   if (!SCOPE_TYPES.includes(policy.scopeType)) {
@@ -137,6 +199,18 @@ export function evaluate(policy: PolicyDeclaration, ctx: PolicyContext): PolicyD
   const grants = ctx.principal.grants.filter(
     (g): g is Grant => typeof g === 'object' && g !== null && typeof g.permission === 'string',
   )
+  // Ignored as AUTHORITY, but not in silence. A malformed grant cannot grant
+  // anything -- and it also means policy state is corrupt somewhere, which is a
+  // separate fact worth surfacing. Discarding it quietly makes the request
+  // succeed correctly while the underlying defect goes unnoticed for months.
+  const malformed = ctx.principal.grants.length - grants.length
+  if (malformed > 0) {
+    onPolicyIntegrityFinding({
+      principalId: ctx.principal.id,
+      malformedGrants: malformed,
+      detail: 'grants that are not well-formed were discarded before evaluation',
+    })
+  }
   const byPermission = grants.filter((g) => g.permission === policy.permission)
 
   // Narrowed in stages, so the DENIAL REASON is the first thing that actually

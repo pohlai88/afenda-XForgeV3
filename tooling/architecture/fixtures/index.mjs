@@ -303,4 +303,20 @@ export const go = (ctx: VerifiedTenantContext) => withTenant(ctx, async () => 1)
 `,
     },
   },
+
+  'db-access-outside-repository': {
+    violating: {
+      path: 'modules/hr/application/commands/add-contact.ts',
+      source: `import { withTenant } from '@xforge/db'
+export const add = (ctx) => withTenant(ctx, async (sql) => sql\`insert into x\`)
+`,
+    },
+    // The repository is exactly where this belongs, and must not be flagged.
+    clean: {
+      path: 'modules/hr/infrastructure/repository/emergency-contact.ts',
+      source: `import { withTenant } from '@xforge/db'
+export const list = (ctx) => withTenant(ctx, async (sql) => sql\`select 1\`)
+`,
+    },
+  },
 }
