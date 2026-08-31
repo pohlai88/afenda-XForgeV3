@@ -56,6 +56,28 @@ illustration would be.
 
 Revocation as an object with a validity window is qualified by T18 and P07.
 
+### What the tenancy phase actually depends on
+
+This ADR has two halves and they are at different readiness, which matters
+because law 34's completeness check cannot tell them apart:
+
+| Part | Status | Does tenancy certification rest on it? |
+|---|---|---|
+| Revocation as an object with a validity window | QUALIFIED -- T18, P07 | **Yes.** This is why ADR-018 is due at tenancy |
+| Machine principals as a distinct principal type | DEFERRED -- not implemented | **No.** `Principal.kind` exists as a type; no machine authenticates yet |
+| The auth library's API-key plugin mocking a user session | **UNVERIFIED VENDOR CLAIM** | No |
+
+So the unverified claim does not block tenancy certification, and it must not be
+allowed to pass as settled once the phase is certified. `adr-has-evidence`
+checks that fields are present; it cannot notice that one row of the reasoning
+is a vendor observation nobody has checked. Recording the split here is the only
+thing that stops mechanical completeness from quietly upgrading an assumption
+into a frozen fact.
+
+**Verify before `packages/auth` implements machine principals**, not after. If
+the claim is wrong the decision is unchanged -- the audit requirement stands on
+its own -- but the illustration would need replacing.
+
 ## Decision
 
 **A machine principal is a first-class principal type — never a user with a
