@@ -1260,7 +1260,7 @@ After adoption, **stop writing competing canonical drafts.**
 | Item | By | Note |
 |---|---|---|
 | Neon MCP auth failing (HTTP 401) | **Before Phase 1 PR qualification**, not before Phase 1 implementation | Refresh the token or provision Postgres via the Vercel Marketplace. Blocks branch-per-PR and preview-database qualification. Does **not** block RLS, `withTenant`, policy or membership correctness — those are proven against a local PostgreSQL with real roles and FORCE RLS. Neon is a provider choice, never the tenancy model, and a vendor credential must not stop architecture work |
-| No git remote; branch protection not active | **Before Phase 1 merges to master** | Phase 1 may be developed locally. It is where the isolation proof lands, and that proof most needs to have executed somewhere other than the machine that wrote it |
+| Branch protection not active | **Before Phase 1 merges to main** | Phase 1 may be developed locally. It is where the isolation proof lands, and that proof most needs to have executed somewhere other than the machine that wrote it |
 | Vercel CLI not installed | Spine phase start | `npm i -g vercel` |
 | Durable executor: Trigger.dev vs Inngest | Spine phase end | Reversible — the outbox is the durable record either way |
 | SEA latency baseline | Spine phase | Measure from KL, HCMC, Jakarta. Informs §26.6 |

@@ -1,4 +1,4 @@
-# The required check for master.
+# The required check for main.
 #
 # `pnpm verify --ci` differs from the local gate in two ways that matter:
 #   - the phase comes from .architecture/state.json, never from the environment,
@@ -10,9 +10,9 @@ name: verify
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
   push:
-    branches: [master]
+    branches: [main]
 
 concurrency:
   group: verify-${{ github.ref }}
