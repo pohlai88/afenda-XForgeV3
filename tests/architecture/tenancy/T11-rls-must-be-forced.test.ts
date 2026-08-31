@@ -17,7 +17,15 @@
  */
 import { withTenant } from '@xforge/db'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { closeAll, contextFor, owner, reachable, seed, TENANT_A } from './harness'
+import {
+  assertBoundaryIntact,
+  closeAll,
+  contextFor,
+  owner,
+  reachable,
+  seed,
+  TENANT_A,
+} from './harness'
 
 beforeAll(async () => {
   if (reachable) await seed()
@@ -86,5 +94,18 @@ describe.skipIf(!reachable)('T11 -- the boundary is RLS, and it is load-bearing'
 
   it('and isolation holds again', async () => {
     expect(await rowsVisibleToA()).toHaveLength(1)
+  })
+
+  /**
+   * The last word, and it runs even if an assertion above failed. Leaving a
+   * developer's database with the boundary down would make every later run of
+   * T02 pass for the wrong reason -- so the suite refuses to end quietly on a
+   * table it has disarmed.
+   */
+  afterAll(async () => {
+    if (!reachable) return
+    await owner`alter table emergency_contact enable row level security`
+    await owner`alter table emergency_contact force row level security`
+    await assertBoundaryIntact()
   })
 })

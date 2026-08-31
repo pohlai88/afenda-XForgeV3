@@ -375,7 +375,10 @@ export const guards = [
     applies: (f) => !/^packages[/]tenancy[/]/.test(f),
     check(f, src) {
       const out = []
-      const re = /as\s+VerifiedTenantContext/g
+      // Both assertion forms. `as unknown as X` is caught by the first.
+      // The angle-bracket form needs a lookbehind, or `Promise<VerifiedTenantContext>`
+      // -- an ordinary generic argument -- would be flagged as a forgery.
+      const re = /as\s+VerifiedTenantContext|(?<![\w$\]])<VerifiedTenantContext>/g
       let m
       while ((m = re.exec(src)) !== null) {
         out.push({

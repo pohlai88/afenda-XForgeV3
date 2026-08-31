@@ -70,8 +70,43 @@ export async function contextFor(
   return resolved.context
 }
 
+/**
+ * PRECONDITION: the boundary is intact before anything is asserted about it.
+ *
+ * T11 deliberately disables row-level security. Serialisation stops it
+ * undercutting the other cases mid-run, but it cannot help if the process dies
+ * while RLS is off -- Ctrl-C, a crash, an assertion that skips teardown. The
+ * table is then left unprotected on a developer's machine, and every later run
+ * of T02 passes for entirely the wrong reason. Unanimous green, silently wrong:
+ * this repository's signature failure, arriving through the one test that
+ * exists to prove the boundary is real.
+ *
+ * So every file checks first. A poisoned database fails loudly here instead of
+ * flattering the suite for the rest of the week.
+ */
+export async function assertBoundaryIntact(): Promise<void> {
+  const [state] = await owner<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
+    select relrowsecurity, relforcerowsecurity
+    from pg_class where relname = 'emergency_contact'
+  `
+  if (!state?.relrowsecurity || !state?.relforcerowsecurity) {
+    throw new Error(
+      [
+        'REFUSING TO RUN: emergency_contact does not have row-level security enabled AND',
+        'forced. A previous run of T11 was probably interrupted while the boundary was',
+        'down. Restore it before trusting anything this suite says:',
+        '  alter table emergency_contact enable row level security;',
+        '  alter table emergency_contact force row level security;',
+      ].join(' '),
+    )
+  }
+}
+
 /** Two tenants, one row each, seeded as owner inside each tenant's context. */
 export async function seed(): Promise<void> {
+  // Every file calls seed() in beforeAll, so the precondition is universal
+  // without each case having to remember it.
+  await assertBoundaryIntact()
   for (const tenant of [TENANT_A, TENANT_B]) {
     await owner.begin(async (tx) => {
       await tx`select set_config('app.tenant_id', ${tenant}, true)`

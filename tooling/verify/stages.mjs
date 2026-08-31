@@ -292,9 +292,16 @@ export const stages = [
     run() {
       const spec = join(ROOT, '.architecture/phase-1-attack-matrix.md')
       if (!existsSync(spec)) return unmet(this, 'the frozen attack matrix')
-      const specified = [...readFileSync(spec, 'utf8').matchAll(/^\|\s*(T\d\d)\s*\|/gm)].map(
-        (m) => m[1],
-      )
+      // id plus the availability column, so the report can separate 'not written'
+      // from 'cannot be written yet'. One combined ratio means two things at once,
+      // and a number meaning two things carries neither.
+      const rows = [
+        ...readFileSync(spec, 'utf8').matchAll(
+          /^\|\s*(T\d\d)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/gm,
+        ),
+      ].map((m) => ({ id: m[1], availableFrom: m[2] }))
+      const specified = rows.map((r) => r.id)
+      const reachable = rows.filter((r) => r.availableFrom === 'now').map((r) => r.id)
 
       const dir = join(ROOT, 'tests/architecture/tenancy')
       const implemented = existsSync(dir)
@@ -317,15 +324,20 @@ export const stages = [
       // nothing, and must never read as a security proof that passed.
       const passed = Number(r.out.match(/Tests\s+(\d+) passed/)?.[1] ?? 0)
       if (passed === 0) return unmet(this, 'a reachable database for the attack suite')
-      const summary = `${passed} assertions, ${implemented.length}/${specified.length} cases`
+      const reachableDone = reachable.filter((t) => implemented.includes(t))
+      const summary =
+        `${passed} assertions, ${reachableDone.length}/${reachable.length} reachable, ` +
+        `${implemented.length}/${specified.length} of the matrix`
 
       if (missing.length > 0) {
-        return {
-          status: PENDING,
-          detail: `${summary} -- still unimplemented: ${missing.join(', ')}`,
-        }
+        const unwritten = missing.filter((t) => reachable.includes(t))
+        const blocked = rows.filter((r) => missing.includes(r.id) && r.availableFrom !== 'now')
+        const parts = []
+        if (unwritten.length) parts.push(`unwritten: ${unwritten.join(', ')}`)
+        for (const r of blocked) parts.push(`${r.id} needs ${r.availableFrom}`)
+        return { status: PENDING, detail: `${summary} -- ${parts.join('; ')}` }
       }
-      return { status: PASS, detail: `${summary} of the frozen attack matrix` }
+      return { status: PASS, detail: `${summary}, complete` }
     },
   },
 

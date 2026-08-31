@@ -268,4 +268,24 @@ export const go = (ctx: VerifiedTenantContext) => withTenant(ctx, async () => 1)
 `,
     },
   },
+
+  // The angle-bracket assertion, which reads nothing like the `as` form and is
+  // exactly what someone reaches for once the `as` form starts failing builds.
+  'no-forged-tenant-context-angle': {
+    violating: {
+      path: 'apps/web/app/api/route.ts',
+      source: `const ctx = <VerifiedTenantContext>{ tenantId: header }
+export const go = () => ctx
+`,
+    },
+    // A generic argument is not an assertion, and confusing the two would make
+    // the guard unusable in exactly the files that handle tenant contexts.
+    clean: {
+      path: 'apps/web/app/api/route.ts',
+      source: `async function load(): Promise<VerifiedTenantContext> {
+  return resolve()
+}
+`,
+    },
+  },
 }
