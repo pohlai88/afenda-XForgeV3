@@ -24,7 +24,7 @@
  * That means Button's props and Button's contract disagree. Fix whichever is
  * wrong -- and the answer is not automatically the contract.
  */
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import type { ContractId, DeclaredProps } from './contracts'
 import type * as components from './index'
 
@@ -36,7 +36,9 @@ import type * as components from './index'
  * not fine, and fails here, because configuration would have no way to supply
  * it.
  */
-type AcceptsItsContract<Id extends ContractId> = (props: DeclaredProps<Id, ReactNode>) => unknown
+type AcceptsItsContract<Id extends ContractId> = (
+  props: DeclaredProps<Id, ReactNode, ReactElement>,
+) => unknown
 
 /** The ids whose component disagrees with its contract. Empty, or a compile error. */
 type Mismatched = {

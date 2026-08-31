@@ -50,6 +50,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import {
+  type Capability,
   type Contract,
   contracts,
   type Kind,
@@ -86,7 +87,24 @@ function propSchema(spec: PropSpec): Json {
 function acceptedIds(spec: Exclude<SlotSpec, { text: true }>): MetadataContractId[] {
   const byId = (spec.accepts ?? []) as readonly MetadataContractId[]
   const byKind = metadataContractIds.filter((id) => (spec.acceptsKinds ?? []).includes(kindOf(id)))
-  return [...new Set([...byId, ...byKind])].sort()
+  // A capability is resolved to the components that HAVE it, so the emitted
+  // schema still names components and a validation error reads "expected one of
+  // Input, Checkbox" rather than "expected something with field-control".
+  const byCapability = spec.acceptsCapability
+    ? metadataContractIds.filter((id) =>
+        ((contracts[id] as Contract).capabilities ?? []).includes(
+          spec.acceptsCapability as Capability,
+        ),
+      )
+    : []
+  const accepted = [...new Set([...byId, ...byKind, ...byCapability])].sort()
+  if (accepted.length === 0) {
+    throw new Error(
+      `a slot accepts nothing: ${JSON.stringify(spec)} -- an unsatisfiable slot makes ` +
+        'every document using it invalid, which reads as a grammar nobody has tried',
+    )
+  }
+  return accepted
 }
 
 /**

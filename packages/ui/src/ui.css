@@ -282,10 +282,19 @@
   opacity: 0.6;
 }
 
-.xf-checkbox-row {
-  display: flex;
+/*
+ * A Field holding a checkbox reads as one row, not a stacked label above a box.
+ *
+ * Selected on the CONTENT rather than on a variant prop, because the layout
+ * follows from what the field contains and asking the caller to declare it
+ * again is a second source for the same fact. The label still comes from
+ * Field.Label -- the checkbox has none of its own.
+ */
+.xf-field:has(> .xf-checkbox) {
+  flex-direction: row-reverse;
   gap: var(--semantic-space-inline-tight);
   align-items: center;
+  justify-content: flex-end;
 }
 
 .xf-checkbox {

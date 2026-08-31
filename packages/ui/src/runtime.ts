@@ -22,12 +22,12 @@
  * than a runtime one -- the second compile-time tie between a contract and the
  * thing it claims to describe.
  */
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import type { DeclaredProps, MetadataContractId } from './contracts'
 
 /** A component as the contract describes it. */
 type Implementation<Id extends MetadataContractId> = (
-  props: DeclaredProps<Id, ReactNode>,
+  props: DeclaredProps<Id, ReactNode, ReactElement>,
 ) => ReactNode
 
 type Loader<Id extends MetadataContractId> = () => Promise<Implementation<Id>>

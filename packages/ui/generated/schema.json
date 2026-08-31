@@ -259,15 +259,6 @@
           },
           "type": "object",
           "additionalProperties": false
-        },
-        "slots": {
-          "properties": {
-            "label": {
-              "type": "string"
-            }
-          },
-          "type": "object",
-          "additionalProperties": false
         }
       },
       "required": [
@@ -376,7 +367,12 @@
               "type": "string"
             },
             "trigger": {
-              "type": "string"
+              "items": {
+                "$ref": "#/$defs/Button"
+              },
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 1
             }
           },
           "type": "object",
@@ -413,7 +409,18 @@
           "properties": {
             "children": {
               "items": {
-                "$ref": "#/$defs/Input"
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Checkbox"
+                  },
+                  {
+                    "$ref": "#/$defs/Input"
+                  }
+                ],
+                "type": "object"
               },
               "type": "array",
               "minItems": 1,

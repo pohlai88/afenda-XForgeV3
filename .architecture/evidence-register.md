@@ -381,25 +381,47 @@ rather than the article about it.
 | Before `@base-ui/react` + Dialog | 146330 B |
 | After | 146330 B |
 
-Byte-identical. The barrel file does not force unused primitives into a route,
-so the remaining stage 3 primitives can be added without spending any of the
-33.6 kB headroom until a route actually uses one. **What this does not prove:**
-what Dialog costs when a route *does* use it. That number does not exist yet
-because nothing renders one, and the budget gate is what will measure it.
+Byte-identical. The barrel file does not force unused primitives into a route.
+
+**The cost is DEFERRED, not zero, and repeating this measurement per tranche
+would be true and misleading.** Nothing here renders a Base UI component, so
+nothing has yet paid for its floating, portal and focus-management internals --
+a cost paid ONCE at the first real mount and then amortised across every
+component sharing it. Measuring zero again for tranches 2, 3 and 4 would invite
+the aggregate conclusion that Base UI is free.
+
+The informative measurement is therefore at the FIRST REAL MOUNT -- the stage 5
+harness or the stage 7 artifact -- and not at each tranche. Until then the only
+claim supported is the one made here: an unused primitive costs an unrelated
+route nothing.
 
 **Two defects found in the wrapper by checking rather than trusting:**
 
-1. *The trigger was not a button.* It was written as
-   `<Dialog.Trigger render={<span />}>` with a `Button` inside. Reading
-   `DialogTrigger.js` shows the default element is already `'button'`, so the
-   override replaced real button semantics with a `<span>` carrying the handler,
-   and nested one interactive element inside another. The trigger slot now takes
-   TEXT, because there is no correct way to put a control in it.
+1. *The trigger was not a button — and the first fix was an overcorrection.*
+   It was written as `<Dialog.Trigger render={<span />}>` with a `Button` inside,
+   which replaced real button semantics with a `<span>` carrying the handler and
+   nested one interactive element in another. The response was to conclude no
+   control could go there and make the slot take text. **That was wrong.**
+   `render?: React.ReactElement | ComponentRenderFn<…>` is Base UI's composition
+   mechanism for exactly this case: the trigger slot accepts a `Button`, and the
+   runtime composes it rather than wrapping it.
+
+   The fix was never to narrow the language. Doing so would have set a precedent
+   for Tooltip, Popover, Menu and Combobox, each of which composes a caller's
+   control the same way — and the narrowing was invisible as a mistake because
+   the resulting grammar still *worked*, on a smaller vocabulary.
 2. *The `List` contract permitted what its component forbade.* Deriving one prop
    per slot turned a latent disagreement into a compile error: the contract said
    `min: 0` while the component required children. An empty collection is an
    EMPTY STATE — a different component that says something useful — never a
    `<ul>` with nothing in it, which is what the screen already does.
+
+   This is the **first case where deriving props from contracts caught something
+   no test would have.** Both halves were internally consistent and every suite
+   was green; only the derivation put them in the same place. Worth recording
+   for the day someone proposes hand-maintaining the prop types, because the
+   argument for the derivation is not tidiness — it is that this class of
+   disagreement is otherwise invisible.
 
 **The debt this stage creates, stated rather than discovered later.** Dialog is
 the first contract whose `interaction.profile` is in
@@ -410,3 +432,18 @@ a second mounting mechanism now would be the two-sources defect again. No
 metadata renderer exists either, so nothing can reach the contract yet. A unit
 test names the owed evidence so the list cannot grow while nobody records
 anything.
+
+Two qualifications on that list, recorded now rather than argued later:
+
+- **`Field` is not a meaningful evidence unit on its own.** Its behaviour is
+  label-to-control, description-to-control and error-to-control association,
+  none of which exists without a control. The evidence fixtures are therefore
+  compositions — Field+Input, Field+Checkbox, later Field+Combobox — never
+  `Field` in isolation. Its profile marks the obligation; the fixture is how the
+  obligation gets discharged.
+- **Stage 8's gate must be PENDING before the design-system phase.** Every
+  contract here ships at `interactionRevision: 1` with no recorded evidence, so
+  a gate written as "revision must not exceed the revision with evidence" is red
+  the day it is written and stays red until an assistive-technology session
+  nobody has scheduled. It needs the `unmet()` treatment — a certification
+  precondition, not a permanently-red stage people learn to scroll past.

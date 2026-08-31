@@ -2,7 +2,7 @@
 /**
  * Refuse to start the E2E server on an occupied port, and say WHO has it.
  *
- * WHEN THIS ACTUALLY FIRES, corrected after observing that it did not.
+ * WHERE THIS RUNS, corrected twice after observing that it did not fire.
  *
  * Playwright probes `webServer.url` BEFORE it runs `webServer.command`. With
  * `reuseExistingServer: false`, anything answering that URL makes Playwright
@@ -15,8 +15,13 @@
  * those cases Playwright's probe times out or errors without naming anything,
  * and this says who has the port and since when.
  *
- * For the case Playwright pre-empts, `pnpm e2e:port` runs this on demand -- the
- * diagnosis is then one command rather than a search. The start time is the
+ * So the `e2e` VERIFY STAGE runs this first, before invoking Playwright at all.
+ * The gate owns that ordering and Playwright's config cannot; wiring it into
+ * `webServer.command` left a check that was proven against a fixture and could
+ * never fire in production, which is a worse state than not having it -- its
+ * presence in the repository implied a coverage that did not exist.
+ *
+ * `pnpm e2e:port` runs the same diagnosis on demand. The start time is the
  * useful field: "started two hours ago" identifies a forgotten process at a
  * glance, where a bare PID does not.
  *

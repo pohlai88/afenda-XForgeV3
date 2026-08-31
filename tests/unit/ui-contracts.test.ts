@@ -12,7 +12,9 @@
  */
 
 import {
+  type Capability,
   type Contract,
+  type ContractId,
   contractIds,
   contracts,
   KINDS,
@@ -28,6 +30,10 @@ import { describe, expect, it } from 'vitest'
 const entries = Object.entries(contracts) as [string, Contract][]
 
 /** `?? {}` alone widens the value type to `unknown`; the annotation keeps it. */
+/** `contracts` is a const union, so an optional field needs the declared type. */
+const capabilitiesOf = (id: ContractId): readonly Capability[] =>
+  (contracts[id] as Contract).capabilities ?? []
+
 const slotsOf = (c: Contract): [string, SlotSpec][] => Object.entries<SlotSpec>(c.slots ?? {})
 
 describe('the contract registry', () => {
@@ -72,6 +78,42 @@ describe('the contract registry', () => {
   })
 })
 
+describe('capabilities', () => {
+  /**
+   * The rule that replaced a whitelist.
+   *
+   * `Field` accepted `['Input']` on the premise that a Checkbox self-labels.
+   * It does not: `CheckboxRoot` reads `labelId` from the Field context and sets
+   * `aria-labelledby` from it. The whitelist would also have refused Combobox
+   * and Select, and the next person adding one would have read it as an
+   * oversight and widened it to every `field` kind -- which lets back in the
+   * thing the whitelist was guarding against.
+   */
+  it('lets Field accept every control that can be a field control', () => {
+    const controls = contractIds.filter((id) => capabilitiesOf(id).includes('field-control'))
+    expect([...controls].sort()).toEqual(['Checkbox', 'Input'])
+  })
+
+  it.each(entries)('%s only claims capabilities the grammar knows', (_id, contract) => {
+    for (const capability of contract.capabilities ?? []) {
+      expect(['field-control']).toContain(capability)
+    }
+  })
+
+  // A slot accepting a capability nothing has is unsatisfiable, so every
+  // document using it would be invalid -- a grammar nobody has tried.
+  it.each(entries)('%s slots accept capabilities something provides', (_id, contract) => {
+    for (const [, spec] of slotsOf(contract)) {
+      if ('text' in spec || !spec.acceptsCapability) {
+        continue
+      }
+      const wanted = spec.acceptsCapability
+      const providers = contractIds.filter((id) => capabilitiesOf(id).includes(wanted))
+      expect(providers.length).toBeGreaterThan(0)
+    }
+  })
+})
+
 describe('the grammar', () => {
   it.each(entries)('%s slots accept only ids that exist', (_id, contract) => {
     for (const [, spec] of slotsOf(contract)) {
@@ -103,7 +145,10 @@ describe('the grammar', () => {
       if ('text' in spec) {
         continue
       }
-      const accepts = (spec.accepts ?? []).length + (spec.acceptsKinds ?? []).length
+      const accepts =
+        (spec.accepts ?? []).length +
+        (spec.acceptsKinds ?? []).length +
+        (spec.acceptsCapability ? 1 : 0)
       expect(accepts, `${name} accepts nothing`).toBeGreaterThan(0)
     }
   })
@@ -121,19 +166,24 @@ describe('the grammar', () => {
   })
 
   /**
-   * A contract with no slots can hold no content, so it had better be a control
-   * that holds a VALUE instead. Input is the only one, and naming it here keeps
-   * the exception deliberate: the alternative was relaxing this test to
-   * "greater than or equal to zero", which asserts nothing and would let a
-   * forgotten slot declaration through on any future container.
+   * Composition is DECLARED and then checked against reality.
+   *
+   * This named `Input` as the one permitted slotless contract, which was a rule
+   * with an expiry date: Separator, Progress and Icon are all legitimate leaves,
+   * and the next one would have been added by widening the exception until the
+   * test asserted nothing. Declaring `composition` instead keeps a forgotten
+   * slot on a container failing, without a whitelist to maintain.
    */
-  it.each(entries)('%s declares a slot, or is a value-holding control', (id, contract) => {
-    if (slotsOf(contract).length === 0) {
-      expect(id, 'only a control may declare no slots').toBe('Input')
-      expect(contract.kind).toBe('field')
+  it.each(entries)('%s composition matches its slots', (id, contract) => {
+    if (contract.composition === 'leaf') {
+      expect(slotsOf(contract), `${id} is a leaf and must hold no slots`).toEqual([])
       return
     }
-    expect(slotsOf(contract).length).toBeGreaterThan(0)
+    expect(slotsOf(contract).length, `${id} is a container and must hold slots`).toBeGreaterThan(0)
+  })
+
+  it.each(entries)('%s declares a composition the grammar knows', (_id, contract) => {
+    expect(['leaf', 'container']).toContain(contract.composition)
   })
 })
 

@@ -533,6 +533,17 @@ export const stages = [
       if (!hasBin('playwright')) {
         return unmet(this, 'Playwright')
       }
+
+      // The port preflight runs HERE, before Playwright, because Playwright
+      // probes its `webServer.url` before it ever runs `webServer.command` --
+      // so a preflight wired into that command cannot fire in the case that
+      // motivated it, which is a stale server answering the health URL. The
+      // gate owns this ordering; Playwright's config does not.
+      const port = run('node', ['tooling/e2e/preflight-port.mjs', '3100'])
+      if (port.code !== 0) {
+        return { detail: port.out, status: FAIL }
+      }
+
       const r = run('pnpm', ['-s', 'exec', 'playwright', 'test'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }

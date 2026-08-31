@@ -85,6 +85,26 @@ export const PROFILES_REQUIRING_AT_EVIDENCE = [
 ] as const satisfies readonly InteractionProfile[]
 
 /**
+ * What a component can DO, independently of what it is.
+ *
+ * `field-control` means: this can be the control inside a `Field`, taking its
+ * accessible name, description and error wiring from that Field. Input and
+ * Checkbox both qualify; Combobox, Select and Switch will.
+ */
+export type Capability = 'field-control'
+
+/**
+ * Whether a component holds CONTENT or a VALUE.
+ *
+ * Declared rather than inferred from whether `slots` happens to be present.
+ * Inferring it makes a forgotten slot declaration indistinguishable from a
+ * deliberate leaf, which is exactly the confusion that had `Input` written into
+ * a test as a named exception -- a rule that would have aged badly the moment
+ * Separator, Progress or Icon arrived.
+ */
+export type Composition = 'leaf' | 'container'
+
+/**
  * `metadata` is vocabulary configuration may name. `internal` is legitimate
  * implementation that is illegal vocabulary -- VisuallyHidden, Portal, GridRow.
  * The guard is deliberately NOT "every primitive is registered".
@@ -115,6 +135,17 @@ export type SlotSpec =
   | {
       accepts?: readonly string[]
       acceptsKinds?: readonly Kind[]
+      /**
+       * Accept by CAPABILITY rather than by name.
+       *
+       * `Field` accepts anything that can act as a field control. Written as a
+       * whitelist -- `accepts: ['Input']` -- the rule refuses Combobox and
+       * Select too, and the next person to add one reads the whitelist as an
+       * oversight and widens it to every `field` kind, which lets back in the
+       * thing the whitelist was guarding against. Naming the property that
+       * causes the rule is what stops that cycle.
+       */
+      acceptsCapability?: Capability
       /** Omitted means 1: a slot is required unless it says otherwise. */
       min?: number
       /** `null` means unbounded, and is written rather than left off. */
@@ -122,6 +153,10 @@ export type SlotSpec =
     }
 
 export interface Contract {
+  /** What this can act AS, for slots that accept by capability. */
+  capabilities?: readonly Capability[]
+  /** Whether this holds content (`container`) or a value (`leaf`). */
+  composition: Composition
   /** The component's own public metadata contract. Bumped on prop changes. */
   contractVersion: number
   exposure: Exposure
@@ -142,6 +177,7 @@ export interface Contract {
  */
 export const contracts = {
   Alert: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     // Politeness is chosen by tone, not by the caller: danger and warning
@@ -156,6 +192,7 @@ export const contracts = {
   },
 
   Button: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     // A native <button>: the platform supplies the role, the Enter and Space
@@ -172,6 +209,7 @@ export const contracts = {
   },
 
   Card: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -190,8 +228,16 @@ export const contracts = {
     },
   },
 
-  /** A boolean control that carries its own label -- see the note on Field. */
+  /**
+   * A boolean control. Its accessible name comes from the Field that wraps it,
+   * exactly as an Input's does -- `CheckboxRoot` reads `labelId` from the Field
+   * context and sets `aria-labelledby`. It has no label slot of its own, and an
+   * earlier version giving it one is what produced the double label this
+   * grammar was briefly written to forbid.
+   */
   Checkbox: {
+    capabilities: ['field-control'],
+    composition: 'leaf',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'form-control', revision: 1 },
@@ -201,10 +247,10 @@ export const contracts = {
       name: { type: 'string' },
       testId: { type: 'string' },
     },
-    slots: { label: { text: true } },
   },
 
   Code: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -229,6 +275,7 @@ export const contracts = {
    * owed and not yet recorded.
    */
   Dialog: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'modal', revision: 1 },
@@ -245,7 +292,7 @@ export const contracts = {
       // A dialog without a name is an unnamed region, so `title` is required
       // and `description` is not.
       title: { text: true },
-      trigger: { min: 0, text: true },
+      trigger: { accepts: ['Button'], max: 1, min: 0 },
     },
   },
 
@@ -258,19 +305,30 @@ export const contracts = {
    * with a label that reads correctly and an error message no screen reader
    * ever announces.
    *
-   * `children` accepts INPUT ONLY, not any `field` control. A Checkbox carries
-   * its own label, so putting one here would produce two labels for one
-   * control -- a defect the grammar can refuse outright rather than leave for a
-   * reviewer to notice.
+   * `children` accepts anything with the `field-control` CAPABILITY.
+   *
+   * It said `accepts: ['Input']`, on the premise that a Checkbox carries its own
+   * label and would be double-labelled here. That premise was false, and the
+   * component that made it look true was mine: `CheckboxRoot` reads `labelId`
+   * from the Field context and sets `aria-labelledby` from it, so a Checkbox
+   * takes its name FROM this Field. It was my wrapper putting a second label
+   * around it.
+   *
+   * The whitelist would also have refused Combobox and Select, which need
+   * exactly this labelling -- and the next person adding one would read
+   * `['Input']` as an oversight and widen it to every `field` kind. Accepting
+   * by capability states the property that decides, so it admits the controls
+   * that qualify without admitting the ones that do not.
    */
   Field: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'form-control', revision: 1 },
     kind: 'field',
     props: { testId: { type: 'string' } },
     slots: {
-      children: { accepts: ['Input'], max: 1, min: 1 },
+      children: { acceptsCapability: 'field-control', max: 1, min: 1 },
       description: { min: 0, text: true },
       error: { min: 0, text: true },
       label: { text: true },
@@ -278,6 +336,7 @@ export const contracts = {
   },
 
   Heading: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -303,6 +362,8 @@ export const contracts = {
    * renders `Field.Control` internally, which is what makes that automatic.
    */
   Input: {
+    capabilities: ['field-control'],
+    composition: 'leaf',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'form-control', revision: 1 },
@@ -322,6 +383,7 @@ export const contracts = {
   },
 
   List: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -340,6 +402,7 @@ export const contracts = {
   },
 
   ListItem: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -353,6 +416,7 @@ export const contracts = {
     },
   },
   Page: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -367,6 +431,7 @@ export const contracts = {
   },
 
   Stack: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -385,6 +450,7 @@ export const contracts = {
   },
 
   Status: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'live-region', revision: 1 },
@@ -393,6 +459,7 @@ export const contracts = {
   },
 
   Text: {
+    composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
     interaction: { profile: 'none', revision: 0 },
@@ -466,6 +533,22 @@ type OptionalSlotNames<S> = {
 }[keyof S]
 
 /**
+ * What one slot holds.
+ *
+ * A slot capped at ONE component holds a single ELEMENT, not a node list, and
+ * the difference is load-bearing rather than pedantic: Dialog's trigger is
+ * composed by Base UI's `render`, which needs an element to clone props onto.
+ * Typed as a general node, a caller could pass a string and the composition
+ * would fail at run time -- which is exactly the class of thing the contracts
+ * exist to make a compile error.
+ */
+type SlotValue<Spec, Children, Element> = Spec extends { text: true }
+  ? Children
+  : Spec extends { max: 1 }
+    ? Element
+    : Children
+
+/**
  * The props a component MUST accept for its contract to be honest.
  *
  * EVERY SLOT IS A PROP, one for one, and a slot named `children` is React's
@@ -481,12 +564,16 @@ type OptionalSlotNames<S> = {
  * is. That is law 5's dependency direction applied to the type layer. The
  * concrete React binding is made once, where the components live.
  */
-export type DeclaredProps<Id extends ContractId, Children = unknown> = {
+export type DeclaredProps<Id extends ContractId, Children = unknown, Element = Children> = {
   [K in RequiredNames<PropsOf<Id>>]: PropValue<PropsOf<Id>[K]>
 } & {
   [K in Exclude<keyof PropsOf<Id>, RequiredNames<PropsOf<Id>>>]?: PropValue<PropsOf<Id>[K]>
 } & {
-  [K in Exclude<keyof SlotsOf<Id>, OptionalSlotNames<SlotsOf<Id>>>]: Children
+  [K in Exclude<keyof SlotsOf<Id>, OptionalSlotNames<SlotsOf<Id>>>]: SlotValue<
+    SlotsOf<Id>[K],
+    Children,
+    Element
+  >
 } & {
-  [K in OptionalSlotNames<SlotsOf<Id>>]?: Children
+  [K in OptionalSlotNames<SlotsOf<Id>>]?: SlotValue<SlotsOf<Id>[K], Children, Element>
 }

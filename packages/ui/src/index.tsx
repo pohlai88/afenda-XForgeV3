@@ -19,7 +19,7 @@ import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Input as BaseInput } from '@base-ui/react/input'
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 type Gap = 'tight' | 'normal' | 'loose'
 
@@ -89,26 +89,50 @@ export function Code({ children }: { children: ReactNode }) {
   return <code className="xf-code">{children}</code>
 }
 
+/**
+ * TWO SURFACES, and keeping them distinct is the point.
+ *
+ * The METADATA contract is `variant`, `disabled`, `testId` and a text label.
+ * That is all configuration can ever say, and it is why there is no `className`
+ * and no `style`.
+ *
+ * The INTERNAL COMPOSITION surface is `composition`: the ref, handlers, ARIA
+ * and data attributes a headless primitive injects when this Button is the
+ * element it renders. `<Dialog.Trigger render={<Button>Open</Button>} />` works
+ * only if those reach the underlying `<button>`.
+ *
+ * Collapsing the two forces a choice between a Button that cannot be composed
+ * and a metadata language that permits arbitrary DOM props. The same question
+ * returns for Tooltip, Popover, Menu and Combobox, so it is worth naming here.
+ *
+ * ORDER IN THE SPREAD IS LOAD-BEARING. `onClick` comes FIRST so that a
+ * composing primitive's handler replaces it -- a trigger whose click opens
+ * nothing is the failure that ordering prevents. `className` and `type` come
+ * LAST so a primitive cannot restyle the design system or turn this into a
+ * submit button.
+ */
 export function Button({
   children,
   onClick,
   variant = 'secondary',
   disabled,
   testId,
+  ...composition
 }: {
   children: ReactNode
   onClick?: () => void
   variant?: 'primary' | 'secondary'
   disabled?: boolean
   testId?: string
-}) {
+} & Record<string, unknown>) {
   return (
     <button
+      onClick={onClick}
+      {...composition}
       className="xf-button xf-focusable"
       data-testid={testId}
       data-variant={variant}
       disabled={disabled}
-      onClick={onClick}
       type="button"
     >
       {children}
@@ -202,7 +226,8 @@ export function Dialog({
 }: {
   title: ReactNode
   description?: ReactNode
-  trigger?: ReactNode
+  /** A Button ELEMENT, composed by Base UI rather than wrapped. */
+  trigger?: ReactElement
   children: ReactNode
   actions?: ReactNode
   open?: boolean
@@ -211,17 +236,17 @@ export function Dialog({
 }) {
   return (
     <BaseDialog.Root onOpenChange={onOpenChange} open={open}>
-      {trigger ? (
-        // The default Trigger IS a <button>, so it carries the role, the Enter
-        // and Space handling and the expanded state for free. An earlier version
-        // passed `render={<span />}` and put a Button inside it: that strips the
-        // button semantics from the thing that opens the dialog and nests one
-        // interactive element inside another. The slot takes TEXT for exactly
-        // that reason -- there is no correct way to put a control in it.
-        <BaseDialog.Trigger className="xf-button xf-focusable" data-variant="secondary">
-          {trigger}
-        </BaseDialog.Trigger>
-      ) : null}
+      {/*
+       * `render` COMPOSES the caller's Button rather than wrapping it.
+       *
+       * The first version passed `render={<span />}` with a Button inside, which
+       * stripped the button semantics from the thing that opens the dialog and
+       * nested one interactive element in another. The second overcorrected: it
+       * concluded no control could go here and made the slot take text. Base
+       * UI's `render` is exactly the composition mechanism for this -- the fix
+       * was never to narrow the language, it was to compose instead of wrap.
+       */}
+      {trigger ? <BaseDialog.Trigger render={trigger as never} /> : null}
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className="xf-dialog-backdrop" />
         <BaseDialog.Popup className="xf-dialog" data-testid={testId}>
@@ -313,35 +338,32 @@ export function Input({
 }
 
 /**
- * A boolean control carrying its own label.
+ * A boolean control with NO label of its own, on purpose.
  *
- * The label is a required slot, not an optional courtesy: a checkbox without
- * one is a control whose meaning exists only visually, next to text that is not
- * associated with it. Base UI's Checkbox reads the Field context, so wrapping
- * the pair in a Field is what associates them.
+ * `CheckboxRoot` reads `labelId` from the Field context and sets
+ * `aria-labelledby` from it, so a Checkbox takes its accessible name from the
+ * Field that wraps it -- exactly as an Input does. An earlier version wrapped
+ * itself in its own Field and Label, which produced the second label a grammar
+ * rule was then written to forbid: the component manufactured the problem, and
+ * the language got bent around it.
  */
 export function Checkbox({
-  label,
   name,
   disabled,
   testId,
 }: {
-  label: ReactNode
   name?: string
   disabled?: boolean
   testId?: string
 }) {
   return (
-    <BaseField.Root className="xf-checkbox-row">
-      <BaseCheckbox.Root
-        className="xf-checkbox xf-focusable"
-        data-testid={testId}
-        disabled={disabled}
-        name={name}
-      >
-        <BaseCheckbox.Indicator className="xf-checkbox-mark" keepMounted={false} />
-      </BaseCheckbox.Root>
-      <BaseField.Label className="xf-field-label">{label}</BaseField.Label>
-    </BaseField.Root>
+    <BaseCheckbox.Root
+      className="xf-checkbox xf-focusable"
+      data-testid={testId}
+      disabled={disabled}
+      name={name}
+    >
+      <BaseCheckbox.Indicator className="xf-checkbox-mark" keepMounted={false} />
+    </BaseCheckbox.Root>
   )
 }
