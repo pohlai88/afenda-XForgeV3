@@ -235,7 +235,7 @@ export const today = (le: string) => businessToday(le)
       source: `import { withPlatformAccess } from '@xforge/tenancy'
 export const all = () =>
   withPlatformAccess(
-    { actor: 'u1', reason: 'reporting', operation: 'x.y', correlationId: 'c1' },
+    { operation: 'billing.usage-rollup', reason: 'monthly reporting' },
     async () => [],
   )
 `,
@@ -245,7 +245,7 @@ export const all = () =>
       source: `import { withPlatformAccess } from '@xforge/tenancy'
 export const all = () =>
   withPlatformAccess(
-    { actor: 'ops', reason: 'tenant list', operation: 'admin.tenants', correlationId: 'c2' },
+    { operation: 'admin.tenant-list', reason: 'platform console listing' },
     async () => [],
   )
 `,

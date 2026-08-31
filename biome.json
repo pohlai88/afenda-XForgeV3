@@ -25,7 +25,8 @@
       "!**/coverage",
       "!**/build",
       "!**/blob-report",
-      "!**/.playwright"
+      "!**/.playwright",
+      "!**/storybook-static"
     ]
   },
   "formatter": {

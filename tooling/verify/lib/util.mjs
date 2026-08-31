@@ -50,11 +50,58 @@ export const PHASES = [
 ]
 
 /**
- * The furthest phase whose work is complete. Raising this is a deliberate act:
- * it converts every BLOCKED stage in that phase from a local inconvenience into
- * a CI failure, which is exactly what completing a phase should mean.
+ * The furthest phase whose work is complete.
+ *
+ * THE REPOSITORY OWNS THIS, not the environment. If CI could run
+ * `XFORGE_PHASE=spine pnpm verify --ci` against a Phase 4 codebase, every
+ * mandatory Phase 1-4 check would quietly become a legitimate PENDING and the
+ * gate would go green having verified almost nothing. Committing the phase
+ * makes lowering it a reviewable diff rather than an environment variable.
+ *
+ * XFORGE_PHASE may RAISE the phase locally -- useful for qualifying the next
+ * phase's stages before declaring it complete -- and may never lower it.
+ * Under --ci the environment is ignored entirely.
  */
-export const CURRENT_PHASE = process.env.XFORGE_PHASE ?? 'spine'
+function readCommittedPhase() {
+  const p = join(ROOT, '.architecture/state.json')
+  if (!existsSync(p)) {
+    throw new Error('.architecture/state.json is missing -- the canonical phase has no authority')
+  }
+  const { currentPhase } = JSON.parse(readFileSync(p, 'utf8'))
+  if (!PHASES.includes(currentPhase)) {
+    throw new Error(`.architecture/state.json declares unknown phase '${currentPhase}'`)
+  }
+  return currentPhase
+}
+
+export const COMMITTED_PHASE = readCommittedPhase()
+
+/**
+ * Resolve the effective phase.
+ *
+ * @param {{ci?: boolean}} opts
+ */
+export function resolvePhase({ ci = false } = {}) {
+  const requested = process.env.XFORGE_PHASE
+  if (!requested || ci) return COMMITTED_PHASE
+
+  if (!PHASES.includes(requested)) {
+    throw new Error(`XFORGE_PHASE='${requested}' is not a known phase. Known: ${PHASES.join(', ')}`)
+  }
+  // Monotonic: the environment may look further ahead, never further back.
+  if (PHASES.indexOf(requested) < PHASES.indexOf(COMMITTED_PHASE)) {
+    throw new Error(
+      `XFORGE_PHASE='${requested}' is BEHIND the committed phase '${COMMITTED_PHASE}'. ` +
+        'Lowering the phase would turn mandatory checks back into legitimate PENDING stages. ' +
+        'Change .architecture/state.json in a reviewed commit instead.',
+    )
+  }
+  return requested
+}
+
+export const CURRENT_PHASE = resolvePhase({
+  ci: process.argv.includes('--ci') || process.env.CI === 'true',
+})
 
 export function phaseHasStarted(phase) {
   const at = PHASES.indexOf(CURRENT_PHASE)

@@ -11,7 +11,24 @@
  * query" -- the documented way RLS architectures fail. The point is not that
  * cross-tenant access is safe; it is that it is rare, named and logged.
  */
+import { type PlatformAccessRequest, performPlatformAccess } from './platform-access'
+
 export { createMemoryDriver } from './memory-driver'
+export type {
+  ExecutionContext,
+  PlatformAccessRequest,
+  PlatformAuditRecord,
+  PlatformAuditSink,
+  PlatformOperation,
+} from './platform-access'
+export {
+  createMemoryAuditSink,
+  currentExecutionContext,
+  PLATFORM_OPERATIONS,
+  readPlatformAudit,
+  setPlatformAuditSink,
+  withExecutionContext,
+} from './platform-access'
 export * as schema from './schema/index'
 export { TENANT_OWNED_TABLES } from './schema/index'
 
@@ -19,32 +36,6 @@ export interface TenantSession {
   /** Every statement runs inside the transaction that set app.tenant_id. */
   readonly tenantId: string
   execute<T>(fn: () => Promise<T>): Promise<T>
-}
-
-/**
- * Cross-tenant access is a DANGEROUS CAPABILITY, not the administrative twin of
- * withTenant. The signature is deliberately awkward: a bare string reason is too
- * easy to satisfy, and if platform access becomes the answer whenever a query is
- * inconvenient, the RLS architecture becomes decorative one call site at a time.
- *
- * Every field is required so the audit row can answer, months later, who did
- * what and under which request. An audit trail that records only that something
- * happened is not worth keeping.
- */
-export interface PlatformAccessContext {
-  /** The human or machine principal accountable for this access. */
-  readonly actor: string
-  /** Why tenant isolation is being stepped around, in terms a reviewer can judge. */
-  readonly reason: string
-  /** The named operation, e.g. 'billing.monthly-rollup'. Enumerable across the codebase. */
-  readonly operation: string
-  /** Ties this access to the request or job that caused it. */
-  readonly correlationId: string
-}
-
-export interface PlatformAuditRecord extends PlatformAccessContext {
-  readonly at: string
-  readonly caller: string
 }
 
 /**
@@ -84,7 +75,6 @@ export interface Driver {
 }
 
 let driver: Driver | null = null
-const platformAudit: PlatformAuditRecord[] = []
 
 export function setDriver(d: Driver): void {
   driver = d
@@ -106,32 +96,16 @@ export function withTenant<T>(tenantId: string, fn: (tx: TenantClient) => Promis
  * The only sanctioned path to cross-tenant data. Restricted to apps/admin by a
  * guard, requires a stated reason, and writes an audit record on EVERY call.
  */
+
+/**
+ * The only sanctioned path to cross-tenant data (ADR-003).
+ *
+ * The caller states intent; identity comes from the trusted execution context.
+ * See platform-access.ts for why that split matters.
+ */
 export function withPlatformAccess<T>(
-  context: PlatformAccessContext,
+  request: PlatformAccessRequest,
   fn: (tx: TenantClient) => Promise<T>,
 ): Promise<T> {
-  for (const field of ['actor', 'reason', 'operation', 'correlationId'] as const) {
-    const value = context?.[field]
-    if (typeof value !== 'string' || value.trim().length < 3) {
-      throw new Error(
-        `withPlatformAccess requires a meaningful '${field}'. Cross-tenant access must be ` +
-          'rare, named and attributable -- if this is hard to fill in, it is probably the ' +
-          'wrong tool.',
-      )
-    }
-  }
-
-  // The audit row is written BEFORE the work, so an access that throws is still
-  // recorded. An audit trail that only logs successes is not an audit trail.
-  platformAudit.push({
-    ...context,
-    at: new Date(0).toISOString(),
-    caller: new Error().stack?.split('\n')[2]?.trim() ?? 'unknown',
-  })
-  return requireDriver().transactionAsPlatform(fn)
-}
-
-/** Exposed so the isolation gate can assert an audit row per invocation. */
-export function readPlatformAudit(): readonly PlatformAuditRecord[] {
-  return platformAudit
+  return performPlatformAccess(request, (inner) => requireDriver().transactionAsPlatform(inner), fn)
 }

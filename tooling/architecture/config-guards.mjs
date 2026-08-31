@@ -13,8 +13,8 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { NON_SOURCE_DIRS } from '../source-universe.mjs'
-import { posix, ROOT, read, sourceFiles } from '../verify/lib/util.mjs'
+import { classify, NON_SOURCE_DIRS, UNCOMMITTABLE } from '../source-universe.mjs'
+import { posix, ROOT, read, run, sourceFiles } from '../verify/lib/util.mjs'
 
 /**
  * Read JSON, tolerating comments only when genuinely needed.
@@ -95,6 +95,23 @@ export const configGuards = [
   },
 
   {
+    id: 'no-committed-build-output',
+    law: 29,
+    title: 'No git-tracked file is classified as build or cache output',
+    check(env) {
+      // The decisive invariant, and the one that would have caught the
+      // Playwright test-results incident from the same classification system
+      // rather than from someone noticing it in a diff.
+      return (env.trackedFiles ?? [])
+        .filter((f) => UNCOMMITTABLE.includes(classify(f)))
+        .map((f) => ({
+          where: f,
+          message: `tracked in git but classified as '${classify(f)}' -- build output must never be committed`,
+        }))
+    },
+  },
+
+  {
     id: 'no-shared-dev-secret',
     law: 29,
     title: 'The local fixture credential never escapes approved fixture locations',
@@ -118,7 +135,12 @@ export const configGuards = [
 export function scanConfig() {
   const gitignorePath = join(ROOT, '.gitignore')
   const exts = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.sql', '.json', '.yaml', '.yml']
+  const tracked = run('git', ['ls-files'])
   const env = {
+    // Empty when git is unavailable; the guard then simply has nothing to check
+    // rather than silently passing on a wrong assumption.
+    trackedFiles:
+      tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
     biome: readJsonc('biome.json'),
     tsconfig: readJsonc('tsconfig.json'),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
