@@ -23,6 +23,32 @@ serving several clients, a consultant, a group-company HR manager with access to
 tenants, an implementation partner. In an SEA SME market where outsourced payroll
 bureaux are common, it may be a *typical* case.
 
+## Prior art
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [OWASP Multi-Tenant Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html) | 2026-08-31 | Establish tenant context early in the request lifecycle; extract the tenant from verified authentication claims, not client headers alone; treat client-supplied tenant identifiers as SELECTORS ONLY and verify the authenticated principal is authorized to act in the selected tenant; bind verified context to request scope and propagate only server-verified context |
+| [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | Permission validated on every request, via middleware rather than per-handler |
+
+### What prior art does NOT prove
+
+**The multi-membership tautology appears in no source found**, and it is the
+defect this ADR exists for. OWASP prescribes verifying that the principal is
+authorised in the selected tenant -- correct, and what every predecessor draft of
+this architecture believed it was already doing, by comparing the host-resolved
+tenant against the session's tenant.
+
+For a principal holding one membership that comparison works. For a principal
+holding two it is vacuous: the session is valid for both, so the host becomes the
+sole selector and the assertion always passes. A consultant, an accountant, or a
+group-company HR manager is an ordinary case, not an exotic one.
+
+Prior art would have given us the right rule and we would still have implemented
+it wrongly, because the rule and the tautology look identical from inside the
+code. Finding it took a scenario walk (UC-15); holding it is AQS-008 / T07.
+
 ## Decision
 
 > An authenticated request context carries **exactly one `tenant_id`**, bound at an

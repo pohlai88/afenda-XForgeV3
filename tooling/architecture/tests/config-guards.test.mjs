@@ -10,8 +10,11 @@
  * never observed to reject a bad config is exactly as untrustworthy as a source
  * guard never observed to reject bad source.
  */
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { GENERATED_DIRS, GENERATED_FILES, NON_SOURCE_DIRS } from '../../source-universe.mjs'
+import { ROOT } from '../../verify/lib/util.mjs'
 import {
   configGuards,
   FIXTURE_SECRET,
@@ -194,5 +197,42 @@ describe('evidence backfill is lazy, and triggered by dependency', () => {
 
   it('never grandfathers a decision written after the law', () => {
     expect(stillGrandfathered('ADR-024-structural-guards-stay-custom.md', 'spine')).toBe(false)
+  })
+})
+
+describe('the tenancy phase can be certified without tripping law 34', () => {
+  const adrs = readdirSync(join(ROOT, '.architecture/adr'))
+    .filter((f) => /^ADR-[0-9]{3}.*[.]md$/.test(f))
+    .map((name) => ({
+      name,
+      source: readFileSync(join(ROOT, '.architecture/adr', name), 'utf8'),
+    }))
+
+  it('names the decisions the tenancy proof rests on', () => {
+    const due = adrs.filter((a) => !stillGrandfathered(a.name, 'tenancy')).map((a) => a.name)
+    expect(due.length).toBeGreaterThan(0)
+    for (const n of ['ADR-003', 'ADR-010', 'ADR-015', 'ADR-018', 'ADR-019']) {
+      expect(
+        due.some((d) => d.startsWith(n)),
+        `${n} should be due at tenancy`,
+      ).toBe(true)
+    }
+  })
+
+  it('and every one of them already carries its evidence', () => {
+    // Checked BEFORE the phase advances. Discovering the gate cannot be
+    // satisfied at the moment of certification would mean either backfilling
+    // under pressure or waiving the law -- and a law waived once is a law.
+    const gaps = []
+    for (const a of adrs) {
+      if (stillGrandfathered(a.name, 'tenancy')) continue
+      if (!/FROZEN/.test(a.source)) continue
+      if (!/^##\s+Prior art/m.test(a.source)) gaps.push(`${a.name}: no Prior art section`)
+      if (!/\|\s*20\d\d-\d\d-\d\d\s*\|/.test(a.source) && !/no-direct-match/.test(a.source)) {
+        gaps.push(`${a.name}: no dated source`)
+      }
+      if (!/does NOT prove/i.test(a.source)) gaps.push(`${a.name}: no "does NOT prove" section`)
+    }
+    expect(gaps).toEqual([])
   })
 })

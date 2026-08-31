@@ -29,6 +29,33 @@ A second gap sits beside it: **no revocation object existed anywhere.** Nothing
 described how a departed employee's access ends, how a leaked integration credential
 is killed, or how temporary delegation expires.
 
+## Prior art
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [OWASP Non-Human Identities Top 10 (2025)](https://owasp.org/www-project-non-human-identities-top-10/) | 2026-08-31 | Machine identities are a distinct risk class with their own Top 10. NHI1 Improper Offboarding -- inadequate deactivation when an identity is no longer needed. NHI5 Overprivileged NHI. NHI7 Long-Lived Secrets -- credentials that never expire |
+| [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | Least privilege and deny-by-default apply to every principal, not only to humans |
+
+### What prior art does NOT prove
+
+**That a machine must be a distinct principal TYPE rather than a user with a
+credential attached.** The NHI Top 10 catalogues what goes wrong with machine
+identities -- stale, overprivileged, long-lived -- and every item argues for
+governing them. None argues the modelling decision made here, which is driven by
+the AUDIT requirement: a credential resolving to a human's session produces a
+trail saying a person approved what a machine did.
+
+**A provider claim this ADR rests on has NOT been re-verified**: that the auth
+library's API-key plugin validates credentials by mocking a session tied to a
+user. It is recorded in the architecture as an unverified vendor observation and
+must be checked before `packages/auth` implements machine principals. If it is
+wrong the reasoning is unchanged -- the audit requirement stands alone -- but the
+illustration would be.
+
+Revocation as an object with a validity window is qualified by T18 and P07.
+
 ## Decision
 
 **A machine principal is a first-class principal type — never a user with a

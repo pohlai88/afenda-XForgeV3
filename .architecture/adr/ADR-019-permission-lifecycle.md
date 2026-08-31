@@ -20,6 +20,31 @@ left to apply. Deleting `hr.compensation.read` during a refactor therefore does 
 lock compensation down — **it opens it**, silently, for every tenant whose field rule
 referenced it.
 
+## Prior art
+
+### Evidence
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | Deny by default: the application must always make a decision, whether implicitly or explicitly, to either deny or permit the requested access; ensure all exception and failed access control checks are handled no matter how unlikely they seem; centralize the handling of failed checks |
+
+### What prior art does NOT prove
+
+**Deny-by-default is standard and well documented.** What is not is the direction
+this ADR adds: that an unknown or RETIRED code compiles to DENY rather than to
+"no restriction". The permissive reading is the natural one -- there is no rule,
+so nothing forbids it -- and it is how a renamed permission silently opens an
+endpoint. P06 holds the forward half.
+
+**The tombstone lifecycle is ours.** A committed permission-vocabulary snapshot,
+so CI fails when a code DISAPPEARS without a tombstone, makes the guard
+bidirectional. No source found proposes it. It answers a failure mode specific to
+a codebase where an agent may rename a permission across many files in one edit,
+and every consumer will agree with the new name.
+
+**Not yet implemented**: the snapshot and the deprecation window. `PERMISSIONS`
+closes the forward direction only. The reverse lands with the manifest work.
+
 ## Decision
 
 **Codes carry a lifecycle** in the module manifest:

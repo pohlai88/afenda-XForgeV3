@@ -140,6 +140,40 @@ its first recommendation.
 rows carrying the server-verified tenant, and the `SECURITY DEFINER` doctrine
 now recorded in ADR-023.
 
+## Backfilled 31 August 2026, before certifying the tenancy phase
+
+Law 34's backfill is LAZY and triggered by dependency: a grandfathered decision
+stops being exempt when the phase that rests on it is certified. Committing
+`currentPhase: tenancy` makes five decisions due, so their evidence was written
+first -- discovering at the moment of certification that the gate cannot be
+satisfied would mean either backfilling under pressure or waiving the law, and a
+law waived once is not a law.
+
+| # | Source | Retrieved | Grade | Supports | Outcome |
+|---|---|---|---|---|---|
+| E27 | [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) | 2026-08-31 | S | Deny by default -- "the application must always make a decision, whether implicitly or explicitly, to either deny or permit"; centralize the handling of failed access-control checks; validate permission on every request through middleware rather than per handler; handle every failed check "no matter how unlikely they seem" | ADOPT (ADR-010, ADR-019) |
+| E28 | [OWASP Non-Human Identities Top 10 (2025)](https://owasp.org/www-project-non-human-identities-top-10/) | 2026-08-31 | S | Machine identities are a distinct risk class: NHI1 Improper Offboarding, NHI5 Overprivileged NHI, NHI7 Long-Lived Secrets | ADAPT (ADR-018) |
+
+**Where precedent and this architecture diverge**, recorded in each ADR rather
+than smoothed over:
+
+- **ADR-003** -- OWASP and PostgreSQL establish FORCE RLS, a non-owner request
+  role and transaction-local context. Neither argues for a SANCTIONED
+  cross-tenant path on the grounds that without one somebody improvises a
+  privileged connection. That is ours, held by T14/T15.
+- **ADR-010** -- OWASP says CENTRALISE authorisation. It does not say WHERE. That
+  it belongs to the application rather than the identity provider follows from
+  membership having to be readable under the boundary it enforces.
+- **ADR-015** -- the multi-membership tautology is in no source found. OWASP
+  gives the right rule, and we would still have implemented it wrongly, because
+  the rule and the tautology are indistinguishable from inside the code.
+- **ADR-018** -- the NHI Top 10 catalogues machine-identity risk; it does not
+  prescribe modelling a machine as a distinct principal TYPE. The audit
+  requirement does. One provider claim behind this ADR remains UNVERIFIED and is
+  flagged there.
+- **ADR-019** -- deny-by-default is standard; a bidirectional permission
+  vocabulary with tombstones is not, and is not yet implemented.
+
 **Freshness.** STANDARD sources (PostgreSQL, OWASP, OpenAPI) are re-checked when
 the architecture or a major version changes. PRODUCTION precedent stays valid as
 precedent. PROVIDER capability (E25, E26, Neon, Vercel) is freshness-sensitive
