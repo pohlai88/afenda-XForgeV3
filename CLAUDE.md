@@ -52,6 +52,28 @@ Canonical architecture: .architecture/architecture-final.md
 Decisions:              .architecture/adr/
 Evidence:               .architecture/evidence-register.md
 
+# Repository workflow
+
+The initial commits established this repository and its default branch. That
+was a one-time exception: with zero commits there is nothing to branch from,
+and reconstructing history to satisfy a branch-first rule would have bought
+ceremony, not architecture.
+
+  From master onward: feature/* -> PR -> master. No direct commits to master.
+
+Recorded here so it is not re-litigated, and so "the last change went straight
+to master" is never cited as precedent.
+
+# Verification
+
+  pnpm verify      local. BLOCKED stages are reported loudly and tolerated.
+  pnpm verify:ci   BLOCKED is a failure. CI MUST use this.
+
+A stage is BLOCKED when its phase has started but a prerequisite is missing --
+no database, no browser. A check that did not run is not a check that passed,
+and without that distinction "verify was green" eventually comes to mean "the
+database tests never ran".
+
 A question not answered here is answered in .architecture/adr/ — consult it
 rather than re-deciding. Changes to a FROZEN section arrive as an ADR, never as
 a competing draft.

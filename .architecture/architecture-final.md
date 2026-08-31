@@ -1128,7 +1128,7 @@ Phases are **referred to by name** in all prose, so cross-references survive ren
 | # | Phase | Exit criterion |
 |---|---|---|
 | 0 | **Spine** | One vertical slice travels UX → contract → mock → UI → handler → repository → DB → Playwright. **Five guards deliberately violated and observed to fail.** Driver session-state test (AQS-022) green |
-| 1 | **Tenancy, identity, policy** | **Cross-tenant denial proven across every tenant-owned table, dynamically enumerated** — including a multi-membership principal at a sibling host |
+| 1 | **Tenancy, identity, policy** | **FIRST move the existing vertical slice onto the real tenant-scoped PostgreSQL path, THEN attack that same slice.** Proving isolation on a path the application does not use is weak evidence. Then: automated proof that tenant A cannot read or mutate tenant B across every tenant-owned table, enumerated dynamically; host/session mismatch denied including for a multi-membership principal; `withPlatformAccess` audit evidence asserted; every tenancy guard mutation-tested |
 | 2 | **Design system** | A representative screen built entirely from system primitives, no bespoke CSS, keyboard-only usable |
 | 3 | **Bounded metadata** | Label change → no DDL · custom field → zero core DDL · hidden required field → contract still required · policy-denied field not re-enabled by metadata · overlay conflict deterministic · high-integrity entity refused generic storage |
 | 4 | **HR core** | Onboarding, transfer, effective-dated manager change, leave → approval → balance, privileged compensation read, stale concurrent edit rejected, **revoked principal denied on the next request** |

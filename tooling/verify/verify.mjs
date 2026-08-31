@@ -2,18 +2,25 @@
 /**
  * pnpm verify -- the canonical definition of repository green.
  *
- *   pnpm verify            run every stage in order
+ *   pnpm verify            run every stage in order (local: BLOCKED tolerated)
+ *   pnpm verify:ci         BLOCKED is a failure. CI must use this.
  *   pnpm verify:list       show the stage list
  *   pnpm verify:coverage   map CLAUDE.md laws to the stages that enforce them
  *
- * Exit code is 0 unless a stage FAILS. PENDING and EMPTY do not fail the build
- * -- they are reported loudly instead, because the whole point is that nobody
- * can mistake "not checked yet" for "checked and fine".
+ * THREE OUTCOMES, and the middle one is the point:
+ *
+ *   FULL GREEN     every stage whose phase has started passed
+ *   PARTIAL GREEN  nothing failed, but a stage that should have run could not
+ *   RED            an enforcing stage failed, or CI hit a blocked stage
+ *
+ * A check that did not run is not a check that passed. Without the middle
+ * category, "verify was green" eventually comes to mean "the database tests
+ * never ran" -- which is how a verification spine quietly becomes decoration.
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { EMPTY, FAIL, PASS, PENDING, ROOT } from './lib/util.mjs'
+import { BLOCKED, CURRENT_PHASE, EMPTY, FAIL, PASS, PENDING, ROOT } from './lib/util.mjs'
 import { reviewOnly, stages } from './stages.mjs'
 
 const ESC = String.fromCharCode(27)
@@ -29,7 +36,13 @@ const C = {
 const tty = process.stdout.isTTY
 const paint = (c, s) => (tty ? c + s + C.reset : s)
 
-const COLOUR = { [PASS]: C.green, [FAIL]: C.red, [EMPTY]: C.dim, [PENDING]: C.yellow }
+const COLOUR = {
+  [PASS]: C.green,
+  [FAIL]: C.red,
+  [EMPTY]: C.dim,
+  [PENDING]: C.blue,
+  [BLOCKED]: C.yellow,
+}
 
 /** Parse the numbered laws out of CLAUDE.md so coverage is derived, not duplicated. */
 function readLaws() {
@@ -47,7 +60,9 @@ function list() {
   console.log(paint(C.bold, '\npnpm verify -- stage order\n'))
   stages.forEach((s, i) => {
     const laws = s.enforces.length ? `laws ${s.enforces.join(', ')}` : 'no law directly'
-    console.log(`  ${String(i + 1).padStart(2)}. ${s.title.padEnd(26)}${paint(C.dim, laws)}`)
+    console.log(
+      `  ${String(i + 1).padStart(2)}. ${s.title.padEnd(26)}${paint(C.dim, `${s.phase.padEnd(9)} ${laws}`)}`,
+    )
   })
   console.log(
     paint(C.dim, '\n  Any rule not represented as a stage here is unenforced by construction.\n'),
@@ -83,13 +98,13 @@ function coverage() {
   }
 
   console.log(
-    '\n  ' +
-      paint(C.green, `${staged} enforced by a stage`) +
-      '   ' +
-      paint(C.blue, `${Object.keys(reviewOnly).length} review or phase gate`) +
-      '   ' +
-      paint(unaccounted.length ? C.yellow : C.green, `${unaccounted.length} unaccounted`) +
-      paint(C.dim, `   of ${laws.size} laws`),
+    `\n  ${paint(C.green, `${staged} enforced by a stage`)}   ${paint(
+      C.blue,
+      `${Object.keys(reviewOnly).length} review or phase gate`,
+    )}   ${paint(
+      unaccounted.length ? C.yellow : C.green,
+      `${unaccounted.length} unaccounted`,
+    )}${paint(C.dim, `   of ${laws.size} laws`)}`,
   )
 
   if (unaccounted.length) {
@@ -117,7 +132,9 @@ function main() {
   if (process.argv.includes('--list')) return list()
   if (process.argv.includes('--coverage')) return coverage()
 
-  console.log(paint(C.bold, '\npnpm verify\n'))
+  const ci = process.argv.includes('--ci') || process.env.CI === 'true'
+
+  console.log(paint(C.bold, `\npnpm verify${ci ? ' --ci' : ''}\n`))
   const results = []
   let failed = false
 
@@ -131,11 +148,7 @@ function main() {
     results.push({ stage, ...r })
     const c = COLOUR[r.status] || C.reset
     console.log(
-      '  ' +
-        paint(c, r.status.padEnd(8)) +
-        ' ' +
-        stage.title.padEnd(26) +
-        paint(C.dim, r.detail.split('\n')[0]),
+      `  ${paint(c, r.status.padEnd(8))} ${stage.title.padEnd(26)}${paint(C.dim, r.detail.split('\n')[0])}`,
     )
     if (r.status === FAIL) {
       failed = true
@@ -145,38 +158,64 @@ function main() {
     }
   }
 
-  const n = (s) => results.filter((r) => r.status === s).length
-  const enforcing = n(PASS)
+  const n = (st) => results.filter((r) => r.status === st).length
+  const blocked = results.filter((r) => r.status === BLOCKED)
+
   console.log(
-    '\n  ' +
-      paint(C.green, `${n(PASS)} pass`) +
-      '  ' +
-      paint(C.dim, `${n(EMPTY)} empty`) +
-      '  ' +
-      paint(C.yellow, `${n(PENDING)} pending`) +
-      '  ' +
-      paint(C.red, `${n(FAIL)} fail`) +
-      paint(C.dim, `   of ${stages.length} stages`),
+    `\n  ${paint(C.green, `${n(PASS)} pass`)}  ${paint(C.dim, `${n(EMPTY)} empty`)}  ${paint(
+      C.blue,
+      `${n(PENDING)} pending`,
+    )}  ${paint(C.yellow, `${n(BLOCKED)} blocked`)}  ${paint(C.red, `${n(FAIL)} fail`)}${paint(
+      C.dim,
+      `   of ${stages.length} stages, phase: ${CURRENT_PHASE}`,
+    )}`,
   )
 
   if (failed) {
-    console.log(paint(C.red, '\n  NOT GREEN\n'))
+    console.log(paint(C.red, '\n  RED -- an enforcing stage failed\n'))
     process.exit(1)
   }
 
-  if (enforcing === 0) {
+  if (n(PASS) === 0) {
     console.log(
-      paint(C.yellow, '\n  GREEN, but nothing is actually enforced yet.') +
+      paint(C.yellow, '\n  Nothing is actually enforced yet.') +
         paint(
           C.dim,
-          '\n  Every stage is empty or pending. Expected on an empty repository;\n' +
-            '  a defect at any point after the spine phase.\n',
+          '\n  Every stage is empty, pending or blocked. Expected on an empty\n' +
+            '  repository; a defect at any point after the spine phase.\n',
         ),
     )
-  } else {
-    console.log(paint(C.green, '\n  GREEN\n'))
+    process.exit(0)
   }
+
+  if (blocked.length > 0) {
+    console.log(paint(C.yellow, `\n  PARTIAL GREEN -- ${blocked.length} stage(s) could not run:`))
+    for (const b of blocked) {
+      console.log(paint(C.yellow, `    ${b.stage.title} -- ${b.detail}`))
+    }
+    if (ci) {
+      console.log(
+        paint(C.red, '\n  RED in CI: a blocked stage is a failure.') +
+          paint(
+            C.dim,
+            '\n  "verify was green" must never come to mean "the database tests never ran".\n',
+          ),
+      )
+      process.exit(1)
+    }
+    console.log(
+      paint(
+        C.dim,
+        '\n  Tolerated locally. `pnpm verify:ci` treats this as failure, and CI must use it.\n',
+      ),
+    )
+    process.exit(0)
+  }
+
+  console.log(paint(C.green, '\n  FULL GREEN -- every stage whose phase has started passed\n'))
   process.exit(0)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main()
+// argv[1] is absent when this module is imported (node -e, a test), so the
+// entry check must tolerate it rather than throwing on import.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()

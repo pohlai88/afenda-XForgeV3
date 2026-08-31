@@ -233,13 +233,21 @@ export const today = (le: string) => businessToday(le)
     violating: {
       path: 'modules/payroll/application/queries/summary.ts',
       source: `import { withPlatformAccess } from '@xforge/tenancy'
-export const all = () => withPlatformAccess('reporting', async () => [])
+export const all = () =>
+  withPlatformAccess(
+    { actor: 'u1', reason: 'reporting', operation: 'x.y', correlationId: 'c1' },
+    async () => [],
+  )
 `,
     },
     clean: {
       path: 'apps/admin/app/tenants/page.tsx',
       source: `import { withPlatformAccess } from '@xforge/tenancy'
-export const all = () => withPlatformAccess('tenant list', async () => [])
+export const all = () =>
+  withPlatformAccess(
+    { actor: 'ops', reason: 'tenant list', operation: 'admin.tenants', correlationId: 'c2' },
+    async () => [],
+  )
 `,
     },
   },

@@ -21,8 +21,28 @@ export interface TenantSession {
   execute<T>(fn: () => Promise<T>): Promise<T>
 }
 
-export interface PlatformAuditRecord {
+/**
+ * Cross-tenant access is a DANGEROUS CAPABILITY, not the administrative twin of
+ * withTenant. The signature is deliberately awkward: a bare string reason is too
+ * easy to satisfy, and if platform access becomes the answer whenever a query is
+ * inconvenient, the RLS architecture becomes decorative one call site at a time.
+ *
+ * Every field is required so the audit row can answer, months later, who did
+ * what and under which request. An audit trail that records only that something
+ * happened is not worth keeping.
+ */
+export interface PlatformAccessContext {
+  /** The human or machine principal accountable for this access. */
+  readonly actor: string
+  /** Why tenant isolation is being stepped around, in terms a reviewer can judge. */
   readonly reason: string
+  /** The named operation, e.g. 'billing.monthly-rollup'. Enumerable across the codebase. */
+  readonly operation: string
+  /** Ties this access to the request or job that caused it. */
+  readonly correlationId: string
+}
+
+export interface PlatformAuditRecord extends PlatformAccessContext {
   readonly at: string
   readonly caller: string
 }
@@ -87,14 +107,24 @@ export function withTenant<T>(tenantId: string, fn: (tx: TenantClient) => Promis
  * guard, requires a stated reason, and writes an audit record on EVERY call.
  */
 export function withPlatformAccess<T>(
-  reason: string,
+  context: PlatformAccessContext,
   fn: (tx: TenantClient) => Promise<T>,
 ): Promise<T> {
-  if (!reason || reason.trim().length < 3) {
-    throw new Error('withPlatformAccess requires a stated reason')
+  for (const field of ['actor', 'reason', 'operation', 'correlationId'] as const) {
+    const value = context?.[field]
+    if (typeof value !== 'string' || value.trim().length < 3) {
+      throw new Error(
+        `withPlatformAccess requires a meaningful '${field}'. Cross-tenant access must be ` +
+          'rare, named and attributable -- if this is hard to fill in, it is probably the ' +
+          'wrong tool.',
+      )
+    }
   }
+
+  // The audit row is written BEFORE the work, so an access that throws is still
+  // recorded. An audit trail that only logs successes is not an audit trail.
   platformAudit.push({
-    reason,
+    ...context,
     at: new Date(0).toISOString(),
     caller: new Error().stack?.split('\n')[2]?.trim() ?? 'unknown',
   })

@@ -130,4 +130,6 @@ function main() {
   process.exit(1)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main()
+// argv[1] is absent when this module is imported (node -e, a test), so the
+// entry check must tolerate it rather than throwing on import.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main()
