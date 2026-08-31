@@ -7,6 +7,10 @@
  *
  * Aliases are emitted as var() references rather than resolved values, so
  * rebinding a semantic role below updates everything that references it.
+ *
+ * Mode selectors are :root-qualified: (0,2,0) beats the base on specificity
+ * rather than on source order, and a mode set on an inner element does not
+ * match -- theme and density are document-level modes by construction.
  */
 :root {
   --color-neutral-0: #ffffff;
@@ -100,4 +104,35 @@
   --component-alert-padding-inline: var(--semantic-space-inline);
   --component-list-item-padding: var(--semantic-row-padding);
   --component-list-item-gap: var(--semantic-row-gap);
+}
+
+:root[data-density='compact'] {
+  --semantic-space-stack-tight: var(--space-1);
+  --semantic-space-stack: var(--space-2);
+  --semantic-space-stack-loose: var(--space-3);
+  --semantic-space-inline: var(--space-3);
+  --semantic-space-section: var(--space-3);
+  --semantic-control-padding-block: var(--space-1);
+  --semantic-control-padding-inline: var(--space-2);
+  --semantic-row-padding: var(--space-2);
+  --semantic-row-gap: var(--space-3);
+  --semantic-container-padding: var(--space-3);
+  --semantic-type-heading: var(--size-text-md);
+}
+
+:root[data-theme='dark'] {
+  --semantic-surface-page: var(--color-neutral-950);
+  --semantic-surface-raised: var(--color-neutral-900);
+  --semantic-surface-sunken: var(--color-neutral-800);
+  --semantic-text-default: var(--color-neutral-50);
+  --semantic-text-muted: var(--color-neutral-400);
+  --semantic-border-default: var(--color-neutral-800);
+  --semantic-border-strong: var(--color-neutral-600);
+  --semantic-accent-subtle: var(--color-blue-950);
+  --semantic-danger-text: var(--color-red-400);
+  --semantic-danger-surface: var(--color-red-950);
+  --semantic-danger-border: var(--color-red-700);
+  --semantic-warning-text: var(--color-amber-300);
+  --semantic-warning-surface: var(--color-amber-950);
+  --semantic-warning-border: var(--color-amber-800);
 }

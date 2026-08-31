@@ -29,6 +29,41 @@
  * argument for having a semantic layer. `resolve()` survives as the VALIDATOR
  * -- cycles and dangling references still have to be caught, and now so do
  * illegal tier edges -- but its output is no longer what gets written.
+ *
+ * -------------------------------------------------------------------------
+ * TWO INDEPENDENT AXES, AND WHY DISJOINTNESS IS CHECKED RATHER THAN INTENDED.
+ *
+ * THEME owns colour. DENSITY owns geometry. Their selectors have equal
+ * specificity, so if one token were rebound by both, which value won would be
+ * decided by whichever block this generator happened to emit last. That is
+ * source order masquerading as architecture, and it fails silently: the page
+ * looks plausible, and `dark + compact` is quietly not the composition of dark
+ * and compact. So the generator computes the intersection and REFUSES.
+ *
+ * Axis ownership is derived from DTCG `$type`, not from namespace convention: a
+ * theme mode may only rebind `color` tokens and a density mode may only rebind
+ * `dimension` ones. That is checkable, and it does not depend on anyone naming
+ * a group carefully.
+ *
+ * WHAT THAT MEANS FOR THE DISJOINTNESS CHECK, stated so nobody deletes it as
+ * dead code: with today's two axes a collision is UNREACHABLE, because the type
+ * check rejects any crossing override before disjointness is consulted. The
+ * check is for the second COLOUR axis, which is the one actually coming --
+ * high-contrast and tenant branding are both colour axes, and either can
+ * legitimately claim a token `theme` already claims. That is the moment the
+ * cascade would start deciding, and it is tested against exactly that
+ * configuration rather than against an impossible present.
+ *
+ * -------------------------------------------------------------------------
+ * SELECTORS ARE `:root[data-theme='dark']`, NOT `[data-theme='dark']`.
+ *
+ * Two reasons, both structural. Specificity: `:root` alone is (0,1,0) and so is
+ * a bare attribute selector, so a mode block would only beat the base by coming
+ * later in the file; `:root[...]` is (0,2,0) and wins on specificity, whatever
+ * the order. And scope: a mode set on some inner container would not match, so
+ * theme and density are document-level modes by construction rather than by
+ * convention -- which is what keeps a Dialog rendered through a portal from
+ * silently losing the density its trigger was under.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -139,26 +174,47 @@ function resolve(tokens) {
   return resolved
 }
 
+/** A mode's overrides, flattened and checked against the base it overrides. */
+function readMode(axisName, axis, modeName, tokens) {
+  const overrides = flatten(axis[modeName])
+  for (const name of overrides.keys()) {
+    const base = tokens.get(name)
+    if (!base) {
+      throw new Error(
+        `${axisName}.${modeName} overrides '${name}', which is not a token -- ` +
+          'a mode may rebind a role, never invent one',
+      )
+    }
+    if (base.type !== axis.$axis) {
+      throw new Error(
+        `${axisName}.${modeName} overrides '${name}' of type '${base.type}', but the ` +
+          `${axisName} axis owns '${axis.$axis}' -- theme owns colour and density owns ` +
+          'geometry, and an axis reaching into the other is how the two stop composing',
+      )
+    }
+  }
+  return overrides
+}
+
 /**
  * The one thing tokens CAN guarantee about target size: the floor value itself.
- *
- * Tokens cannot guarantee the rendered result -- a 20px control is still
- * constructible from compliant values -- so this is the static half, and a
- * browser test owes the other.
+ * Checked in every mode, because compact is exactly where it would be shaved.
  */
-function assertTargetFloor(resolved, label) {
+function assertTargetFloor(byMode) {
   const MIN_PX = 24
   const ROOT_PX = 16
-  const raw = resolved.get('semantic.target.minimum')
-  if (raw === undefined) {
-    throw new Error(`semantic.target.minimum is missing in ${label}`)
-  }
-  const px = raw.endsWith('rem') ? Number.parseFloat(raw) * ROOT_PX : Number.parseFloat(raw)
-  if (!(px >= MIN_PX)) {
-    throw new Error(
-      `semantic.target.minimum is ${raw} (${px}px) in ${label}, below the ${MIN_PX}px ` +
-        'floor -- WCAG 2.5.8 permits documented exceptions, but not a silent one',
-    )
+  for (const [label, resolved] of byMode) {
+    const raw = resolved.get('semantic.target.minimum')
+    if (raw === undefined) {
+      throw new Error(`semantic.target.minimum is missing in ${label}`)
+    }
+    const px = raw.endsWith('rem') ? Number.parseFloat(raw) * ROOT_PX : Number.parseFloat(raw)
+    if (!(px >= MIN_PX)) {
+      throw new Error(
+        `semantic.target.minimum is ${raw} (${px}px) in ${label}, below the ${MIN_PX}px ` +
+          'floor -- WCAG 2.5.8 permits documented exceptions, but not a silent one in a mode',
+      )
+    }
   }
 }
 
@@ -191,7 +247,50 @@ export function generate(source) {
     )
   }
 
-  assertTargetFloor(base, 'the base')
+  const axes = source.$modes ?? {}
+  const claimed = new Map()
+  const blocks = []
+  const byMode = new Map([['the base', base]])
+
+  // `$`-prefixed keys are metadata at EVERY level. Filtering them only at the
+  // mode level made `$modes.$description` -- a string -- look like an axis, and
+  // `Object.keys` of a string is its character indices, so the generator
+  // cheerfully emitted 456 empty mode blocks named after them.
+  const named = (node) =>
+    Object.keys(node)
+      .filter((k) => !k.startsWith('$'))
+      .sort()
+
+  for (const axisName of named(axes)) {
+    const axis = axes[axisName]
+    for (const modeName of named(axis)) {
+      const overrides = readMode(axisName, axis, modeName, tokens)
+
+      for (const name of overrides.keys()) {
+        const other = claimed.get(name)
+        if (other && other !== axisName) {
+          throw new Error(
+            `'${name}' is rebound by both the ${other} and ${axisName} axes. Their ` +
+              'selectors have equal specificity, so which one wins would be decided by ' +
+              'emission order rather than by design. Give the axes disjoint tokens, or ' +
+              'make the combination an explicit mode',
+          )
+        }
+        claimed.set(name, axisName)
+      }
+
+      // Resolved with the override applied, so the floor check sees this mode.
+      byMode.set(`${axisName}=${modeName}`, resolve(new Map([...tokens, ...overrides])))
+
+      blocks.push({
+        entries: [...overrides.entries()],
+        label: `${axisName}=${modeName}`,
+        selector: `:root[data-${axisName}='${modeName}']`,
+      })
+    }
+  }
+
+  assertTargetFloor(byMode)
 
   const lines = [
     '/*',
@@ -203,27 +302,35 @@ export function generate(source) {
     ' *',
     ' * Aliases are emitted as var() references rather than resolved values, so',
     ' * rebinding a semantic role below updates everything that references it.',
+    ' *',
+    ' * Mode selectors are :root-qualified: (0,2,0) beats the base on specificity',
+    ' * rather than on source order, and a mode set on an inner element does not',
+    ' * match -- theme and density are document-level modes by construction.',
     ' */',
     ':root {',
     ...declarations([...tokens.entries()]),
     '}',
   ]
 
+  for (const block of blocks) {
+    lines.push('', `${block.selector} {`, ...declarations(block.entries), '}')
+  }
   lines.push('')
 
-  return { componentTokens, css: lines.join('\n'), tokens }
+  return { blocks, componentTokens, css: lines.join('\n'), tokens }
 }
 
 function main() {
   const source = JSON.parse(readFileSync(INPUT, 'utf8'))
-  const { componentTokens, css, tokens } = generate(source)
+  const { blocks, componentTokens, css, tokens } = generate(source)
 
   mkdirSync(dirname(OUTPUT), { recursive: true })
   writeFileSync(OUTPUT, css, 'utf8')
 
+  const modes = blocks.map((b) => b.label).join(', ')
   process.stdout.write(
     `tokens: ${tokens.size} custom properties, ${componentTokens.length}/${COMPONENT_TOKEN_CEILING} ` +
-      'component tier\n',
+      `component tier, modes: ${modes}\n`,
   )
 }
 
