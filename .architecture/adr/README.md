@@ -51,9 +51,12 @@ opinion**, and the architecture treats it as such.
 | [019](ADR-019-permission-lifecycle.md) | Permission-code lifecycle and fail-closed policy compilation | FROZEN | AQS-021 |
 | [020](ADR-020-data-lifecycle.md) | Data retention, erasure and tenant offboarding | STABLE | AQS-028 |
 | [021](ADR-021-migration-policy.md) | Production migration compatibility policy | FROZEN | AQS-018 |
+| [022](ADR-022-verified-tenant-context.md) | Verified tenant context: host selects, membership authorises | FROZEN | AQS-008 |
 
 ADRs 001–013 record decisions reconciled from thirteen predecessor drafts.
 **ADRs 014–020 record defects found by adversarial review** that no draft had caught;
 each names the scenario (UC-nn) that exposed it.
 ADR-021 records a policy that was normative in the architecture but had no ADR, and
 restores the scenario (UC-22) that was lost when three drafts were merged.
+ADR-022 settles the multi-tab and multi-membership authority question before
+Phase 1 code depends on it.

@@ -1,26 +1,123 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { NON_SOURCE_DIRS } from '../../source-universe.mjs'
 
 export const ROOT = process.cwd()
 
-/** Stage outcomes. EMPTY and PENDING are deliberately distinct from PASS:
- *  a stage that passed because there was nothing to check has NOT verified anything,
- *  and saying so is the difference between an honest gate and a decorative one. */
+/**
+ * Stage outcomes.
+ *
+ * EMPTY, PENDING and BLOCKED are deliberately distinct from PASS: a stage that
+ * passed because there was nothing to check has NOT verified anything, and
+ * saying so is the difference between an honest gate and a decorative one.
+ *
+ * PENDING and BLOCKED look identical in a terminal and are entirely different
+ * facts:
+ *
+ *   PENDING  the stage belongs to a phase that has not started. Nothing is
+ *            wrong; there is genuinely nothing to check yet.
+ *   BLOCKED  the stage belongs to a phase that HAS started and should be
+ *            running, but a prerequisite is missing -- no database, no browser.
+ *            Locally that is an inconvenience. In CI it is a failure, because
+ *            a check that did not run is not a check that passed.
+ *
+ * Collapsing the two is how "verify was green" comes to mean "the database
+ * tests never ran".
+ */
 export const PASS = 'PASS'
 export const FAIL = 'FAIL'
 export const EMPTY = 'EMPTY'
 export const PENDING = 'PENDING'
+export const BLOCKED = 'BLOCKED'
 
-const IGNORED_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  '.next',
-  '.turbo',
-  'coverage',
-  '.architecture',
-])
+/**
+ * Build phases in order. A stage declares the phase it activates in; anything
+ * at or before CURRENT_PHASE is expected to run.
+ */
+export const PHASES = [
+  'spine',
+  'tenancy',
+  'design-system',
+  'metadata',
+  'hr',
+  'payroll',
+  'async',
+  'ai',
+  'integrations',
+  'second-domain',
+  'second-country',
+]
+
+/**
+ * The furthest phase whose work is complete.
+ *
+ * THE REPOSITORY OWNS THIS, not the environment. If CI could run
+ * `XFORGE_PHASE=spine pnpm verify --ci` against a Phase 4 codebase, every
+ * mandatory Phase 1-4 check would quietly become a legitimate PENDING and the
+ * gate would go green having verified almost nothing. Committing the phase
+ * makes lowering it a reviewable diff rather than an environment variable.
+ *
+ * XFORGE_PHASE may RAISE the phase locally -- useful for qualifying the next
+ * phase's stages before declaring it complete -- and may never lower it.
+ * Under --ci the environment is ignored entirely.
+ */
+function readCommittedPhase() {
+  const p = join(ROOT, '.architecture/state.json')
+  if (!existsSync(p)) {
+    throw new Error('.architecture/state.json is missing -- the canonical phase has no authority')
+  }
+  const { currentPhase } = JSON.parse(readFileSync(p, 'utf8'))
+  if (!PHASES.includes(currentPhase)) {
+    throw new Error(`.architecture/state.json declares unknown phase '${currentPhase}'`)
+  }
+  return currentPhase
+}
+
+export const COMMITTED_PHASE = readCommittedPhase()
+
+/**
+ * Resolve the effective phase.
+ *
+ * @param {{ci?: boolean}} opts
+ */
+export function resolvePhase({ ci = false } = {}) {
+  const requested = process.env.XFORGE_PHASE
+  if (!requested || ci) return COMMITTED_PHASE
+
+  if (!PHASES.includes(requested)) {
+    throw new Error(`XFORGE_PHASE='${requested}' is not a known phase. Known: ${PHASES.join(', ')}`)
+  }
+  // Monotonic: the environment may look further ahead, never further back.
+  if (PHASES.indexOf(requested) < PHASES.indexOf(COMMITTED_PHASE)) {
+    throw new Error(
+      `XFORGE_PHASE='${requested}' is BEHIND the committed phase '${COMMITTED_PHASE}'. ` +
+        'Lowering the phase would turn mandatory checks back into legitimate PENDING stages. ' +
+        'Change .architecture/state.json in a reviewed commit instead.',
+    )
+  }
+  return requested
+}
+
+export const CURRENT_PHASE = resolvePhase({
+  ci: process.argv.includes('--ci') || process.env.CI === 'true',
+})
+
+export function phaseHasStarted(phase) {
+  const at = PHASES.indexOf(CURRENT_PHASE)
+  const of = PHASES.indexOf(phase)
+  if (of === -1) throw new Error(`unknown phase '${phase}'`)
+  return of <= at
+}
+
+/**
+ * Directories the guards never walk.
+ *
+ * Derived from the single source universe rather than maintained here, so the
+ * guards, Biome, tsc and Vitest cannot drift apart -- the drift that made the
+ * lint stage order-dependent.
+ */
+const IGNORED_DIRS = new Set([...NON_SOURCE_DIRS, '.architecture'])
 
 /** Recursively collect files under `dir` matching `exts`. */
 export function walk(dir, exts = ['.ts', '.tsx', '.mts', '.js', '.mjs'], acc = []) {
@@ -37,8 +134,8 @@ export function walk(dir, exts = ['.ts', '.tsx', '.mts', '.js', '.mjs'], acc = [
 }
 
 /** Source files across the workspace roots that guards police. */
-export function sourceFiles(roots = ['apps', 'modules', 'packages']) {
-  return roots.flatMap((r) => walk(r))
+export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
+  return roots.flatMap((r) => (exts ? walk(r, exts) : walk(r)))
 }
 
 export function read(file) {

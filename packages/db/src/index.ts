@@ -11,7 +11,24 @@
  * query" -- the documented way RLS architectures fail. The point is not that
  * cross-tenant access is safe; it is that it is rare, named and logged.
  */
+import { type PlatformAccessRequest, performPlatformAccess } from './platform-access'
+
 export { createMemoryDriver } from './memory-driver'
+export type {
+  ExecutionContext,
+  PlatformAccessRequest,
+  PlatformAuditRecord,
+  PlatformAuditSink,
+  PlatformOperation,
+} from './platform-access'
+export {
+  createMemoryAuditSink,
+  currentExecutionContext,
+  PLATFORM_OPERATIONS,
+  readPlatformAudit,
+  setPlatformAuditSink,
+  withExecutionContext,
+} from './platform-access'
 export * as schema from './schema/index'
 export { TENANT_OWNED_TABLES } from './schema/index'
 
@@ -19,12 +36,6 @@ export interface TenantSession {
   /** Every statement runs inside the transaction that set app.tenant_id. */
   readonly tenantId: string
   execute<T>(fn: () => Promise<T>): Promise<T>
-}
-
-export interface PlatformAuditRecord {
-  readonly reason: string
-  readonly at: string
-  readonly caller: string
 }
 
 /**
@@ -64,7 +75,6 @@ export interface Driver {
 }
 
 let driver: Driver | null = null
-const platformAudit: PlatformAuditRecord[] = []
 
 export function setDriver(d: Driver): void {
   driver = d
@@ -86,22 +96,16 @@ export function withTenant<T>(tenantId: string, fn: (tx: TenantClient) => Promis
  * The only sanctioned path to cross-tenant data. Restricted to apps/admin by a
  * guard, requires a stated reason, and writes an audit record on EVERY call.
  */
+
+/**
+ * The only sanctioned path to cross-tenant data (ADR-003).
+ *
+ * The caller states intent; identity comes from the trusted execution context.
+ * See platform-access.ts for why that split matters.
+ */
 export function withPlatformAccess<T>(
-  reason: string,
+  request: PlatformAccessRequest,
   fn: (tx: TenantClient) => Promise<T>,
 ): Promise<T> {
-  if (!reason || reason.trim().length < 3) {
-    throw new Error('withPlatformAccess requires a stated reason')
-  }
-  platformAudit.push({
-    reason,
-    at: new Date(0).toISOString(),
-    caller: new Error().stack?.split('\n')[2]?.trim() ?? 'unknown',
-  })
-  return requireDriver().transactionAsPlatform(fn)
-}
-
-/** Exposed so the isolation gate can assert an audit row per invocation. */
-export function readPlatformAudit(): readonly PlatformAuditRecord[] {
-  return platformAudit
+  return performPlatformAccess(request, (inner) => requireDriver().transactionAsPlatform(inner), fn)
 }

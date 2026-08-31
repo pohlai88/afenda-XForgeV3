@@ -22,15 +22,34 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { scanConfig } from '../architecture/config-guards.mjs'
 import { scanContract } from '../architecture/contract-guards.mjs'
 import { mutationTest, scanWorkspace } from '../architecture/run-guards.mjs'
-import { EMPTY, FAIL, hasBin, PASS, PENDING, ROOT, run, workspaceHasPackages } from './lib/util.mjs'
+import {
+  BLOCKED,
+  EMPTY,
+  FAIL,
+  hasBin,
+  PASS,
+  PENDING,
+  phaseHasStarted,
+  ROOT,
+  run,
+  workspaceHasPackages,
+} from './lib/util.mjs'
 
-/** A stage whose tooling has not arrived yet. */
-const pending = (phase, needs) => () => ({
-  status: PENDING,
-  detail: `activates in the ${phase} phase (needs ${needs})`,
-})
+/**
+ * A prerequisite is missing.
+ *
+ * Which status that deserves depends entirely on whether the stage's phase has
+ * started. Before its phase: PENDING, and nothing is wrong. On or after its
+ * phase: BLOCKED, because the check should be running and is not -- a fact CI
+ * must treat as failure.
+ */
+const unmet = (stage, needs) =>
+  phaseHasStarted(stage.phase)
+    ? { status: BLOCKED, detail: `${stage.phase} phase has started but ${needs} is missing` }
+    : { status: PENDING, detail: `activates in the ${stage.phase} phase (needs ${needs})` }
 
 const hasGit = () => existsSync(join(ROOT, '.git'))
 
@@ -45,17 +64,17 @@ const GENERATED_PATHS = ['contracts/', 'packages/api-client/src/generated/']
 export const stages = [
   {
     id: 'generate',
+    phase: 'spine',
     title: 'generate cleanliness',
     enforces: [27],
     run() {
       if (!existsSync(join(ROOT, 'contracts'))) {
         return {
-          status: PENDING,
-          detail: 'activates in the spine phase (needs contracts/ and a generator)',
+          status: BLOCKED,
+          detail: 'spine phase has started but contracts/ or the generator is missing',
         }
       }
-      if (!hasGit())
-        return { status: PENDING, detail: 'needs a git repository to diff generated output' }
+      if (!hasGit()) return unmet(this, 'a git repository to diff generated output')
       const gen = run('pnpm', ['-s', 'generate'])
       if (gen.code !== 0) return { status: FAIL, detail: `pnpm generate failed\n${gen.out}` }
       // Scoped to GENERATED paths only. Diffing the whole tree would fail on
@@ -70,6 +89,7 @@ export const stages = [
 
   {
     id: 'guards',
+    phase: 'spine',
     title: 'architecture guards',
     enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30],
     run() {
@@ -79,6 +99,12 @@ export const stages = [
       // where $refs are resolved -- not against source text, which cannot see
       // through a named schema reference.
       const contract = scanContract()
+
+      // Config guards police what the TOOLING is pointed at. Without them the
+      // gate itself can become order-dependent, which no amount of source
+      // checking would catch.
+      const config = scanConfig()
+
       const violations = [
         ...sourceViolations,
         ...contract.violations.map((v) => ({
@@ -86,6 +112,7 @@ export const stages = [
           file: 'contracts/openapi.generated.json',
           line: 0,
         })),
+        ...config.violations.map((v) => ({ ...v, file: v.where, line: 0 })),
       ]
 
       if (violations.length > 0) {
@@ -124,21 +151,22 @@ export const stages = [
       const contractNote = contract.present
         ? `, ${contract.checked} operations`
         : ', no contract yet'
+      const configNote = `, ${config.checked} config guards`
       return {
         status: PASS,
-        detail: `${checked} file-checks${contractNote}, ${proven} guards proven`,
+        detail: `${checked} file-checks${contractNote}${configNote}, ${proven} guards proven`,
       }
     },
   },
 
   {
     id: 'typecheck',
+    phase: 'spine',
     title: 'typecheck',
     enforces: [9],
     run() {
       if (!workspaceHasPackages()) return { status: EMPTY, detail: 'no packages to typecheck' }
-      if (!hasBin('tsc'))
-        return { status: PENDING, detail: 'activates in the spine phase (needs typescript)' }
+      if (!hasBin('tsc')) return unmet(this, 'typescript')
       const r = run('pnpm', ['-s', 'exec', 'tsc', '--noEmit'])
       return r.code === 0
         ? { status: PASS, detail: 'no type errors' }
@@ -148,12 +176,12 @@ export const stages = [
 
   {
     id: 'lint',
+    phase: 'spine',
     title: 'format / lint',
     enforces: [],
     run() {
       if (!workspaceHasPackages()) return { status: EMPTY, detail: 'no packages to lint' }
-      if (!hasBin('biome'))
-        return { status: PENDING, detail: 'activates in the spine phase (needs @biomejs/biome)' }
+      if (!hasBin('biome')) return unmet(this, '@biomejs/biome')
       const r = run('pnpm', ['-s', 'exec', 'biome', 'ci', '.'])
       return r.code === 0 ? { status: PASS, detail: 'clean' } : { status: FAIL, detail: r.out }
     },
@@ -161,11 +189,11 @@ export const stages = [
 
   {
     id: 'unit',
+    phase: 'spine',
     title: 'unit tests',
     enforces: [],
     run() {
-      if (!hasBin('vitest'))
-        return { status: PENDING, detail: 'activates in the spine phase (needs vitest)' }
+      if (!hasBin('vitest')) return unmet(this, 'vitest')
       const r = run('pnpm', [
         '-s',
         'exec',
@@ -183,22 +211,23 @@ export const stages = [
 
   {
     id: 'property',
+    phase: 'payroll',
     title: 'property tests',
     enforces: [18, 19],
-    run: pending('payroll', 'fast-check + the money and ledger invariants'),
+    run() {
+      return unmet(this, 'fast-check and the money and ledger invariants')
+    },
   },
 
   {
     id: 'contract',
+    phase: 'spine',
     title: 'contract tests',
     enforces: [2, 3, 4],
     run() {
       const spec = join(ROOT, 'contracts/openapi.generated.json')
       if (!existsSync(spec)) {
-        return {
-          status: PENDING,
-          detail: 'activates in the spine phase (needs an OpenAPI document)',
-        }
+        return unmet(this, 'an OpenAPI document')
       }
 
       // The published contract must be a valid OpenAPI 3.1 document with a
@@ -222,8 +251,7 @@ export const stages = [
         return { status: FAIL, detail: `operations without operationId: ${missing.join(', ')}` }
       }
 
-      if (!hasBin('vitest'))
-        return { status: PENDING, detail: 'needs vitest for boundary-hardening tests' }
+      if (!hasBin('vitest')) return unmet(this, 'vitest for boundary-hardening tests')
       const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'contract.test'])
       if (r.code !== 0) return { status: FAIL, detail: r.out }
       const m = r.out.match(/Tests\s+(\d+) passed/)
@@ -236,6 +264,7 @@ export const stages = [
 
   {
     id: 'rls',
+    phase: 'tenancy',
     title: 'RLS / security proof',
     enforces: [11, 12, 13, 14],
     run() {
@@ -254,16 +283,17 @@ export const stages = [
 
   {
     id: 'integration',
+    phase: 'spine',
     title: 'integration tests',
     enforces: [11, 12],
     run() {
-      if (!hasBin('vitest')) return { status: PENDING, detail: 'needs vitest' }
+      if (!hasBin('vitest')) return unmet(this, 'vitest')
       const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'integration.test'])
       if (r.code !== 0) return { status: FAIL, detail: r.out }
       // A suite that skips because the database is unreachable has proven
       // nothing, and must not be reported as a pass.
       if (/skipped/.test(r.out) && !/\d+ passed/.test(r.out)) {
-        return { status: PENDING, detail: 'no database reachable -- integration tests skipped' }
+        return unmet(this, 'a reachable database')
       }
       const m = r.out.match(/Tests\s+(\d+) passed/)
       return {
@@ -275,12 +305,13 @@ export const stages = [
 
   {
     id: 'migration',
+    phase: 'spine',
     title: 'migration compatibility',
     enforces: [28],
     run() {
       const dir = join(ROOT, 'packages/db/migrations')
       if (!existsSync(dir)) {
-        return { status: PENDING, detail: 'activates in the spine phase (needs migrations)' }
+        return unmet(this, 'migrations')
       }
       const files = readdirSync(dir)
         .filter((f) => f.endsWith('.sql'))
@@ -296,8 +327,8 @@ export const stages = [
       const probe = run('node', [join(ROOT, 'tooling/verify/lib/migrate-check.mjs')])
       if (probe.code === 2) {
         return {
-          status: PENDING,
-          detail: `${files.length} migrations; no database reachable to apply them`,
+          status: BLOCKED,
+          detail: `${files.length} migrations, but no database is reachable to apply them`,
         }
       }
       if (probe.code !== 0) return { status: FAIL, detail: probe.out }
@@ -312,12 +343,12 @@ export const stages = [
 
   {
     id: 'build',
+    phase: 'spine',
     title: 'build',
     enforces: [],
     run() {
       if (!workspaceHasPackages()) return { status: EMPTY, detail: 'nothing to build' }
-      if (!hasBin('turbo'))
-        return { status: PENDING, detail: 'activates in the spine phase (needs turbo)' }
+      if (!hasBin('turbo')) return unmet(this, 'turbo')
       const r = run('pnpm', ['-s', 'exec', 'turbo', 'run', 'build'])
       return r.code === 0 ? { status: PASS, detail: 'built' } : { status: FAIL, detail: r.out }
     },
@@ -325,11 +356,12 @@ export const stages = [
 
   {
     id: 'e2e',
+    phase: 'spine',
     title: 'selected E2E',
     enforces: [],
     run() {
       if (!hasBin('playwright')) {
-        return { status: PENDING, detail: 'activates in the spine phase (needs Playwright)' }
+        return unmet(this, 'Playwright')
       }
       const r = run('pnpm', ['-s', 'exec', 'playwright', 'test'])
       if (r.code !== 0) return { status: FAIL, detail: r.out }

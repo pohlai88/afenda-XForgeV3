@@ -1,0 +1,5 @@
+{
+  "$comment": "Canonical project state. The repository owns the phase, not the environment.",
+  "currentPhase": "spine",
+  "phaseHistory": [{ "phase": "spine", "completed": "2026-08-31", "commit": "e876272" }]
+}

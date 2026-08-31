@@ -22,7 +22,11 @@
       "!**/.turbo",
       "!**/.next",
       "!**/dist",
-      "!**/coverage"
+      "!**/coverage",
+      "!**/build",
+      "!**/blob-report",
+      "!**/.playwright",
+      "!**/storybook-static"
     ]
   },
   "formatter": {

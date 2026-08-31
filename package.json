@@ -15,7 +15,8 @@
     "gen:openapi": "tsx tooling/generate/emit-openapi.ts",
     "gen:client": "orval --config orval.config.ts",
     "generate": "pnpm -s gen:openapi && pnpm -s gen:client",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "verify:ci": "node tooling/verify/verify.mjs --ci"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",

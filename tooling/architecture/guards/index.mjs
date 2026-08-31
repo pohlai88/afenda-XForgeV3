@@ -331,11 +331,17 @@ export const guards = [
     id: 'platform-access-outside-admin',
     law: 12,
     precision: 'text',
-    title: 'withPlatformAccess is confined to apps/admin',
-    // packages/db DEFINES it, and a declaration is not a call. This exemption
-    // was added after the guard false-positived on its own implementation --
-    // the clean fixture had only ever exercised a call site.
-    applies: (f) => !/^apps\/admin\//.test(f) && !/^packages\/(db|tenancy)\//.test(f),
+    title: 'withPlatformAccess is confined to explicitly privileged locations',
+    // packages/db DEFINES it, and a declaration is not a call. The allowlist is
+    // deliberately short and enumerable: ordinary HR and payroll code must never
+    // discover this as "the convenient helper that fixes my RLS error". If
+    // platform access becomes the answer whenever a query is inconvenient, the
+    // RLS architecture becomes decorative one call site at a time.
+    applies: (f) =>
+      !/^packages\/db\//.test(f) &&
+      !/^apps\/admin\//.test(f) &&
+      !/^packages\/tenancy\/platform\//.test(f) &&
+      !/^tooling\/operations\//.test(f),
     check(f, src) {
       const out = []
       const re = /(?<![.\w])withPlatformAccess\s*\(/g
