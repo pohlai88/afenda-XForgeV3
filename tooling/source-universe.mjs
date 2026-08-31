@@ -88,7 +88,17 @@ export function classify(path) {
   return 'source'
 }
 
-/** Classifications that must never appear in version control. */
+/**
+ * Classifications that must never appear in version control.
+ *
+ * GENERATED and OUTPUT are deliberately different categories, and the
+ * difference is exactly this list. Generated state is derived source: tracked,
+ * diffed after regeneration, and asserted byte-identical -- `contracts/` and
+ * the Orval client belong there. Build output is a by-product of running a
+ * tool: never tracked, and its presence in git is a defect. Collapsing the two
+ * would either start committing `.next/` or stop diffing the published
+ * contract, and the second failure is silent.
+ */
 export const UNCOMMITTABLE = ['output']
 
 export const isNonSourcePath = (p) => classify(p) === 'output'

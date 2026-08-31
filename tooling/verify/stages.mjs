@@ -35,6 +35,7 @@ import {
   phaseHasStarted,
   ROOT,
   run,
+  treeState,
   workspaceHasPackages,
 } from './lib/util.mjs'
 
@@ -52,6 +53,14 @@ const unmet = (stage, needs) =>
     : { status: PENDING, detail: `activates in the ${stage.phase} phase (needs ${needs})` }
 
 const hasGit = () => existsSync(join(ROOT, '.git'))
+
+/**
+ * The working tree as it stood BEFORE any stage ran -- this module is imported
+ * before the first `run()`. The idempotence stage compares against this, so an
+ * uncommitted feature in progress is not mistaken for the gate mutating the
+ * repository.
+ */
+const TREE_AT_START = treeState()
 
 const _NL = String.fromCharCode(10)
 
@@ -367,6 +376,50 @@ export const stages = [
       if (r.code !== 0) return { status: FAIL, detail: r.out }
       const m = r.out.match(/(\d+) passed/)
       return { status: PASS, detail: `${m ? m[1] : '?'} flagship E2E specs passed` }
+    },
+  },
+
+  {
+    id: 'idempotence',
+    phase: 'spine',
+    title: 'gate leaves no trace',
+    enforces: [33],
+    /**
+     * LAST, and the only check here that does not depend on the source
+     * universe's vocabulary being complete.
+     *
+     * Every ordering defect this repository has hit -- .turbo and .next written
+     * by the build, then next-env.d.ts rewritten by the formatter -- had the
+     * same signature: every tool agreed, every tool was wrong, and a red build
+     * found it. Both were CLASSIFICATION failures, and a classification system
+     * can only catch the categories it already models. Directories were
+     * modelled; a single generated file was not.
+     *
+     * This stage asks a BEHAVIOURAL question instead: did running the gate
+     * change the repository? That catches the whole class regardless of which
+     * category classify() failed to model -- including the next one, which by
+     * definition is not enumerable in advance.
+     */
+    run() {
+      if (!hasGit()) return unmet(this, 'a git repository to compare tree state against')
+      if (TREE_AT_START === null) {
+        return { status: BLOCKED, detail: 'could not read the working tree before the run' }
+      }
+      const now = treeState()
+      if (now === TREE_AT_START) {
+        return { status: PASS, detail: 'the working tree is exactly as the run found it' }
+      }
+      const before = new Set(TREE_AT_START.split(_NL).filter(Boolean))
+      const touched = now
+        .split(_NL)
+        .filter(Boolean)
+        .filter((line) => !before.has(line))
+      return {
+        status: FAIL,
+        detail:
+          'the gate mutated the repository -- a green run must leave the checkout as it ' +
+          `found it:${_NL}${touched.map((t) => `  ${t}`).join(_NL)}`,
+      }
     },
   },
 ]

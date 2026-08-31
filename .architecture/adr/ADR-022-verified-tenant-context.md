@@ -61,6 +61,14 @@ The type is constructible only by the request-context layer, after host
 resolution, principal authentication and membership verification. Repositories
 and application code receive `ctx.tenant`; a raw UUID does not typecheck.
 
+**Exactly one constructor, and no exported cast.** `packages/tenancy` exports no
+`asVerifiedTenantContext()`, no `unsafeTenantContext()`, and no exported type
+that lets application code assert the brand. A brand with an escape hatch
+reachable from a handler is a comment with extra syntax: the first awkward test
+reaches for the hatch, and after that the type proves nothing. A guard flags
+construction of the branded value outside `packages/tenancy`, and `as
+VerifiedTenantContext` anywhere in `apps/**` or `modules/**`.
+
 ```
 untrusted tenant identifier
         ↓

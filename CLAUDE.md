@@ -47,10 +47,12 @@
 30. New infrastructure requires a named, measured pain.
 31. Generalise a platform abstraction only after a second real use case proves it.
 32. pnpm verify is the canonical definition of repository green.
+33. A green verification run leaves the checkout exactly as it found it.
 
 Canonical architecture: .architecture/architecture-final.md
 Decisions:              .architecture/adr/
 Evidence:               .architecture/evidence-register.md
+Next phase's spec:      .architecture/phase-1-attack-matrix.md
 
 # Repository workflow
 
@@ -64,17 +66,44 @@ ceremony, not architecture.
 Recorded here so it is not re-litigated, and so "the last change went straight
 to master" is never cited as precedent.
 
-master is protected. Once a remote exists, apply exactly this -- a protection
-rule that is weaker than the local gate teaches people the gate is optional:
+master is NOT protected. Being precise about that matters, because a policy
+written down reads exactly like a policy enforced:
+
+  branch policy         DEFINED     this file
+  CI workflow           DEFINED     .github/workflows/verify.yml
+  remote CI execution   NOT SHOWN   nothing has ever run it
+  branch protection     NOT ACTIVE  there is no remote to configure
+
+Once a remote exists, apply exactly this -- a protection rule weaker than the
+local gate teaches people the gate is optional:
 
   required check        verify / verify  (pnpm verify --ci)
   pull request          required, no direct push, no force push
   up to date            branch must be current with master before merge
   BLOCKED stages        a failure, which --ci already enforces
 
-There is no remote yet, so this is a specification rather than a setting. The
-one open item that blocks it is a provisioning decision, not an architectural
-one.
+  Until then: Phase 1 may be DEVELOPED locally, and may not be MERGED to
+  master. Phase 1 is where the tenant isolation proof lands, and that is the
+  one check that most needs to have actually executed somewhere other than the
+  machine that wrote it.
+
+# Phases
+
+.architecture/state.json holds the phase, and the repository owns it. The
+environment may raise it locally and may never lower it; --ci ignores it.
+
+  Advancing currentPhase is a phase-COMPLETION event, never a phase-start one.
+
+  Phase 1 work begins        XFORGE_PHASE=tenancy locally
+                             -> that phase's checks become mandatory HERE, and
+                                anything unbuilt goes red immediately
+  all exit criteria pass     commit currentPhase: tenancy
+                             -> from that commit on, CI requires it permanently
+
+So currentPhase reads "the furthest phase this architecture has CERTIFIED", not
+"the phase someone is working on". A stage that reports PENDING during its own
+phase is a failure, which is what makes the local raise real evidence rather
+than a quiet PENDING discovered at merge.
 
 # Verification
 
@@ -85,6 +114,13 @@ A stage is BLOCKED when its phase has started but a prerequisite is missing --
 no database, no browser. A check that did not run is not a check that passed,
 and without that distinction "verify was green" eventually comes to mean "the
 database tests never ran".
+
+The last stage asserts law 33: the gate must leave the checkout exactly as it
+found it. It is the only check here that does not depend on the source
+universe's category vocabulary being complete -- twice now, every tool agreed
+about a file and every tool was wrong, and a red build found it rather than a
+guard. Asking a behavioural question instead of a classification one catches
+that whole class, including the next category nobody has thought of yet.
 
 A question not answered here is answered in .architecture/adr/ — consult it
 rather than re-deciding. Changes to a FROZEN section arrive as an ADR, never as

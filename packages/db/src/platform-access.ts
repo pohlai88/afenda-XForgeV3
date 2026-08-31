@@ -22,6 +22,14 @@
  *     Writing the audit row inside the same transaction as the privileged work
  *     means a ROLLBACK erases the evidence of exactly the accesses most worth
  *     investigating. If the attempt cannot be persisted, the work does not run.
+ *
+ * INVARIANT STILL OWED, recorded here so it is not rediscovered during an
+ * incident: an ATTEMPTED row with no SUCCEEDED or FAILED after a bounded time
+ * is INCOMPLETE, and that is a finding rather than corrupt data. Absence of an
+ * outcome already carries the meaning, so no fourth state is needed -- but it
+ * cannot on its own separate "still running" from "the process died" from "the
+ * outcome write itself failed". The admin and operations surface owes an
+ * explicit view of incomplete privileged operations. Phase 1 case T16.
  */
 import type { TenantClient } from './index'
 
