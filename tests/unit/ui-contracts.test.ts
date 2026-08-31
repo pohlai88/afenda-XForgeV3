@@ -244,6 +244,60 @@ describe('reachability', () => {
     const orphans = contractIds.filter((id) => id !== 'Page' && !acceptedSomewhere.has(id))
     expect(orphans).toEqual([])
   })
+
+  /**
+   * The mirror of reachability, and the same class of defect.
+   *
+   * A slot DECLARES what it accepts; whether anything satisfies that
+   * declaration is a separate question. `accepts: ['Toolbar']` naming a
+   * component that does not exist, or a capability nothing provides, produces a
+   * slot that can never be filled -- so every document using it is invalid and
+   * the component owning it is partly unusable. Structurally valid, and dead.
+   *
+   * Checked by RESOLVING each slot rather than counting its declarations: the
+   * test beside this one asserts a slot declares something, which a dead
+   * declaration satisfies perfectly.
+   */
+  it.each(entries)('%s slots can actually be filled', (_id, contract) => {
+    for (const [name, spec] of slotsOf(contract)) {
+      if ('text' in spec) {
+        continue
+      }
+      const resolved = new Set<string>(spec.accepts ?? [])
+      for (const candidate of contractIds) {
+        const kindOk = (spec.acceptsKinds ?? []).includes(contracts[candidate].kind)
+        const capOk =
+          spec.acceptsCapability !== undefined &&
+          capabilitiesOf(candidate).includes(spec.acceptsCapability)
+        if (kindOk || capOk) {
+          resolved.add(candidate)
+        }
+      }
+      expect(resolved.size, `${name} resolves to no component`).toBeGreaterThan(0)
+    }
+  })
+
+  /**
+   * A capability nothing accepts is a property nothing reads.
+   *
+   * Not merely tidiness: `form-field` exists to keep a bare Checkbox out of
+   * layout, and it only does that while some slot actually accepts it. If the
+   * last slot accepting it were rewritten to a kind list, the capability would
+   * still be declared, still be provided, and be enforcing nothing.
+   */
+  it('every capability is both provided and accepted somewhere', () => {
+    const provided = new Set(contractIds.flatMap((id) => capabilitiesOf(id)))
+    const acceptedByASlot = new Set<string>()
+    for (const id of contractIds) {
+      for (const [, spec] of slotsOf(contracts[id] as Contract)) {
+        if (!('text' in spec) && spec.acceptsCapability) {
+          acceptedByASlot.add(spec.acceptsCapability)
+        }
+      }
+    }
+    expect([...provided].sort()).toEqual(['field-control', 'form-field'])
+    expect([...acceptedByASlot].sort()).toEqual([...provided].sort())
+  })
 })
 
 describe('the runtime registry', () => {
@@ -271,13 +325,27 @@ describe('the runtime registry', () => {
 })
 
 describe('accessibility obligations', () => {
-  it('names the profiles that owe screen-reader evidence', () => {
+  /**
+   * The criterion, asserted as a criterion rather than as a list.
+   *
+   * A profile is gated when the component manages focus itself or announces
+   * state the DOM does not already carry -- the cases where axe passes, the
+   * browser-observed checks pass, and a screen reader still says the wrong
+   * thing. Profiles resting on native semantics are not gated, because two
+   * cheaper layers already verify them.
+   */
+  it('gates only the profiles that manage focus or announce state', () => {
     expect([...PROFILES_REQUIRING_AT_EVIDENCE].sort()).toEqual([
       'composite',
       'composite-grid',
-      'form-control',
       'modal',
     ])
+
+    // Named explicitly: these rest on native semantics, and dropping them from
+    // the gate is a deliberate reduction recorded in ADR-025, not an omission.
+    for (const profile of ['native-control', 'form-control', 'none', 'live-region']) {
+      expect(PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).not.toContain(profile)
+    }
   })
 
   /**
@@ -295,7 +363,7 @@ describe('accessibility obligations', () => {
         contracts[id].interaction.profile,
       ),
     )
-    expect([...owing].sort()).toEqual(['Checkbox', 'Dialog', 'Field', 'Input'])
+    expect([...owing].sort()).toEqual(['Dialog'])
 
     // The pair that makes the point. Dialog is `layout` and owes evidence
     // because it traps focus; Alert is `feedback` and owes none because it only
@@ -319,11 +387,11 @@ describe('accessibility obligations', () => {
         contracts[id].interaction.profile,
       ),
     )
-    // Dialog is `modal`; Field, Input and Checkbox are `form-control`. None of
-    // them has recorded NVDA or VoiceOver evidence, and the gate that would
-    // demand it is stage 8 work that does not exist yet. Listing them is what
-    // stops the set growing while nobody is recording anything.
-    expect([...owing].sort()).toEqual(['Checkbox', 'Dialog', 'Field', 'Input'])
+    // Dialog alone, because it is the only shipped contract that manages its
+    // own focus. Combobox, CommandPalette and DataGrid will join by declaring a
+    // composite profile -- nobody has to remember to add them. Dialog still has
+    // no recorded session, which is one sitting rather than a dozen.
+    expect([...owing].sort()).toEqual(['Dialog'])
     for (const id of owing) {
       expect(contracts[id].interaction.revision, `${id} versions its behaviour`).toBe(1)
     }

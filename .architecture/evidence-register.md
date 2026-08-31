@@ -504,8 +504,17 @@ verify in Chromium that:
   Field, and the input its description
 - every control, including the checkbox, meets the 24px target floor
 
-**Still owed: A11y-3.** No NVDA or VoiceOver session has been run, and none is
-scheduled. Nothing here substitutes for one.
+**Still owed: A11y-3, now for one contract rather than four** — see ADR-025.
+The gate is derived from `interaction.profile` and covers components that manage
+focus themselves or announce state the DOM does not carry: `modal`, `composite`,
+`composite-grid`. Field, Input and Checkbox rest on native semantics that axe
+checks statically and the specs above check in Chromium, so they are no longer
+gated — a deliberate reduction whose residual risk (announcement order,
+verbosity, virtual-cursor traversal, none of which A11y-2 observes) is accepted
+rather than eliminated. They remain in scope for the first session that runs.
+
+Dialog is the one contract still owing, and has no recorded session. That is a
+single sitting rather than a batch, which is the point of the reduction.
 
 ### Honest limits
 
@@ -530,3 +539,40 @@ The harness bundles to 132 kB gzipped, but that number answers nothing about the
 product: different bundler, and it includes `ajv`, which no route will ever
 ship. The informative measurement remains what a real route pays for its first
 Base UI component, and no route mounts one yet.
+
+### The class of check reachability belongs to
+
+Every gate that existed before validated a RELATION: component against contract,
+document against grammar, import against the dependency direction. Reachability
+was the first that validated a **property of the grammar itself**, and that is
+why it stayed green for so long while being false.
+
+Two more of the same class were added while the question was fresh, and one
+dead slot now trips four independent checks:
+
+| Property | Failure it catches |
+|---|---|
+| every component is accepted somewhere | vocabulary no document can contain |
+| every slot resolves to a component | a slot that can never be filled, so its owner is partly unusable |
+| every capability is provided AND accepted | a property nothing reads — `form-field` enforcing nothing |
+
+The third is subtler than it looks: `form-field` exists to keep a bare Checkbox
+out of layout, and it does that only while some slot still accepts it. Rewrite
+the last such slot to a kind list and the capability remains declared, remains
+provided, and quietly enforces nothing.
+
+### Two claims from the last entry, corrected
+
+**The harness does not accrete state.** `e2e/global-setup.ts` runs
+`delete from emergency_contact` unscoped, so every run starts empty for both
+employees. The concern was reasonable and does not apply.
+
+**The harness is not exploiting a missing constraint.** `employee_id` carries no
+foreign key because **there is no employee table** — the schema holds
+`emergency_contact`, `tenant`, `tenant_domain` and `tenant_membership`, and
+nothing else. Law 14's person → employee → employment is HR-phase work.
+
+So the fabricated id is legal against today's schema rather than slipping past a
+weakened one. It becomes illegal the day an employee table and its foreign key
+land, and the fixture will then need to seed a real employee. Recorded because
+that failure will arrive in a phase where nobody is thinking about a UI harness.

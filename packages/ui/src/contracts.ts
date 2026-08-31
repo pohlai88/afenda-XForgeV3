@@ -76,9 +76,36 @@ export type InteractionProfile =
   | 'composite-grid'
   | 'live-region'
 
-/** Profiles owing recorded screen-reader evidence before a contract may ship. */
+/**
+ * Profiles owing recorded screen-reader evidence.
+ *
+ * THE CRITERION, so the set is computed rather than remembered: a profile is
+ * gated when the component MANAGES FOCUS ITSELF or ANNOUNCES STATE THE DOM DOES
+ * NOT ALREADY CARRY. Those are the cases where axe passes, the browser-observed
+ * keyboard and ARIA checks pass, and a screen reader still says the wrong
+ * thing -- roving focus that moves without the accessibility tree agreeing, a
+ * trap that restores focus somewhere unexpected, an announcement whose timing
+ * decides whether it lands at all.
+ *
+ * `form-control` was here and is not any more. An Input's name, role and
+ * validity come from native semantics: axe verifies them statically and the
+ * A11y-2 specs verify them in Chromium, which is what
+ * `conformance-harness.spec.ts` now does for Field, Input and Checkbox. A
+ * screen-reader session on those confirms what two cheaper layers already
+ * established.
+ *
+ * THIS IS A REDUCTION IN THE GATE, NOT IN COVERAGE. What it gives up is real:
+ * A11y-2 observes computed names, roles and focus order, and says nothing about
+ * what NVDA reads aloud, in what order, or how a virtual cursor traverses --
+ * all of which can diverge from a correct accessibility tree. The ungated
+ * contracts carry that residual risk knowingly, and stay in scope for the first
+ * session that runs; they simply do not block it.
+ *
+ * A profile-derived set also means a future component joins by declaring what
+ * it is. Combobox is `composite` and will be gated the day it lands, without
+ * anyone editing a list.
+ */
 export const PROFILES_REQUIRING_AT_EVIDENCE = [
-  'form-control',
   'modal',
   'composite',
   'composite-grid',

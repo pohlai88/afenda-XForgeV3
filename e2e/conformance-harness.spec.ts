@@ -246,14 +246,27 @@ test.describe('the modal behaves as the APG dialog pattern requires', () => {
     expect(inside).toBe(true)
   })
 
+  /**
+   * Polls rather than reading `activeElement` once.
+   *
+   * The first version asserted synchronously after each keypress and failed
+   * about one run in six, always on the fourth Tab -- which is exactly the wrap,
+   * this dialog having four focusable descendants. A focus trap moves focus
+   * itself to wrap the sequence, so there is a moment where the previous
+   * element has blurred and the next has not yet been focused. Reading in that
+   * window sees `body`.
+   *
+   * The property is that focus SETTLES inside the dialog, not that it is inside
+   * at every instant of a transition the trap is performing.
+   */
   test('Tab does not leave the dialog', async ({ page }) => {
     await open(page)
+    const focusIsInside = () =>
+      page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null)
+
     for (let i = 0; i < 10; i += 1) {
       await page.keyboard.press('Tab')
-      const inside = await page.evaluate(
-        () => document.activeElement?.closest('[role="dialog"]') !== null,
-      )
-      expect(inside, `focus escaped after ${i + 1} tabs`).toBe(true)
+      await expect.poll(focusIsInside, { message: `focus escaped after ${i + 1} tabs` }).toBe(true)
     }
   })
 
