@@ -336,29 +336,31 @@ export const contracts = {
   },
 
   /**
-   * The labelling, description and validity wrapper for one control.
+   * There is genuinely nothing to show -- and nothing went wrong.
    *
-   * Base UI's Field owns the wiring -- generated ids, `aria-describedby` to the
-   * description and the error, `aria-labelledby` to the label, and the validity
-   * state that flows to the control. Doing that by hand is how a form ends up
-   * with a label that reads correctly and an error message no screen reader
-   * ever announces.
+   * Distinct from error, forbidden, partial and loading, all of which stage 4
+   * will need to keep apart. Collapsing them into one component with different
+   * strings is precisely what stops a user learning whether to wait, retry, ask
+   * for access, or create the first record.
    *
-   * `children` accepts anything with the `field-control` CAPABILITY.
-   *
-   * It said `accepts: ['Input']`, on the premise that a Checkbox carries its own
-   * label and would be double-labelled here. That premise was false, and the
-   * component that made it look true was mine: `CheckboxRoot` reads `labelId`
-   * from the Field context and sets `aria-labelledby` from it, so a Checkbox
-   * takes its name FROM this Field. It was my wrapper putting a second label
-   * around it.
-   *
-   * The whitelist would also have refused Combobox and Select, which need
-   * exactly this labelling -- and the next person adding one would read
-   * `['Input']` as an oversight and widen it to every `field` kind. Accepting
-   * by capability states the property that decides, so it admits the controls
-   * that qualify without admitting the ones that do not.
+   * `action` is what makes it useful rather than decorative: an empty list
+   * whose only content is a sentence has told the user what is true and not
+   * what to do about it.
    */
+  EmptyState: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'feedback',
+    props: { testId: { type: 'string' } },
+    slots: {
+      action: { accepts: ['Button'], max: 1, min: 0 },
+      description: { min: 0, text: true },
+      title: { text: true },
+    },
+  },
+
   Field: {
     capabilities: ['form-field'],
     composition: 'container',
@@ -467,6 +469,60 @@ export const contracts = {
         max: null,
         min: 1,
       },
+    },
+  },
+
+  /**
+   * The labelling, description and validity wrapper for one control.
+   *
+   * Base UI's Field owns the wiring -- generated ids, `aria-describedby` to the
+   * description and the error, `aria-labelledby` to the label, and the validity
+   * state that flows to the control. Doing that by hand is how a form ends up
+   * with a label that reads correctly and an error message no screen reader
+   * ever announces.
+   *
+   * `children` accepts anything with the `field-control` CAPABILITY.
+   *
+   * It said `accepts: ['Input']`, on the premise that a Checkbox carries its own
+   * label and would be double-labelled here. That premise was false, and the
+   * component that made it look true was mine: `CheckboxRoot` reads `labelId`
+   * from the Field context and sets `aria-labelledby` from it, so a Checkbox
+   * takes its name FROM this Field. It was my wrapper putting a second label
+   * around it.
+   *
+   * The whitelist would also have refused Combobox and Select, which need
+   * exactly this labelling -- and the next person adding one would read
+   * `['Input']` as an oversight and widen it to every `field` kind. Accepting
+   * by capability states the property that decides, so it admits the controls
+   * that qualify without admitting the ones that do not.
+   */
+  /**
+   * A visual placeholder for content that has not arrived.
+   *
+   * DELIBERATELY NOT THE LOADING STATE. Skeleton is an affordance; the state is
+   * `ResourceState.loading`, and the announcement belongs to whatever renders
+   * that state. So this is `aria-hidden` and carries no live region: a shimmer
+   * that announced itself would talk over the thing that should be speaking.
+   *
+   * That leaves a real obligation for stage 4 -- a screen-reader user must
+   * still learn that something is loading -- and it is recorded rather than
+   * solved here, because solving it in a placeholder is how two components end
+   * up announcing the same fact.
+   *
+   * The variants are a closed set on purpose. Width, height, radius and line
+   * count as metadata props would turn a placeholder into a small layout
+   * language; a structural skeleton is composed from several of these through
+   * the layout primitives that already exist.
+   */
+  Skeleton: {
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'feedback',
+    props: {
+      testId: { type: 'string' },
+      variant: { type: 'enum', values: ['text', 'block'] },
     },
   },
 

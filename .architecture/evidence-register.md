@@ -395,6 +395,17 @@ harness or the stage 7 artifact -- and not at each tranche. Until then the only
 claim supported is the one made here: an unused primitive costs an unrelated
 route nothing.
 
+**Re-measured after Skeleton and EmptyState: 146330 B -> 146333 B.** Three
+bytes, and worth stating precisely rather than rounding to zero. Inspecting the
+route's client chunks shows they contain no reference to `Skeleton`,
+`EmptyState`, `Dialog`, `xf-skeleton` or any Base UI module -- nothing leaked.
+The delta comes from content-hashed chunk FILENAMES changing length, and those
+names appear inside the bootstrap chunk.
+
+So the metric carries a few bytes of naming noise whenever chunk content shifts.
+Recorded so nobody spends an afternoon hunting three bytes, and so a future
+delta of a few hundred is read as real rather than dismissed as the same noise.
+
 **Two defects found in the wrapper by checking rather than trusting:**
 
 1. *The trigger was not a button — and the first fix was an overcorrection.*
@@ -576,3 +587,46 @@ So the fabricated id is legal against today's schema rather than slipping past a
 weakened one. It becomes illegal the day an employee table and its foreign key
 land, and the fixture will then need to seed a real employee. Recorded because
 that failure will arrive in a phase where nobody is thinking about a UI harness.
+
+### A named rule, after paying for it three times
+
+> **Do not assert on an instantaneous value when the property is about a settled
+> state — and when you switch to waiting, pin the destination.**
+
+Three instances this round, each looking unrelated:
+
+| Where | The instantaneous thing | The settled property |
+|---|---|---|
+| `tokens.css` mode blocks | which block the generator emitted last | the composed value, whatever the order |
+| E2E spec files | which filename sorts first | each suite's own data, independent of order |
+| dialog focus trap | `activeElement` during the wrap | where focus comes to rest |
+
+The third was a 1-in-6 flake that always failed on the fourth Tab, in a dialog
+with exactly four focusable descendants — a diagnosis rather than a symptom, and
+only visible because it was characterised with `--repeat-each` instead of
+re-run.
+
+**The correction to the correction matters as much.** Replacing the instant read
+with `expect.poll` tolerated the transition and also accepted focus LEAVING the
+dialog and being restored a moment later, which is the escape the test exists to
+catch. Waiting widens the passing set unless the destination is pinned: the
+assertion now requires the sequence to visit exactly four distinct elements and
+repeat with period four.
+
+A fourth instance will look different again, which is why this is written as a
+rule rather than three observations.
+
+### Two distinctions to carry into stage 4
+
+**`PartialReason` may need to be plural.** A bounded read that hit its cap AND
+had an enrichment source fail is one state in the type and two things to tell
+the user. A single `reason` forecloses that silently. To be settled when the
+wire marker is decided — either a list, or a recorded rule that the first reason
+wins and why.
+
+**Renderable is not producible, and they need separate checks.** `Field` was
+unreachable because no slot accepted it: a static property of the grammar, which
+the harness can decide. A STATE is unreachable if no code path constructs it,
+which is a property of the experience layer and invisible to the harness. A
+green "every state renders" check is not evidence that anything produces
+`partial` — and reading it as such is exactly how `partial` becomes decoration.

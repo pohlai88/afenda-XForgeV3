@@ -367,3 +367,57 @@ export function Checkbox({
     </BaseCheckbox.Root>
   )
 }
+
+/**
+ * A visual placeholder for content that has not arrived.
+ *
+ * `aria-hidden`, and that is the whole design decision. Skeleton is an
+ * affordance; the loading STATE is what should be announced, and announcing it
+ * here would put two components in charge of one fact. The obligation to tell a
+ * screen-reader user that something is loading therefore belongs to whatever
+ * renders `ResourceState.loading` -- recorded rather than quietly dropped.
+ */
+export function Skeleton({
+  variant = 'text',
+  testId,
+}: {
+  variant?: 'text' | 'block'
+  testId?: string
+}) {
+  return (
+    <div aria-hidden="true" className="xf-skeleton" data-testid={testId} data-variant={variant} />
+  )
+}
+
+/**
+ * There is nothing to show, and nothing went wrong.
+ *
+ * A heading rather than a paragraph, because an empty region that a screen
+ * reader user can navigate to by heading is findable; a stray sentence is not.
+ * The action is what separates this from a shrug.
+ */
+export function EmptyState({
+  title,
+  description,
+  action,
+  testId,
+}: {
+  title: ReactNode
+  description?: ReactNode
+  action?: ReactNode
+  testId?: string
+}) {
+  return (
+    <div className="xf-empty-state" data-testid={testId}>
+      <p className="xf-heading" data-empty-title="">
+        {title}
+      </p>
+      {description ? (
+        <p className="xf-text" data-tone="muted">
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="xf-empty-state-action">{action}</div> : null}
+    </div>
+  )
+}

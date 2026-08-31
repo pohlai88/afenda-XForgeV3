@@ -25,6 +25,9 @@
           "$ref": "#/$defs/Dialog"
         },
         {
+          "$ref": "#/$defs/EmptyState"
+        },
+        {
           "$ref": "#/$defs/Field"
         },
         {
@@ -41,6 +44,9 @@
         },
         {
           "$ref": "#/$defs/Page"
+        },
+        {
+          "$ref": "#/$defs/Skeleton"
         },
         {
           "$ref": "#/$defs/Stack"
@@ -197,6 +203,9 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
@@ -207,6 +216,9 @@
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
                   },
                   {
                     "$ref": "#/$defs/Stack"
@@ -334,6 +346,9 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
@@ -344,6 +359,9 @@
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
                   },
                   {
                     "$ref": "#/$defs/Stack"
@@ -387,6 +405,49 @@
         "slots"
       ],
       "title": "Dialog",
+      "type": "object"
+    },
+    "EmptyState": {
+      "additionalProperties": false,
+      "description": "feedback / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "EmptyState"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "action": {
+              "items": {
+                "$ref": "#/$defs/Button"
+              },
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "EmptyState",
       "type": "object"
     },
     "Field": {
@@ -604,10 +665,16 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
                   },
                   {
                     "$ref": "#/$defs/Stack"
@@ -667,6 +734,9 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
@@ -677,6 +747,9 @@
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
                   },
                   {
                     "$ref": "#/$defs/Stack"
@@ -706,6 +779,35 @@
         "slots"
       ],
       "title": "Page",
+      "type": "object"
+    },
+    "Skeleton": {
+      "additionalProperties": false,
+      "description": "feedback / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Skeleton"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            },
+            "variant": {
+              "enum": [
+                "text",
+                "block"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "Skeleton",
       "type": "object"
     },
     "Stack": {
@@ -758,6 +860,9 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
                     "$ref": "#/$defs/Field"
                   },
                   {
@@ -771,6 +876,9 @@
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
                   },
                   {
                     "$ref": "#/$defs/Stack"

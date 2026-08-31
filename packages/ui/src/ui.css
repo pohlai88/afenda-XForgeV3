@@ -332,3 +332,58 @@
   rotate: 45deg;
   translate: 0 -10%;
 }
+
+/*
+ * The loading placeholder.
+ *
+ * The animation is OPTIONAL, not decoration with an accessibility footnote.
+ * Vestibular disorders make looping motion genuinely unpleasant, and a shimmer
+ * that ignores the user's stated preference is a system deciding it knows
+ * better. Reduced motion keeps the placeholder and drops the movement.
+ */
+.xf-skeleton {
+  background: var(--semantic-surface-sunken);
+  border-radius: var(--semantic-radius-control);
+  animation: xf-skeleton-pulse 1.6s ease-in-out infinite;
+}
+.xf-skeleton[data-variant="text"] {
+  block-size: var(--semantic-type-body);
+}
+.xf-skeleton[data-variant="block"] {
+  block-size: var(--semantic-container-padding);
+}
+
+@keyframes xf-skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xf-skeleton {
+    animation: none;
+  }
+}
+
+.xf-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack-tight);
+  align-items: flex-start;
+  padding: var(--semantic-container-padding);
+  background: var(--semantic-surface-sunken);
+  border-radius: var(--semantic-radius-container);
+}
+
+/*
+ * Sized as a label rather than a page heading. An empty state is a local
+ * message inside a region that already has a name; rendering it at heading
+ * scale competes with the heading that names the region.
+ */
+.xf-empty-state [data-empty-title] {
+  font-size: var(--semantic-type-body);
+}
+
+.xf-empty-state-action {
+  margin-block-start: var(--semantic-space-stack-tight);
+}

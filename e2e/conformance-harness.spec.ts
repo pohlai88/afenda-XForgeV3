@@ -259,15 +259,36 @@ test.describe('the modal behaves as the APG dialog pattern requires', () => {
    * The property is that focus SETTLES inside the dialog, not that it is inside
    * at every instant of a transition the trap is performing.
    */
-  test('Tab does not leave the dialog', async ({ page }) => {
+  test('Tab cycles within the dialog rather than leaving it', async ({ page }) => {
     await open(page)
-    const focusIsInside = () =>
-      page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null)
 
-    for (let i = 0; i < 10; i += 1) {
-      await page.keyboard.press('Tab')
-      await expect.poll(focusIsInside, { message: `focus escaped after ${i + 1} tabs` }).toBe(true)
+    /** Where focus comes to rest, once the trap has finished moving it. */
+    const settled = async (after: number) => {
+      await expect
+        .poll(
+          () => page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null),
+          { message: `focus escaped after ${after} tabs` },
+        )
+        .toBe(true)
+      return await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null
+        return el?.getAttribute('name') ?? (el?.textContent ?? '').trim() ?? ''
+      })
     }
+
+    const visited: string[] = []
+    for (let i = 0; i < 8; i += 1) {
+      await page.keyboard.press('Tab')
+      visited.push(await settled(i + 1))
+    }
+
+    // The dialog holds four focusable descendants, so a trapped sequence visits
+    // four distinct elements and repeats with period four. Polling alone would
+    // also accept focus leaving and something restoring it a moment later,
+    // which is the very escape this asserts against -- so the destination is
+    // pinned, not merely the containment.
+    expect(new Set(visited).size, `visited ${visited.join(' -> ')}`).toBe(4)
+    expect(visited.slice(4)).toEqual(visited.slice(0, 4))
   })
 
   test('Escape closes it and focus returns to the trigger', async ({ page }) => {
