@@ -13,7 +13,12 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { GENERATED_DIRS, GENERATED_FILES, NON_SOURCE_DIRS } from '../../source-universe.mjs'
+import {
+  GENERATED_DIRS,
+  GENERATED_FILES,
+  NON_SOURCE_DIRS,
+  OUTPUT_FILES,
+} from '../../source-universe.mjs'
 import { ROOT } from '../../verify/lib/util.mjs'
 import {
   configGuards,
@@ -36,6 +41,7 @@ const goodEnv = () => ({
         ...NON_SOURCE_DIRS.map((d) => `!**/${d}/**`),
         ...GENERATED_DIRS.map((d) => `!**/${d}`),
         ...GENERATED_FILES.map((f) => `!**/${f}`),
+        ...OUTPUT_FILES.map((f) => `!**/${f}`),
         '!contracts',
       ],
     },
@@ -52,7 +58,7 @@ describe('deterministic-source-set', () => {
     expect(guard.check(goodEnv())).toHaveLength(0)
   })
 
-  it('REJECTS a Biome config that would FORMAT generated state', () => {
+  it('REJECTS a Biome config that would FORMAT a build-output file', () => {
     // The concrete case: Biome rewrote next-env.d.ts, Next's build wrote it
     // back, and lint passed or failed depending on which ran last.
     const env = goodEnv()

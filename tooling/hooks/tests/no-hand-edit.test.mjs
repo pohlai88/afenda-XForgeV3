@@ -36,8 +36,16 @@ describe('law 27: generated state is refused at authorship time', () => {
     expect(runHook(edit('packages/api-client/src/generated/model/index.ts')).code).toBe(2)
   })
 
-  it('blocks a generated file identified by name rather than directory', () => {
-    expect(runHook(edit('apps/web/next-env.d.ts')).code).toBe(2)
+  it('blocks BUILD OUTPUT identified by name rather than directory', () => {
+    // next-env.d.ts is output, not generated: there is no generator to re-run,
+    // and its content records which of `next dev` or `next build` ran last.
+    const { code, stderr } = runHook(edit('apps/web/next-env.d.ts'))
+    expect(code).toBe(2)
+    expect(stderr).toMatch(/build output/)
+  })
+
+  it('blocks a write into a build directory', () => {
+    expect(runHook(edit('apps/web/.next/server/app/page.js')).code).toBe(2)
   })
 
   it('resolves an absolute path, which is what the hook is actually handed', () => {

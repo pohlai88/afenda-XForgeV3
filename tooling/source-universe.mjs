@@ -60,7 +60,18 @@ export const GENERATED_PATHS = [
  * than a directory. A formatter rewriting generated state is law 27 violated by
  * a tool instead of by a hand.
  */
-export const GENERATED_FILES = ['next-env.d.ts']
+export const GENERATED_FILES = []
+
+/**
+ * Generated files that must NEVER be tracked.
+ *
+ * Stronger than GENERATED_FILES, which is for derived state that IS committed
+ * and diffed. `next-env.d.ts` cannot be committed at all: Next writes
+ * `./.next/dev/types/...` under `next dev` and `./.next/types/...` under
+ * `next build`, so its content records which command ran last and any tracked
+ * copy is dirtied by the other. The no-committed-build-output guard enforces it.
+ */
+export const OUTPUT_FILES = ['next-env.d.ts']
 
 /**
  * File classification. One function, so every consumer and every test asks the
@@ -77,7 +88,9 @@ export function classify(path) {
   for (const d of GENERATED_DIRS) {
     if (p.includes(`/${d}/`) || p.startsWith(`${d}/`)) return 'generated'
   }
-  if (GENERATED_FILES.includes(p.slice(p.lastIndexOf('/') + 1))) return 'generated'
+  const base = p.slice(p.lastIndexOf('/') + 1)
+  if (OUTPUT_FILES.includes(base)) return 'output'
+  if (GENERATED_FILES.includes(base)) return 'generated'
   if (p.startsWith('contracts/')) return 'generated'
   if (/(^|\/)(tests?|e2e)\//.test(p) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(p)) return 'test'
   if (/(^|\/)\.architecture\//.test(p) || /\.md$/.test(p)) return 'documentation'

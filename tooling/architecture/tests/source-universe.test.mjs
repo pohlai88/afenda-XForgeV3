@@ -67,12 +67,14 @@ describe('generated source is classified explicitly, not as output', () => {
   it('the published contract is generated', () => {
     expect(classify('contracts/openapi.generated.json')).toBe('generated')
   })
-  it("a framework's own .d.ts is generated, wherever it sits", () => {
-    // Found by a red build, not by the guard: classify() knew about generated
-    // DIRECTORIES and this is a generated FILE, so nothing objected while a
-    // formatter and a build took turns rewriting it.
-    expect(classify('apps/web/next-env.d.ts')).toBe('generated')
-    expect(classify('next-env.d.ts')).toBe('generated')
+  it("a framework's own .d.ts is OUTPUT, and must never be tracked", () => {
+    // First classified as 'generated' -- committed and diffed. That was wrong.
+    // next dev writes ./.next/dev/types/... and next build writes
+    // ./.next/types/..., so the file records WHICH COMMAND RAN LAST and any
+    // tracked copy is dirtied by the other. It is output, not derived source.
+    expect(classify('apps/web/next-env.d.ts')).toBe('output')
+    expect(classify('next-env.d.ts')).toBe('output')
+    expect(UNCOMMITTABLE).toContain('output')
   })
 
   it('every declared generated file classifies as generated', () => {

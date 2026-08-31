@@ -19,6 +19,7 @@ import {
   GENERATED_FILES,
   GENERATED_PATHS,
   NON_SOURCE_DIRS,
+  OUTPUT_FILES,
   UNCOMMITTABLE,
 } from '../source-universe.mjs'
 import {
@@ -132,6 +133,11 @@ export const configGuards = [
         const required = [
           ...GENERATED_DIRS.map((d) => ({ what: `generated directory '${d}'`, token: d })),
           ...GENERATED_FILES.map((f) => ({ what: `generated file '${f}'`, token: f })),
+          // Output FILES too. next-env.d.ts moved from generated to output when
+          // it turned out its content records which command last ran -- and the
+          // exclusion requirement moved with it, or the formatter would start
+          // rewriting it again, which is the original ordering bug.
+          ...OUTPUT_FILES.map((f) => ({ what: `build-output file '${f}'`, token: f })),
           ...GENERATED_PATHS.filter(
             (g) => !GENERATED_DIRS.some((d) => g.split('/').includes(d)),
           ).map((g) => ({ what: `generated path '${g}'`, token: g.split('/')[0] })),

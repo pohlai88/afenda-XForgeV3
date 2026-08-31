@@ -64,12 +64,30 @@ const main = async () => {
     return 2
   }
 
-  if (classify(rel) === 'generated') {
+  const kind = classify(rel)
+
+  if (kind === 'generated') {
     process.stderr.write(
-      `Law 27: ${rel} is generated state and is never hand-edited.\n` +
+      `Law 27: ${rel} is generated state and is never hand-edited.` +
+        String.fromCharCode(10) +
         'Change the source the generator reads, then run `pnpm generate`. ' +
         'Editing the output makes the next `pnpm verify` fail the generate ' +
-        'stage, which asserts it is byte-identical after regeneration.\n',
+        'stage, which asserts it is byte-identical after regeneration.' +
+        String.fromCharCode(10),
+    )
+    return 2
+  }
+
+  if (kind === 'output') {
+    // Build output rather than derived source. There is no generator to re-run
+    // and nothing to commit: the tool that produces it will overwrite the edit,
+    // and next-env.d.ts proved the sharper version -- its content records which
+    // command ran last, so an edit is not merely lost, it flips back and forth.
+    process.stderr.write(
+      `${rel} is build output. Whatever writes it will overwrite this edit.` +
+        String.fromCharCode(10) +
+        'If a value here needs to change, change what produces it.' +
+        String.fromCharCode(10),
     )
     return 2
   }
