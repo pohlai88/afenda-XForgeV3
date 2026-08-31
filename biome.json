@@ -18,7 +18,11 @@
       "!contracts",
       "!pnpm-lock.yaml",
       "!**/test-results",
-      "!**/playwright-report"
+      "!**/playwright-report",
+      "!**/.turbo",
+      "!**/.next",
+      "!**/dist",
+      "!**/coverage"
     ]
   },
   "formatter": {
