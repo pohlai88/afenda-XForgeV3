@@ -4,8 +4,9 @@ import { expect, test } from '@playwright/test'
  * The spine's flagship path: UX -> contract -> generated client -> handler ->
  * repository -> DB, exercised through a real browser against the real app.
  *
- * The in-memory store is per-server-process, so these tests run in order and
- * treat the page as a live surface rather than resetting between assertions.
+ * The rows persist in PostgreSQL now, so global setup clears this employee's
+ * contacts once and the specs run in order, treating the page as a live surface
+ * rather than resetting between assertions.
  */
 const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const PAGE = `/employees/${EMPLOYEE}`

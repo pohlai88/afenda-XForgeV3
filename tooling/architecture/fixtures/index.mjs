@@ -251,4 +251,21 @@ export const all = () =>
 `,
     },
   },
+
+  'no-forged-tenant-context': {
+    violating: {
+      path: 'modules/hr/index.ts',
+      source: `import { withTenant } from '@xforge/db'
+const ctx = { tenantId: req.body.tenantId } as VerifiedTenantContext
+export const go = () => withTenant(ctx, async () => 1)
+`,
+    },
+    clean: {
+      path: 'modules/hr/index.ts',
+      source: `import { withTenant } from '@xforge/db'
+import type { VerifiedTenantContext } from '@xforge/tenancy'
+export const go = (ctx: VerifiedTenantContext) => withTenant(ctx, async () => 1)
+`,
+    },
+  },
 }

@@ -77,6 +77,9 @@ importers:
       '@xforge/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@xforge/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/tenancy
       hono:
         specifier: ^4.9.0
         version: 4.13.5
@@ -104,6 +107,9 @@ importers:
       '@xforge/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@xforge/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/tenancy
       hono:
         specifier: ^4.9.0
         version: 4.13.5
@@ -122,6 +128,9 @@ importers:
       '@xforge/policy':
         specifier: workspace:*
         version: link:../policy
+      '@xforge/tenancy':
+        specifier: workspace:*
+        version: link:../tenancy
       hono:
         specifier: ^4.9.0
         version: 4.13.5
@@ -140,6 +149,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@xforge/tenancy':
+        specifier: workspace:*
+        version: link:../tenancy
       drizzle-orm:
         specifier: ^0.44.0
         version: 0.44.7(postgres@3.4.9)
@@ -148,6 +160,8 @@ importers:
         version: 3.4.9
 
   packages/policy: {}
+
+  packages/tenancy: {}
 
 packages:
 

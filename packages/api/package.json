@@ -15,6 +15,7 @@
     "hono": "^4.9.0",
     "zod": "^4.0.0",
     "@xforge/policy": "workspace:*",
-    "@xforge/db": "workspace:*"
+    "@xforge/db": "workspace:*",
+    "@xforge/tenancy": "workspace:*"
   }
 }

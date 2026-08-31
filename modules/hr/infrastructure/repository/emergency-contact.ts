@@ -1,17 +1,20 @@
 /**
- * Emergency-contact repository.
+ * Emergency-contact repository -- real PostgreSQL.
  *
- * Database access happens ONLY here, and only inside `withTenant` (law 11/12).
- * Note every method takes `tenantId` as a required, non-optional parameter --
- * never an optional filter. RLS is the backstop, not the plan: relying on the
- * database to catch a missing predicate is what makes the backstop load-bearing.
+ * Database access happens ONLY here, and only inside `withTenant` (law 11/12),
+ * which now takes a VerifiedTenantContext rather than a tenant id (ADR-022).
  *
- * The store is in-memory for the spine phase. The Postgres implementation lands
- * with the tenancy phase, when AQS-005..008 can actually prove isolation. The
- * SHAPE is what the spine proves: chokepoint, required tenant binding, and
- * optimistic concurrency that rejects rather than merges.
+ * Every statement below carries `tenant_id = ${ctx.tenantId}` as well. That
+ * predicate is DEFENCE IN DEPTH AND AN INDEX HINT -- it is not the security
+ * boundary. The boundary is FORCE ROW LEVEL SECURITY under the non-owner
+ * `app_user` role, and T02 proves it by deleting the predicate from these very
+ * queries and requiring that isolation still holds. A suite that passes only
+ * because every query here happens to be careful has proven the author careful,
+ * not the architecture safe -- and carefulness is exactly what erodes across an
+ * agent-authored codebase.
  */
 import { withTenant } from '@xforge/db'
+import type { VerifiedTenantContext } from '@xforge/tenancy'
 
 export interface EmergencyContactRow {
   id: string
@@ -28,65 +31,82 @@ export type UpdateResult =
   | { readonly kind: 'not-found' }
   | { readonly kind: 'conflict'; readonly currentVersion: number }
 
-const store = new Map<string, EmergencyContactRow>()
-
-/** Test seam. Not exported from the module's public surface. */
-export function __reset(seed: readonly EmergencyContactRow[] = []): void {
-  store.clear()
-  for (const r of seed) store.set(r.id, { ...r })
-}
-
 export function listByEmployee(
-  tenantId: string,
+  ctx: VerifiedTenantContext,
   employeeId: string,
 ): Promise<EmergencyContactRow[]> {
-  return withTenant(tenantId, async () =>
-    [...store.values()]
-      .filter((r) => r.tenantId === tenantId && r.employeeId === employeeId)
-      .map((r) => ({ ...r })),
-  )
+  return withTenant(ctx, async (sql) => {
+    const rows = await sql<EmergencyContactRow>`
+      select id, tenant_id as "tenantId", employee_id as "employeeId",
+             name, relationship, phone, version
+      from emergency_contact
+      where tenant_id = ${ctx.tenantId} and employee_id = ${employeeId}
+      order by name
+    `
+    return [...rows]
+  })
 }
 
 export function create(
-  tenantId: string,
+  ctx: VerifiedTenantContext,
   employeeId: string,
   input: { name: string; relationship: string; phone: string },
   id: string,
 ): Promise<EmergencyContactRow> {
-  return withTenant(tenantId, async () => {
-    const row: EmergencyContactRow = { id, tenantId, employeeId, ...input, version: 1 }
-    store.set(id, row)
-    return { ...row }
+  return withTenant(ctx, async (sql) => {
+    const rows = await sql<EmergencyContactRow>`
+      insert into emergency_contact (id, tenant_id, employee_id, name, relationship, phone)
+      values (${id}, ${ctx.tenantId}, ${employeeId}, ${input.name},
+              ${input.relationship}, ${input.phone})
+      returning id, tenant_id as "tenantId", employee_id as "employeeId",
+                name, relationship, phone, version
+    `
+    const [row] = rows
+    // An INSERT ... RETURNING that yields nothing means the WITH CHECK policy
+    // refused the row. Failing loudly beats returning a half-built object.
+    if (!row) throw new Error('insert returned no row -- tenant policy refused the write')
+    return row
   })
 }
 
 /**
  * ADR-013: the update is conditional on the version the caller read.
  *
- * In SQL this is `UPDATE ... WHERE id = $1 AND tenant_id = $2 AND version = $3`
- * with a zero-row result meaning conflict. Expressed that way the check cannot
- * be forgotten, and it is why a `version` token is mandated over a guarded
- * `updated_at`: a guard can see a missing field, not a mis-written predicate.
+ * The `version` predicate is in the UPDATE itself, so a zero-row result IS the
+ * conflict -- the check cannot be forgotten by a later edit. The preceding
+ * SELECT exists only to tell 404 from 409, which the row count alone cannot.
  */
 export function update(
-  tenantId: string,
+  ctx: VerifiedTenantContext,
   id: string,
   input: { name?: string; relationship?: string; phone?: string; version: number },
 ): Promise<UpdateResult> {
-  return withTenant(tenantId, async () => {
-    const row = store.get(id)
-    if (!row || row.tenantId !== tenantId) return { kind: 'not-found' as const }
-    if (row.version !== input.version) {
-      return { kind: 'conflict' as const, currentVersion: row.version }
+  return withTenant(ctx, async (sql) => {
+    const current = await sql<{ version: number }>`
+      select version from emergency_contact
+      where id = ${id} and tenant_id = ${ctx.tenantId}
+    `
+    const [existing] = current
+    if (!existing) return { kind: 'not-found' as const }
+    if (existing.version !== input.version) {
+      return { kind: 'conflict' as const, currentVersion: existing.version }
     }
-    const next: EmergencyContactRow = {
-      ...row,
-      name: input.name ?? row.name,
-      relationship: input.relationship ?? row.relationship,
-      phone: input.phone ?? row.phone,
-      version: row.version + 1,
-    }
-    store.set(id, next)
-    return { kind: 'updated' as const, row: { ...next } }
+
+    const rows = await sql<EmergencyContactRow>`
+      update emergency_contact
+      set name         = coalesce(${input.name ?? null}, name),
+          relationship = coalesce(${input.relationship ?? null}, relationship),
+          phone        = coalesce(${input.phone ?? null}, phone),
+          version      = version + 1,
+          updated_at   = now()
+      where id = ${id} and tenant_id = ${ctx.tenantId} and version = ${input.version}
+      returning id, tenant_id as "tenantId", employee_id as "employeeId",
+                name, relationship, phone, version
+    `
+    // Zero rows here means another writer committed between the SELECT and the
+    // UPDATE. Report the conflict rather than reporting success on no change.
+    const [row] = rows
+    if (!row) return { kind: 'conflict' as const, currentVersion: input.version }
+    return { kind: 'updated' as const, row }
   })
 }

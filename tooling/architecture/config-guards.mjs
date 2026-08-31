@@ -48,8 +48,12 @@ export const FIXTURE_SECRET = ['app', 'user', 'dev', 'only'].join('_')
 
 /** Where that credential may appear. Everywhere else reads a managed secret. */
 export const SECRET_FIXTURE_ALLOWLIST = [
+  // ONE fixture module owns the local URLs; everything that needs them imports
+  // it. The list shrinks as things move there rather than growing an entry per
+  // discovery -- a long allowlist is how a guard becomes a formality.
+  'tests/fixtures/local-database.ts',
+  // Provisioning artifacts, which cannot import TypeScript.
   'packages/db/bootstrap.sql',
-  'packages/db/tests/isolation.integration.test.ts',
   'tooling/verify/lib/migrate-check.mjs',
 ]
 
@@ -175,7 +179,12 @@ export function scanConfig() {
     biome: readJsonc('biome.json'),
     tsconfig: readJsonc('tsconfig.json'),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
-    files: sourceFiles(['apps', 'modules', 'packages', 'tooling', 'e2e'], exts)
+    // THE WHOLE REPOSITORY, not a list of roots someone must remember to
+    // extend. A credential guard that cannot see a directory is a credential
+    // guard that approves it, and the directory it cannot see is always the one
+    // added last -- root-level config files, in this case. Source guards keep
+    // their narrower roots: test code legitimately calls withTenant directly.
+    files: sourceFiles(['.'], exts)
       .map(posix)
       .map((path) => ({ path, source: read(path) })),
   }

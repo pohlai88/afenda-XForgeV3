@@ -16,7 +16,8 @@
     "gen:client": "orval --config orval.config.ts",
     "generate": "pnpm -s gen:openapi && pnpm -s gen:client",
     "e2e": "playwright test",
-    "verify:ci": "node tooling/verify/verify.mjs --ci"
+    "verify:ci": "node tooling/verify/verify.mjs --ci",
+    "test:architecture:tenancy": "vitest run --config vitest.architecture.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",

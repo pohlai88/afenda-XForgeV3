@@ -358,6 +358,37 @@ export const guards = [
       return out
     },
   },
+
+  {
+    id: 'no-forged-tenant-context',
+    law: 13,
+    precision: 'text',
+    title: 'VerifiedTenantContext is constructed only inside packages/tenancy',
+    // ADR-022. The branded type makes `withTenant(request.body.tenantId, ...)`
+    // a compile error -- but only while the brand cannot be forged. One
+    // exported cast helper, or one `as VerifiedTenantContext` in a handler that
+    // was awkward to wire, and the type is a comment with extra syntax: the
+    // next awkward case reaches for the same escape and nothing objects.
+    //
+    // packages/tenancy holds the single cast, in `verify()`. Everywhere else,
+    // asserting the brand is a build failure.
+    applies: (f) => !/^packages[/]tenancy[/]/.test(f),
+    check(f, src) {
+      const out = []
+      const re = /as\s+VerifiedTenantContext/g
+      let m
+      while ((m = re.exec(src)) !== null) {
+        out.push({
+          file: f,
+          line: line(src, m.index),
+          message:
+            'forges a VerifiedTenantContext -- it may only be constructed by ' +
+            'packages/tenancy, after host resolution and membership verification',
+        })
+      }
+      return out
+    },
+  },
 ]
 
 export const guardById = Object.fromEntries(guards.map((g) => [g.id, g]))

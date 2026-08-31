@@ -57,6 +57,11 @@ or the proof is about a program nobody runs.
 
 **T02 is Mutation A.** **T11 is Mutation B seen from the gate's side.**
 
+Implementation status is not recorded here -- it is reported by `pnpm verify`,
+which reads this table and compares it against `tests/architecture/tenancy/`.
+A status column in a document drifts; a gate that names the missing cases and
+turns them into a failure the day the tenancy phase is declared does not.
+
 **T07 is the multi-tab case ADR-022 exists for**, and the expected result is the
 one people find surprising: the host decides, so a tenant switch in another tab
 changes nothing here. `activeTenantId` is a navigation preference.
