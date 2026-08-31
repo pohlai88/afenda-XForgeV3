@@ -979,9 +979,14 @@ pnpm verify
   generate cleanliness → architecture guards → typecheck → format/lint
   → unit → property → contract → RLS/security → integration
   → migration compatibility → build → selected Playwright E2E
+  → gate leaves no trace
 ```
 
 Caching and parallelism are fine. **The meaning of green is singular.** Any rule not represented as a stage here is unenforced by construction.
+
+**The last stage is behavioural, and deliberately so.** Every other stage decides what to check by CLASSIFYING paths, and a classification system can only catch categories it already models. Twice that vocabulary has been incomplete — build directories, then a single generated file — and both times every tool agreed and every tool was wrong, discovered by a red build rather than by a guard. `gate leaves no trace` asks instead whether running the gate CHANGED the repository, which catches the whole class without depending on the vocabulary being complete. It compares the tree against its state when the run began, not against a clean tree: a gate unusable with work in progress is a gate people stop running.
+
+**A stage may not report PENDING once its phase has started.** PENDING means "this phase has not begun"; after it has, the same status would let a mandatory check sit permanently unrun while CI — which tolerates PENDING by design — reported green. This is also what makes qualifying the next phase locally real evidence: raising `XFORGE_PHASE` turns every unbuilt check of that phase red immediately, rather than at merge.
 
 ### 24.2 Architecture Qualification Suite
 
@@ -1139,6 +1144,8 @@ Phases are **referred to by name** in all prose, so cross-references survive ren
 | 9 | **Second domain proves generality** | **HR-specific assumptions found and deleted from platform packages.** No general-platform claim before this |
 | 10 | **Second country / enterprise isolation** | Second country pack and, if a real deal requires it, the dedicated tier proving identical module code |
 
+The tenancy phase's gate is specified before its implementation, in `.architecture/phase-1-attack-matrix.md` — sixteen cases plus the two mutations that decide whether the suite is testing RLS or merely testing that the application remembered its `WHERE` clause.
+
 **The tenancy and payroll phases carry the blocking gates.** Neither passes on manual inspection. The spine through metadata phases are the highest-risk work: if the kernel is wrong, everything downstream inherits it.
 
 > **Generalise on the second real use case, not from imagination.**
@@ -1251,7 +1258,8 @@ After adoption, **stop writing competing canonical drafts.**
 
 | Item | By | Note |
 |---|---|---|
-| Neon MCP auth failing (HTTP 401) | Spine phase start | Refresh token or provision via the Vercel Marketplace. Blocks branch-per-PR |
+| Neon MCP auth failing (HTTP 401) | **Before Phase 1 PR qualification**, not before Phase 1 implementation | Refresh the token or provision Postgres via the Vercel Marketplace. Blocks branch-per-PR and preview-database qualification. Does **not** block RLS, `withTenant`, policy or membership correctness — those are proven against a local PostgreSQL with real roles and FORCE RLS. Neon is a provider choice, never the tenancy model, and a vendor credential must not stop architecture work |
+| No git remote; branch protection not active | **Before Phase 1 merges to master** | Phase 1 may be developed locally. It is where the isolation proof lands, and that proof most needs to have executed somewhere other than the machine that wrote it |
 | Vercel CLI not installed | Spine phase start | `npm i -g vercel` |
 | Durable executor: Trigger.dev vs Inngest | Spine phase end | Reversible — the outbox is the durable record either way |
 | SEA latency baseline | Spine phase | Measure from KL, HCMC, Jakarta. Informs §26.6 |

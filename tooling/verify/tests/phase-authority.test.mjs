@@ -7,7 +7,19 @@
  * These tests make phase progression MONOTONIC and the declaration MANDATORY.
  */
 import { describe, expect, it } from 'vitest'
-import { COMMITTED_PHASE, PHASES, phaseHasStarted, resolvePhase } from '../lib/util.mjs'
+import {
+  BLOCKED,
+  COMMITTED_PHASE,
+  CURRENT_PHASE,
+  EMPTY,
+  FAIL,
+  PASS,
+  PENDING,
+  PHASES,
+  phaseHasStarted,
+  resolvePhase,
+  settleStatus,
+} from '../lib/util.mjs'
 import { stages } from '../stages.mjs'
 
 describe('the repository owns the phase', () => {
@@ -83,15 +95,91 @@ describe('every stage declares a phase', () => {
 })
 
 describe('phase ordering', () => {
-  it('every phase at or before the committed one has started', () => {
-    for (const p of PHASES.slice(0, PHASES.indexOf(COMMITTED_PHASE) + 1)) {
+  // Against the EFFECTIVE phase, not the committed one. These two are the same
+  // in CI and differ under a local `XFORGE_PHASE=<next>` raise -- which is the
+  // whole point of the raise, and this test asserted the opposite until a
+  // raised run caught it.
+  it('every phase at or before the effective one has started', () => {
+    for (const p of PHASES.slice(0, PHASES.indexOf(CURRENT_PHASE) + 1)) {
       expect(phaseHasStarted(p), `${p} should have started`).toBe(true)
     }
   })
 
-  it('no phase after the committed one has started', () => {
-    for (const p of PHASES.slice(PHASES.indexOf(COMMITTED_PHASE) + 1)) {
+  it('no phase after the effective one has started', () => {
+    for (const p of PHASES.slice(PHASES.indexOf(CURRENT_PHASE) + 1)) {
       expect(phaseHasStarted(p), `${p} should NOT have started`).toBe(false)
     }
+  })
+
+  it('the effective phase is never behind the committed one', () => {
+    expect(PHASES.indexOf(CURRENT_PHASE)).toBeGreaterThanOrEqual(PHASES.indexOf(COMMITTED_PHASE))
+  })
+})
+
+/**
+ * PENDING expires.
+ *
+ * The reviewer asked whether raising XFORGE_PHASE locally actually enables the
+ * next phase's checks. It did not, and the answer was worse than either option
+ * offered: guards are not phase-gated at all, and the one tenancy stage
+ * returned a HARDCODED PENDING, so raising the phase surfaced nothing. CI
+ * tolerates PENDING by design, so a mandatory stage could have sat unrun
+ * forever while the gate reported green.
+ */
+describe('PENDING expires when its phase starts', () => {
+  const pending = { status: PENDING, detail: 'activates in the tenancy phase' }
+
+  it('is allowed for a stage whose phase has NOT started', () => {
+    const settled = settleStatus({ id: 'x', phase: 'payroll' }, pending)
+    expect(settled.status).toBe(PENDING)
+  })
+
+  it('becomes FAIL for a stage whose phase HAS started', () => {
+    const settled = settleStatus({ id: 'x', phase: 'spine' }, pending)
+    expect(settled.status).toBe(FAIL)
+    expect(settled.detail).toContain('during its own')
+  })
+
+  it('keeps the original detail, so the failure says what the stage claimed', () => {
+    const settled = settleStatus({ id: 'x', phase: 'spine' }, pending)
+    expect(settled.detail).toContain('activates in the tenancy phase')
+  })
+
+  it('leaves every other status untouched', () => {
+    for (const status of [PASS, FAIL, EMPTY, BLOCKED]) {
+      const r = { status, detail: 'd' }
+      expect(settleStatus({ id: 'x', phase: 'spine' }, r)).toBe(r)
+    }
+  })
+
+  it('turns the tenancy stage red the moment the phase is raised', () => {
+    // The whole point: local qualification of the next phase is now real
+    // evidence rather than a quiet PENDING.
+    const rls = stages.find((s) => s.id === 'rls')
+    expect(rls.phase).toBe('tenancy')
+    expect(rls.run().status).toBe(PENDING)
+    expect(settleStatus({ ...rls, phase: 'spine' }, rls.run()).status).toBe(FAIL)
+  })
+})
+
+/**
+ * The behavioural invariant, and the only check in the gate that does not
+ * depend on the source universe's category vocabulary being complete.
+ */
+describe('the gate leaves no trace', () => {
+  const stage = stages.find((s) => s.id === 'idempotence')
+
+  it('exists, runs last, and enforces law 33', () => {
+    expect(stage).toBeDefined()
+    expect(stages.at(-1).id).toBe('idempotence')
+    expect(stage.enforces).toContain(33)
+  })
+
+  it('passes on a tree that was already dirty when the run started', () => {
+    // "Does not MUTATE", not "is clean". Comparing against a clean tree would
+    // fail on any uncommitted work and make the gate unusable during
+    // development -- and an ignored gate is the same as no gate. This test runs
+    // with whatever the working tree happens to hold, which is the point.
+    expect([PASS, BLOCKED]).toContain(stage.run().status)
   })
 })

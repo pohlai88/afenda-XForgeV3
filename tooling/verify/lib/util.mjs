@@ -16,7 +16,10 @@ export const ROOT = process.cwd()
  * facts:
  *
  *   PENDING  the stage belongs to a phase that has not started. Nothing is
- *            wrong; there is genuinely nothing to check yet.
+ *            wrong; there is genuinely nothing to check yet. PENDING EXPIRES:
+ *            once the stage's phase starts, PENDING is a FAIL, because a stage
+ *            declaring itself not-yet-applicable during its own phase is the
+ *            quietest way for a mandatory check to never run.
  *   BLOCKED  the stage belongs to a phase that HAS started and should be
  *            running, but a prerequisite is missing -- no database, no browser.
  *            Locally that is an inconvenience. In CI it is a failure, because
@@ -168,4 +171,42 @@ export function workspaceHasPackages() {
     const abs = join(ROOT, d)
     return existsSync(abs) && readdirSync(abs).some((e) => existsSync(join(abs, e, 'package.json')))
   })
+}
+
+/**
+ * The working tree as git sees it: modified tracked files AND untracked files
+ * that nothing ignores.
+ *
+ * Used to assert that running the gate does not MUTATE the repository. Note
+ * "does not mutate", not "is clean" -- comparing against a clean tree would
+ * fail on any uncommitted work and make the gate unusable during development,
+ * and an ignored gate is the same as no gate.
+ */
+export function treeState() {
+  const r = run('git', ['status', '--porcelain'])
+  return r.code === 0 ? r.out.trim() : null
+}
+
+/**
+ * Apply the phase rules to a stage's raw result.
+ *
+ * PENDING EXPIRES. A stage may declare itself not-yet-applicable only BEFORE
+ * its phase starts. Once the phase has started, PENDING would let a mandatory
+ * check sit permanently unrun while the gate reported green -- and because CI
+ * tolerates PENDING by design, nothing would ever say so.
+ *
+ * This is also what makes a local `XFORGE_PHASE=<next>` run real evidence:
+ * raising the phase turns every not-yet-built check of that phase red
+ * immediately, rather than at merge.
+ */
+export function settleStatus(stage, result) {
+  if (result.status !== PENDING) return result
+  if (!phaseHasStarted(stage.phase)) return result
+  return {
+    status: FAIL,
+    detail:
+      `stage reported PENDING during its own '${stage.phase}' phase, which has started. ` +
+      `Implement it, or report BLOCKED with the missing prerequisite.` +
+      `${String.fromCharCode(10)}  it said: ${result.detail}`,
+  }
 }

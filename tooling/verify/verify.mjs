@@ -20,7 +20,16 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { BLOCKED, CURRENT_PHASE, EMPTY, FAIL, PASS, PENDING, ROOT } from './lib/util.mjs'
+import {
+  BLOCKED,
+  CURRENT_PHASE,
+  EMPTY,
+  FAIL,
+  PASS,
+  PENDING,
+  ROOT,
+  settleStatus,
+} from './lib/util.mjs'
 import { reviewOnly, stages } from './stages.mjs'
 
 const ESC = String.fromCharCode(27)
@@ -145,6 +154,9 @@ function main() {
     } catch (err) {
       r = { status: FAIL, detail: `stage threw: ${err?.message}` }
     }
+
+    r = settleStatus(stage, r)
+
     results.push({ stage, ...r })
     const c = COLOUR[r.status] || C.reset
     console.log(
