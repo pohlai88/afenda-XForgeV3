@@ -55,7 +55,7 @@ describe.skipIf(!reachable)('T07 -- host decides, whatever the session prefers',
     if (resolved.kind !== 'verified') {
       throw new Error('fixture failed')
     }
-    const rows = await repo.listByEmployee(resolved.context, EMPLOYEE)
+    const { rows } = await repo.listByEmployee(resolved.context, EMPLOYEE)
     expect(rows.map((r) => r.id)).toEqual([A_ROW])
   })
 
@@ -72,11 +72,11 @@ describe.skipIf(!reachable)('T07 -- host decides, whatever the session prefers',
     expect(a.context.tenantId).toBe(TENANT_A)
     expect(b.context.tenantId).toBe(TENANT_B)
 
-    const [rowsA, rowsB] = await Promise.all([
+    const [listA, listB] = await Promise.all([
       repo.listByEmployee(a.context, EMPLOYEE),
       repo.listByEmployee(b.context, EMPLOYEE),
     ])
-    expect(rowsA.map((r) => r.id)).toEqual([A_ROW])
-    expect(rowsB.map((r) => r.id)).toEqual([B_ROW])
+    expect(listA.rows.map((r) => r.id)).toEqual([A_ROW])
+    expect(listB.rows.map((r) => r.id)).toEqual([B_ROW])
   })
 })

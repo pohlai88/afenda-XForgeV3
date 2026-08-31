@@ -219,6 +219,15 @@ export const stages = [
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest')
       }
+      // Integration files are excluded, not merely separately reported.
+      //
+      // This stage excluded only `*.contract.test.ts`, so it also ran every
+      // `*.integration.test.ts` -- in parallel, against the real database, and
+      // then the integration stage ran them again. A stage named "unit tests"
+      // whose result depends on a database is mislabelled, and it survived only
+      // while there was exactly one such file: the moment a second arrived they
+      // raced on `seedTenancy`, which clears tenant_domain and tenant_membership
+      // unscoped to give itself a known starting state.
       const r = run('pnpm', [
         '-s',
         'exec',
@@ -227,6 +236,8 @@ export const stages = [
         '--reporter=dot',
         '--exclude',
         '**/*.contract.test.ts',
+        '--exclude',
+        '**/*.integration.test.ts',
       ])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
@@ -414,7 +425,14 @@ export const stages = [
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest')
       }
-      const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'integration.test'])
+      // Through the script, so there is ONE way to run these and one
+      // behaviour. Integration files share a single database, and
+      // `seedTenancy` clears `tenant_domain` and `tenant_membership` unscoped
+      // to give itself a known starting state -- which two files running in
+      // parallel do to each other, mid-run. The failure is a resolution that
+      // cannot find a membership another file has just deleted, and it appears
+      // only when both files exist and only sometimes.
+      const r = run('pnpm', ['-s', 'test:integration'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }

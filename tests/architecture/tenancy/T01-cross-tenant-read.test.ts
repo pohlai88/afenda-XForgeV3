@@ -16,7 +16,7 @@ afterAll(closeAll)
 
 describe.skipIf(!reachable)('T01 -- cross-tenant read is denied', () => {
   it('tenant A lists only its own rows', async () => {
-    const rows = await repo.listByEmployee(await contextFor(TENANT_A), EMPLOYEE)
+    const { rows } = await repo.listByEmployee(await contextFor(TENANT_A), EMPLOYEE)
     expect(rows.map((r) => r.id)).toEqual([A_ROW])
     expect(rows.map((r) => r.id)).not.toContain(B_ROW)
   })

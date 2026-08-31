@@ -49,8 +49,21 @@ export const hrModuleRoutes: RouteDefinition[] = [
     config: hrRoutes.listEmergencyContacts,
     async handler(c) {
       const { employeeId } = c.req.param()
-      const items = await repo.listByEmployee(tenantOf(c), String(employeeId))
-      return c.json({ items: items.map(toContact) }, 200)
+      const { rows, hasMore } = await repo.listByEmployee(tenantOf(c), String(employeeId))
+
+      // The marker states what the server KNOWS, in codes and numbers. What a
+      // person should be told about it is the experience layer's decision, and
+      // putting a sentence here would move that decision into the transport.
+      const meta = hasMore
+        ? {
+            completeness: 'partial' as const,
+            partialReasons: [
+              { code: 'result_cap' as const, limit: repo.LIST_LIMIT, returned: rows.length },
+            ],
+          }
+        : { completeness: 'complete' as const }
+
+      return c.json({ items: rows.map(toContact), meta }, 200)
     },
   },
   {

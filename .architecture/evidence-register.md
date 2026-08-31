@@ -630,3 +630,61 @@ the harness can decide. A STATE is unreachable if no code path constructs it,
 which is a property of the experience layer and invisible to the harness. A
 green "every state renders" check is not evidence that anything produces
 `partial` — and reading it as such is exactly how `partial` becomes decoration.
+
+---
+
+## Stage 4A — `partial` gets a producer before it gets a type, 1 September 2026
+
+Grade **X**. Recorded because the interesting part is what adding ONE test file
+exposed, not the feature.
+
+**The producer is real, not manufactured to justify the state.** The
+emergency-contacts read was UNBOUNDED — one pathological employee and a screen
+attempts arbitrarily many rows. Bounding it is a safety fix that happens to
+produce genuine incompleteness, which is the only kind of producer worth having.
+
+It fetches `LIMIT + 1` and returns at most `LIMIT`. That extra row is the whole
+mechanism: `returned === limit` does not prove a further row exists, so
+inferring incompleteness from a count would report a complete list of exactly
+`LIMIT` as truncated forever. An integration test pins that boundary.
+
+`completeness` is present on EVERY response. A marker that appears only when
+something is wrong is one whose absence a client reads as success without having
+looked — and every client that forgets is silently correct until it matters.
+Reasons are a LIST: a bounded read that hit its cap while an enrichment source
+failed is one response with two independently meaningful degradations, and a
+precedence rule discards one. `enrichment_unavailable` is deliberately undefined
+— nothing produces it.
+
+### Four defects from adding one integration file, three of them pre-existing
+
+| Found | Property it violated |
+|---|---|
+| a forged `VerifiedTenantContext` | only `packages/tenancy` may construct one (guard caught it) |
+| integration files raced on seeding | tests sharing a database must not run in parallel |
+| the **unit** stage ran `*.integration.test.ts` | a stage's name must match what it runs |
+| the fixture's `valid_from` boundary | law 20's half-open interval, across two clocks |
+
+The third had been true for months and was invisible because exactly one
+integration file existed: a stage called "unit tests" was running database
+tests, in parallel, and reporting their count as unit tests. The published
+figures were overstated — 443 unit, 17 integration, not 460 unit.
+
+**The fourth cost three wrong diagnoses**, and the signature that settled it was
+one I had glossed: only the FIRST test failed and the rest passed. A wiped
+membership fails everything; a BOUNDARY fails only until time moves past it.
+`valid_from` defaults to the DATABASE's `now()` while `hasActiveMembership`
+compares against NODE's `new Date()` — two clocks either side of a half-open
+interval.
+
+**Still latent:** `tests/fixtures/tenancy.ts` has the same race for every caller,
+including the contract suite. Fixed locally rather than in the shared fixture,
+whose callers include the tenancy attack suite; recorded so the next
+intermittent "membership denied" is recognised rather than re-diagnosed.
+
+**The durable fix was additive seeding, not serialisation.** `seedTenancy`
+clears `tenant_domain` and `tenant_membership` unscoped to give itself a known
+starting state — correct for one file, unusable from two whatever the ordering.
+The bounded-read fixture inserts only what it needs and deletes nothing, so two
+files converge instead of destroying each other. Serialisation is defence in
+depth; it was never the guarantee.

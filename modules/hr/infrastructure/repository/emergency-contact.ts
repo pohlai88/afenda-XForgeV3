@@ -31,19 +31,45 @@ export type UpdateResult =
   | { readonly kind: 'not-found' }
   | { readonly kind: 'conflict'; readonly currentVersion: number }
 
+/**
+ * The most rows this read will return.
+ *
+ * The read was unbounded, which is a hazard rather than a simplification: one
+ * pathological employee is all it takes for a screen to try to render an
+ * arbitrary number of rows. A hundred is far above any real emergency-contact
+ * list and far below anything that hurts.
+ */
+export const LIST_LIMIT = 100
+
+export interface BoundedRows {
+  /** Authoritative. See the note on the probe below. */
+  hasMore: boolean
+  rows: EmergencyContactRow[]
+}
+
+/**
+ * A bounded read that KNOWS whether it truncated.
+ *
+ * Fetches `LIMIT + 1` and returns at most `LIMIT`. That extra row is the whole
+ * point: `returned === limit` does not prove a hundred-and-first row exists, so
+ * a client -- or a repository -- inferring incompleteness from a count would be
+ * guessing, and would report a complete list of exactly a hundred as truncated
+ * forever. The server is the only party that can answer this, so it answers.
+ */
 export function listByEmployee(
   ctx: VerifiedTenantContext,
   employeeId: string,
-): Promise<EmergencyContactRow[]> {
+): Promise<BoundedRows> {
   return withTenant(ctx, async (sql) => {
-    const rows = await sql<EmergencyContactRow>`
+    const probed = await sql<EmergencyContactRow>`
       select id, tenant_id as "tenantId", employee_id as "employeeId",
              name, relationship, phone, version
       from emergency_contact
       where tenant_id = ${ctx.tenantId} and employee_id = ${employeeId}
       order by name
+      limit ${LIST_LIMIT + 1}
     `
-    return [...rows]
+    return { hasMore: probed.length > LIST_LIMIT, rows: [...probed].slice(0, LIST_LIMIT) }
   })
 }
 

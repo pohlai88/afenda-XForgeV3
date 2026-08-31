@@ -24,6 +24,68 @@ export const EmergencyContact = z
   })
   .openapi('EmergencyContact')
 
+/**
+ * Why a representation is INCOMPLETE, structurally rather than in prose.
+ *
+ * Codes and numbers, never a sentence. A user-facing message here would put the
+ * wording in the transport, where it cannot be localised, cannot be varied by
+ * surface, and makes the API responsible for a decision the experience layer
+ * owns. The mapper turns these into something a person reads.
+ *
+ * A LIST, not a single reason. A bounded read that hit its cap while an
+ * enrichment source was also unavailable is one response with two independently
+ * meaningful degradations, and a precedence rule would silently discard one of
+ * them. `enrichment_unavailable` is deliberately NOT defined yet: nothing
+ * produces it, and vocabulary without a producer is the defect this project
+ * keeps finding. It lands with the source that can report it.
+ */
+export const PartialReason = z
+  .object({
+    code: z.literal('result_cap'),
+    /** What the server would have returned unbounded is NOT claimed here. */
+    limit: z.number().int().positive(),
+    returned: z.number().int().nonnegative(),
+  })
+  /**
+   * Closed. An open object would accept a producer emitting `available: 173`
+   * -- a total nobody counted and no consumer reads -- and it would validate
+   * forever. The same reason the generated UI schema sets
+   * `additionalProperties: false`: a field that is silently accepted is a claim
+   * nobody checks.
+   *
+   * `available` is absent on purpose. Reporting it means either a second count
+   * query on every bounded read or a number already stale, and "100 of 173"
+   * that is wrong is worse than "100, and there are more".
+   */
+  .strict()
+  .openapi('PartialReason')
+
+/**
+ * Whether a representation is all of what was asked for.
+ *
+ * `completeness` is ALWAYS present. A marker that appears only when something
+ * is wrong is a marker whose absence a client can read as success without ever
+ * having looked -- the same reason the performance budget file names
+ * `inherited` explicitly instead of leaving the common case blank.
+ *
+ * The invariants are enforced where they can be checked rather than described:
+ * complete carries no reasons, partial carries at least one.
+ */
+export const Completeness = z
+  .object({
+    completeness: z.enum(['complete', 'partial']),
+    partialReasons: z.array(PartialReason).optional(),
+  })
+  .strict()
+  .refine(
+    (m) =>
+      m.completeness === 'partial'
+        ? (m.partialReasons?.length ?? 0) >= 1
+        : (m.partialReasons?.length ?? 0) === 0,
+    { message: 'partial must carry at least one reason, and complete must carry none' },
+  )
+  .openapi('Completeness')
+
 export const NewEmergencyContact = z
   .object({
     name: z.string().min(1).max(200),
@@ -63,7 +125,10 @@ export const listEmergencyContacts = createRoute({
   policy: { permission: 'hr.employee.read', scopeType: 'tenant' },
   request: { params: z.object({ employeeId: z.uuid() }) },
   responses: {
-    200: { description: 'The contacts', ...json(z.object({ items: z.array(EmergencyContact) })) },
+    200: {
+      description: 'The contacts, and whether this is all of them',
+      ...json(z.object({ items: z.array(EmergencyContact), meta: Completeness })),
+    },
     401: { description: 'Unauthenticated', ...json(Problem) },
     403: { description: 'Forbidden', ...json(Problem) },
   },

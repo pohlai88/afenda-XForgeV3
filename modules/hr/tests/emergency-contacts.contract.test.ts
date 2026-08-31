@@ -184,10 +184,18 @@ describe.skipIf(!reachable)('authorisation (ADR-014)', () => {
 })
 
 describe.skipIf(!reachable)('the vertical slice', () => {
-  it('lists an empty collection before anything exists', async () => {
+  /**
+   * An empty collection is COMPLETE, and says so.
+   *
+   * The marker is present on every response, not only when something is
+   * degraded -- a client that only ever sees it on the unhappy path is one that
+   * never learned to look. `toEqual` rather than `toMatchObject`, so a future
+   * field cannot appear here unnoticed.
+   */
+  it('lists an empty collection, stated as complete, before anything exists', async () => {
     const res = await req(`/v1/employees/${EMPLOYEE}/emergency-contacts`)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ items: [] })
+    expect(await res.json()).toEqual({ items: [], meta: { completeness: 'complete' } })
   })
 
   it('creates, then lists', async () => {
@@ -203,6 +211,11 @@ describe.skipIf(!reachable)('the vertical slice', () => {
     const body = await listed.json()
     expect(body.items).toHaveLength(1)
     expect(body.items[0].name).toBe('Siti')
+
+    // A short list is complete and carries no reasons. The invariant is in the
+    // schema; this asserts the handler actually satisfies it on a real response
+    // rather than only in a unit test of the schema.
+    expect(body.meta).toEqual({ completeness: 'complete' })
   })
 
   it('the ADR-022 chain runs in order, and never touches another tenant', async () => {

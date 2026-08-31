@@ -5,10 +5,11 @@
  * Multi-tenant HRMS and payroll platform. Every operation declares a policy; see .architecture/adr/ADR-014-policy-declaration.md.
  * OpenAPI spec version: 0.1.0
  */
-import type { Completeness } from './completeness.ts';
-import type { EmergencyContact } from './emergencyContact.ts';
 
-export type ListEmergencyContacts200 = {
-  items: EmergencyContact[];
-  meta: Completeness;
-};
+export type CompletenessCompleteness = typeof CompletenessCompleteness[keyof typeof CompletenessCompleteness];
+
+
+export const CompletenessCompleteness = {
+  complete: 'complete',
+  partial: 'partial',
+} as const;

@@ -6,12 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './completeness.ts';
+export * from './completenessCompleteness.ts';
 export * from './emergencyContact.ts';
 export * from './emergencyContact';
 export * from './listEmergencyContacts200.ts';
 export * from './listEmergencyContacts200';
 export * from './newEmergencyContact.ts';
 export * from './newEmergencyContact';
+export * from './partialReason.ts';
+export * from './partialReasonCode.ts';
 export * from './problem.ts';
 export * from './problem';
 export * from './updateEmergencyContact.ts';

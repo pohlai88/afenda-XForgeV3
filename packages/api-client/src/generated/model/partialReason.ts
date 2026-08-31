@@ -5,10 +5,12 @@
  * Multi-tenant HRMS and payroll platform. Every operation declares a policy; see .architecture/adr/ADR-014-policy-declaration.md.
  * OpenAPI spec version: 0.1.0
  */
-import type { Completeness } from './completeness.ts';
-import type { EmergencyContact } from './emergencyContact.ts';
+import type { PartialReasonCode } from './partialReasonCode.ts';
 
-export type ListEmergencyContacts200 = {
-  items: EmergencyContact[];
-  meta: Completeness;
-};
+export interface PartialReason {
+  code: PartialReasonCode;
+  /** @exclusiveMinimum 0 */
+  limit: number;
+  /** @minimum 0 */
+  returned: number;
+}
