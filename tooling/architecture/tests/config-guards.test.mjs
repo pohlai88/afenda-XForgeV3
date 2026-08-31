@@ -126,6 +126,52 @@ describe('no-shared-dev-secret', () => {
   })
 })
 
+describe('database-image-matches-ci', () => {
+  const guard = byId('database-image-matches-ci')
+
+  const envWith = (localImage, ciImage) => ({
+    files: [
+      { path: 'compose.yaml', source: `services:\n  postgres:\n    image: ${localImage}\n` },
+      {
+        path: '.github/workflows/verify.yml',
+        source: `    services:\n      postgres:\n        image: ${ciImage}\n`,
+      },
+    ],
+  })
+
+  it('permits the two agreeing', () => {
+    expect(guard.check(envWith('postgres:17-alpine', 'postgres:17-alpine'))).toHaveLength(0)
+  })
+
+  it('REJECTS a major-version split -- the divergence this was written for', () => {
+    const found = guard.check(envWith('postgres:17-alpine', 'postgres:16'))
+    expect(found).toHaveLength(1)
+    expect(found[0]?.message).toMatch(/cannot reproduce/)
+  })
+
+  it('REJECTS a variant split, which changes the engine just as quietly', () => {
+    expect(guard.check(envWith('postgres:17-alpine', 'postgres:17'))).toHaveLength(1)
+  })
+
+  it('does not trip on prose that merely mentions another version', () => {
+    const env = envWith('postgres:17-alpine', 'postgres:17-alpine')
+    env.files[0].source = `# this said postgres:16 once, and diverged\n${env.files[0].source}`
+    expect(guard.check(env)).toHaveLength(0)
+  })
+
+  it('stays silent when a file is absent -- that is a different problem', () => {
+    expect(guard.check({ files: [] })).toHaveLength(0)
+    const onlyLocal = envWith('postgres:17-alpine', 'postgres:16')
+    onlyLocal.files.pop()
+    expect(guard.check(onlyLocal)).toHaveLength(0)
+  })
+
+  it('holds against the real repository', () => {
+    const found = scanConfig().violations.filter((v) => v.guard === 'database-image-matches-ci')
+    expect(found).toHaveLength(0)
+  })
+})
+
 describe('the real repository satisfies both guards', () => {
   it('scanConfig reports no violations', () => {
     expect(scanConfig().violations).toEqual([])

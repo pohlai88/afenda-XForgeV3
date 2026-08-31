@@ -25,7 +25,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        # MUST match compose.yaml. This said 16 while every local run was on 17,
+        # so the gate would have been qualifying a different database engine
+        # than the one the proof was written against -- and RLS semantics are
+        # precisely where major versions diverge.
+        image: postgres:17-alpine
         env:
           POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: xforge

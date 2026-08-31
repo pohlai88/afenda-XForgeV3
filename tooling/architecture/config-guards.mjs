@@ -209,6 +209,47 @@ export const configGuards = [
     },
   },
   {
+    id: 'database-image-matches-ci',
+    law: 32,
+    title: 'The local fixture and the gate run the same database image',
+    /**
+     * `pnpm verify` cannot be the canonical definition of green while it means
+     * two different things in two places. This diverged silently -- compose on
+     * 17, the workflow on 16 -- and row-level security is precisely where major
+     * versions differ, so the qualification suite would have been proving a
+     * property of an engine the gate never runs.
+     *
+     * Matched on `image:` lines only: prose about a past mismatch is not a
+     * mismatch, and a guard that cannot tell the two apart gets disabled.
+     */
+    check(env) {
+      const imagesIn = (path) => {
+        const f = (env.files ?? []).find((x) => x.path === path)
+        if (!f) return null
+        return [...f.source.matchAll(/^\s*image:\s*['"]?(postgres:[A-Za-z0-9._-]+)/gm)].map(
+          (m) => m[1],
+        )
+      }
+      const local = imagesIn('compose.yaml')
+      const ci = imagesIn('.github/workflows/verify.yml')
+      // Either side absent is a different problem than the two disagreeing.
+      if (local === null || ci === null) return []
+      if (local.length === 0 || ci.length === 0) return []
+
+      const distinct = [...new Set([...local, ...ci])]
+      return distinct.length === 1
+        ? []
+        : [
+            {
+              where: 'compose.yaml',
+              message:
+                `the local fixture and .github/workflows/verify.yml disagree on the database image (${distinct.join(' vs ')}) -- ` +
+                'a local green the gate cannot reproduce is not a green',
+            },
+          ]
+    },
+  },
+  {
     id: 'adr-has-evidence',
     law: 34,
     title: 'A FROZEN decision records the prior art it was checked against',

@@ -1,0 +1,59 @@
+# The local database fixture. NOT a deployment artifact.
+#
+# Brings up the PostgreSQL that the `rls`, `integration` and `migration` stages
+# need. Without it those three report BLOCKED -- which `pnpm verify` tolerates
+# loudly and `pnpm verify:ci` treats as a failure.
+#
+# This file exists because the fixture was real but undeclared: a hand-started
+# `xforge-pg` container, correctly provisioned, that nothing in the repository
+# described. The suite passed against it on one machine, which is not the same
+# as being reproducible -- and .env.example already referred to a "local Docker
+# fixture" that did not exist here.
+#
+# PINNED TO THE SAME IMAGE AS .github/workflows/verify.yml. They disagreed once
+# -- local on 17, CI on 16 -- and RLS is exactly where major versions differ.
+# The 66-case qualification suite has only ever been executed against 17, so 17
+# is what both now use; the alternative was to discard the only evidence that
+# has actually run in favour of a version nothing has.
+#
+# The container that has been serving this suite was started by hand as
+# `xforge-pg` on the same port. Compose will not adopt it -- it creates its own
+# and the port bind fails -- so remove that one first:
+#
+#   docker rm -f xforge-pg
+#
+#   docker compose up -d      start
+#   docker compose down       stop, keep the data
+#   docker compose down -v    stop and DISCARD the volume -- REQUIRED after
+#                             editing bootstrap.sql, which runs only once, on
+#                             an empty data directory
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: xforge-postgres
+    ports:
+      - '55432:5432'
+    environment:
+      # The owner credential from tests/fixtures/local-database.ts, which is
+      # what the suite falls back to when DATABASE_URL is unset -- so a clean
+      # checkout needs no .env.local to run the proof.
+      #
+      # This is not the guarded fixture secret. app_user's password lives in
+      # bootstrap.sql, one of the three locations the no-shared-dev-secret
+      # guard allows, and is deliberately not repeated here.
+      POSTGRES_PASSWORD: xforge
+      POSTGRES_DB: xforge
+    volumes:
+      # Cluster-level role provisioning. Roles are cluster-scoped, so this is
+      # not part of the migration set. CI runs the SAME file explicitly; one
+      # file, one authority.
+      - ./packages/db/bootstrap.sql:/docker-entrypoint-initdb.d/10-bootstrap.sql:ro
+      - xforge-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d xforge']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  xforge-pgdata:
