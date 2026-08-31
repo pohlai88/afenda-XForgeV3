@@ -94,9 +94,24 @@ describe('capabilities', () => {
     expect([...controls].sort()).toEqual(['Checkbox', 'Input'])
   })
 
+  /**
+   * The two capabilities are deliberately not the same set.
+   *
+   * `field-control` is a raw control that gets its name from a Field.
+   * `form-field` is the labelled result, which is what layout may hold. Merging
+   * them would let a bare Checkbox sit in a Stack, unlabelled -- the exact
+   * defect the split exists to prevent.
+   */
+  it('keeps a raw control distinct from a labelled field', () => {
+    const labelled = contractIds.filter((id) => capabilitiesOf(id).includes('form-field'))
+    expect(labelled).toEqual(['Field'])
+    expect(capabilitiesOf('Checkbox')).not.toContain('form-field')
+    expect(capabilitiesOf('Input')).not.toContain('form-field')
+  })
+
   it.each(entries)('%s only claims capabilities the grammar knows', (_id, contract) => {
     for (const capability of contract.capabilities ?? []) {
-      expect(['field-control']).toContain(capability)
+      expect(['field-control', 'form-field']).toContain(capability)
     }
   })
 
@@ -184,6 +199,50 @@ describe('the grammar', () => {
 
   it.each(entries)('%s declares a composition the grammar knows', (_id, contract) => {
     expect(['leaf', 'container']).toContain(contract.composition)
+  })
+})
+
+describe('reachability', () => {
+  /**
+   * Can a document actually CONTAIN this component?
+   *
+   * The conformance harness found that it could not, for three of them. `Field`
+   * was accepted by no slot anywhere, and `Input` and `Checkbox` are reachable
+   * only through `Field` -- so a fifth of the vocabulary could appear in no
+   * valid document at all. Every other check was green: the components matched
+   * their contracts, the schema was well-formed, the guards passed. Nothing
+   * asks "can this ever be used?" except trying to use it.
+   *
+   * `Stack` now accepts the `form-field` capability, which is what makes a
+   * labelled Field placeable in ordinary layout. Accepting kind `field` instead
+   * would have admitted a bare Checkbox -- a control whose accessible name
+   * comes from a Field that is no longer there.
+   */
+  it('every component can appear inside something', () => {
+    const acceptedSomewhere = new Set<string>()
+    for (const id of contractIds) {
+      for (const [, spec] of slotsOf(contracts[id] as Contract)) {
+        if ('text' in spec) {
+          continue
+        }
+        for (const child of spec.accepts ?? []) {
+          acceptedSomewhere.add(child)
+        }
+        for (const candidate of contractIds) {
+          const kindOk = (spec.acceptsKinds ?? []).includes(contracts[candidate].kind)
+          const capOk =
+            spec.acceptsCapability !== undefined &&
+            capabilitiesOf(candidate).includes(spec.acceptsCapability)
+          if (kindOk || capOk) {
+            acceptedSomewhere.add(candidate)
+          }
+        }
+      }
+    }
+
+    // `Page` is the document root and is deliberately contained by nothing.
+    const orphans = contractIds.filter((id) => id !== 'Page' && !acceptedSomewhere.has(id))
+    expect(orphans).toEqual([])
   })
 })
 

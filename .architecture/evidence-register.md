@@ -447,3 +447,86 @@ Two qualifications on that list, recorded now rather than argued later:
   the day it is written and stays red until an assistive-technology session
   nobody has scheduled. It needs the `unmet()` treatment — a certification
   precondition, not a permanently-red stage people learn to scroll past.
+
+---
+
+## Stage 5 — the conformance harness, and what it found, 1 September 2026
+
+Grade **X**. The harness renders the emergency-contacts screen from
+configuration and compares the result against the hand-built screen that ships.
+
+**What it establishes.** The accessible trees are IDENTICAL — roles, names,
+states and order — for the empty state and the populated list, and the Tab order
+matches. The grammar can express the screen it was designed from. It refuses an
+unregistered component, a Button where only ListItem is permitted, and a
+document nested past `MAX_NESTING_DEPTH`.
+
+The depth bound was recorded as owed by "the validator" when the generated
+schema could not express it. **This is that validator**, and the obligation is
+discharged rather than still noted.
+
+### The finding: a fifth of the vocabulary could appear in no document
+
+`Field` was accepted by no slot anywhere. `Input` and `Checkbox` are reachable
+only through `Field`, so three of fifteen contracts were unreachable — valid,
+type-checked, schema-correct vocabulary that no document could legally contain.
+
+Nothing else could have seen it. The compiler checked components against
+contracts. The schema checked documents against the grammar. The guards checked
+imports and stylesheets. **Not one of them asks whether a component can ever be
+used**, and the only thing that does is trying to use it.
+
+The naive fix would have reintroduced a defect: letting a layout slot accept
+kind `field` admits a bare `Checkbox`, whose accessible name comes from a Field
+that is no longer there. So capability is split in two —
+
+| Capability | Meaning |
+|---|---|
+| `field-control` | a raw control, named by the Field that wraps it — Input, Checkbox |
+| `form-field` | the labelled result, which layout may hold — Field |
+
+`Stack` accepts `form-field`. A unit test now asserts every contract except
+`Page` (the root, contained by nothing) is accepted somewhere.
+
+### The A11y-2 debt is discharged; A11y-3 is not
+
+Dialog, Field, Input and Checkbox had never been mounted anywhere in this
+repository. Their behaviour was delegated to Base UI and confirmed by reading
+its source, which is not the same as observing it. Hand-authored APG conformance
+specs — not generated from the contracts, so they can disagree with them — now
+verify in Chromium that:
+
+- the trigger is a real `<button>`, neither a `<span>` wrapper nor a nested button
+- the dialog is named by its title and described by its description
+- focus moves in on open, does not escape under ten Tab presses, and returns to
+  the trigger on Escape
+- the text input and the checkbox each take their accessible name from their
+  Field, and the input its description
+- every control, including the checkbox, meets the 24px target floor
+
+**Still owed: A11y-3.** No NVDA or VoiceOver session has been run, and none is
+scheduled. Nothing here substitutes for one.
+
+### Honest limits
+
+- The harness is a **Playwright fixture**, injected with `setContent` from a
+  Vite-built bundle. It is not a route, so none of it ships: a route would put
+  the runtime registry, the generated schema and a JSON Schema validator on
+  somebody's critical path and spend budget nobody allocated.
+- It is **not a metadata renderer and must not become one.** The permitted
+  pipeline is static config → schema validation → depth validation → registry
+  resolution → render. No API, policy, permissions, expressions, workflow,
+  persistence, routing or conditional visibility.
+- The seven-state vocabulary (`loading`, `partial`, `forbidden`, `conflict`,
+  `error`) is **not** exercised, because it does not exist yet — stage 4 is
+  unbuilt. `empty` and `ready` are covered because the screen has them.
+- The `dialog` document is **not part of the shipping screen.** It is the
+  smallest document that mounts the components owing evidence, which is what the
+  conformance specs needed and what nothing else provided.
+
+### Still deferred: the first-mount bundle cost
+
+The harness bundles to 132 kB gzipped, but that number answers nothing about the
+product: different bundler, and it includes `ajv`, which no route will ever
+ship. The informative measurement remains what a real route pays for its first
+Base UI component, and no route mounts one yet.

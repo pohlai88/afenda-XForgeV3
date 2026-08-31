@@ -26,3 +26,4 @@ storybook-static/
 # declarations this application actually needs.
 next-env.d.ts
 
+tests/harness/dist/

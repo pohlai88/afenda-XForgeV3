@@ -91,7 +91,19 @@ export const PROFILES_REQUIRING_AT_EVIDENCE = [
  * accessible name, description and error wiring from that Field. Input and
  * Checkbox both qualify; Combobox, Select and Switch will.
  */
-export type Capability = 'field-control'
+export type Capability =
+  /** Can be the control inside a `Field`, taking its name and wiring from it. */
+  | 'field-control'
+  /**
+   * Is a labelled field, and may therefore sit in ordinary layout.
+   *
+   * The distinction matters because the two are not interchangeable. A layout
+   * slot accepting kind `field` would admit a bare Checkbox -- a control whose
+   * accessible name comes from a Field that is no longer there. Accepting
+   * `form-field` admits the labelled thing and keeps the raw control reachable
+   * only through the component that names it.
+   */
+  | 'form-field'
 
 /**
  * Whether a component holds CONTENT or a VALUE.
@@ -321,6 +333,7 @@ export const contracts = {
    * that qualify without admitting the ones that do not.
    */
   Field: {
+    capabilities: ['form-field'],
     composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
@@ -442,6 +455,7 @@ export const contracts = {
     },
     slots: {
       children: {
+        acceptsCapability: 'form-field',
         acceptsKinds: ['layout', 'content', 'action', 'collection', 'feedback'],
         max: null,
         min: 1,

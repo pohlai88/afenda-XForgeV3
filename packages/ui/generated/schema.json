@@ -758,6 +758,9 @@
                     "$ref": "#/$defs/Dialog"
                   },
                   {
+                    "$ref": "#/$defs/Field"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
