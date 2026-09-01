@@ -13,6 +13,7 @@
 import { hasActiveMembership, resolveHostname, setDriver, tenancyDriver } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
+import { resetEmergencyContacts } from '@xforge/fixtures/hr'
 import { HOST_A, HOST_B, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
 
 export { EMPLOYEE } from '@xforge/fixtures/employee'
@@ -190,9 +191,7 @@ export async function seed(): Promise<void> {
     { principalId: MEMBER_OF_A_ONLY, tenantId: TENANT_A },
   ])
 
-  // Unscoped: the seeding connection is a superuser and bypasses RLS anyway.
-  // Pretending otherwise is how the tenant_domain fixture bug happened.
-  await owner`delete from emergency_contact`
+  await resetEmergencyContacts(owner)
   for (const [tenant, id, name] of [
     [TENANT_A, A_ROW, 'Alice of Tenant A'],
     [TENANT_B, B_ROW, 'Bob of Tenant B'],

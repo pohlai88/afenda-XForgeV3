@@ -24,28 +24,94 @@ import { ROOT } from '../verify/lib/util.mjs'
 const SPEC = 'contracts/openapi.generated.json'
 const VERBS = ['get', 'post', 'put', 'patch', 'delete']
 
-/** Resolve a local $ref against the document. */
-function deref(doc, node, depth = 0) {
-  if (!node || depth > 10) {
-    return node
+/**
+ * Resolve a local `$ref`, and SAY WHAT HAPPENED.
+ *
+ * This returned the unresolved node past `depth > 10`, so a pathological or
+ * merely deep chain read as "the schema has no properties" and produced a
+ * confident false finding -- `version-token-on-updates` announcing a missing
+ * version token on an operation whose schema it never actually read.
+ *
+ * DEPTH IS NOT THE DETECTION MECHANISM. A counter is wrong in both directions:
+ * a legitimately deep schema trips it, and a cycle longer than the ceiling does
+ * not. A pointer already on the current resolution path IS a cycle,
+ * definitionally, at any depth -- so a visited set decides, and the depth
+ * ceiling survives only as a last resort against input this reasoning has not
+ * anticipated.
+ *
+ * The set is per-path, not global: the same `$ref` reached twice through
+ * different branches is reuse, which is ordinary and legal, and only a pointer
+ * repeating within one chain is a cycle.
+ *
+ * Callers must never read "not RESOLVED" as "the rule does not hold". A
+ * resolution failure means the rule COULD NOT BE EVALUATED, which is its own
+ * finding and a different one.
+ */
+const RESOLUTION = {
+  CYCLIC: 'cyclic',
+  DEPTH_LIMIT: 'depth-limit',
+  RESOLVED: 'resolved',
+  UNRESOLVABLE: 'unresolvable',
+}
+
+/** Generous, and no longer load-bearing: the visited set decides. */
+const DEPTH_CEILING = 50
+
+function resolve(doc, node, seen = new Set(), depth = 0) {
+  // An ABSENT node is resolved to nothing, not unresolvable. An operation with
+  // no request body is a fact about the operation, not a failure to read it.
+  if (!node?.$ref) {
+    return { kind: RESOLUTION.RESOLVED, node }
   }
-  if (node.$ref?.startsWith('#/')) {
-    const target = node.$ref
-      .slice(2)
-      .split('/')
-      // `== null`, not `=== null`: a $ref that does not resolve yields
-      // undefined, and dereferencing it throws inside a guard.
-      // biome-ignore lint/suspicious/noEqualsToNull: matches undefined too, see above
-      .reduce((acc, k) => (acc == null ? acc : acc[k.replace(/~1/g, '/').replace(/~0/g, '~')]), doc)
-    return deref(doc, target, depth + 1)
+  const pointer = node.$ref
+  if (!pointer.startsWith('#/')) {
+    return { kind: RESOLUTION.UNRESOLVABLE, pointer }
   }
-  return node
+  if (seen.has(pointer)) {
+    return { kind: RESOLUTION.CYCLIC, pointer }
+  }
+  if (depth > DEPTH_CEILING) {
+    return { kind: RESOLUTION.DEPTH_LIMIT, pointer }
+  }
+  const target = pointer
+    .slice(2)
+    .split('/')
+    // `== null`, not `=== null`: a $ref that does not resolve yields
+    // undefined, and dereferencing it throws inside a guard.
+    // biome-ignore lint/suspicious/noEqualsToNull: matches undefined too, see above
+    .reduce((acc, k) => (acc == null ? acc : acc[k.replace(/~1/g, '/').replace(/~0/g, '~')]), doc)
+  if (target === undefined || target === null) {
+    return { kind: RESOLUTION.UNRESOLVABLE, pointer }
+  }
+  return resolve(doc, target, new Set(seen).add(pointer), depth + 1)
 }
 
 function requestBodySchema(doc, op) {
-  const body = deref(doc, op.requestBody)
-  const media = body?.content?.['application/json']
-  return media ? deref(doc, media.schema) : null
+  const body = resolve(doc, op.requestBody)
+  if (body.kind !== RESOLUTION.RESOLVED) {
+    return body
+  }
+  const media = body.node?.content?.['application/json']
+  if (!media) {
+    return { kind: RESOLUTION.RESOLVED, node: null }
+  }
+  return resolve(doc, media.schema)
+}
+
+/**
+ * The finding a guard makes when it could not read what it needed.
+ *
+ * Distinct from every rule finding on purpose: "I could not evaluate this" and
+ * "this is wrong" are different claims, and collapsing them is what made an
+ * unresolved chain look like a missing version token.
+ */
+function unevaluable(result, where) {
+  return {
+    message:
+      `the request body schema could not be resolved (${result.kind}: ${result.pointer}) -- ` +
+      'the rule was not evaluated, which is not the same as the rule holding or failing',
+    where,
+  }
 }
 
 export const contractGuards = [
@@ -75,7 +141,13 @@ export const contractGuards = [
           if (!op) {
             continue
           }
-          const schema = requestBodySchema(doc, op)
+          const resolved = requestBodySchema(doc, op)
+          const target = op.operationId ?? `${verb.toUpperCase()} ${path}`
+          if (resolved.kind !== RESOLUTION.RESOLVED) {
+            out.push(unevaluable(resolved, target))
+            continue
+          }
+          const schema = resolved.node
           const props = schema?.properties ?? {}
           if (!('version' in props)) {
             out.push({
@@ -128,7 +200,12 @@ export const contractGuards = [
         if (!op) {
           continue
         }
-        const schema = requestBodySchema(doc, op)
+        const resolved = requestBodySchema(doc, op)
+        if (resolved.kind !== RESOLUTION.RESOLVED) {
+          out.push(unevaluable(resolved, op.operationId ?? `PATCH ${path}`))
+          continue
+        }
+        const schema = resolved.node
         if (schema?.properties && 'status' in schema.properties) {
           out.push({
             message:

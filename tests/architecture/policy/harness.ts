@@ -20,6 +20,7 @@ import {
 } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
+import { resetEmergencyContacts } from '@xforge/fixtures/hr'
 import { HOST_A, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
 
 export { EMPLOYEE } from '@xforge/fixtures/employee'
@@ -119,7 +120,7 @@ export async function seed(): Promise<void> {
     { principalId: 'p2', tenantId: TENANT_A },
     { principalId: 'outsider', tenantId: TENANT_B },
   ])
-  await owner`delete from emergency_contact`
+  await resetEmergencyContacts(owner)
   await owner`
     insert into emergency_contact (tenant_id, employee_id, name, relationship, phone)
     values (${TENANT_A}, ${EMPLOYEE}, 'Alice', 'Spouse', '+60 12-000 0000')

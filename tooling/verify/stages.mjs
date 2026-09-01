@@ -245,8 +245,11 @@ export const stages = [
       // then the integration stage ran them again. A stage named "unit tests"
       // whose result depends on a database is mislabelled, and it survived only
       // while there was exactly one such file: the moment a second arrived they
-      // raced on `seedTenancy`, which clears tenant_domain and tenant_membership
-      // unscoped to give itself a known starting state.
+      // raced on the fixture reset. (That reset is `resetEmergencyContacts`,
+      // and it is unscoped because the owner role bypasses RLS anyway --
+      // `seedTenancy`, which this comment used to name, has scoped its own
+      // deletes since. A comment naming the wrong function is worse than none,
+      // because it sends the next reader to a file that looks correct.)
       const r = run('pnpm', [
         '-s',
         'exec',
@@ -446,11 +449,12 @@ export const stages = [
       }
       // Through the script, so there is ONE way to run these and one
       // behaviour. Integration files share a single database, and
-      // `seedTenancy` clears `tenant_domain` and `tenant_membership` unscoped
-      // to give itself a known starting state -- which two files running in
-      // parallel do to each other, mid-run. The failure is a resolution that
-      // cannot find a membership another file has just deleted, and it appears
-      // only when both files exist and only sometimes.
+      // `resetEmergencyContacts` clears its table unscoped -- deliberately, as
+      // the owner role bypasses RLS regardless -- which two files running in
+      // parallel do to each other, mid-run. The failure is an assertion whose
+      // rows another file has just deleted, and it appears only when both files
+      // exist and only sometimes. (`seedTenancy` was named here until its own
+      // deletes were scoped; the hazard moved and the comment did not.)
       const r = run('pnpm', ['-s', 'test:integration'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }

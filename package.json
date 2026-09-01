@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:harness": "vite build --config vite.harness.config.ts",
-    "check": "ultracite check",
+    "check": "biome ci .",
     "e2e": "playwright test",
     "e2e:port": "node tooling/e2e/preflight-port.mjs",
     "fix": "ultracite fix",

@@ -304,6 +304,12 @@ function main() {
   const { binary, blind, dormant, files, checked, exemptions, tracked, violations } =
     scanWorkspace()
 
+  // `precision` was recorded on every guard and read by nothing. A field stored
+  // and never consumed is documentation with a colon -- and its own comment
+  // argues that an over-trusted guard is worse than a known-approximate one,
+  // which is only true while the approximation is VISIBLE. Printed every run.
+  const approximate = guards.filter((g) => g.precision === 'text').length
+
   // The number that accumulated in silence. 159 files were claimable by a guard
   // and never offered to one, for as long as nothing printed a count.
   for (const e of exemptions) {
@@ -329,7 +335,7 @@ function main() {
         ? paint(C.yellow, 'no source files yet — guards ran against an empty workspace')
         : paint(
             C.dim,
-            `${checked} file-checks across ${files} files (${tracked} tracked, ${binary} declared binary), ${exemptions.length} exempt`,
+            `${checked} file-checks across ${files} files (${tracked} tracked, ${binary} declared binary), ${exemptions.length} exempt, ${approximate} text-precision`,
           )
     console.log(`  ${paint(C.green, 'PASS')} architecture guards  ${note}`)
     process.exit(0)

@@ -53,7 +53,8 @@ opinion**, and the architecture treats it as such.
 | [021](ADR-021-migration-policy.md) | Production migration compatibility policy | FROZEN | AQS-018 |
 | [022](ADR-022-verified-tenant-context.md) | Verified tenant context: host selects, membership authorises | FROZEN | AQS-008 |
 | [023](ADR-023-membership-resolution-path.md) | How membership is read before a tenant context exists | FROZEN | T06, T07, T18 |
-| [024](ADR-024-structural-guards-stay-custom.md) | Structural guards stay custom until the tooling supports TypeScript 7 | Accepted | revisit trigger |
+| [024](ADR-024-structural-guards-stay-custom.md) | Structural guards stay custom until the tooling supports our compiler | Accepted | revisit trigger |
+| [025](ADR-025-assistive-technology-evidence-is-risk-based.md) | Assistive-technology evidence is required by interaction profile, not by control count | Accepted | A11y-3 gate |
 
 ADRs 001–013 record decisions reconciled from thirteen predecessor drafts.
 **ADRs 014–020 record defects found by adversarial review** that no draft had caught;

@@ -102,6 +102,36 @@ export const contractFixtures = {
     },
   },
 
+  // A cycle is not a malformed contract -- a recursive schema is legal and
+  // common. What is malformed is a guard that cannot resolve one and reports
+  // "no version token" anyway, which is what the depth-limited resolver did.
+  // The fixture asserts the finding says the rule was NOT EVALUATED.
+  'version-token-on-updates-cyclic': {
+    because: 'could not be resolved',
+    clean: {
+      ...emptyDoc,
+      paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
+    },
+    guardId: 'version-token-on-updates',
+    violating: {
+      ...emptyDoc,
+      components: { schemas: { Loop: { $ref: '#/components/schemas/Loop' } } },
+      paths: {
+        '/a': {
+          patch: {
+            operationId: 'p',
+            requestBody: {
+              content: {
+                'application/json': { schema: { $ref: '#/components/schemas/Loop' } },
+              },
+            },
+            responses: { 200: { description: 'ok' }, 409: { description: 'conflict' } },
+          },
+        },
+      },
+    },
+  },
+
   // The second half of the same rule, and the one a single fixture would miss:
   // a version token that is PRESENT but optional disables the staleness check
   // exactly as thoroughly as one that is absent.
@@ -115,6 +145,32 @@ export const contractFixtures = {
     violating: {
       ...emptyDoc,
       paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, []) } } },
+    },
+  },
+
+  // The other way resolution fails. Same rule: say so, do not invent a verdict.
+  'version-token-on-updates-unresolvable': {
+    because: 'could not be resolved',
+    clean: {
+      ...emptyDoc,
+      paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
+    },
+    guardId: 'version-token-on-updates',
+    violating: {
+      ...emptyDoc,
+      paths: {
+        '/a': {
+          patch: {
+            operationId: 'p',
+            requestBody: {
+              content: {
+                'application/json': { schema: { $ref: '#/components/schemas/Absent' } },
+              },
+            },
+            responses: { 200: { description: 'ok' }, 409: { description: 'conflict' } },
+          },
+        },
+      },
     },
   },
 }

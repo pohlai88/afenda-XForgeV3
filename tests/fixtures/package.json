@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./employee": "./employee.ts",
+    "./hr": "./hr.ts",
     "./local-database": "./local-database.ts",
     "./rls-checks": "./rls-checks.ts",
     "./tenancy": "./tenancy.ts"

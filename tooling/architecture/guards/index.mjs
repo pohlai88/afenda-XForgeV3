@@ -186,6 +186,57 @@ const notATest = (f) => classify(f) !== 'test'
  */
 const isTypeScript = (f) => /[.](ts|tsx|mts)$/.test(f)
 
+/**
+ * Is `'use server'` this file's DIRECTIVE, or just a string inside it?
+ *
+ * A directive prologue is the run of string-literal statements at the top of a
+ * file, preceded by comments and whitespace and nothing else. After the first
+ * real statement, `'use server'` is only a string -- in a template literal, a
+ * documentation example, a test fixture describing the rule.
+ */
+function isServerDirective(src) {
+  let rest = src
+  for (;;) {
+    const trimmed = rest.replace(/^\s+/, '')
+    if (trimmed.startsWith('//')) {
+      const eol = trimmed.indexOf('\n')
+      if (eol === -1) {
+        return false
+      }
+      rest = trimmed.slice(eol + 1)
+      continue
+    }
+    if (trimmed.startsWith('/*')) {
+      const close = trimmed.indexOf('*/')
+      if (close === -1) {
+        return false
+      }
+      rest = trimmed.slice(close + 2)
+      continue
+    }
+    return /^['"]use server['"]/.test(trimmed)
+  }
+}
+
+/**
+ * What a business mutation LOOKS like, rather than which words sit near a dot.
+ *
+ * Each shape names something that actually mutates: SQL that writes, a call
+ * through a repository handle, or a command. `map.delete(` matches none of
+ * them, and `repo.delete(` matches the repository shape -- the distinction the
+ * bare-verb pattern could not draw and a negative lookbehind would have erased
+ * by suppressing both.
+ *
+ * `precision: 'text'` still applies: an obfuscated mutation escapes all three.
+ * That is recorded rather than pretended away, and the scan prints how many
+ * guards carry the limitation.
+ */
+const MUTATION_SHAPES = [
+  { kind: 'sql write', re: /\b(insert\s+into|update\s+[\w."`]+\s+set|delete\s+from)\b/gi },
+  { kind: 'repository call', re: /\brepo(sitory)?\s*\.\s*\w+\s*\(/g },
+  { kind: 'command', re: /\b\w*[Cc]ommand\s*\(/g },
+]
+
 const line = (src, idx) => src.slice(0, idx).split('\n').length
 
 function imports(src) {
@@ -387,23 +438,38 @@ export const guards = [
   {
     applies: (f) => /^(apps|modules)\//.test(f),
     check(f, src) {
-      if (!/^\s*['"]use server['"]/m.test(src)) {
+      // THE DIRECTIVE PROLOGUE, not the whole file. `'use server'` is a
+      // directive only as the first statement, after comments and whitespace
+      // and nothing else. Matching it anywhere at line start fired on the string
+      // appearing inside a template literal or a documentation example, and a
+      // guard that reports against a file it does not govern teaches people to
+      // stop reading it.
+      if (!isServerDirective(src)) {
         return []
       }
-      const re = /\b(insert|update|delete|repository|command)\b\s*[.(]/g
+      // ANCHORED ON WHAT A MUTATION LOOKS LIKE, not on a bare verb near a
+      // bracket. The previous pattern was `\b(insert|update|delete)\b\s*[.(]`,
+      // so `map.delete(` was a business mutation -- and a real `repo.delete(`
+      // was indistinguishable from it, which is why a negative lookbehind is
+      // not the fix: it would have suppressed both.
       const out = []
-      let m
-      while ((m = re.exec(src)) !== null) {
-        out.push({
-          file: f,
-          line: line(src, m.index),
-          message:
-            'use server file performs a business mutation (' +
-            m[1] +
-            ') -- use the generated client',
-        })
+      for (const { kind, re } of MUTATION_SHAPES) {
+        re.lastIndex = 0
+        let m
+        while ((m = re.exec(src)) !== null) {
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message: `use server file performs a business mutation (${kind}) -- use the generated client`,
+          })
+        }
       }
-      return out.slice(0, 1)
+      // EVERY finding, in file order. It returned `.slice(0, 1)`, so a file with
+      // three violations reported one and the next two surfaced only after the
+      // first was fixed. Sorted because the shapes are scanned in declaration
+      // order, which would otherwise make multi-finding output depend on the
+      // order of that list rather than on the file.
+      return out.sort((a, b) => a.line - b.line)
     },
     id: 'server-action-business-mutation',
     law: 5,
