@@ -563,6 +563,72 @@ export const contracts = {
     slots: { children: { text: true } },
   },
 
+  /**
+   * PASSIVE tabular content, and the distinction from a grid is the design.
+   *
+   * A table is READ, not operated: ordinary Tab reaches whatever controls happen
+   * to sit inside it and nothing manages focus. The APG grid pattern -- one tab
+   * stop, arrows moving between cells, focus landing differently depending on
+   * cell content -- is a DIFFERENT contract with a different profile. Applying
+   * `role="grid"` because a table looks sophisticated is how a component
+   * acquires a keyboard model nobody implemented.
+   *
+   * THE HEADER IS REQUIRED. A table whose columns are unnamed is close to
+   * unreadable with a screen reader, and a grammar that permits one produces it
+   * eventually. `caption` names the table natively, so no `aria-labelledby`
+   * is wired and the contract stays inert under 4C.6's clause.
+   */
+  Table: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    props: { testId: { type: 'string' } },
+    slots: {
+      caption: { text: true },
+      children: { accepts: ['TableRow'], max: null, min: 1 },
+      header: { accepts: ['TableHeaderCell'], max: null, min: 1 },
+    },
+  },
+
+  TableCell: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    slots: { children: { acceptsKinds: ['content'], max: null, min: 1 } },
+  },
+
+  /**
+   * A column name, and a SEPARATE contract from `TableCell` on purpose.
+   *
+   * One cell contract that rendered `<th>` or `<td>` from context is not
+   * available here: `index.tsx` is imported by server components, so it has no
+   * React context to read. One that took a `header` boolean would leave a
+   * `<th>` in the body representable, and a grammar that can express a broken
+   * table eventually contains one. Two contracts make the illegal arrangement
+   * unsayable instead of merely discouraged.
+   */
+  TableHeaderCell: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    slots: { children: { text: true } },
+  },
+
+  TableRow: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    slots: { children: { accepts: ['TableCell'], max: null, min: 1 } },
+  },
+
   Text: {
     composition: 'container',
     contractVersion: 1,

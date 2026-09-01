@@ -59,6 +59,10 @@ export const runtime: { [Id in MetadataContractId]: Loader<Id> } = {
   Skeleton: () => import('./index').then((m) => m.Skeleton),
   Stack: () => import('./index').then((m) => m.Stack),
   Status: () => import('./index').then((m) => m.Status),
+  Table: () => import('./index').then((m) => m.Table),
+  TableCell: () => import('./index').then((m) => m.TableCell),
+  TableHeaderCell: () => import('./index').then((m) => m.TableHeaderCell),
+  TableRow: () => import('./index').then((m) => m.TableRow),
   Text: () => import('./index').then((m) => m.Text),
 }
 

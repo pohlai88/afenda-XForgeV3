@@ -387,3 +387,39 @@
 .xf-empty-state-action {
   margin-block-start: var(--semantic-space-stack-tight);
 }
+
+/*
+ * A table is READ. Nothing here manages focus or implies a keyboard model --
+ * that distinction belongs to a grid, and a stylesheet is where it would first
+ * be blurred by making a passive table look operable.
+ *
+ * Semantic tokens only. A component token would need the ceiling raised in its
+ * own commit, and nothing here needs to change independently of its category.
+ */
+.xf-table {
+  width: 100%;
+  color: var(--semantic-text-default);
+  border-collapse: collapse;
+}
+
+.xf-table-caption {
+  padding-bottom: var(--semantic-space-stack-tight);
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-muted);
+  text-align: start;
+}
+
+.xf-table-row {
+  border-bottom: var(--semantic-stroke-width) solid
+    var(--semantic-border-default);
+}
+
+.xf-table-cell {
+  padding: var(--semantic-space-stack-tight) var(--semantic-space-inline);
+  text-align: start;
+}
+
+.xf-table-cell[data-header] {
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-muted);
+}

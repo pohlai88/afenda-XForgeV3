@@ -55,6 +55,18 @@
           "$ref": "#/$defs/Status"
         },
         {
+          "$ref": "#/$defs/Table"
+        },
+        {
+          "$ref": "#/$defs/TableCell"
+        },
+        {
+          "$ref": "#/$defs/TableHeaderCell"
+        },
+        {
+          "$ref": "#/$defs/TableRow"
+        },
+        {
           "$ref": "#/$defs/Text"
         }
       ],
@@ -232,6 +244,18 @@
                     "$ref": "#/$defs/Status"
                   },
                   {
+                    "$ref": "#/$defs/Table"
+                  },
+                  {
+                    "$ref": "#/$defs/TableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableRow"
+                  },
+                  {
                     "$ref": "#/$defs/Text"
                   }
                 ],
@@ -378,6 +402,18 @@
                   },
                   {
                     "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Table"
+                  },
+                  {
+                    "$ref": "#/$defs/TableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableRow"
                   },
                   {
                     "$ref": "#/$defs/Text"
@@ -782,6 +818,18 @@
                     "$ref": "#/$defs/Status"
                   },
                   {
+                    "$ref": "#/$defs/Table"
+                  },
+                  {
+                    "$ref": "#/$defs/TableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableRow"
+                  },
+                  {
                     "$ref": "#/$defs/Text"
                   }
                 ],
@@ -911,6 +959,18 @@
                     "$ref": "#/$defs/Status"
                   },
                   {
+                    "$ref": "#/$defs/Table"
+                  },
+                  {
+                    "$ref": "#/$defs/TableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableRow"
+                  },
+                  {
                     "$ref": "#/$defs/Text"
                   }
                 ],
@@ -969,6 +1029,163 @@
         "slots"
       ],
       "title": "Status",
+      "type": "object"
+    },
+    "Table": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Table"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "caption": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "children": {
+              "items": {
+                "$ref": "#/$defs/TableRow"
+              },
+              "type": "array",
+              "minItems": 1
+            },
+            "header": {
+              "items": {
+                "$ref": "#/$defs/TableHeaderCell"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "caption",
+            "children",
+            "header"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "Table",
+      "type": "object"
+    },
+    "TableCell": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "TableCell"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "TableCell",
+      "type": "object"
+    },
+    "TableHeaderCell": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "TableHeaderCell"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "TableHeaderCell",
+      "type": "object"
+    },
+    "TableRow": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "TableRow"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "$ref": "#/$defs/TableCell"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "TableRow",
       "type": "object"
     },
     "Text": {

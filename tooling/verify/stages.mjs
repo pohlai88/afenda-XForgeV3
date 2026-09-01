@@ -769,6 +769,73 @@ export const stages = [
   },
 
   {
+    authorship: true,
+    enforces: [],
+    id: 'a11y-evidence',
+    phase: 'design-system',
+    /**
+     * ADR-025's obligation, made mechanical.
+     *
+     * WHO OWES IS DERIVED, never listed: the gated set comes from
+     * `PROFILES_REQUIRING_AT_EVIDENCE`, so a Combobox declaring `composite`
+     * joins the day it lands and nobody edits a list to make that happen.
+     *
+     * STALE EVIDENCE IS ABSENT EVIDENCE. A session recorded at a lower
+     * `interaction.revision` described a component that has since changed its
+     * keyboard, focus or ARIA behaviour -- which is precisely what invalidates a
+     * screen-reader result. Partial credit here would be a gate reporting
+     * coverage it does not have.
+     *
+     * ORPHANED EVIDENCE FAILS rather than being ignored. A session naming a
+     * contract that does not exist, or one that owes nothing, proves nothing and
+     * reads exactly like proof -- the same conservation the guard fixtures apply.
+     *
+     * PENDING BEFORE THE PHASE, BLOCKED AFTER, via `unmet`. Red on day one by
+     * construction is how a stage becomes something people learn to scroll past;
+     * a precondition that activates with its phase is not.
+     */
+    run() {
+      const evidencePath = join(ROOT, '.architecture/a11y-evidence.json')
+      if (!existsSync(evidencePath)) {
+        return { detail: '.architecture/a11y-evidence.json is missing', status: FAIL }
+      }
+      const sessions = JSON.parse(readFileSync(evidencePath, 'utf8')).sessions ?? {}
+
+      const r = run('node', [join(ROOT, 'tooling/verify/lib/at-evidence.mjs')])
+      if (r.code !== 0) {
+        return { detail: r.out, status: FAIL }
+      }
+      const owing = JSON.parse(r.out)
+
+      // ORPHANS FIRST, and the order matters. If nothing is gated then every
+      // recorded session is an orphan, so checking EMPTY first would report "no
+      // contract requires evidence" over a file full of sessions proving
+      // nothing -- the reassuring answer, and the wrong one.
+      const orphans = Object.keys(sessions).filter((id) => !owing.gated.includes(id))
+      if (orphans.length > 0) {
+        return {
+          detail: `evidence recorded for ${orphans.join(', ')}, which owes none`,
+          status: FAIL,
+        }
+      }
+
+      // A gate over nothing is not a gate. EMPTY says so rather than passing.
+      if (owing.gated.length === 0) {
+        return { detail: 'no contract requires assistive-technology evidence', status: EMPTY }
+      }
+
+      if (owing.missing.length > 0) {
+        return unmet(this, `a recorded screen-reader session for ${owing.missing.join(', ')}`)
+      }
+      return {
+        detail: `${owing.gated.length} gated contract(s) have current evidence`,
+        status: PASS,
+      }
+    },
+    title: 'assistive-technology evidence',
+  },
+
+  {
     enforces: [],
     id: 'e2e',
     phase: 'spine',

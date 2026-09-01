@@ -55,7 +55,44 @@ and silently untrue afterwards, and nothing in the sentence tells a reader which
 one they are holding. `pnpm verify` is the only thing that can answer it for the
 tree in front of you, so it is referenced and never quoted.
 
-## In flight — Phase 2 design system, stage 4C
+## In flight — Phase 2 design system, stage 6
+
+Stage 4C is complete, every row of it. What is being worked now is stage 6, the
+two patterns, and its FIRST decision was its scope.
+
+```
+  Table            passive tabular content            DONE
+  CommandPalette   keyboard-first command surface     not started
+  DataGrid         composite grid, inline edit        not started
+```
+
+**Table first, and the reason is A11y-3 debt rather than difficulty.** Every
+gated contract stage 6 adds is another screen-reader session, and the first one
+— Dialog — is still owed. `CommandPalette` is `composite`; `DataGrid` is
+`composite-grid` plus inline edit. `Table` is passive, so it adds none, and
+ADR-025 exists precisely to stop those obligations arriving as an unscheduled
+batch at the certification gate.
+
+**Four contracts, not one**, and the shape was forced by a constraint worth
+recording: `index.tsx` is imported by server components, so it has no React
+context, and a single cell contract cannot learn from context whether it sits in
+the header. A `header` boolean would leave a `<th>` in the body
+representable. So `TableHeaderCell` is its own contract and the illegal
+arrangement is unsayable rather than discouraged. The header slot is REQUIRED
+for the same reason: a table with unnamed columns is close to unreadable with a
+screen reader, and a grammar that permits one produces it eventually.
+
+Sorting is NOT included. A sort control is a Button reordering data the
+application owns, and the `aria-sort` state it implies is behaviour — which
+would move the contract off `profile: 'none'`. It arrives with a screen that
+needs it.
+
+**Nothing was written to test it.** The conformance suites derive their subjects
+from the registry, so the four contracts arrived already covered: unit tests
+went 533 to 589, and inertness picked all four up with generated documents. That
+is what the derivation was for.
+
+## Stage 4C — the breakdown, complete
 
 Stage 4 gave the experience layer a state vocabulary. 4C makes each member
 something a person can be shown, and proves it.
@@ -370,14 +407,27 @@ deliberately rather than discovering it.
 ## Deferred, and why
 
 ```
-  Stage 3 remainder        Combobox · Section · FieldGroup · Toolbar · Toast ·
-                           Table. Deferred at the point where AT-evidence debt
-                           and the grammar-expressiveness question were both
+  Stage 3 remainder        Combobox · Section · FieldGroup · Toolbar · Toast.
+                           Deferred at the point where AT-evidence debt and the
+                           grammar-expressiveness question were both
                            accumulating; the harness answered the second.
+                           Table came off this list at stage 6.
 
-  A11y-3 for Dialog        One sitting with a screen reader, unscheduled.
-                           ADR-025 makes the requirement risk-based, so this is
-                           a named obligation rather than an open-ended one.
+  A11y-3 for Dialog        One sitting with a screen reader, unscheduled --
+                           and now MECHANICALLY OWED rather than remembered. The
+                           `a11y-evidence` stage reads
+                           `.architecture/a11y-evidence.json`, derives who is
+                           gated from the profile, and treats evidence recorded
+                           below a contract's `interaction.revision` as absent
+                           rather than as partial credit. PENDING while the
+                           design-system phase has not started, BLOCKED once it
+                           has -- so it is a certification precondition and not a
+                           stage anybody learns to scroll past.
+
+                           The evidence itself cannot be generated. That is the
+                           point of the level: axe and the browser specs already
+                           agree the tree is correct, and what they cannot
+                           observe is what a screen reader actually says.
 
   focus across a state     4C.5 took A11y-2 only as far as REACHABILITY, which
   swap                     is state-specific. Where focus GOES when a surface is

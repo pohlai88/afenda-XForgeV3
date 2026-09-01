@@ -174,6 +174,58 @@ export function Alert({
   )
 }
 
+/**
+ * Tabular content that is read rather than operated.
+ *
+ * Renders the structure a screen reader needs and nothing more: a `<caption>`
+ * naming the table, one `<thead>` row of column names, and a `<tbody>`. The
+ * header row is composed FROM the header slot rather than passed in as a row,
+ * so a caller cannot supply two header rows or none.
+ *
+ * No sorting, and that is scope rather than oversight. A sort control is a
+ * Button that changes the order of data the application owns, so it arrives
+ * with a screen that needs it -- and the `aria-sort` state it implies is
+ * behaviour, which would move this contract off `profile: 'none'`.
+ */
+export function Table({
+  caption,
+  header,
+  children,
+  testId,
+}: {
+  caption: ReactNode
+  header: ReactNode
+  children: ReactNode
+  testId?: string
+}) {
+  return (
+    <table className="xf-table" data-testid={testId}>
+      <caption className="xf-table-caption">{caption}</caption>
+      <thead>
+        <tr className="xf-table-row">{header}</tr>
+      </thead>
+      <tbody>{children}</tbody>
+    </table>
+  )
+}
+
+/** A column name. `scope` is what ties a data cell to it, and is not optional. */
+export function TableHeaderCell({ children }: { children: ReactNode }) {
+  return (
+    <th className="xf-table-cell" data-header="" scope="col">
+      {children}
+    </th>
+  )
+}
+
+export function TableRow({ children }: { children: ReactNode }) {
+  return <tr className="xf-table-row">{children}</tr>
+}
+
+export function TableCell({ children }: { children: ReactNode }) {
+  return <td className="xf-table-cell">{children}</td>
+}
+
 /** A live region for work in progress. Polite: it must not interrupt. */
 export function Status({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
