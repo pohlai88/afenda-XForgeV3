@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 
 /**
  * Theme and density, composed by a real cascade engine.
@@ -17,7 +18,6 @@ import { expect, test } from '@playwright/test'
  * applied is CSS nobody has checked, and it would stay that way until the day
  * someone shipped a toggle and discovered the composition was wrong.
  */
-const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const PAGE = `/employees/${EMPLOYEE}`
 
 /** Computed custom properties on the document root, under the given modes. */

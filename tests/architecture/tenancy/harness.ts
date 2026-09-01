@@ -12,7 +12,10 @@
  */
 import { hasActiveMembership, resolveHostname, setDriver, tenancyDriver } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { HOST_A, HOST_B, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+
+export { EMPLOYEE } from '@xforge/fixtures/employee'
 
 export {
   HOST_A,
@@ -31,7 +34,6 @@ import {
 import postgres from 'postgres'
 import { appUrl, ownerUrl } from '../../fixtures/local-database'
 
-export const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 export const A_ROW = '55555555-5555-4555-8555-555555555555'
 export const B_ROW = '66666666-6666-4666-8666-666666666666'
 

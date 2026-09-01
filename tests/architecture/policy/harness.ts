@@ -19,7 +19,10 @@ import {
   tenancyDriver,
 } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { HOST_A, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+
+export { EMPLOYEE } from '@xforge/fixtures/employee'
 
 export { HOST_A, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
 
@@ -29,7 +32,6 @@ import { type MembershipQueries, resolveRequestTenant } from '@xforge/tenancy'
 import postgres from 'postgres'
 import { appUrl, ownerUrl } from '../../fixtures/local-database'
 
-export const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 export const READ = 'hr.employee.read'
 export const UPDATE = 'hr.employee.update'
 

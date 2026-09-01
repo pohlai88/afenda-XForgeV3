@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 
 /**
  * The spine's flagship path: UX -> contract -> generated client -> handler ->
@@ -8,7 +9,6 @@ import { expect, test } from '@playwright/test'
  * contacts once and the specs run in order, treating the page as a live surface
  * rather than resetting between assertions.
  */
-const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const PAGE = `/employees/${EMPLOYEE}`
 
 test.describe('emergency contacts', () => {

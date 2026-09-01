@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./employee": "./employee.ts",
     "./local-database": "./local-database.ts",
-    "./tenancy": "./tenancy.ts",
-    "./rls-checks": "./rls-checks.ts"
+    "./rls-checks": "./rls-checks.ts",
+    "./tenancy": "./tenancy.ts"
   },
   "dependencies": {
     "postgres": "^3.4.5"

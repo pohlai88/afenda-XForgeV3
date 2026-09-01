@@ -22,6 +22,7 @@ import {
   tenancyDriver,
 } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
 import { HOST_A, seedTenancy } from '@xforge/fixtures/tenancy'
 import type { Principal } from '@xforge/policy'
@@ -32,7 +33,6 @@ import { hrModuleRoutes } from '../index'
 
 const TENANT = '11111111-1111-4111-8111-111111111111'
 const OTHER_TENANT = '22222222-2222-4222-8222-222222222222'
-const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const CONTACT = '44444444-4444-4444-8444-444444444444'
 
 /** Reachability is probed at MODULE scope: describe.skipIf runs at collection. */

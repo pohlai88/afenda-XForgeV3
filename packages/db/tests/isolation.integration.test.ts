@@ -12,6 +12,7 @@
  * subject is absent is worse than one that says it did not run.
  */
 
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
 import { checkApplicationRole, checkRlsCoverage } from '@xforge/fixtures/rls-checks'
 import postgres from 'postgres'
@@ -20,7 +21,6 @@ import { createPostgresDriver } from '../src/postgres-driver'
 
 const TENANT_A = '11111111-1111-4111-8111-111111111111'
 const TENANT_B = '22222222-2222-4222-8222-222222222222'
-const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 
 /**
  * Reachability is probed at MODULE scope, not in beforeAll.

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { appUrl } from './tests/fixtures/local-database'
 import { E2E_ORIGIN, E2E_PORT } from './tooling/e2e/config.ts'
 
@@ -49,7 +50,7 @@ export default defineConfig({
      */
     reuseExistingServer: false,
     timeout: 120_000,
-    url: `${E2E_ORIGIN}/employees/33333333-3333-4333-8333-333333333333`,
+    url: `${E2E_ORIGIN}/employees/${EMPLOYEE}`,
   },
   workers: 1,
 })

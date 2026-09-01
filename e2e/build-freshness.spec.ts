@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { EMPLOYEE } from '@xforge/fixtures/employee'
 
 /**
  * The gate builds and then tests. This asserts it tested what it built.
@@ -34,7 +35,6 @@ import { expect, test } from '@playwright/test'
  * rather than at the mechanism is the only kind that survives the next costume.
  */
 const NEXT = join(import.meta.dirname, '../apps/web/.next')
-const EMPLOYEE = '33333333-3333-4333-8333-333333333333'
 const PAGE = `/employees/${EMPLOYEE}`
 
 /** The build id written by the `next build` this gate just ran. */
