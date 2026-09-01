@@ -329,6 +329,35 @@ export const go = () => ctx
 `,
     },
   },
+  /**
+   * THE CLEAN SIDE CALLS `revalidateTag`, deliberately.
+   *
+   * A fixture whose clean side merely omitted the cache would pass a guard that
+   * banned every `next/cache` import, and that guard would be wrong:
+   * `revalidateTag` and `revalidatePath` DESTROY cache entries. Banning them
+   * bans the cure. So the clean side reaches into next/cache and must still be
+   * accepted, which is the distinction the rule actually draws.
+   */
+  'no-next-cache-in-business-path': {
+    because: 'persistent cache boundary',
+    clean: {
+      path: 'modules/hr/queries.ts',
+      source: `import { revalidateTag } from 'next/cache'
+
+export async function invalidateContacts() {
+  revalidateTag('emergency-contacts')
+}
+`,
+    },
+    violating: {
+      path: 'modules/hr/queries.ts',
+      source: `export async function listContacts(employeeId: string) {
+  'use cache'
+  return await repository.listByEmployee(employeeId)
+}
+`,
+    },
+  },
 
   'no-wall-clock-in-modules': {
     clean: {

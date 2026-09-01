@@ -237,6 +237,33 @@ const MUTATION_SHAPES = [
   { kind: 'command', re: /\b\w*[Cc]ommand\s*\(/g },
 ]
 
+/**
+ * Every way Next.js can persist a response, across BOTH caching models.
+ *
+ * The Cache Components entries and the previous-model entries are listed
+ * together on purpose: the previous model is live today with
+ * `cacheComponents` off, so a list covering only `'use cache'` would police the
+ * one door that is currently locked.
+ *
+ * `cacheTag` and `cacheLife` do not themselves create a cache; they configure
+ * one. They are listed because their presence means a cached scope exists
+ * nearby, and a finding that points at them is pointing somewhere useful.
+ */
+const NEXT_CACHE_SHAPES = [
+  { kind: "'use cache' directive", re: /^[ \t]*['"]use cache(?::\s*(?:private|remote))?['"]/gm },
+  { kind: 'unstable_cache()', re: /\bunstable_cache\s*\(/g },
+  { kind: "fetch cache: 'force-cache'", re: /\bcache\s*:\s*['"]force-cache['"]/g },
+  { kind: 'fetch next.revalidate', re: /\bnext\s*:\s*\{[^}]*\brevalidate\b/g },
+  { kind: 'route segment revalidate', re: /^[ \t]*export\s+const\s+revalidate\b/gm },
+  { kind: 'route segment fetchCache', re: /^[ \t]*export\s+const\s+fetchCache\b/gm },
+  {
+    kind: "route segment dynamic = 'force-static'",
+    re: /^[ \t]*export\s+const\s+dynamic\s*=\s*['"]force-static['"]/gm,
+  },
+  { kind: 'cacheTag()', re: /\bcacheTag\s*\(/g },
+  { kind: 'cacheLife()', re: /\bcacheLife\s*\(/g },
+]
+
 const line = (src, idx) => src.slice(0, idx).split('\n').length
 
 function imports(src) {
@@ -475,6 +502,82 @@ export const guards = [
     law: 5,
     precision: 'text',
     title: 'No business mutation through a Server Action',
+  },
+  {
+    /**
+     * A Next.js persistent cache HIT serves business data without traversing
+     * generated client -> Hono -> policy -> withTenant -> RLS.
+     *
+     * THE INVARIANT IS LAW 5, not only tenancy. ADR-012 says there is one
+     * transport, one policy path and one set of failure semantics. A cache
+     * boundary is a second path that answers from memory, and it answers
+     * BEFORE any of the four planes it was supposed to cross.
+     *
+     * Tenant leakage is the catastrophic case rather than the definition. Note
+     * what makes it invisible: `withTenant(ctx, fn)` takes its context as an
+     * EXPLICIT ARGUMENT, so a tenant-scoped call would contribute to a cache
+     * key derived from arguments. The ambient one is `executionStore`, the
+     * AsyncLocalStorage in packages/db/src/platform-access.ts carrying
+     * ExecutionContext across the AUDITED cross-tenant path. Ambient context is
+     * exactly what a generated cache key cannot see, and that path is the
+     * highest-consequence one in the repository.
+     *
+     * WRITTEN BEFORE THE VIOLATION EXISTS. There is no `use cache` in this
+     * repository today, and that is the cheapest possible moment to draw the
+     * line -- ADR-024 wants a guard proven against a rejection, and a rule
+     * landed after the first convenient cache is a rule argued about rather
+     * than applied. `cacheComponents` is deliberately OFF (see the Next
+     * evaluation); this guard is what makes leaving it off a decision rather
+     * than a default nobody revisits.
+     *
+     * THE PREVIOUS CACHING MODEL IS COVERED TOO, and this is the half that is
+     * live right now: `export const revalidate`, `export const fetchCache`,
+     * `dynamic = 'force-static'`, `unstable_cache()` and fetch's own
+     * `cache: 'force-cache'` / `next.revalidate` all cache today with
+     * `cacheComponents` disabled. A guard covering only `'use cache'` would
+     * have policed the door nobody can walk through yet.
+     *
+     * NOT A BAN ON `next/cache` IMPORTS. `revalidateTag` and `revalidatePath`
+     * are invalidators -- they destroy cache entries rather than create them,
+     * and banning them would be banning the cure.
+     *
+     * NO EXEMPTIONS TODAY, and the mechanism is `exempt: [{path, reason,
+     * checkedBy}]` when one is needed. A genuinely tenant-independent lookup --
+     * ISO country codes, currency metadata, effective-dated statutory tables --
+     * can legitimately cache, and must say so out loud with its reason rather
+     * than by the absence of a finding.
+     *
+     * `precision: 'text'`. It matches source text, so a cache introduced
+     * through an alias or a dynamic import is not caught. That is recorded
+     * rather than assumed, per the note at the top of this file.
+     */
+    applies: (f) =>
+      classify(f) === 'source' &&
+      (/^apps\/web\/app\//.test(f) ||
+        /^modules\//.test(f) ||
+        /^packages\/(db|policy|api|api-client|tenancy)\//.test(f)),
+    check(f, src) {
+      const out = []
+      for (const { kind, re } of NEXT_CACHE_SHAPES) {
+        re.lastIndex = 0
+        let m
+        while ((m = re.exec(src)) !== null) {
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message:
+              `Next persistent cache boundary in the business-data path (${kind}) -- ` +
+              'a cache hit answers without crossing the generated client, Hono, policy ' +
+              'or RLS (law 5, ADR-012)',
+          })
+        }
+      }
+      return out.sort((a, b) => a.line - b.line)
+    },
+    id: 'no-next-cache-in-business-path',
+    law: 5,
+    precision: 'text',
+    title: 'Business data is never served from a Next.js persistent cache',
   },
   {
     applies: (f) => /^modules\//.test(f),
