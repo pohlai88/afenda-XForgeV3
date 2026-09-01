@@ -22,9 +22,30 @@ export const HOST_B = 'b.xforge.test'
 export const HOST_DEV = 'localhost'
 export const HOST_DEV_IP = '127.0.0.1'
 
+/**
+ * When a seeded membership begins, stated as a fixed instant.
+ *
+ * `valid_from` used to be left to the column default, which is the DATABASE's
+ * `now()` -- while `hasActiveMembership` asks `valid_from <= asOf` against
+ * NODE's `new Date()`. Two clocks either side of law 20's half-open interval:
+ * when Node's was a hair behind, a membership seeded microseconds earlier was
+ * not yet active, and only the FIRST resolution after seeding failed. That is
+ * why it read as a wiped membership rather than a boundary, and cost three
+ * wrong diagnoses.
+ *
+ * A fixed past instant rather than `now() - interval '1 second'`: subtracting an
+ * arbitrary margin makes the symptom go away while leaving the comparison
+ * between two clocks intact, and hides the very semantics these fixtures exist
+ * to protect. A date states what is true -- this membership began long before
+ * any test asked about it -- and no clock is consulted at all.
+ */
+export const FIXTURE_VALID_FROM = new Date('2020-01-01T00:00:00.000Z')
+
 export interface Membership {
   readonly principalId: string
   readonly tenantId: string
+  /** Defaults to FIXTURE_VALID_FROM. Set when a test owns the lower boundary. */
+  readonly validFrom?: Date
   /** Set to revoke: half-open, so a membership ending at T does not authorise T. */
   readonly validTo?: Date
 }
@@ -43,7 +64,17 @@ export interface Membership {
  * request 500'd with a message about a missing tenant context -- three steps
  * away from the actual cause.
  *
- * Clearing once, unscoped, is both correct and honest about what is happening.
+ * Clearing is now SCOPED to the rows this fixture owns and re-inserts.
+ *
+ * It used to clear `tenant_domain` and `tenant_membership` entirely, which gave
+ * this fixture a known starting state and gave every other suite a wiped one.
+ * That was invisible while one file used it; the moment a second did, whichever
+ * seeded later removed the other's membership mid-run, and the symptom was a
+ * resolution denied for a principal seeded moments earlier.
+ *
+ * A fixture may delete state it UNIQUELY OWNS. It may not restore global truth
+ * by emptying a shared table. Scoped deletes keep the known-state property for
+ * these rows and let two suites converge instead of destroying each other.
  */
 export async function seedTenancy(owner: Sql, memberships: readonly Membership[]): Promise<void> {
   await owner`
@@ -53,8 +84,14 @@ export async function seedTenancy(owner: Sql, memberships: readonly Membership[]
     on conflict (id) do nothing
   `
 
-  await owner`delete from tenant_domain`
-  await owner`delete from tenant_membership`
+  const ownedHostnames = [HOST_A, HOST_B, HOST_DEV, HOST_DEV_IP]
+  await owner`delete from tenant_domain where hostname in ${owner(ownedHostnames)}`
+  for (const m of memberships) {
+    await owner`
+      delete from tenant_membership
+      where tenant_id = ${m.tenantId} and principal_id = ${m.principalId}
+    `
+  }
 
   for (const [tenantId, hostnames] of [
     [TENANT_A, [HOST_A, HOST_DEV, HOST_DEV_IP]],
@@ -70,8 +107,11 @@ export async function seedTenancy(owner: Sql, memberships: readonly Membership[]
 
   for (const m of memberships) {
     await owner`
-      insert into tenant_membership (tenant_id, principal_id, valid_to)
-      values (${m.tenantId}, ${m.principalId}, ${m.validTo ?? null})
+      insert into tenant_membership (tenant_id, principal_id, valid_from, valid_to)
+      values (
+        ${m.tenantId}, ${m.principalId},
+        ${m.validFrom ?? FIXTURE_VALID_FROM}, ${m.validTo ?? null}
+      )
     `
   }
 }

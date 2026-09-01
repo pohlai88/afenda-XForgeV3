@@ -84,6 +84,33 @@ export const add = (ctx) => withTenant(ctx, async (sql) => sql\`insert into x\`)
     },
   },
 
+  'fixtures-declare-their-instants': {
+    clean: {
+      path: 'tests/fixtures/tenancy.ts',
+      source: `const FIXTURE_VALID_FROM = new Date('2020-01-01T00:00:00.000Z')
+await owner\`insert into m (valid_from) values (\${FIXTURE_VALID_FROM})\`
+`,
+    },
+    violating: {
+      path: 'tests/fixtures/tenancy.ts',
+      source: `await owner\`insert into m (valid_from) values (now() - interval '1 second')\`
+`,
+    },
+  },
+
+  'fixtures-delete-only-what-they-own': {
+    clean: {
+      path: 'tests/fixtures/tenancy.ts',
+      source: `await owner\`delete from tenant_membership where principal_id = \${id}\`
+`,
+    },
+    violating: {
+      path: 'tests/fixtures/tenancy.ts',
+      source: `await owner\`delete from tenant_membership\`
+`,
+    },
+  },
+
   'job-sdk-in-domain': {
     clean: {
       path: 'modules/payroll/application/commands/release.ts',
@@ -215,6 +242,38 @@ export const Row = () => <Text tone="muted">fine</Text>
       path: 'modules/hr/ui/contact-row.tsx',
       source: `export const Row = () => <div style={{ marginTop: 8 }}>nope</div>
 `,
+    },
+  },
+  /**
+   * Built entirely from character codes, with no escape sequence anywhere.
+   *
+   * A fixture for a guard against mangled escapes must not itself contain one:
+   * the first attempt wrote the newline as an escape, it arrived as a real line
+   * break, and the module stopped parsing. That is the same defect the guard
+   * exists to catch, one line after the guard was written.
+   */
+  'no-control-characters-in-source': {
+    clean: {
+      path: 'tooling/x.mjs',
+      // A word boundary that survived the journey intact.
+      source: `const re = /${String.fromCharCode(92)}b(now)/${String.fromCharCode(10)}`,
+    },
+    violating: {
+      // The same regex after the escape was mangled: a literal backspace.
+      path: 'tooling/x.mjs',
+      source: `const re = /${String.fromCharCode(8)}(now)/${String.fromCharCode(10)}`,
+    },
+  },
+  // The wider family: invisible, legal, and able to change meaning. A
+  // zero-width space splits an identifier that reads as one word.
+  'no-control-characters-in-source-zero-width': {
+    clean: {
+      path: 'tooling/x.mjs',
+      source: `const tenantId = 1${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'tooling/x.mjs',
+      source: `const tenant${String.fromCharCode(8203)}Id = 1${String.fromCharCode(10)}`,
     },
   },
 

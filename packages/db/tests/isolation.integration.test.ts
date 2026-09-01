@@ -53,7 +53,12 @@ beforeAll(async () => {
 
   // Seed as owner: RLS is FORCED, so the owner is subject to policy too and
   // cannot insert rows for arbitrary tenants without setting the context.
-  await owner`delete from emergency_contact`
+  //
+  // Scoped to the employee this suite owns. It used to empty the table, which
+  // was invisible while this was the only integration file and became a race
+  // the moment a second one existed -- the guard that now forbids it was added
+  // after that race cost three wrong diagnoses.
+  await owner`delete from emergency_contact where employee_id = ${EMPLOYEE}`
   for (const [tenant, name] of [
     [TENANT_A, 'Tenant A contact'],
     [TENANT_B, 'Tenant B contact'],

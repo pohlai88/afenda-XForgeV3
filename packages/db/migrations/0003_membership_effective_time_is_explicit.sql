@@ -1,0 +1,29 @@
+-- Membership validity is stated by the writer, never defaulted.
+--
+-- `valid_from` carried `DEFAULT now()`, which means the DATABASE chooses the
+-- instant while an authorisation read compares against one the application
+-- obtained separately. Two clocks either side of law 20's half-open interval.
+--
+-- It surfaced in a fixture: a membership seeded microseconds before a
+-- resolution was reported inactive, and because only the FIRST check after
+-- seeding failed it read as a missing row rather than a boundary. Three wrong
+-- diagnoses before the right one.
+--
+-- DROPPED WHILE DORMANT, which is the cheapest this will ever be. Nothing in
+-- production writes memberships today -- there is no grant or revoke command
+-- and no admin application -- so removing the default costs nothing now and
+-- turns omission into an insert-time error later. The alternative is that the
+-- first admin implementation inherits the trap by forgetting a column, and
+-- inherits it silently.
+--
+-- The column stays NOT NULL. What changes is that a writer must say what it
+-- means, which is the whole point.
+--
+-- WHEN THE FIRST PRODUCTION WRITER LANDS, this is the moment to answer: which
+-- clock is authoritative, whether a grant takes effect immediately or at a
+-- stated instant, what happens exactly at revocation, and whether retries are
+-- idempotent. Postgres keeps microseconds and JavaScript `Date` keeps
+-- milliseconds, so a `valid_to` written with sub-millisecond precision has no
+-- exact representation on the reading side -- the same defect one layer down.
+
+ALTER TABLE "tenant_membership" ALTER COLUMN "valid_from" DROP DEFAULT;

@@ -688,3 +688,126 @@ starting state — correct for one file, unusable from two whatever the ordering
 The bounded-read fixture inserts only what it needs and deletes nothing, so two
 files converge instead of destroying each other. Serialisation is defence in
 depth; it was never the guarantee.
+
+### Integration fixture law
+
+Four hidden assumptions surfaced the moment a SECOND integration participant
+existed. None was a new defect; each had been true and unverifiable while there
+was one of everything. Written as rules, because the fifth will look different
+again:
+
+> **1. A stage's name must match what it runs.** A stage called "unit tests" may
+> not execute anything that needs a database. It did, for months, and reported
+> the count as unit tests.
+>
+> **2. Suites sharing a database do not run in parallel.** Defence in depth, not
+> the guarantee — see rule 3, which is what actually holds.
+>
+> **3. Fixtures are ADDITIVE. A test may create state it owns, and delete state
+> it uniquely owns. It may not restore global truth by clearing a shared
+> table.** `seedTenancy` cleared `tenant_domain` and `tenant_membership`
+> unscoped to give itself a known starting state: correct for one file,
+> unusable from two whatever the ordering. Additive fixtures converge;
+> destructive ones race.
+>
+> **4. A time-bound fixture states its own clock.** Never the column default,
+> and never an interval subtracted from `now()`. `valid_from` defaulted to the
+> DATABASE's clock while the check compared against NODE's, and a margin of
+> `now() - interval '1 second'` would have made the symptom vanish while leaving
+> two clocks either side of a half-open boundary. `FIXTURE_VALID_FROM` is a
+> fixed instant, so no clock is consulted at all.
+>
+> **5. No semantic state without a producer.** Applied to
+> `enrichment_unavailable`, and the reason `partial` got a bounded read before
+> it got a type.
+
+Rule 4 is now fixed in the SHARED fixture rather than only where it was found.
+T18 depends on a membership resolving before it revokes one, so it carried the
+same race; 67 tenancy assertions still pass with validity stated explicitly.
+
+### Producibility and renderability have separate owners, permanently
+
+> A component fixture proving `{ status: 'partial' }` renders proves nothing
+> about whether production code can construct it. An integration test proving a
+> read truncates proves nothing about what an operator sees.
+
+| Question | Owner |
+|---|---|
+| can this state be produced? | the repository, against real PostgreSQL |
+| does it survive the wire? | the contract test |
+| is the meaning preserved? | the experience mapper (stage 4B) |
+| can it be rendered? | the conformance harness (stage 4C) |
+
+Recorded as a named rule so a future "partial state test" cannot quietly become
+one check standing for four.
+
+---
+
+## An enforcement mechanism must prove that it can fail, 1 September 2026
+
+The underlying law behind the guard-proof harness, promoted from practice after
+it caught a guard that could never have fired.
+
+> A guard matching nothing is INDISTINGUISHABLE from a clean workspace. The
+> only way to tell them apart is to make every guard reject something on
+> demand.
+
+A crashing guard says "I do not know". A silently neutered one says "I checked,
+and everything is fine" — which is worse, because it is indistinguishable from
+evidence.
+
+| Fact | Established by |
+|---|---|
+| the guard CAN reject | a violating fixture it must flag |
+| the guard does not over-reject | a clean near-miss it must not flag |
+| the repository complies | the workspace scan |
+
+Three different facts. `22 proven, 0 broken` is the first two; `PASS ... 325
+file-checks` is the third. Collapsing them is how `function check() { return [] }`
+becomes the greenest guard in the repository.
+
+### The escape that arrived six times
+
+A regex word boundary reaching a file as a literal BACKSPACE (U+0008). It
+compiles, lints, type-checks, reads correctly in an editor, and never matches.
+
+The sixth occurrence was **inside the guard written to catch the fifth** —
+`/\bwhere\b/i` arrived as `/<BS>where<BS>/i`, so the where-clause exemption never
+fired and every scoped delete looked unqualified. Found in minutes only because
+the mutation harness reported it BROKEN.
+
+Two responses, and the second matters more:
+
+- `no-control-characters-in-source` rejects invisible characters that can change
+  meaning — C0 except tab, newline and return, plus U+00A0, U+200B, U+2028,
+  U+2029 and the bidi overrides U+202A–U+202E. Written with no escape sequence
+  anywhere, because a guard against mangled escapes that used one could be
+  disabled by the bug it exists to catch.
+- **The cause is upstream.** Backslash escapes do not survive this write path.
+  Regex escapes are written byte-wise or through file tools, never through a
+  shell heredoc.
+
+**What the guard cannot see, stated rather than implied:** an escape arriving as
+a REAL newline. Tab, newline and return must stay legal, so that case is outside
+it — and it is exactly what broke this guard's own fixture, one line after the
+guard was written. Discipline in the write path is what covers it, not the guard.
+
+### What `fixtures-delete-only-what-they-own` found on its first scan
+
+Three violations, one of them a false safety claim:
+
+`emergency-contacts.contract.test.ts` set a tenant context and issued a
+context-free DELETE, commented *"RLS is FORCED, so even the owner is subject to
+policy"*. Checked against the live database rather than reasoned: the role is
+`postgres`, with `rolsuper` and `rolbypassrls` both true. A superuser bypasses
+row security unconditionally and FORCE binds only the table OWNER — so the
+per-tenant loop deleted every tenant's rows, twice, and would have taken any
+other suite's with them.
+
+`tests/fixtures/tenancy.ts` records fixing exactly this once already. **The same
+false assumption was living in a second file** — the two-sources defect, and
+this time wearing a comment that read as reassurance.
+
+The rule is deliberately an under-approximation: "additive" is not decidable by
+pattern, an unqualified DELETE is, and the defect actually hit sits inside what
+it catches.

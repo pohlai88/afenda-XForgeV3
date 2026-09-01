@@ -17,7 +17,7 @@
 import { hasActiveMembership, resolveHostname, setDriver, tenancyDriver } from '@xforge/db'
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
-import { HOST_A, TENANT_A } from '@xforge/fixtures/tenancy'
+import { FIXTURE_VALID_FROM, HOST_A, TENANT_A } from '@xforge/fixtures/tenancy'
 import { LIST_LIMIT, listByEmployee } from '@xforge/hr/repository'
 import {
   type MembershipQueries,
@@ -120,16 +120,12 @@ beforeEach(async () => {
     values (${TENANT}, ${HOST_A}, true)
     on conflict do nothing
   `
-  // `valid_from` is stated, not defaulted.
-  //
-  // The column defaults to the DATABASE's `now()`, and `hasActiveMembership`
-  // asks `valid_from <= asOf` against NODE's `new Date()`. Two clocks, one
-  // half-open interval: when Node's is a hair behind, a membership inserted
-  // microseconds earlier is not active yet, and only the FIRST test failed --
-  // by the second, time had moved on. Law 20's boundary, met in a fixture.
+  // The same fixed instant every seeded membership uses. An interval subtracted
+  // from `now()` would make this pass while leaving two clocks either side of a
+  // half-open boundary -- see the note on FIXTURE_VALID_FROM.
   await owner`
     insert into tenant_membership (tenant_id, principal_id, valid_from, valid_to)
-    values (${TENANT}, ${PRINCIPAL}, now() - interval '1 minute', null)
+    values (${TENANT}, ${PRINCIPAL}, ${FIXTURE_VALID_FROM}, null)
     on conflict do nothing
   `
   context = await verifiedContext()

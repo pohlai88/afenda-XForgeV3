@@ -139,7 +139,14 @@ export const tenantMembership = pgTable(
     status: text('status').notNull().default('active'),
     tenantId: uuid('tenant_id').notNull(),
     /** Half-open [valid_from, valid_to) -- law 20. NULL valid_to is open-ended. */
-    validFrom: timestamp('valid_from', { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * NO DEFAULT, deliberately -- see migration 0003.
+     *
+     * A default means the database chooses the instant while an authorisation
+     * read compares against one the application obtained separately: two clocks
+     * either side of a half-open interval. A writer states what it means.
+     */
+    validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
     validTo: timestamp('valid_to', { withTimezone: true }),
   },
   (t) => [

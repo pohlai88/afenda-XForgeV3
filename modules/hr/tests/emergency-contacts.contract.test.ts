@@ -133,13 +133,21 @@ beforeEach(async () => {
     { principalId: 'u2', tenantId: TENANT },
     { principalId: 'u3', tenantId: TENANT },
   ])
-  // RLS is FORCED, so even the owner is subject to policy and a context-free
-  // DELETE removes nothing. Clean per tenant, inside the tenant's context.
+  // Scoped by a WHERE clause, not by RLS.
+  //
+  // The previous version set a tenant context and issued a context-free DELETE,
+  // on the stated grounds that FORCE RLS would confine it. It does not: this
+  // connection is `postgres`, and `rolsuper`/`rolbypassrls` are both true --
+  // checked against the live database, not inferred. A superuser bypasses row
+  // security unconditionally, and FORCE only subjects the table OWNER. So the
+  // loop deleted every tenant every time, and would have wiped any other
+  // suite's rows too.
+  //
+  // tests/fixtures/tenancy.ts records fixing exactly this once already, in its
+  // own seeding. The same false assumption survived here in a second file --
+  // one fact, two homes, agreeing until they did not.
   for (const tenant of [TENANT, OTHER_TENANT]) {
-    await owner.begin(async (tx) => {
-      await tx`select set_config('app.tenant_id', ${tenant}, true)`
-      await tx`delete from emergency_contact`
-    })
+    await owner`delete from emergency_contact where tenant_id = ${tenant}`
   }
   tenantsSeen.length = 0
 })

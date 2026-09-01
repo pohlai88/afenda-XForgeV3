@@ -603,6 +603,179 @@ export const guards = [
   },
 
   {
+    /**
+     * Law 29: invariants are enforced by guards, not prose -- and this one has
+     * cost five separate debugging sessions.
+     *
+     * A regex written as a word boundary reaches a file as a literal BACKSPACE
+     * (0x08) when an escape is mangled in transit. The result compiles, lints,
+     * type-checks and reads correctly in an editor, and simply never matches --
+     * so the check it belongs to reports zero findings forever. That is the
+     * worst possible failure for a guard: it looks like evidence of compliance.
+     *
+     * It has happened five times here. The most recent was the fixture-clock
+     * guard immediately below, which passed its own mutation test as BROKEN
+     * while its regex began with an invisible control character -- found only by
+     * running `cat -A` on the line.
+     *
+     * SCOPE: characters that are invisible in an editor and can change meaning.
+     * That is wider than C0. U+00A0 breaks a keyword that looks like a keyword,
+     * U+200B splits an identifier that reads as one word, U+2028 and U+2029 are
+     * line terminators to a JavaScript parser but not to a diff, and
+     * U+202A-U+202E reorder how the source DISPLAYS without changing what runs
+     * -- the last of which is how a well-known class of source-hiding attack
+     * works.
+     *
+     * Tab, newline and carriage return are legal and excluded. That leaves one
+     * member of this family outside the guard: an escape arriving as a REAL
+     * newline, which is exactly what broke this guard's own fixture one line
+     * after it was written. Nothing here can see that, because the result is
+     * indistinguishable from a deliberate line break. Recorded rather than
+     * pretended otherwise -- the cause is fixed upstream instead, by never
+     * routing source through an interpolating heredoc.
+     *
+     * WRITTEN WITHOUT ESCAPE SEQUENCES ON PURPOSE. A guard against mangled
+     * escapes that used one could be silently disabled by the very bug it
+     * exists to catch.
+     */
+    applies: () => true,
+    check(f, src) {
+      const out = []
+      const TAB = 9
+      const NEWLINE = 10
+      const RETURN = 13
+      const FIRST_PRINTABLE = 32
+      const NBSP = 160
+      const ZERO_WIDTH_SPACE = 8203
+      const LINE_SEPARATOR = 8232
+      const PARAGRAPH_SEPARATOR = 8233
+      const BIDI_FIRST = 8234
+      const BIDI_LAST = 8238
+      const invisible = (code) =>
+        (code < FIRST_PRINTABLE && code !== TAB && code !== NEWLINE && code !== RETURN) ||
+        code === NBSP ||
+        code === ZERO_WIDTH_SPACE ||
+        code === LINE_SEPARATOR ||
+        code === PARAGRAPH_SEPARATOR ||
+        (code >= BIDI_FIRST && code <= BIDI_LAST)
+
+      for (let i = 0; i < src.length; i += 1) {
+        const code = src.charCodeAt(i)
+        if (!invisible(code)) {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(src, i),
+          message:
+            `control character U+${code.toString(16).padStart(4, '0').toUpperCase()} in source ` +
+            '-- invisible in an editor and able to change what the source means',
+        })
+      }
+      return out
+    },
+    id: 'no-control-characters-in-source',
+    law: 29,
+    precision: 'text',
+    title: 'Source carries no stray control characters',
+  },
+
+  {
+    /**
+     * A fixture may delete state it UNIQUELY OWNS. It may not restore global
+     * truth by emptying a shared table.
+     *
+     * `seedTenancy` cleared `tenant_domain` and `tenant_membership` entirely to
+     * give itself a known starting state. Correct while one file used it; the
+     * moment a second did, whichever seeded later removed the other's rows
+     * mid-run, and the symptom was a resolution denied for a principal seeded
+     * moments earlier. Serialising the suites hid it rather than fixing it --
+     * additive fixtures converge, destructive ones race whatever the ordering.
+     *
+     * DELIBERATELY AN UNDER-APPROXIMATION. "Additive" is not decidable by
+     * pattern; an unqualified DELETE is, and the defect this repository
+     * actually hit sits inside what it catches. A scoped delete is permitted
+     * because owning rows and removing them is exactly what a fixture should
+     * do.
+     */
+    applies: (f) => /^tests[/]fixtures[/].*[.]ts$/.test(f) || /[.]test[.]tsx?$/.test(f),
+    check(f, src) {
+      const out = []
+      const re = /delete\s+from\s+([a-z_."]+)([^`;]*)/gi
+      let m
+      while ((m = re.exec(src)) !== null) {
+        // Prose describing the rule is not a breach of it: this guard is
+        // documented with the very statement it forbids.
+        if (isNonCallContext(src, m.index)) {
+          continue
+        }
+        if (/\bwhere\b/i.test(m[2])) {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(src, m.index),
+          message:
+            `unqualified 'delete from ${m[1]}' in a fixture -- it empties a table ` +
+            'other suites are using. Scope it to the rows this fixture owns',
+        })
+      }
+      return out
+    },
+    id: 'fixtures-delete-only-what-they-own',
+    law: 29,
+    precision: 'text',
+    title: 'A fixture deletes only rows it owns, never a whole shared table',
+  },
+
+  {
+    /**
+     * Law 20: effective-dated ranges are half-open, and a test that compares
+     * two CLOCKS cannot assert anything reliable about a boundary.
+     *
+     * A fixture writing `now()` or `now() - interval '1 second'` lets the
+     * DATABASE choose an instant which the assertion then compares against one
+     * Node obtained separately. The orderings are not guaranteed, and the
+     * failure is intermittent, one-sided and easy to misread: `valid_from`
+     * defaulted to the database clock here, only the FIRST resolution after
+     * seeding was denied, and it read as a wiped membership rather than a
+     * boundary -- three wrong diagnoses before the real one.
+     *
+     * Subtracting a margin hides it rather than fixing it: two clocks are still
+     * being compared, with a bet on the skew. A declared instant is not a bet.
+     *
+     * JavaScript's `new Date()` is deliberately NOT flagged. One clock, read
+     * once and threaded through both sides of an assertion, is exactly how T18
+     * revokes at an instant and then asks about that same instant. The hazard is
+     * a SECOND clock, not a current time.
+     */
+    applies: (f) => /^tests[/]fixtures[/].*[.]ts$/.test(f) || /[.]integration[.]test[.]ts$/.test(f),
+    check(f, src) {
+      const out = []
+      const re = /(now\s*\(\s*\)|interval\s+'[^']*')/g
+      let m
+      while ((m = re.exec(src)) !== null) {
+        if (isNonCallContext(src, m.index)) {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(src, m.index),
+          message:
+            `fixture takes a time value from the database ('${m[1]}') -- the ` +
+            'assertion then compares it against a clock obtained separately. ' +
+            'Declare the instant instead',
+        })
+      }
+      return out
+    },
+    id: 'fixtures-declare-their-instants',
+    law: 20,
+    precision: 'text',
+    title: 'A fixture states its own time values rather than taking the database clock',
+  },
+
+  {
     // Law 8: the planes are joined by stable semantic identifiers. A primitive
     // is a raw value with NO role -- `--space-5` says how far, never what for --
     // so a stylesheet naming one has reached past the layer that gives it
