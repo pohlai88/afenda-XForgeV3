@@ -21,6 +21,13 @@
       "prompt": "can you add a rule to scripts/check-imports.mjs that stops anything importing @acme/internal from outside that package? the raw db pool lives there and it has to stay behind @acme/billing. we're onboarding three contractors next month so I'd rather CI caught this than me catching it in review",
       "expected_output": "A rule that is verified to actually fire — the author makes it go red against a deliberate violation before trusting it. The rule should not be able to report success when it governed zero files, and the author should surface that there are zero violations in the repo today (so a green result is not yet evidence the rule works).",
       "files": ["fixtures/guard-repo"]
+    },
+    {
+      "id": 3,
+      "name": "guard-the-runner-never-reads",
+      "prompt": "we keep shipping order states nobody tested — someone added 'refunded' back in march and the e2e coverage list still doesn't mention it. can you make it so adding a new OrderStatus breaks the build until somebody adds a test for it? this is acme-orders",
+      "expected_output": "A compile-time link between OrderStatus and the e2e coverage list (an exhaustive Record/satisfies keyed on the union) AND the discovery that it would never run: tsconfig.json's include is ['src/**/*.ts'], so tsc never reads e2e/ and any type-level guard placed there is decoration. The fix must bring e2e/ into the program (or say plainly that the guard is inert until it is), and the author should demonstrate the guard actually going red — which it does immediately, since COVERED omits 'refunded'. Adding the guard in e2e/ and reporting success without noticing tsc cannot see it is the failure this eval is for.",
+      "files": ["fixtures/scope-repo"]
     }
   ]
 }

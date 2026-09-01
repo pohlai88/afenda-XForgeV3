@@ -81,6 +81,23 @@ required, match it exactly, per entry, rather than searching a joined string.
 comparison is a check. A number nobody compares against an expectation gets
 printed, read past, and cited later as though it had been verified.
 
+**The runner never sees the file.** A check exists only if the tool that would
+run it includes the file it lives in. A `tsconfig.json` whose `include` misses a
+directory means `tsc` never reads the type-level guard written there. A
+`testMatch` that does not match means the spec is never collected. A workflow
+triggering on a branch the repository does not use means the required check
+cannot fire — while the branch-protection UI reports it as configured.
+
+This is not the empty-subject-set shape wearing a hat. A rule handed no files
+can at least report zero; a file outside the runner's scope produces **no signal
+of any kind**, so there is nothing to notice and no count to distrust. It also
+hides one level up from where you are looking: the check reads correctly, and
+the defect is in a config file you did not open.
+
+Confirm inclusion the same way you confirm anything else here — break the file
+on purpose and watch the tool complain. If nothing complains, the tool is not
+reading it, and every check in that directory is decoration.
+
 ### The conservation trick
 
 When you split a set into buckets, assert the buckets sum back to the input:
@@ -159,6 +176,32 @@ stale in complete silence.
 The test for a comment you are about to write: if the code changed underneath
 it, would this sentence become obviously wrong, or quietly wrong? Prefer
 sentences that would become obviously wrong.
+
+### A named control is not a control
+
+The expensive form, because it does not merely go stale — it **buys something**.
+A document justifies removing or weakening one check by naming another:
+
+> "the linter already catches that" · "these rest on native semantics the
+> scanner checks statically" · "the integration suite covers it" · "typecheck
+> would reject it"
+
+Each of those trades away real coverage for a claim nobody executed, and the
+trade is what makes it worse than a wrong sentence. The reduction ships. The
+control it was traded for may never have existed.
+
+Before accepting such a trade — writing one, or reading one in an ADR, a README,
+a review comment — verify the named control **exists, runs, and covers the thing
+being given up**. All three, because they fail separately:
+
+- a tool absent from the lockfile was never a control
+- a tool present but never invoked reports nothing, forever
+- a tool that runs can still be blind — green having inspected an empty source
+  population, which is §1's first shape wearing a vendor's name
+
+Nothing mechanical will catch this: no guard reads a sentence asserting that a
+check exists. It is caught by asking, of any justification that names a control,
+whether you have seen that control fail.
 
 ---
 

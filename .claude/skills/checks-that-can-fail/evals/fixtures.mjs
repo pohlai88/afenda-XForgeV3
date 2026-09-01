@@ -69,6 +69,18 @@ export const fixtures = {
     'tests/fixtures/api.ts':
       "import { http, HttpResponse } from 'msw'\n\n// Kept in step with src/config.ts by hand.\nexport const handlers = [\n  http.post('https://billing.acme.internal/v1/charges', () =>\n    HttpResponse.json({ id: 'ch_test_1', ok: true }),\n  ),\n]\n",
   },
+  'scope-repo': {
+    '.github/workflows/ci.yml':
+      'name: ci\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm typecheck\n      - run: pnpm e2e\n',
+    'e2e/order.spec.ts':
+      "import { expect, test } from '@playwright/test'\n\n/**\n * Coverage for the order states. Kept in step with OrderStatus by hand.\n */\nconst COVERED = ['pending', 'paid', 'shipped']\n\nfor (const status of COVERED) {\n  test(`the ${status} order renders`, async ({ page }) => {\n    await page.goto(`/orders/demo?status=${status}`)\n    await expect(page.getByTestId(status)).toBeVisible()\n  })\n}\n",
+    'package.json':
+      '{\n  "name": "acme-orders",\n  "private": true,\n  "scripts": {\n    "typecheck": "tsc --noEmit",\n    "e2e": "playwright test"\n  }\n}\n',
+    'src/order.ts':
+      "/**\n * An order's lifecycle. Every state below is reachable in production.\n */\nexport type OrderStatus = 'pending' | 'paid' | 'shipped' | 'refunded'\n\nexport interface Order {\n  id: string\n  status: OrderStatus\n  total: number\n}\n",
+    'tsconfig.json':
+      '{\n  "compilerOptions": {\n    "strict": true,\n    "noEmit": true,\n    "module": "Preserve",\n    "moduleResolution": "bundler"\n  },\n  "include": ["src/**/*.ts"]\n}\n',
+  },
 }
 
 /**
