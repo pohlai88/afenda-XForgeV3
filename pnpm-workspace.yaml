@@ -42,6 +42,7 @@ packages:
 catalogMode: strict
 
 catalog:
+  '@axe-core/playwright': ^4.13.0
   '@hono/zod-openapi': ^1.6.1
   '@tanstack/react-query': ^5.60.0
   hono: ^4.9.0

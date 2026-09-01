@@ -57,7 +57,14 @@ test.describe('the server is serving the build the gate produced', () => {
     const html = (await response?.text()) ?? ''
 
     const referenced = [
-      ...new Set([...html.matchAll(/\/_next\/(static\/[^"'\\)\s]+)/g)].map((m) => m[1])),
+      // The pattern has one capture group, so a match always carries m[1] --
+      // but `noUncheckedIndexedAccess` cannot know that, and an assertion here
+      // would be a claim nothing checks. Filtering narrows by evidence instead.
+      ...new Set(
+        [...html.matchAll(/\/_next\/(static\/[^"'\\)\s]+)/g)]
+          .map((m) => m[1])
+          .filter((asset) => asset !== undefined),
+      ),
     ]
 
     expect(

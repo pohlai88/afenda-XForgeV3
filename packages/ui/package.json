@@ -7,6 +7,7 @@
     ".": "./src/index.tsx",
     "./boundary": "./src/boundary.tsx",
     "./contracts": "./src/contracts.ts",
+    "./live-region": "./src/live-region.ts",
     "./runtime": "./src/runtime.ts",
     "./schema": "./generated/schema.json",
     "./state": "./src/state.ts",

@@ -524,6 +524,24 @@ gated — a deliberate reduction whose residual risk (announcement order,
 verbosity, virtual-cursor traversal, none of which A11y-2 observes) is accepted
 rather than eliminated. They remain in scope for the first session that runs.
 
+> **Corrected 1 September 2026, at stage 4C.5.** The clause "axe checks
+> statically" was false when it was written: there was no axe anywhere in this
+> repository, so the reduction above cited a control that had never run. It runs
+> now — `conformance-harness.spec.ts` scans the open dialog, the one place Field,
+> Input and Checkbox are mounted together, and `a11y-conformance.spec.ts` scans
+> every application state surface.
+>
+> The reduction's *reasoning* survives; only its evidence was retrospective, and
+> this is recorded rather than quietly repaired. A register that silently
+> acquires the proof it already claimed is worse than one that admits the gap —
+> and this is the defect this project keeps having, appearing for once as a claim
+> about a TOOL rather than about a value, which is why nothing caught it: no
+> guard reads a sentence asserting that a check exists.
+>
+> The first scan run in anger also found the harness's own page failing WCAG
+> 2.4.2 for want of a `<title>` — an invalid document being used to assert that a
+> configured tree is equivalent to the shipping screen's.
+
 Dialog is the one contract still owing, and has no recorded session. That is a
 single sitting rather than a batch, which is the point of the reduction.
 

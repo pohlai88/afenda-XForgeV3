@@ -20,6 +20,7 @@ import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Field as BaseField } from '@base-ui/react/field'
 import { Input as BaseInput } from '@base-ui/react/input'
 import type { ReactElement, ReactNode } from 'react'
+import { ANNOUNCEMENT, TONE_ANNOUNCEMENT } from './live-region'
 
 type Gap = 'tight' | 'normal' | 'loose'
 
@@ -141,13 +142,15 @@ export function Button({
 }
 
 /**
- * An alert carries its own ARIA role, chosen by tone.
+ * An alert carries its own ARIA role and politeness, chosen by tone.
  *
- * `danger` and `warning` are assertive (`role="alert"`) because something needs
- * the user's attention now -- a failed load, a rejected write. `info` is
- * polite, so a status message does not interrupt what a screen reader user is
- * already reading. Leaving that to each screen is how half of them end up with
- * no role at all.
+ * WHICH tone announces how is `TONE_ANNOUNCEMENT`'s to say, and this comment
+ * deliberately does not repeat it -- it used to, alongside the same rule in the
+ * contract and twice more in the markup below, which is four owners for one
+ * fact and no way to notice them diverging.
+ *
+ * What belongs here is why the component decides at all: leaving the role to
+ * each screen is how half of them end up with none.
  */
 export function Alert({
   children,
@@ -160,11 +163,11 @@ export function Alert({
 }) {
   return (
     <div
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
+      aria-live={ANNOUNCEMENT[TONE_ANNOUNCEMENT[tone]].ariaLive}
       className="xf-alert"
       data-testid={testId}
       data-tone={tone}
-      role={tone === 'info' ? 'status' : 'alert'}
+      role={ANNOUNCEMENT[TONE_ANNOUNCEMENT[tone]].role}
     >
       {children}
     </div>
@@ -174,7 +177,12 @@ export function Alert({
 /** A live region for work in progress. Polite: it must not interrupt. */
 export function Status({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
-    <p aria-live="polite" className="xf-text" data-testid={testId} role="status">
+    <p
+      aria-live={ANNOUNCEMENT.polite.ariaLive}
+      className="xf-text"
+      data-testid={testId}
+      role={ANNOUNCEMENT.polite.role}
+    >
       {children}
     </p>
   )

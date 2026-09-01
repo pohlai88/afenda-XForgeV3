@@ -7,7 +7,9 @@
     "apps/**/*.ts",
     "apps/**/*.tsx",
     "tooling/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "e2e/**/*.ts"
   ],
   "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist"]
 }

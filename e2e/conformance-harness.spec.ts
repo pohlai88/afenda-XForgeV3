@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { expect, type Page, test } from '@playwright/test'
+import { scan } from './axe.ts'
+import { documents, mount } from './harness.ts'
 
 /**
  * Does the vocabulary actually say anything?
@@ -38,40 +38,6 @@ import { expect, type Page, test } from '@playwright/test'
  */
 const EMPLOYEE = '44444444-4444-4444-8444-444444444444'
 const PAGE = `/employees/${EMPLOYEE}`
-const ROOT = join(import.meta.dirname, '..')
-
-const harnessBundle = () => readFileSync(join(ROOT, 'tests/harness/dist/harness.iife.js'), 'utf8')
-const stylesheet = (p: string) => readFileSync(join(ROOT, p), 'utf8')
-const documents = JSON.parse(
-  readFileSync(join(ROOT, 'tests/harness/emergency-contacts.config.json'), 'utf8'),
-) as Record<string, unknown>
-
-/**
- * Mount a configuration document in a blank page.
- *
- * `setContent` rather than a route: the harness must not ship. The stylesheets
- * are inlined because target size and focus behaviour are only real once the
- * design system's CSS is applied -- an accessible tree would compare fine
- * without them and a keyboard spec would not.
- */
-async function mount(page: Page, config: unknown) {
-  await page.setContent(
-    `<!doctype html><html lang="en"><head><style>
-       ${stylesheet('packages/tokens/generated/tokens.css')}
-       ${stylesheet('packages/ui/src/ui.css')}
-     </style></head><body><div id="root"></div>
-     <script>window.__XFORGE_CONFIG__ = ${JSON.stringify(config)}</script>
-     <script>${harnessBundle()}</script>
-     </body></html>`,
-  )
-  await page.waitForFunction(
-    () =>
-      document.documentElement.hasAttribute('data-harness-ready') ||
-      document.documentElement.hasAttribute('data-harness-error'),
-  )
-  const failure = await page.evaluate(() => window.__XFORGE_HARNESS_ERROR__)
-  return failure
-}
 
 const card = (page: Page) => page.getByRole('region', { name: 'Emergency contacts' })
 
@@ -329,4 +295,47 @@ test.describe('the modal behaves as the APG dialog pattern requires', () => {
     expect(checkbox?.width).toBeGreaterThanOrEqual(24)
     expect(checkbox?.height).toBeGreaterThanOrEqual(24)
   })
+
+  /**
+   * THE CLAIM ADR-025's REDUCTION RESTS ON, finally executable.
+   *
+   * The evidence register argued Field, Input and Checkbox out of the A11y-3
+   * gate partly because they "rest on native semantics that axe checks
+   * statically". At the time that sentence was written there was no axe in this
+   * repository at all -- the reduction cited a control that had never run, which
+   * is the defect this project keeps having wearing its least obvious costume: a
+   * claim about a TOOL rather than about a value.
+   *
+   * Here it runs, over the open dialog, which is the only place those three
+   * contracts are mounted together. Scanned inside this describe because `open`
+   * lives here, and a second copy of the harness boot sequence would trade one
+   * duplicated fact for another.
+   */
+  test('the mounted field primitives pass axe statically', async ({ page }) => {
+    await open(page)
+    // Proof the subject is present, not merely that the scan found nothing: axe
+    // over a dialog that failed to open is a green over the trigger page.
+    await expect(page.getByRole('textbox')).toBeVisible()
+    await expect(page.getByRole('checkbox')).toBeVisible()
+    await scan(page, 'the open dialog and its field controls')
+  })
+})
+
+/**
+ * The same mechanical question, asked of the documents rather than the app.
+ *
+ * `a11y-conformance.spec.ts` scans the shipping screen's state surfaces. These
+ * are the CONFIGURED renderings of the same vocabulary, and they can differ:
+ * that is the entire premise of this file. A grammar that produces an
+ * inaccessible tree from a legal document is a grammar defect, and nothing else
+ * here would report it.
+ */
+test.describe('the configured renderings pass axe statically', () => {
+  for (const name of ['empty', 'ready'] as const) {
+    test(`the ${name} document`, async ({ page }) => {
+      const failure = await mount(page, documents[name])
+      expect(failure, 'the harness refused the document').toBeUndefined()
+      await scan(page, `the configured ${name} document`)
+    })
+  }
 })

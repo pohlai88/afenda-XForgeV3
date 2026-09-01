@@ -66,8 +66,8 @@ something a person can be shown, and proves it.
   4C.2  read-state behavioural conformance                DONE    2273122
   4C.3  write-outcome behavioural conformance              DONE    d0524fc
   4C.4  cross-axis composition                            DONE
-  4C.5  accessibility, and error containment
-  4C.6  interaction and action conformance
+  4C.5  accessibility, and error containment              DONE
+  4C.6  interaction and action conformance                DONE
 ```
 
 **The seventh state was retired, and that is a correction rather than a cut.**
@@ -147,17 +147,203 @@ and ending in `assertNever`, so a new read state is a compile error rather than 
 silent default into one answer. `empty` is the case that keeps the rule honest:
 it is a SUCCESSFUL read and adding the first record is the entire point of it.
 
+### 4C.6 — what a declared interaction profile must prove
+
+The row is labelled "interaction and action conformance"; the scope that survived
+review is narrower and cleaner, and `action` sits inside it. `kind: 'action'` is
+Button alone, while `none` and `live-region` are not actions at all.
+
+**THE RULE.** `interaction.profile` is a declaration of OBSERVABLE BEHAVIOUR,
+never a mechanism for selecting or escaping tests.
+
+THE STATE THIS STAGE WAS OPENED AGAINST, in the past tense because the stage
+closed and it is no longer true. `ui-contracts.test.ts` asserted
+
+```
+  profile === 'none'  <->  revision === 0
+```
+
+which compares two fields of the SAME declaration to each other. Both could be
+wrong together and nothing read the component. ADR-025 derives the entire
+assistive-technology gate from `interaction.profile`, so a contract escaped that
+gate with a one-word edit every check passed. Combobox, Select, Switch,
+RadioGroup, CommandPalette and DataGrid each join the gate ONLY if their
+declaration is honest, and none of them exists yet.
+
+That weld also spent `revision` on encoding profile-ness: a `none` contract
+could not bump its revision for an unrelated reason, and a new interactive
+contract could not start at 0. It is gone, rather than left beside the real
+check where it would read as corroboration; what replaced it keeps only the
+direction that mattered, that a behavioural profile carries a positive revision.
+
+**SUBJECTS ARE DERIVED, NEVER LISTED.** Every obligation below reads its subject
+set from the registry by profile. A list of component names would reintroduce
+exactly what ADR-025 removed, one level down, and would protect today's
+seventeen contracts and none of the six still to come.
+
+```
+  none            the contract ROOT introduces no interaction stop: not
+                  natively focusable, no author-created tab stop, no interactive
+                  role of its own, and navigation does not land on it.
+
+                  AND NO LIVE-REGION MARKER OF ITS OWN -- no `aria-live`, no
+                  `role="alert"` or `role="status"`. This clause was not in the
+                  first draft and was added by WRITING THE MUTATION TABLE: a
+                  live region is not focusable and carries no interactive role,
+                  so inertness as originally scoped would have passed a
+                  mis-declared Alert or Status. The hole was found by
+                  construction, which is the whole argument for building the
+                  table before the conformance it measures.
+
+                  AND IT WIRES NO ACCESSIBLE RELATIONSHIP -- nothing it renders
+                  is named or described BY REFERENCE to another element it
+                  rendered. Added for the same reason, one row later: a Field is
+                  not focusable, declares no interactive role and carries no
+                  live-region marker, so every clause above passes one
+                  mis-declared as inert. Naming a control it rendered is the one
+                  signature that separates the two.
+
+                  BY REFERENCE is load-bearing. A Button inside a ListItem is
+                  named by its own text and wires nothing; `Card` points at a
+                  heading its CALLER owns, which is not the contract supplying
+                  both ends. The obvious form of this rule -- "no descendant
+                  control has an accessible name" -- rejected List and ListItem
+                  while still missing Field, whose control is a
+                  `span[role=checkbox]` no tag-based selector sees.
+
+                  DESCENDANT INTERACTIVITY IS OUTSIDE THIS ASSERTION. Card,
+                  Stack, List and ListItem legitimately contain Buttons; `none`
+                  describes the root's semantics, not its children's. A naive
+                  "nothing inside is focusable" is false for every container,
+                  and a test written to pass against that falsity is worse than
+                  none.
+
+                  NOT "handles no keys" -- that decays into reading the
+                  implementation for handlers rather than observing behaviour.
+
+  native-control  the declared native element is PRESERVED, and a disabled
+                  public state cannot activate its action. Enter and Space are
+                  both asserted, because they are different facts: Enter
+                  activates on keydown and Space on keyup, so a component that
+                  has quietly reimplemented activation in `onKeyDown` passes the
+                  Enter assertion by construction and only Space catches it. No
+                  further keys are specified -- this proves the native control
+                  was preserved, it does not restate the HTML specification.
+
+  form-control    4C.5 is the authority. Not duplicated here.
+
+  live-region     the component exposes the intended role AND politeness. Role
+                  alone is what 4C.2 already asserts; the polite/assertive split
+                  is a separate fact and is currently asserted nowhere.
+
+  modal           the conformance harness is the authority. Not duplicated here.
+```
+
+**THE GATE MUST BE SHOWN TO DETECT DISHONESTY, not merely to agree with honest
+declarations today.** Those are different claims and only the second protects a
+component that does not exist yet. For each contract whose profile is not
+`none`, flipping the declaration DOWN to `none` must turn something red, on the
+`fixtures/families.mjs` model -- including its `because`, since a fixture that
+fails for the wrong reason proves nothing and proves it in the shape of a pass.
+
+Lateral flips are NOT covered, and that is recorded rather than assumed closed:
+`native-control` is a strictly weaker gate than `form-control` -- name,
+description, target floor and axe all fall away -- so Button mis-declared as
+`native-control` is a real downgrade. The full matrix is not built here.
+
+**THE DEFERRAL IS DORMANT, NOT ABSENT.** `composite` and `composite-grid` have
+zero contracts, and conformance written for them now would be green having
+governed nothing. So the set of profiles with no contracts is asserted to be
+exactly those two: it goes red the day the first Combobox lands, which is
+precisely when somebody needs telling.
+
+Every profile with contracts must have a non-zero proof population, and the
+profiles must sum to the registry -- an unknown profile fails rather than
+falling out of every bucket unnoticed.
+
 ## Undecided
 
-**An error boundary that collapses the mapper's throw into `error` loses the
-remedy.** `toResourceState` refuses an unrecognised wire code rather than
-inventing a meaning for it, and it runs during render, so the throw needs
-containing. But a stale tab that met a new reason code needs a RELOAD, and
-`error` offers "Try again" — the precise failure `retryable` exists to prevent,
-which is that a control appears for something it cannot fix. Probably a distinct
-problem code. Blocks 4C.5. The boundary should also scope to the resource
-surface rather than the app shell: one unknown code should not turn the whole
-product into an error screen.
+**The generator's filler order is a conformance decision, not a detail.** A slot
+declaring both a capability and kinds gets the cheapest KIND, because
+capability-first made `Stack` generate `Stack{Field{Checkbox}}` and the
+inertness suite then reported Stack as wiring a relationship that was the nested
+Field's doing. That is the root-versus-subtree distinction reappearing in the
+generator rather than in the assertion, which is the harder place to see it. A
+slot whose ONLY option is a form-control would put it back, and would need the
+wiring attributed by differencing the child mounted alone. No slot is shaped
+that way today, so it is recorded rather than built.
+
+**The screen's live regions mount together with their content, which is the
+pattern that does not announce.** `Status` renders only in `case 'loading'`, and
+each `Alert` only inside its own state branch, so the region and its message
+enter the DOM in the same commit. The reliable pattern is a region already
+present and then mutated; inserting both at once is routinely missed by NVDA and
+JAWS. WHOSE OBLIGATION IS THIS is the part to get right, and it is not the
+component's: `Status` is handed its children by a caller and cannot guarantee it
+was mounted earlier, so demanding pre-existence of the CONTRACT would force an
+API change while proving nothing about the screen. The obligation belongs to the
+consumer. Splits cleanly from A11y-3: whether the region is present before the
+message is deterministic and checkable in a harness; what a screen reader
+actually said is not, and stays there. Shapes 4C.6's live-region work.
+
+**The tone -> politeness mapping now has ONE owner, and the open half is
+whether that owner should be the contract.** It had four: the Alert contract's
+comment, the component's comment, and `aria-live` and `role` computed from
+`tone` in two INDEPENDENT ternaries -- so a single edit could ship
+`role="alert"` with `aria-live="polite"`, which contradicts itself and reads
+fine in a diff. `packages/ui/src/live-region.ts` now pairs role with politeness
+so that combination is unwritable, and both comments point at it instead of
+restating it.
+
+**Politeness in CONTRACT DATA is REJECTED for now, and the rejection is the
+useful record.** It looked like the fuller fix — the generated schema and a
+metadata renderer could read it — but the two live-region contracts need
+different shapes: `Status` has a fixed politeness and `Alert`'s is decided by a
+prop's value. Expressing both means a general mechanism for prop-conditional
+behaviour, which would be the first in this vocabulary, built for exactly two
+cases that disagree. Law 31 wants a second real use case to prove an
+abstraction, and two cases needing two shapes is not that. There is also no
+metadata renderer yet, so the benefit is entirely anticipated.
+
+What would change the answer: a third live-region contract whose politeness is
+prop-conditional, or a metadata renderer that actually needs to read it. Until
+then the residual cost is one second copy — `Status` asserting its own
+politeness — which is recorded below rather than paid for with a mechanism.
+
+Its own module was chosen over `contracts.ts` for a measured reason: `index.tsx`
+importing the registry would drag the whole vocabulary into every bundle
+carrying an Alert, and per-route budgets are enforced.
+
+One consequence is recorded rather than hidden: `Status` takes no discriminating
+prop, so nothing derives its politeness and the conformance spec asserts it
+directly. That IS a second copy, kept deliberately, because the alternative is a
+silent hole where a progress indicator becomes assertive and interrupts every
+reader on every load. It would stop being a copy if politeness moved into the
+contract, which is rejected above.
+
+**THE READINESS FIX NEEDS A VOCABULARY DECISION, which is why it is still open
+after the politeness work rather than in spite of it.** The transitions that
+matter are not the initial load — they are `ready -> conflict` and
+`ready -> failed`, where the user has just acted and the answer arrives in a
+region that did not exist a moment earlier. Neither obvious fix is free:
+
+```
+  persistent region   the region must render with NO content, and `Alert`
+                      requires children and paints a coloured banner. A live
+                      region permitted to be empty and invisible is a new
+                      primitive -- a change to the VOCABULARY, not to a screen.
+
+  separate announcer  the standard pattern, and it CONTRADICTS what 4C.6 built:
+                      announcer and Alert would both announce, so the Alert
+                      would have to stop being a live region -- which is the
+                      profile it declares and the thing the politeness
+                      conformance proves.
+```
+
+The DOM-level property is cheap and deterministic and could be asserted today,
+but it would assert a property the screen does not have, and a red test for
+undecided behaviour is the permanently-red stage this repository refuses. The
+decision comes first, and it is not one to take while closing a stage.
 
 **The gate has a flake, and the machine accumulates load.**
 `tests/unit/ui-contracts.test.ts` timed out at 5s in one full run and passed
@@ -193,6 +379,25 @@ deliberately rather than discovering it.
                            ADR-025 makes the requirement risk-based, so this is
                            a named obligation rather than an open-ended one.
 
+  focus across a state     4C.5 took A11y-2 only as far as REACHABILITY, which
+  swap                     is state-specific. Where focus GOES when a surface is
+                           replaced under the user is not implemented: retry a
+                           failed read and the button holding focus unmounts, so
+                           focus falls to `<body>` and a keyboard user restarts
+                           from the top of the document. Deferred rather than
+                           half-tested, because the test is easy and the
+                           behaviour is not -- and a red test for behaviour
+                           nobody has decided on is the permanently-red stage
+                           this project already refuses to ship.
+
+  a distinct problem       REJECTED, recorded so it is not re-proposed. The
+  code for a stale         boundary contains the mapper's throw at the resource
+  bundle                   surface, so it never becomes a `ResourceState` and
+                           the read vocabulary was left alone. Adding a member
+                           to a union whose rule is "every member has a
+                           producer" would have bought a second way to say what
+                           the boundary already says.
+
   Base UI first-mount      Never measured. The per-route budget covers bytes,
   cost                     not the cost of the first component mount.
 
@@ -214,7 +419,7 @@ deliberately rather than discovering it.
 ## What a resuming session needs, that the code does not say
 
 The repository records what was decided and what was proven. It does not record
-the shape of the argument that produced them, and two are load-bearing here:
+the shape of the argument that produced them, and three are load-bearing here:
 
 **Producibility, renderability, and mapping are three different facts with three
 different owners.** A state can be constructible, mappable, and unrenderable.
@@ -226,3 +431,12 @@ complete one. The vocabulary was correct and the screen contradicted it.
 violating fixture and a clean one, and the harness additionally asserts a
 rejection is actionable. That rule was earned: a guard was reported PROVEN while
 its message read `NaN`, and it was caught by eye.
+
+**A compile-time check written in `e2e/` is real only as of 4C.5.** That
+directory was outside `tsconfig.json`'s `include`, so `tsc --noEmit` never saw
+it, and any type-level guard written there would have been decorative — the
+exact shape of a check that cannot fail. `tests/**/*.tsx` was missing for the
+same reason, which is why the `Window` augmentation in `tests/harness/mount.tsx`
+was invisible to the spec that reads it. Both are in the program now, and the
+a11y tables are keyed on the state unions precisely because that is finally
+enforceable rather than aspirational.

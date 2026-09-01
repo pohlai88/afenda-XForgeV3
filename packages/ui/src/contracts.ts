@@ -219,8 +219,10 @@ export const contracts = {
     composition: 'container',
     contractVersion: 1,
     exposure: 'metadata',
-    // Politeness is chosen by tone, not by the caller: danger and warning
-    // interrupt, info does not. That is behaviour, so it carries a revision.
+    // Politeness is chosen by tone, not by the caller. That is behaviour, so it
+    // carries a revision. WHICH tone announces how lives in `live-region.ts`,
+    // not here: this comment stated the mapping and so did three other places,
+    // and a rule with four owners diverges in silence.
     interaction: { profile: 'live-region', revision: 1 },
     kind: 'feedback',
     props: {
@@ -584,6 +586,30 @@ export const contractIds = Object.keys(contracts) as ContractId[]
 export const metadataContractIds = contractIds.filter(
   (id) => contracts[id].exposure === 'metadata',
 ) as MetadataContractId[]
+
+/**
+ * The contracts owing recorded screen-reader evidence.
+ *
+ * ADR-025's load-bearing rule -- "the set is derived from the profile a contract
+ * declares, never from a list of component names" -- as something callable.
+ * It was written out byte for byte at two call sites in `ui-contracts.test.ts`
+ * and existed nowhere as an authority, which is the shape where two copies agree
+ * until one of them is edited.
+ *
+ * TAKES A REGISTRY, and that parameter is the point. The profile-mutation table
+ * asks this exact question of a deliberately dishonest registry. A mutation test
+ * carrying its own copy of the rule would prove only that the copy works.
+ */
+export function contractsOwingAtEvidence(
+  registry: Readonly<Record<string, Contract>> = contracts,
+): string[] {
+  return Object.entries(registry)
+    .filter(([, c]) =>
+      (PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).includes(c.interaction.profile),
+    )
+    .map(([id]) => id)
+    .sort()
+}
 
 export const KINDS: readonly Kind[] = [
   'layout',

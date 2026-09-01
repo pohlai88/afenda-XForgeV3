@@ -72,6 +72,21 @@ Not gated: `none`, `native-control`, `form-control`, `live-region` — these res
 on native semantics that A11y-1 verifies statically and A11y-2 verifies in a
 browser.
 
+> **Correction, 1 September 2026, at stage 4C.5.** "A11y-1 verifies statically"
+> was not true when this was accepted. There was no axe anywhere in the
+> repository — A11y-1 existed as a *defined level* and never as a running check
+> — so the reduction above rested on something that had never executed. It runs
+> now; see Verification below.
+>
+> The original wording is left standing rather than edited, because the decision
+> was reached on that basis and rewriting it would conceal what was actually
+> relied upon.
+>
+> Worth recording where this was visible and went unread: the Verification
+> section below named only checks that existed, while the Decision named one
+> that did not. The two sections disagreed, in one document, and nothing
+> compares them — no guard reads a sentence claiming that a check exists.
+
 The set is **derived from the profile a contract declares**, never from a list of
 component names. Combobox is `composite` and will be gated the day it lands,
 without anyone editing anything.
@@ -126,3 +141,8 @@ intended way to notice.
   Checkbox carry the names, descriptions and roles this decision relies on them
   carrying. **If that spec is deleted, this ADR loses its basis** and the
   reduction is no longer justified.
+- The same spec runs A11y-1 — axe at WCAG A/AA — over the open dialog, which is
+  the only place Field, Input and Checkbox are mounted together. Added at 4C.5.
+  This is the level the Decision above cited, and until then it was named here
+  by nothing, because it did not exist. It carries the same condition: delete
+  the scan and the reduction is again resting on a claim rather than a check.

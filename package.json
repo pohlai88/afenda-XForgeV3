@@ -27,6 +27,7 @@
     "verify:list": "node tooling/verify/verify.mjs --list"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@biomejs/biome": "2.5.11",
     "@faker-js/faker": "^10.6.0",
     "@playwright/test": "^1.62.1",

@@ -11,12 +11,15 @@
  * nothing ever asks whether that string names anything.
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   type Capability,
   type Contract,
   type ContractId,
   contractIds,
   contracts,
+  contractsOwingAtEvidence,
   KINDS,
   MAX_NESTING_DEPTH,
   metadataContractIds,
@@ -26,6 +29,8 @@ import {
 } from '@xforge/ui/contracts'
 import { resolvableIds, resolve, runtime } from '@xforge/ui/runtime'
 import { describe, expect, it } from 'vitest'
+
+const ROOT = join(import.meta.dirname, '../..')
 
 const entries = Object.entries(contracts) as [string, Contract][]
 
@@ -65,12 +70,31 @@ describe('the contract registry', () => {
     expect(contract.interaction.revision).toBeGreaterThanOrEqual(0)
   })
 
-  // The orthogonality that the plan corrected for. A profile of `none` on
-  // something interactive, or a behavioural profile with revision 0, means the
-  // two dimensions have been collapsed back into one.
-  it.each(entries)('%s revisions its behaviour when it has any', (_id, contract) => {
-    const inert = contract.interaction.profile === 'none'
-    expect(contract.interaction.revision === 0).toBe(inert)
+  /**
+   * REPLACES a weld, deliberately weaker, and the weakening is the point.
+   *
+   * This asserted `revision === 0` if and only if `profile === 'none'`, which
+   * compares two fields of the SAME declaration to each other. Both can be
+   * wrong together and nothing here reads the component, so it looked like
+   * profile conformance while proving only internal consistency of metadata --
+   * and `interaction-profile-mutation.test.ts` exists because of the gap it
+   * left.
+   *
+   * It also spent `revision` on encoding profile-ness. A `none` contract could
+   * not bump its revision for an unrelated reason without going red on an
+   * interaction test, and a new interactive contract could not start at 0.
+   *
+   * What survives is the rule `revision` is actually for: it is a PROTOCOL
+   * VERSION, so anything carrying project-defined interaction obligations
+   * carries a positive one. The direction that mattered -- an interactive
+   * profile must not sit at revision 0 -- is kept; the reverse implication,
+   * which was doing the damage, is not.
+   */
+  it.each(entries)('%s versions a behavioural profile', (_id, contract) => {
+    if (contract.interaction.profile === 'none') {
+      return
+    }
+    expect(contract.interaction.revision).toBeGreaterThan(0)
   })
 
   it.each(entries)('%s versions its own contract', (_id, contract) => {
@@ -358,11 +382,7 @@ describe('accessibility obligations', () => {
    * one that only announces asked for an NVDA scenario.
    */
   it('derives the obligation from profile, never from kind', () => {
-    const owing = contractIds.filter((id) =>
-      (PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).includes(
-        contracts[id].interaction.profile,
-      ),
-    )
+    const owing = contractsOwingAtEvidence()
     expect([...owing].sort()).toEqual(['Dialog'])
 
     // The pair that makes the point. Dialog is `layout` and owes evidence
@@ -382,18 +402,40 @@ describe('accessibility obligations', () => {
    * while nobody is recording anything.
    */
   it('names every contract that owes assistive-technology evidence', () => {
-    const owing = contractIds.filter((id) =>
-      (PROFILES_REQUIRING_AT_EVIDENCE as readonly string[]).includes(
-        contracts[id].interaction.profile,
-      ),
-    )
+    const owing = contractsOwingAtEvidence()
     // Dialog alone, because it is the only shipped contract that manages its
     // own focus. Combobox, CommandPalette and DataGrid will join by declaring a
     // composite profile -- nobody has to remember to add them. Dialog still has
     // no recorded session, which is one sitting rather than a dozen.
-    expect([...owing].sort()).toEqual(['Dialog'])
-    for (const id of owing) {
-      expect(contracts[id].interaction.revision, `${id} versions its behaviour`).toBe(1)
-    }
+    expect(owing).toEqual(['Dialog'])
+    // The revision assertion that stood here is gone rather than moved: the
+    // protocol-version rule above covers EVERY contract with a behavioural
+    // profile, so restating it for the owing subset was a second assertion of
+    // one fact -- and the narrower of the two, which is the worse one to keep.
+  })
+
+  /**
+   * ADR-025 writes of `e2e/conformance-harness.spec.ts`: "**If that spec is
+   * deleted, this ADR loses its basis**". Nothing enforced that. A decision
+   * record named a file load-bearing, and removing the file would have
+   * withdrawn the justification for a narrowed accessibility gate in total
+   * silence -- the ADR and the file each correct on their own, with nothing
+   * holding the two together.
+   *
+   * A UNIT test rather than an E2E one, deliberately. This asserts the evidence
+   * EXISTS, which has to stay true on a machine with no browser and no
+   * database; running the spec is the E2E stage's job, and noticing it has gone
+   * is this one's. The two failures are different and only one of them is
+   * detectable here.
+   */
+  it('keeps the evidence ADR-025 rests on', () => {
+    const spec = join(ROOT, 'e2e/conformance-harness.spec.ts')
+    expect(existsSync(spec), 'ADR-025 names this spec as its basis').toBe(true)
+
+    // A11y-1 is cited by the Decision and did not exist until 4C.5. The
+    // correction recorded in the ADR is true only while this scan is wired.
+    const source = readFileSync(spec, 'utf8')
+    expect(source, 'the A11y-1 scan ADR-025 cites').toMatch(/\bscan\(page,/)
+    expect(existsSync(join(ROOT, 'e2e/axe.ts')), 'the scan it imports').toBe(true)
   })
 })
