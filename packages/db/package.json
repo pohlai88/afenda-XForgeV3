@@ -10,12 +10,12 @@
   },
   "main": "./src/index.ts",
   "dependencies": {
-    "@xforge/fixtures": "workspace:*",
     "@xforge/tenancy": "workspace:*",
     "drizzle-orm": "^0.44.0",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@xforge/fixtures": "workspace:*",
     "vitest": "^4.0.0"
   }
 }

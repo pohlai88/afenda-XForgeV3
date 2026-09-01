@@ -143,9 +143,6 @@ importers:
       '@xforge/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@xforge/fixtures':
-        specifier: workspace:*
-        version: link:../../tests/fixtures
       '@xforge/policy':
         specifier: workspace:*
         version: link:../../packages/policy
@@ -159,6 +156,9 @@ importers:
         specifier: ^4.0.0
         version: 4.5.4
     devDependencies:
+      '@xforge/fixtures':
+        specifier: workspace:*
+        version: link:../../tests/fixtures
       postgres:
         specifier: ^3.4.5
         version: 3.4.9
@@ -206,9 +206,6 @@ importers:
 
   packages/db:
     dependencies:
-      '@xforge/fixtures':
-        specifier: workspace:*
-        version: link:../../tests/fixtures
       '@xforge/tenancy':
         specifier: workspace:*
         version: link:../tenancy
@@ -219,6 +216,9 @@ importers:
         specifier: ^3.4.5
         version: 3.4.9
     devDependencies:
+      '@xforge/fixtures':
+        specifier: workspace:*
+        version: link:../../tests/fixtures
       vitest:
         specifier: ^4.0.0
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))

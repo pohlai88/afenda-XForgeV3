@@ -14,13 +14,13 @@
     "@hono/zod-openapi": "^1.6.1",
     "@xforge/api": "workspace:*",
     "@xforge/db": "workspace:*",
-    "@xforge/fixtures": "workspace:*",
     "@xforge/policy": "workspace:*",
     "@xforge/tenancy": "workspace:*",
     "hono": "^4.9.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@xforge/fixtures": "workspace:*",
     "postgres": "^3.4.5",
     "vitest": "^4.0.0"
   }
