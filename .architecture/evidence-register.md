@@ -1399,3 +1399,162 @@ manifests, which is a strictly weaker claim than the one the defect is about.
 `source` for that tree, which is why this guard states its roots rather than
 deriving them. Adding one would touch every consumer of `classify()` and is not
 in this change.
+
+# Gate efficiency, 2026-09-01
+
+A rejection leaves no trace in the tree by construction. Someone reads
+`turbo.json` in four months, sees no cache, and re-derives the whole track from
+scratch — so the register is the only place a negative result can live.
+
+## GE-001 — gate caching: REJECTED BY MEASUREMENT, not deferred
+
+Three stages of fourteen are cacheable at all: `typecheck`, `lint` and `build`.
+The cache is disabled under `--ci` by design, so its only beneficiary is the
+local pre-commit run — which is the last check before code leaves the machine and
+the place a stale PASS costs most. Against that, a cache owes provenance, input
+conservation, hash sensitivity, invalidation, CI refusal, and a stated answer for
+where its state lives.
+
+**The structure is the argument, not the percentage.** At the time of measuring,
+those three stages were 8.34s of 135.42s. That number will rot — `verify:fast`
+already moved the ground once, and a later run moved the gate 17s on a change
+that could not have caused it. What does not rot: three of fourteen, `--ci`
+excluded, therefore the beneficiary is the one path where cached proof is least
+appropriate. The cache cannot pay for its own proof.
+
+**What would reopen this:** the cacheable share rising materially — a slow new
+build-like stage, or `generate` becoming cacheable — OR the `--ci` exclusion
+being revisited, which would need its own argument first, since it is the rule
+that makes a stale cache unable to grant merge authority.
+
+## GE-002 — process-launch overhead: PREMISE DID NOT REPRODUCE
+
+The thesis rested on "a 9.5s wall for 1.5s of Biome work — that is process
+launch, not checking". Instrumented, `format / lint` is ~3.1s and the gap between
+summed stage time and process wall time is ~0.22s. There is no generic runner
+overhead to architect around.
+
+**It was not wrong, it was measured on a command the gate does not run.** The
+9.5s belonged to `pnpm check`, which runs ultracite; the gate runs `biome ci .`.
+
+The durable lesson is about method rather than about Biome: **a performance claim
+must name the invocation it was measured against.** Two tools over one config
+with different binaries produced a number that survived into a plan and shaped a
+track.
+
+## GE-003 — the execution context could bleed across overlapping operations
+
+FIXED in `0c8d022`. A finding rather than a decision, and the part worth keeping
+is the part the diff cannot show.
+
+The diff shows `AsyncLocalStorage` replacing a module-scope `let`, which reads as
+an ordinary refactor everybody already agrees with. What it cannot show is that
+**the tenancy proof was structurally incapable of observing the bug.** Per-file
+vitest isolation gives each file a fresh module registry, so the binding was
+effectively per-file and two operations could never interleave against it. The
+isolation that makes the proof reproducible is the same isolation that hid the
+bleed, and it surfaced only because a performance experiment proposed removing it
+for speed.
+
+Demonstrated before being fixed, with two overlapping operations in one process:
+
+```
+expected 'bob' to be 'alice'                    A resumed and read B's actor
+expected { actor: 'alice', ... } to be null     the context outlived both
+```
+
+The second is the `finally`: B restored what B saw on ENTRY — A's context, not
+null. `withPlatformAccess` derives the audited actor and correlationId from this
+context precisely so a caller cannot name itself, so a bleed attributes
+privileged cross-tenant access to the wrong actor: the property T15 and T16 exist
+to establish.
+
+**What makes it latent, and what ends that.** Latency is not a property of the
+code. It is a property of `apps/` and `modules/` containing no caller of
+`withExecutionContext`, so no request layer establishes one and
+`withPlatformAccess` refuses without it. That condition ends exactly when the
+request layer arrives — which the function's own doc comment says it will.
+"Latent" must not be read as "handled". The fix is unconditional either way, and
+the regression tests were written before it and against behaviour, so they still
+fail if the shape returns.
+
+### Two consequences that outlive the fix
+
+**The proof keeps a known blind spot.** While `fileParallelism: false` and
+per-file isolation hold, concurrency defects in module-scope state are invisible
+to the tenancy suite in general. `driver` and `sink` sit in that blind spot right
+now. They are read here as set-at-boot composition wiring and therefore benign —
+but that is an unverified reading, not a proven property, and it is recorded as
+such.
+
+**The class is populated.** `withExecutionContext` and `devPrincipal` are both
+mechanisms whose doc comment names a caller they do not have. Two instances is a
+shape, and the next one will also look correct under test. A comment asserting a
+wiring that a grep would refute is cheap to check mechanically, and that is the
+kind of thing the guard families exist for.
+
+## GE-004 — tenancy import cost: MECHANISM PROVEN, no baseline recorded
+
+```
+transform 0.89s · setup 0ms · import 23.36s · tests 8.16s · environment 6ms
+one file: import 1.02s        22 files x 1.02s = 22.4s ~= 23.36s measured
+```
+
+Import is the dominant cost and it is **fixed per-file module-graph
+instantiation**, not one pathological file. `fileParallelism: false` is set, with
+the reason stated in the config — the cases share one database and T11 disables
+row-level security — so these are serial wall-clock costs rather than summed
+worker time.
+
+**No total is recorded here, deliberately.** Two readings 18% apart exist for a
+stage nobody deliberately changed, and whichever number is written down first
+becomes the thing everything is measured against. The structural facts above
+explain the number and do not move between runs; the total lands after repeated
+runs of the stage alone.
+
+Two avenues are closed rather than merely untried. **Fewer files** is blocked
+because the T-numbered filenames are an interface: the stage parses case
+identifiers out of them and reports coverage against the frozen matrix, so
+merging files silently drops cases from the count. **`isolate: false`** is
+blocked by the two remaining set-at-boot bindings in GE-003 — ordinary
+test-isolation work now that the correctness defect is separated out of it.
+
+## GE-005 — whole-gate timing must declare its tool state
+
+Two runs: 135.42s and 152.90s. `build` moved 1.71s to 16.47s across them, which
+is a turbo cache-state difference and not the `AsyncLocalStorage` change, which
+cannot have cost 15s in a stage it does not touch.
+
+So a whole-gate timing with no stated tool state mixes cold and warm behaviour
+and is not a baseline. Future performance evidence names its state:
+**steady-state** = tool-owned cache established by a priming run;
+**fresh-state** = tool-owned cache absent. No claim is made about OS-level cache
+state, which is not controlled on this platform.
+
+## GE-006 — stage concurrency: the next hypothesis, not yet safe
+
+```
+DB-bound      99.72s          not DB-bound      35.69s
+```
+
+The second group runs serially behind the first for no reason other than list
+order, which makes it the largest remaining wall-clock item — and larger than the
+cache GE-001 rejected.
+
+It is not safe yet: **zero stages declare prerequisites.** Two ordering edges are
+already visible — `build` precedes E2E, and `gate leaves no trace` must run after
+everything that can write to the tree, or it inspects a tree still being written.
+
+**Dependency and resource exclusion are different edges and must be declared
+separately.** "E2E needs build" is an ordering constraint. "Tenancy and
+integration both mutate one database" is a mutual-exclusion constraint between
+stages with no dependency relationship at all. A scheduler that cannot tell them
+apart will either over-serialise and lose the win, or race and produce an
+intermittent FAIL — the worst failure mode for the thing that decides whether
+code ships.
+
+The runner must derive waves from stage-owned declarations rather than acquire a
+second hand-maintained orchestration list, and any implementation owes
+verdict-equivalence against the serial gate: same stages executed, same
+blocked/skipped, same findings, same verdict, same presentation order, including
+against a deliberately failing fixture.
