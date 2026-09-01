@@ -1029,13 +1029,19 @@ Seven occurrences, and the mechanism was never established -- "the file tool
 holds" was a data point, not a cause. Established now, by probe:
 
 ```
-emitted            reaches the interpreter as        lands on disk as
-'\n'   (two)      '
-'   (one)                       0x0A
-'
-'    (one)      newline                           0x0A
-'\0'   (two)      ' '   (one)                       0x00
+emitted              reaches the interpreter as      lands on disk as
+'\\n'   (two)       '\n'   (one)                 0x0A
+'\n'    (one)       a real newline                  0x0A
+'\\0'   (two)       '\0'   (one)                 0x00
 ```
+
+That table was itself corrupted by the mechanism it describes, and the damage
+is the strongest demonstration available: every backslash in it arrived halved,
+so the middle column of row three became a literal NUL byte. It sat in this
+file for two commits, invisible to an editor and to git -- which inspects only
+the first 8KB for its own binary heuristic, and the byte was at offset 61045.
+It is written here by constructing each backslash from `chr(92)`, which is the
+mitigation this section prescribes, applied to the section prescribing it.
 
 **One backslash level is consumed in transport, before any interpreter**, inside a
 quoted heredoc that performs no expansion. Whatever the inner language does with
@@ -1051,3 +1057,96 @@ halving step.
 The mitigation is now a rule with a reason: **build backslashes from
 `chr(92)` / `String.fromCharCode(92)`, or use the file tools. Never rely on
 doubling.**
+
+## A file could exempt itself from every guard by containing the byte one forbids
+
+`trackedFiles()` decided a file was binary by looking for a NUL in its contents
+and withheld it from the scan. So the exact character
+`no-control-characters-in-source` exists to reject was also the character that
+made a file invisible to that guard. Not one file's problem: a permanent,
+structural hole in that guard's coverage, and self-concealing in the way that
+makes a hole survive.
+
+It hid from the tools you would check with, too. Git inspects roughly the first
+8KB for its own binary heuristic, and the byte was at offset 61045, so the
+evidence register diffed as text, grepped as text, and looked fully covered while
+being offered to nothing. Two sources for "is this file binary", disagreeing, and
+the one deciding guard coverage was the one nothing displayed.
+
+**Classification is now an assertion, not a filter.** A file is binary because its
+PATH says so. `DECLARED_BINARY` is a stated pattern and is EMPTY of matches today
+-- measured, not assumed: every extension tracked here (css, json, jsonc, md, mjs,
+sql, ts, tsx, yaml, yml and the dotfiles) is textual. Content can no longer change
+a file's enforcement class, so malformed contents are a finding rather than an
+exemption.
+
+The moment the filter came out the scan went red on
+`.architecture/evidence-register.md:1037 — control character U+0000`. The guard
+found it immediately once it was allowed to see it.
+
+| proof | result |
+|---|---|
+| the real register, NUL removed | offered again: 210 files -> 217 |
+| an expected-text `.md` carrying a NUL | not classified away |
+| the invisible-character guard receives it | rejects it -- fixture `-nul-in-markdown` |
+| full workspace | green, register inside the scan universe |
+
+### A number changed and was read past
+
+`211 files` becoming `210` was printed on two consecutive gate runs and neither
+was noticed. A printed count is evidence; only an assertion is a check. The runner
+now asserts conservation:
+
+```
+offered + declared binary == tracked
+```
+
+Proven able to fail by dropping one file from the enumeration:
+
+```
+Error: scan universe does not conserve: 216 offered + 0 declared binary != 217 tracked
+```
+
+That is this project's own guard law applied one level up -- to the scan, rather
+than to the guards it feeds. It would have gone red at the commit that introduced
+the NUL.
+
+### The table that ate itself
+
+Every backslash in the mechanism table above arrived halved, which is why row
+three's middle column BECAME a literal NUL instead of reading a backslash followed by a zero. The section
+documenting that doubling does not survive was destroyed by doubling not
+surviving. Rebuilt by constructing each backslash from `chr(92)` -- the mitigation
+that section prescribes, applied to the section prescribing it.
+
+This paragraph did it AGAIN on the way in, and the guard caught it: the append
+that wrote this section carried a NUL to line 1117, inside the sentence
+describing how a NUL gets introduced. Third occurrence in one session. What
+stopped it was not discipline -- discipline had just been written down two
+paragraphs above and did not survive its own next edit. It was the guard, seeing
+the file for the first time because this change let it.
+
+### Two defects introduced while making this change, both caught by the gate
+
+**A repo-wide claim from a file-scoped search.** `trackedFiles()` changed from
+returning an array to returning the offered set and the withheld set together.
+The claim that only `run-guards.mjs` consumed it came from a grep run against
+`run-guards.mjs`. `tests/unit/seeded-employee-owner.test.ts` also consumed it and
+broke. One participant, two descriptions, agreeing until a second participant
+appeared -- the same shape as everything else this register records, arriving in
+the change written to close an instance of it.
+
+**A cast is where type-checking stops.** That call site read
+`(trackedFiles() as string[])`, so the compiler could not report that the
+function no longer returned an array. It failed at RUNTIME, in a suite about
+employee identity that had nothing to do with the change. Fixed at the owner
+rather than the call site: `util.mjs` now declares its return shape, so consumers
+receive a type instead of asserting one.
+
+Worth generalising: an `as` on a value crossing a module boundary converts a
+compile-time check into a runtime hope, and the failure surfaces somewhere
+unrelated to the edit that caused it.
+
+**What this does not prove.** That no other classifier in the repository decides
+by content. `classify()` in `tooling/source-universe.mjs` is path-based and was
+not audited for this property; only the binary decision was found and fixed.

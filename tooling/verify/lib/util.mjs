@@ -185,6 +185,50 @@ export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
  * scan that silently offers nothing reports PASS, which is the failure mode this
  * whole change exists to remove.
  */
+/**
+ * Tracked paths that are genuinely binary, DECLARED BY PATH.
+ *
+ * Empty today, and that is a measured fact rather than an oversight: every
+ * extension tracked in this repository -- css, json, jsonc, md, mjs, sql, ts,
+ * tsx, yaml, yml and the dotfiles -- is textual. The list is stated anyway so
+ * that the first image or font added is a declaration somebody writes, not a
+ * behaviour content triggers.
+ */
+const DECLARED_BINARY = /[.](png|jpe?g|gif|ico|webp|avif|woff2?|ttf|otf|eot|pdf|zip|gz)$/
+
+/**
+ * Every tracked textual file. An ENUMERATION, not a decision -- and now not a
+ * content inspection either.
+ *
+ * THE FILTER THIS REPLACES WAS A SELF-EXEMPTION PATH. It called a file binary if
+ * it contained a NUL byte, so any file could remove itself from every guard by
+ * containing the exact character `no-control-characters-in-source` exists to
+ * reject. That guard could not find a NUL anywhere in the repository,
+ * structurally, because a NUL is what made a file invisible to it. The hole was
+ * self-concealing, which is what made it survive.
+ *
+ * It also hid from the tools you would check with. Git inspects roughly the
+ * first 8KB for its own binary heuristic, so at offset 61045 the evidence
+ * register still diffed and grepped as text while being invisible to the scan.
+ * Two sources for "is this file binary", disagreeing, and the one deciding guard
+ * coverage was the one nothing displayed.
+ *
+ * CLASSIFICATION IS AN ASSERTION, NOT A FILTER. A file is binary because its
+ * PATH says so. Content cannot change a file's enforcement class, so malformed
+ * contents are a finding rather than an exemption -- a NUL in a `.md` now
+ * reaches the guard and is rejected.
+ *
+ * git is REQUIRED, and its absence throws rather than yielding an empty set. A
+ * scan that silently offers nothing reports PASS, which is the failure mode this
+ * whole change exists to remove.
+ *
+ * Returns the offered set AND what was withheld, because the runner asserts they
+ * add up. A count that is printed is evidence; only an assertion is a check, and
+ * `211 files` becoming `210` was printed twice and read past both times.
+ */
+/**
+ * @returns {{ binary: string[], files: string[], tracked: number }}
+ */
 export function trackedFiles() {
   const r = spawnSync('git', ['ls-files', '-z'], {
     cwd: ROOT,
@@ -194,19 +238,13 @@ export function trackedFiles() {
   if (r.status !== 0) {
     throw new Error(`cannot enumerate the scan universe: git ls-files failed (${r.status})`)
   }
-  const paths = (r.stdout ?? '').split(String.fromCharCode(0)).filter(Boolean)
-  if (paths.length === 0) {
+  const tracked = (r.stdout ?? '').split(String.fromCharCode(0)).filter(Boolean)
+  if (tracked.length === 0) {
     throw new Error('cannot enumerate the scan universe: git ls-files returned nothing')
   }
-  return paths.filter((f) => {
-    let buf
-    try {
-      buf = readFileSync(join(ROOT, f))
-    } catch {
-      return false
-    }
-    return !buf.includes(0)
-  })
+  const binary = tracked.filter((f) => DECLARED_BINARY.test(f))
+  const files = tracked.filter((f) => !DECLARED_BINARY.test(f))
+  return { binary, files, tracked: tracked.length }
 }
 
 export function read(file) {

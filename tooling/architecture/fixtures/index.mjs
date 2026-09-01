@@ -264,6 +264,22 @@ export const Row = () => <Text tone="muted">fine</Text>
       source: `const re = /${String.fromCharCode(8)}(now)/${String.fromCharCode(10)}`,
     },
   },
+  // A NUL in expected-text material. This is the case the scan universe used to
+  // let escape: `trackedFiles()` called any NUL-bearing file binary and withheld
+  // it, so the one character this guard exists to reject was also the character
+  // that made a file invisible to it. Classification is now declared by path, so
+  // malformed contents are a finding rather than an exemption -- and Markdown is
+  // in scope precisely because that is where the real one was found.
+  'no-control-characters-in-source-nul-in-markdown': {
+    clean: {
+      path: '.architecture/example.md',
+      source: `a table row that survived intact${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: '.architecture/example.md',
+      source: `a table row that did not${String.fromCharCode(0)}${String.fromCharCode(10)}`,
+    },
+  },
   // The wider family: invisible, legal, and able to change meaning. A
   // zero-width space splits an identifier that reads as one word.
   'no-control-characters-in-source-zero-width': {

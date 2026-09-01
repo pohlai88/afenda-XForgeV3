@@ -31,7 +31,23 @@ const C = {
 const paint = (c, s) => (process.stdout.isTTY ? c + s + C.reset : s)
 
 export function scanWorkspace() {
-  const files = trackedFiles().map(posix)
+  const { binary, files: offered, tracked } = trackedFiles()
+  const files = offered.map(posix)
+
+  // Conservation. Every tracked file is either offered to the guards or withheld
+  // by a DECLARED binary path -- there is no third outcome, and no file may leave
+  // the universe by any other means.
+  //
+  // This is the guard law applied one level up, to the scan rather than to the
+  // guards it feeds. The previous content filter dropped a file silently and the
+  // only trace was a printed count falling from 211 to 210, which was printed
+  // twice and read past both times. A number is evidence; only an assertion is a
+  // check.
+  if (files.length + binary.length !== tracked) {
+    throw new Error(
+      `scan universe does not conserve: ${files.length} offered + ${binary.length} declared binary != ${tracked} tracked`,
+    )
+  }
   const violations = []
   const exemptions = []
   const blind = []
@@ -59,7 +75,16 @@ export function scanWorkspace() {
       }
     }
   }
-  return { blind, checked, dormant, exemptions, files: files.length, violations }
+  return {
+    binary: binary.length,
+    blind,
+    checked,
+    dormant,
+    exemptions,
+    files: files.length,
+    tracked,
+    violations,
+  }
 }
 
 /**
@@ -188,7 +213,8 @@ function main() {
     process.exit(0)
   }
 
-  const { blind, dormant, files, checked, exemptions, violations } = scanWorkspace()
+  const { binary, blind, dormant, files, checked, exemptions, tracked, violations } =
+    scanWorkspace()
 
   // The number that accumulated in silence. 159 files were claimable by a guard
   // and never offered to one, for as long as nothing printed a count.
@@ -213,7 +239,10 @@ function main() {
     const note =
       files === 0
         ? paint(C.yellow, 'no source files yet — guards ran against an empty workspace')
-        : paint(C.dim, `${checked} file-checks across ${files} files, ${exemptions.length} exempt`)
+        : paint(
+            C.dim,
+            `${checked} file-checks across ${files} files (${tracked} tracked, ${binary} declared binary), ${exemptions.length} exempt`,
+          )
     console.log(`  ${paint(C.green, 'PASS')} architecture guards  ${note}`)
     process.exit(0)
   }

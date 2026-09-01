@@ -51,7 +51,12 @@ const EXEMPT = [
 
 /** Tracked files whose text contains the identifier. */
 function holders(): string[] {
-  return (trackedFiles() as string[]).filter((f) => {
+  // `.files` -- the offered set. The cast that used to stand here was
+  // `as string[]`, and when `trackedFiles()` began returning the withheld set
+  // alongside the offered one, the cast is what stopped the compiler from
+  // saying so. It broke at runtime instead, in a suite that had nothing to do
+  // with the change.
+  return trackedFiles().files.filter((f: string) => {
     try {
       return readFileSync(join(ROOT, f), 'utf8').includes(EMPLOYEE)
     } catch {
