@@ -4,6 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@hono/zod-openapi':
+      specifier: ^1.6.1
+      version: 1.6.1
+    postgres:
+      specifier: ^3.4.9
+      version: 3.4.9
+    vitest:
+      specifier: ^4.1.11
+      version: 4.1.11
+
 importers:
 
   .:
@@ -63,7 +75,7 @@ importers:
         specifier: ^8.27.0
         version: 8.27.0(@faker-js/faker@10.6.0)(supports-color@7.2.0)(typescript@7.0.2)
       postgres:
-        specifier: ^3.4.9
+        specifier: 'catalog:'
         version: 3.4.9
       react:
         specifier: ^19.0.0
@@ -87,7 +99,7 @@ importers:
         specifier: ^7.0.0
         version: 7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0)
       vitest:
-        specifier: ^4.1.11
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   apps/web:
@@ -135,7 +147,7 @@ importers:
   modules/hr:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.6.1
+        specifier: 'catalog:'
         version: 1.6.1(hono@4.13.5)(zod@4.5.4)
       '@xforge/api':
         specifier: workspace:*
@@ -160,16 +172,16 @@ importers:
         specifier: workspace:*
         version: link:../../tests/fixtures
       postgres:
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.9
       vitest:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/api:
     dependencies:
       '@hono/zod-openapi':
-        specifier: ^1.1.0
+        specifier: 'catalog:'
         version: 1.6.1(hono@4.13.5)(zod@4.5.4)
       '@xforge/db':
         specifier: workspace:*
@@ -188,7 +200,7 @@ importers:
         version: 4.5.4
     devDependencies:
       vitest:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/api-client:
@@ -201,7 +213,7 @@ importers:
         version: 2.15.0(@types/node@26.4.0)(typescript@7.0.2)
     devDependencies:
       vitest:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/db:
@@ -213,20 +225,20 @@ importers:
         specifier: ^0.44.0
         version: 0.44.7(postgres@3.4.9)
       postgres:
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.9
     devDependencies:
       '@xforge/fixtures':
         specifier: workspace:*
         version: link:../../tests/fixtures
       vitest:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/policy:
     devDependencies:
       vitest:
-        specifier: ^4.0.0
+        specifier: 'catalog:'
         version: 4.1.11(@types/node@26.4.0)(msw@2.15.0(@types/node@26.4.0)(typescript@7.0.2))(vite@7.3.6(@types/node@26.4.0)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/tenancy: {}
@@ -248,7 +260,7 @@ importers:
   tests/fixtures:
     dependencies:
       postgres:
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.9
 
 packages:

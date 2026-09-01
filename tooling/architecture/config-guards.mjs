@@ -379,6 +379,7 @@ export const configGuards = [
     law: 32,
     title: 'CI supplies every environment variable the qualification suite declares',
   },
+
   {
     /**
      * Test scaffolding never enters a production dependency closure.

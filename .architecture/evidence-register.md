@@ -1558,3 +1558,76 @@ second hand-maintained orchestration list, and any implementation owes
 verdict-equivalence against the serial gate: same stages executed, same
 blocked/skipped, same findings, same verdict, same presentation order, including
 against a deliberately failing fixture.
+
+## GE-007 — one version per dependency, and no guard for it
+
+Three dependencies were declared twice: `@hono/zod-openapi` (`^1.6.1` in
+`modules/hr` vs `^1.1.0` in `packages/api`), `vitest` (`^4.1.11` at the root vs
+`^4.0.0` in five packages), `postgres` (`^3.4.9` at the root vs `^3.4.5` in
+three).
+
+The first is not tidiness. This is a contract-first architecture, and the module
+DECLARING routes was resolving a different OpenAPI schema library from the
+package MOUNTING them.
+
+**The reconciliation needed no judgement, which was checked rather than
+assumed.** All three pairs are overlapping caret ranges, and the lockfile already
+resolved each to a single version — 1.6.1, 4.1.11, 3.4.9, the higher of every
+pair. Pinning the catalog at those versions therefore changes nothing installed:
+`pnpm install` reported "Already up to date" and the resolved versions are
+identical afterwards. This removes the POSSIBILITY of the disagreement rather
+than an active one.
+
+### No drift guard, and why — measured, then confirmed against the docs
+
+A guard was written and then removed. The question it answered is real, but pnpm
+answers most of it, and the residue does not justify custom enforcement.
+
+Measured on pnpm 11.20.0, with `catalogMode: strict` set:
+
+```
+pnpm add vitest@4.0.0 into a catalogued package
+  -> ERR_PNPM_CATALOG_VERSION_MISMATCH, manifest untouched
+
+hand-edit "vitest": "^4.0.0", then pnpm install
+  -> accepted. "Lockfile is up to date, resolution step is skipped"
+```
+
+That is not a misconfiguration. pnpm's own documentation defines the setting
+that way: *catalogMode "controls if and how dependencies are added to the default
+catalog, when running `pnpm add`"*, and `strict` "only allows dependency versions
+from the catalog. Adding a dependency outside the catalog's version range will
+cause an error." Add-time by definition; install-time is not claimed.
+
+So the coverage is:
+
+| path a second version could enter | covered by |
+|---|---|
+| `pnpm add pkg@other` | `catalogMode: strict` — errors |
+| `pnpm up` | same setting |
+| a new package scaffolded with a literal | `catalogMode: strict` on the add |
+| a hand-edited manifest, or a merge resolving a conflict | **nothing** |
+
+The last row is accepted rather than guarded. Law 30 wants a named, measured
+pain before new infrastructure, and the pain here is one row of a table that the
+package manager closes for every path anyone actually types. A guard for it would
+be enforcement built for a hypothetical, in a repository whose ADR-024 already
+records a governance-to-product ratio of 1.32 : 1.
+
+**What would reopen it:** a second version arriving through the hand-edit path in
+practice. That is an observation to wait for, not to pre-empt — and if it
+arrives, the guard is about sixty lines and was already shown to work.
+
+### While in the workspace file
+
+`allowBuilds` still carried its scaffolding text — `set this to true or false` —
+while `onlyBuiltDependencies` separately decided the same question for the same
+two packages, and nothing complained. Two fields owning one fact, which is the
+shape CLAUDE.md names. `allowBuilds` is what pnpm 11 reads and the other is its
+predecessor, so the predecessor is gone and the values preserve what was already
+permitted rather than revisiting it.
+
+**What this does not prove.** That the pinned versions are the RIGHT versions. It
+proves only that they are the versions already installed, so adopting the catalog
+changed nothing — which is a claim about the migration being safe, not about the
+choices being correct.

@@ -8,10 +8,34 @@ packages:
   # did not contain. Biome's noUndeclaredDependencies reported it.
   - 'tests/fixtures'
 
-allowBuilds:
-  esbuild: set this to true or false
-  msw: set this to true or false
+# ONE VERSION PER DEPENDENCY, declared here and referenced as `catalog:`.
+#
+# Three were declared twice. @hono/zod-openapi is the one that mattered: this is
+# a contract-first architecture, and the module DECLARING routes resolved a
+# different OpenAPI schema library from the package MOUNTING them. Two sources
+# for one fact, agreeing until they stop.
+#
+# Each version below is what the lockfile ALREADY resolved -- 1.6.1, 4.1.11,
+# 3.4.9, the higher of every overlapping caret pair. So this changes nothing
+# that is installed. It removes the possibility of the disagreement rather than
+# an actual disagreement, which is why the reconciliation needed no judgement.
+#
+# Named catalogs exist if a range must differ on purpose. That is the point: an
+# exception would then be declared rather than accidental.
+catalogMode: strict
 
-onlyBuiltDependencies:
-  - esbuild
-  - msw
+catalog:
+  '@hono/zod-openapi': ^1.6.1
+  postgres: ^3.4.9
+  vitest: ^4.1.11
+
+# ONE FIELD decides whether a dependency may run its install scripts.
+#
+# `allowBuilds` carried its scaffolding text -- "set this to true or false" --
+# while `onlyBuiltDependencies` separately decided the same question for the same
+# two packages, and nothing complained. `allowBuilds` is the field pnpm 11 reads
+# and the other is its predecessor, so the predecessor goes. The values preserve
+# what was already permitted rather than revisiting it.
+allowBuilds:
+  esbuild: true
+  msw: true

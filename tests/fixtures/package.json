@@ -11,7 +11,7 @@
     "./tenancy": "./tenancy.ts"
   },
   "dependencies": {
-    "postgres": "^3.4.5"
+    "postgres": "catalog:"
   },
   "$comment": "A real workspace package rather than a bare tsconfig path alias. It was the latter, and nothing could declare a dependency on it -- which noUndeclaredDependencies reported as three packages importing something that does not exist. An alias that pretends to be a package is a dependency nobody can see."
 }

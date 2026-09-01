@@ -11,7 +11,7 @@
   },
   "main": "./index.ts",
   "dependencies": {
-    "@hono/zod-openapi": "^1.6.1",
+    "@hono/zod-openapi": "catalog:",
     "@xforge/api": "workspace:*",
     "@xforge/db": "workspace:*",
     "@xforge/policy": "workspace:*",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@xforge/fixtures": "workspace:*",
-    "postgres": "^3.4.5",
-    "vitest": "^4.0.0"
+    "postgres": "catalog:",
+    "vitest": "catalog:"
   }
 }

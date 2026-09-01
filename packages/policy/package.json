@@ -8,6 +8,6 @@
   },
   "main": "./src/index.ts",
   "devDependencies": {
-    "vitest": "^4.0.0"
+    "vitest": "catalog:"
   }
 }
