@@ -31,6 +31,7 @@
  * outcome write itself failed". The admin and operations surface owes an
  * explicit view of incomplete privileged operations. Phase 1 case T16.
  */
+import { AsyncLocalStorage } from 'node:async_hooks'
 import type { TenantClient } from './index'
 
 /**
@@ -133,7 +134,32 @@ export function createMemoryAuditSink(): PlatformAuditSink {
 }
 
 let sink: PlatformAuditSink | null = null
-let executionContext: ExecutionContext | null = null
+/**
+ * The execution context, held per async operation rather than per module.
+ *
+ * This was a module-scope mutable binding, written on entry and restored in a
+ * `finally`. Safe only while no second caller can interleave -- and two
+ * overlapping operations in one process is exactly what a request layer is. B
+ * wrote the global while A was suspended, and B's `finally` restored what B saw
+ * on ENTRY, which was A's context rather than null. Demonstrated, not reasoned:
+ * A resumed and read bob's actor, and the context outlived both operations.
+ *
+ * That is not a mislabelled log line. `withPlatformAccess` takes the audited
+ * actor and correlationId from here precisely so the caller cannot name itself,
+ * so a bleed attributes privileged cross-tenant access to the wrong actor --
+ * the property T15 and T16 exist to establish.
+ *
+ * FOUND BY A PERFORMANCE INVESTIGATION, which is the part worth recording.
+ * Per-file test isolation gives every file a fresh module registry, so the
+ * binding was effectively per-file and the interleaving could never arise. The
+ * isolation that makes the tenancy proof reproducible is what hid this, and the
+ * defect surfaced only when removing that isolation was proposed for speed.
+ *
+ * `AsyncLocalStorage` is the platform's answer and costs no dependency: the
+ * store follows the async operation through every await, and no writable
+ * module-scope binding is left to clobber.
+ */
+const executionStore = new AsyncLocalStorage<ExecutionContext>()
 
 export function setPlatformAuditSink(s: PlatformAuditSink): void {
   sink = s
@@ -147,17 +173,11 @@ export async function withExecutionContext<T>(
   ctx: ExecutionContext,
   fn: () => Promise<T>,
 ): Promise<T> {
-  const previous = executionContext
-  executionContext = ctx
-  try {
-    return await fn()
-  } finally {
-    executionContext = previous
-  }
+  return executionStore.run(ctx, fn)
 }
 
 export function currentExecutionContext(): ExecutionContext | null {
-  return executionContext
+  return executionStore.getStore() ?? null
 }
 
 let counter = 0
@@ -197,7 +217,7 @@ export async function performPlatformAccess<T>(
 
   // Fail closed: no trusted identity means no privileged access. Letting the
   // caller proceed anonymously would produce an audit row naming nobody.
-  const ctx = executionContext
+  const ctx = executionStore.getStore()
   if (!ctx) {
     throw new Error(
       'withPlatformAccess requires a trusted execution context. It is established by the ' +

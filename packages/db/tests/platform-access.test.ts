@@ -11,6 +11,7 @@ import { TENANT_A } from '@xforge/fixtures/tenancy'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createMemoryAuditSink,
+  currentExecutionContext,
   type PlatformAuditSink,
   readPlatformAudit,
   setDriver,
@@ -156,5 +157,62 @@ describe('the audit records where the privileged call came from', () => {
     // Recording which tenant's console the operator was in when they reached
     // across, which is where an investigation starts.
     expect(sink.read().map((r) => r.tenantId)).toEqual([TENANT_A, TENANT_A])
+  })
+})
+
+/**
+ * Two operations in one process, overlapping across an await.
+ *
+ * `executionContext` is a module-scope `let`, written on entry and restored in
+ * `finally`. That is safe only while no second caller can interleave. In a
+ * process serving concurrent requests it is not: B writes the global while A is
+ * suspended, and B's `finally` restores what B saw on entry -- which is A's
+ * context, not null -- so whichever of them resumes next may read the other's
+ * actor and correlationId.
+ *
+ * `withPlatformAccess` takes the AUDITED IDENTITY from this context precisely so
+ * the caller cannot name itself. A bleed here does not merely mislabel a log
+ * line; it attributes privileged cross-tenant access to the wrong actor, which
+ * is the property T15/T16 exist to establish.
+ *
+ * NOT LIVE TODAY: nothing under apps/ or modules/ calls `withExecutionContext`,
+ * so no request layer establishes one. Its own doc comment says the request
+ * layer will, and this is written before that caller exists rather than after.
+ *
+ * The suite cannot currently see this on its own. Every test FILE gets a fresh
+ * module registry under vitest isolation, so the singleton is effectively
+ * per-file and the interleaving never arises. The isolation that makes the
+ * tenancy proof reproducible is also what hides this.
+ */
+describe('the execution context survives a concurrent operation', () => {
+  const ctxA = { actor: 'alice', correlationId: 'req-A', origin: 'request' as const }
+  const ctxB = { actor: 'bob', correlationId: 'req-B', origin: 'request' as const }
+
+  it('does not let one operation read another actor across an await', async () => {
+    const seen: Record<string, string | undefined> = {}
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 5))
+
+    const a = withExecutionContext(ctxA, async () => {
+      await settle()
+      seen.a = currentExecutionContext()?.actor
+    })
+    const b = withExecutionContext(ctxB, async () => {
+      seen.b = currentExecutionContext()?.actor
+      await settle()
+    })
+    await Promise.all([a, b])
+
+    expect(seen.b).toBe('bob')
+    expect(seen.a).toBe('alice')
+  })
+
+  it('leaves no context behind once every operation has finished', async () => {
+    const a = withExecutionContext(ctxA, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5))
+    })
+    const b = withExecutionContext(ctxB, async () => undefined)
+    await Promise.all([a, b])
+
+    expect(currentExecutionContext()).toBeNull()
   })
 })
