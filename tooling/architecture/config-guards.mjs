@@ -667,6 +667,117 @@ export const configGuards = [
     law: 7,
     title: 'A tsconfig paths alias never shadows a workspace package or its declared exports',
   },
+  {
+    /**
+     * TWO RUNNERS, ONE MIGRATION SET, AND THEY DISAGREED.
+     *
+     * `migrate-check.mjs` globs `packages/db/migrations/*.sql` and sorts. Drizzle
+     * reads `meta/_journal.json` and applies only what it lists. The journal
+     * listed `0000_init` alone while four migrations existed on disk, because
+     * ADR-021 requires forward-reviewed SQL and 0001-0003 were therefore
+     * hand-written -- and drizzle-kit only journals what drizzle-kit generates.
+     *
+     * Both were GREEN. The migration stage reported "4 migrations apply cleanly
+     * to a fresh database", which was true and was measured against its own
+     * glob. `drizzle-kit migrate` against the same repository produced ONE
+     * table. A developer provisioning a database the drizzle way got a schema
+     * with no `tenant`, no `tenant_domain`, no `tenant_membership` and none of
+     * the FORCE ROW LEVEL SECURITY that law 11 requires -- and nothing said so,
+     * because neither runner can see the other.
+     *
+     * This is the defect CLAUDE.md names: a fact acquires a second source, the
+     * two agree until they do not, and nothing complains in between. Here they
+     * never even agreed -- they simply never met.
+     *
+     * The rule is deliberately SYMMETRIC. A .sql with no entry is skipped by
+     * drizzle; an entry with no .sql makes drizzle fail outright. Checking one
+     * direction would leave the other free to drift, which is how this arrived.
+     *
+     * NOT CHECKED HERE, and worth stating because a guard whose name overclaims
+     * is worse than none: this proves the two runners see the SAME SET. It
+     * proves nothing about whether the SQL is correct, and nothing about
+     * `drizzle-kit generate`, which still diffs against `meta/*_snapshot.json`
+     * that hand-written migrations never produce. Measured: `generate` today
+     * emits a file whose name collides with 0001, re-creates three existing
+     * tables and carries no FORCE ROW LEVEL SECURITY at all. Reviewing
+     * generated SQL is permitted by ADR-021; applying it unread is exactly what
+     * that ADR rejects, and this guard is not what would catch it.
+     */
+    check(env) {
+      const MIG = 'packages/db/migrations/'
+      const files = env.files ?? []
+
+      const sql = files
+        .filter((f) => f.path.startsWith(MIG) && f.path.endsWith('.sql'))
+        .map((f) => f.path.slice(MIG.length).replace(/\.sql$/, ''))
+
+      const journalFile = files.find((f) => f.path === `${MIG}meta/_journal.json`)
+      if (sql.length === 0) {
+        // No migrations yet is a legitimate state; a journal without them is not.
+        return journalFile
+          ? [
+              {
+                message:
+                  'a drizzle journal exists but no .sql migrations do -- drizzle would ' +
+                  'fail on every entry it lists',
+                where: `${MIG}meta/_journal.json`,
+              },
+            ]
+          : []
+      }
+      if (!journalFile) {
+        return [
+          {
+            message:
+              `${sql.length} migration(s) exist with no meta/_journal.json -- ` +
+              '`drizzle-kit migrate` would apply NOTHING while the migration stage ' +
+              'applies all of them, and both would report success',
+            where: MIG,
+          },
+        ]
+      }
+
+      let journal
+      try {
+        journal = JSON.parse(journalFile.source)
+      } catch {
+        return [
+          {
+            message: 'is not parseable JSON, so the migration set has no second half to compare',
+            where: journalFile.path,
+          },
+        ]
+      }
+
+      const tags = (journal.entries ?? []).map((e) => e.tag)
+      const out = []
+      for (const tag of sql) {
+        if (!tags.includes(tag)) {
+          out.push({
+            message:
+              `${tag}.sql is on disk but absent from meta/_journal.json -- the ` +
+              'migration stage applies it and `drizzle-kit migrate` skips it, so the ' +
+              'two runners build different schemas and both report success',
+            where: journalFile.path,
+          })
+        }
+      }
+      for (const tag of tags) {
+        if (!sql.includes(tag)) {
+          out.push({
+            message:
+              `meta/_journal.json lists '${tag}' with no matching ${tag}.sql on disk -- ` +
+              '`drizzle-kit migrate` fails outright on a missing file',
+            where: journalFile.path,
+          })
+        }
+      }
+      return out
+    },
+    id: 'migration-set-has-one-authority',
+    law: 28,
+    title: 'Every migration on disk is journalled, and every journal entry has a migration',
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */

@@ -311,6 +311,51 @@ export const configFixtures = {
     }),
   },
 
+  /**
+   * The state the repository was actually in: a drizzle-generated `0000_init`
+   * journalled, and a hand-written migration beside it that drizzle never saw.
+   *
+   * ADR-021 requires forward-reviewed SQL, so hand-written migrations are the
+   * NORMAL case here rather than an aberration -- which is exactly why the
+   * journal fell behind and why nothing noticed. The violating fixture is
+   * therefore the ordinary way of working, one step before anyone checks.
+   *
+   * The clean side journals BOTH, rather than dropping to a single migration.
+   * A one-migration clean side would pass a guard that merely counted, and this
+   * guard is about two collections agreeing.
+   */
+  'migration-set-has-one-authority': {
+    because: 'absent from meta/_journal.json',
+    clean: envWith({
+      files: [
+        { path: 'packages/db/migrations/0000_init.sql', source: 'CREATE TABLE "a" ();' },
+        {
+          path: 'packages/db/migrations/0001_force_rls.sql',
+          source: 'ALTER TABLE "a" FORCE ROW LEVEL SECURITY;',
+        },
+        {
+          path: 'packages/db/migrations/meta/_journal.json',
+          source: JSON.stringify({
+            entries: [{ tag: '0000_init' }, { tag: '0001_force_rls' }],
+          }),
+        },
+      ],
+    }),
+    violating: envWith({
+      files: [
+        { path: 'packages/db/migrations/0000_init.sql', source: 'CREATE TABLE "a" ();' },
+        {
+          path: 'packages/db/migrations/0001_force_rls.sql',
+          source: 'ALTER TABLE "a" FORCE ROW LEVEL SECURITY;',
+        },
+        {
+          path: 'packages/db/migrations/meta/_journal.json',
+          source: JSON.stringify({ entries: [{ tag: '0000_init' }] }),
+        },
+      ],
+    }),
+  },
+
   'no-committed-build-output': {
     because: 'build output',
     clean: envWith({ trackedFiles: ['packages/api/src/app.ts', 'CLAUDE.md'] }),
