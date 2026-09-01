@@ -1,7 +1,7 @@
 'use client'
 
 import { Alert, Button, Card, Code, Heading, List, ListItem, Stack, Status, Text } from '@xforge/ui'
-import { assertNever, type ResourceState, type WriteOutcome } from '@xforge/ui/state'
+import { assertNever, type ResourceState, readSucceeded, type WriteOutcome } from '@xforge/ui/state'
 /**
  * Emergency contacts -- the design system's representative screen.
  *
@@ -182,7 +182,16 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
         <Resource onRetry={retry} onSave={save.run} state={contacts} />
 
         <Stack direction="row">
-          <Button disabled={add.outcome.status === 'saving'} onClick={add.run} variant="primary">
+          {/* Not offered while the read has not produced an answer. Adding to a
+              collection you cannot see creates a duplicate of something you were
+              never shown, and the recovery on offer beneath an `error` is the
+              retry, not a blind write. `empty` is a SUCCESSFUL read, so the
+              control stays available there -- that is the whole point of it. */}
+          <Button
+            disabled={!readSucceeded(contacts) || add.outcome.status === 'saving'}
+            onClick={add.run}
+            variant="primary"
+          >
             {add.outcome.status === 'saving' ? 'Adding…' : 'Add contact'}
           </Button>
         </Stack>

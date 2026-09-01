@@ -64,8 +64,8 @@ something a person can be shown, and proves it.
   4C.0  wire the mapper into the real screen              DONE    76ffcdb
   4C.1  one owner for enforcement scope                   DONE    76ffcdb
   4C.2  read-state behavioural conformance                DONE    2273122
-  4C.3  write-outcome behavioural conformance              NEXT
-  4C.4  cross-axis composition
+  4C.3  write-outcome behavioural conformance              DONE    d0524fc
+  4C.4  cross-axis composition                            DONE
   4C.5  accessibility, and error containment
   4C.6  interaction and action conformance
 ```
@@ -138,6 +138,14 @@ reach any of them.
   forbidden + idle writes     write controls must not remain interactive
   error     + idle writes     beneath a terminal read state
 ```
+
+Seven written, six passed on the first run and one found a defect: beneath an
+`error` the Add control was enabled, so a caller could create a contact in a
+collection they could not see -- a duplicate of something they were never shown.
+`readSucceeded()` now lives with the vocabulary in `@xforge/ui/state`, exhaustive
+and ending in `assertNever`, so a new read state is a compile error rather than a
+silent default into one answer. `empty` is the case that keeps the rule honest:
+it is a SUCCESSFUL read and adding the first record is the entire point of it.
 
 ## Undecided
 

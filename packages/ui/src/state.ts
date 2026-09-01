@@ -121,6 +121,38 @@ export type WriteOutcome =
   | { status: 'failed'; issue: UiProblem }
 
 /**
+ * Did the read produce an answer?
+ *
+ * TRUE for `empty`, `ready` and `partial` -- all three are successful reads that
+ * differ in what they found. FALSE for `loading`, `forbidden` and `error`, where
+ * the collection is unknown.
+ *
+ * It exists because a WRITE control beneath an unsuccessful read offers an
+ * action whose result the caller cannot see: for a collection, creating a
+ * duplicate of something they were never shown. `empty` is the case that stops
+ * this being "writes are off when there is no data" -- adding the first record
+ * is the entire point of that state, and its own copy says so.
+ *
+ * Exhaustive, ending in `assertNever`, so a new member is a compile error rather
+ * than a silent default into one answer or the other. An inline union check at
+ * the call site would be a second place that knows the members.
+ */
+export function readSucceeded<T>(state: ResourceState<T>): boolean {
+  switch (state.status) {
+    case 'empty':
+    case 'ready':
+    case 'partial':
+      return true
+    case 'loading':
+    case 'forbidden':
+    case 'error':
+      return false
+    default:
+      return assertNever(state, 'resource state')
+  }
+}
+
+/**
  * Refuse a value the type system believes impossible.
  *
  * Used as the final branch of every mapper, so that a new producer vocabulary
