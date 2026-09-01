@@ -91,6 +91,39 @@ permits the wrong action has not been proven.
   error        failure semantics, and retry ONLY when `retryable`
 ```
 
+### 4C.3 — what each write outcome must prove
+
+Only producer-backed outcomes. All five are reachable: the controller derives
+them from react-query's own closed status union through an exhaustive switch, so
+`idle`, `saving` and `saved` are as real as `conflict`.
+
+```
+  idle       no outcome is claimed -- a stale banner reports something untrue
+  saving     the control that started it is disabled and says so, and the
+             write is NOT represented as done
+  saved      the control returns to actionable, and nothing claims a problem
+  conflict   five obligations, below
+  failed     distinguishable from conflict, and the read still visible
+```
+
+`conflict` carries the load, and each line is a separate way to get it wrong:
+
+```
+  the existing ResourceState remains visible
+  it is not rendered as a read failure
+  the attempted write is not represented as successful
+  the user is given a RESOLUTION PATH, not only a diagnosis
+  assistive technology can discover it
+```
+
+The fourth is why `conflict` came off the read axis at 4B. An error says
+something broke; a conflict says someone else changed this and here is what to
+do. Collapsing them loses the only part that tells the user what to do next.
+
+`conflict` and `failed` are the discriminating pair on this axis, the same shape
+as `forbidden` and `error` on the read axis: either alone is satisfied by a
+screen that renders one banner for everything.
+
 ### 4C.4 — the combinations worth exercising
 
 The point of two axes is that these exist. Testing each axis alone would not

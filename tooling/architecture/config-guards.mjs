@@ -22,15 +22,7 @@ import {
   OUTPUT_FILES,
   UNCOMMITTABLE,
 } from '../source-universe.mjs'
-import {
-  COMMITTED_PHASE,
-  PHASES,
-  posix,
-  ROOT,
-  read,
-  run,
-  sourceFiles,
-} from '../verify/lib/util.mjs'
+import { COMMITTED_PHASE, PHASES, posix, ROOT, read, trackedFiles } from '../verify/lib/util.mjs'
 
 /**
  * Read JSON, tolerating comments only when genuinely needed.
@@ -454,7 +446,21 @@ export const configGuards = [
 export function scanConfig() {
   const gitignorePath = join(ROOT, '.gitignore')
   const exts = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.sql', '.json', '.yaml', '.yml']
-  const tracked = run('git', ['ls-files'])
+  // ONE ENUMERATION, shared with the source guards.
+  //
+  // This was a filesystem walk from '.', excluding NON_SOURCE_DIRS. The
+  // reasoning above it is right -- a credential guard that cannot see a
+  // directory is a credential guard that approves it -- but "the whole
+  // repository" was implemented as "whatever is on disk", and the disk grew a
+  // second repository: a linked git worktree under .claude/worktrees holds a
+  // complete copy, and the walk scanned it and reported the fixture credential
+  // twice, in a checkout this index does not contain.
+  //
+  // `trackedFiles()` IS the whole repository, by definition, and a linked
+  // worktree is excluded by construction rather than by an exclusion list
+  // somebody has to extend. The two universes were five lines apart in this one
+  // function -- `env.trackedFiles` below already used git.
+  const { files: tracked } = trackedFiles()
   const env = {
     adrs: existsSync(join(ROOT, '.architecture/adr'))
       ? readdirSync(join(ROOT, '.architecture/adr'))
@@ -470,14 +476,15 @@ export function scanConfig() {
     // guard that approves it, and the directory it cannot see is always the one
     // added last -- root-level config files, in this case. Source guards keep
     // their narrower roots: test code legitimately calls withTenant directly.
-    files: sourceFiles(['.'], exts)
+    files: tracked
+      .filter((f) => exts.some((e) => f.endsWith(e)))
       .map(posix)
       .map((path) => ({ path, source: read(path) })),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
-    // Empty when git is unavailable; the guard then simply has nothing to check
-    // rather than silently passing on a wrong assumption.
-    trackedFiles:
-      tracked.code === 0 ? tracked.out.split(String.fromCharCode(10)).filter(Boolean) : [],
+    // The same enumeration, unfiltered. `trackedFiles()` throws when git is
+    // unavailable rather than yielding an empty set, because a guard handed
+    // nothing reports PASS.
+    trackedFiles: tracked,
     tsconfig: readJsonc('tsconfig.json'),
   }
 

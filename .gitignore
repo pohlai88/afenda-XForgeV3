@@ -25,6 +25,10 @@ storybook-static/
 # Claude Code personal overrides (project settings.json IS committed)
 .claude/settings.local.json
 
+# EnterWorktree checks out linked worktrees under here. Unignored, a single
+# `git add -A` in the main checkout commits an entire second copy of the tree.
+.claude/worktrees/
+
 # Written by Next, and its content depends on whether dev or build ran last.
 # Tracking it guarantees a dirty tree. apps/web/types/assets.d.ts owns the
 # declarations this application actually needs.
