@@ -956,3 +956,98 @@ in this repository constructs it", and the difference is exactly what rule 5 is
 for. They become producer-backed at 4C.0, when the screen stops reading
 `list.isPending` and `create.isPending` directly. Until then the honest word is
 PENDING, not PROVEN.
+
+## The scan universe is now an enumeration, and `applies()` is its only owner
+
+Widened to every tracked textual file. `sourceFiles()` walked three roots and
+offered 52 of 210; `trackedFiles()` enumerates 211 and filters only binaries,
+detected by a NUL byte rather than an extension list.
+
+A longer exclusion list in the runner was the obvious fix and the wrong one: it
+keeps two owners of "is this file subject to guards" and makes the second one
+longer. Exclusions now live on the guard whose property they are an exclusion
+FROM, which is the only place the question is answerable. Documentation is
+exempt from the delete guard and emphatically not from the control-character
+one, and a scan-level list cannot say that -- which is precisely how it hid six
+real findings.
+
+```
+before   345 file-checks across  52 files
+after    700 file-checks across 211 files, 4 exempt, 2 dormant
+```
+
+**The 32 reds, each taken as a decision.** Twenty-six collapsed into one derived
+rule rather than twenty-six entries: four guards govern EXECUTABLE TYPESCRIPT,
+and every one of the 26 was either `.md` prose quoting the rule to explain it or
+tooling `.mjs` containing the pattern it matches. The rule was derived from the
+evidence, not asserted ahead of it, so its scope is known to be exactly those
+cases.
+
+Four needed a named file and survive as declared exemptions, each recording where
+the content is checked INSTEAD:
+
+| file | why | checked instead by |
+|---|---|---|
+| `T02-missing-app-predicate.test.ts` | the unqualified DELETE is the test's subject | the test, more strictly: it asserts the delete returned exactly `[A_ROW]` |
+| `resource-state.ts` | the mapper IS the boundary | 16 mapper tests |
+| `use-emergency-contacts.ts` | the controller | exhaustive switches ending in `assertNever` |
+| `api/[[...route]]/route.ts` | the SERVER side of the same app | contract tests and the tenancy proof suite |
+
+The documentation twenty are checked NOWHERE, and that is written on the guard
+rather than implied. Nothing verifies that a code example in `.architecture/`
+still reflects the code.
+
+### Two invariants kept, and one of them fired immediately
+
+`no guard governs zero files` -- the depcruise failure, where a tool is
+installed, configured, green and blind. It went red on first run against
+`ai-tool-no-data-access` and `legal-entity-binding`, whose subjects (`packages/ai`,
+`modules/payroll/infrastructure`) do not exist yet. Dormancy is the honest
+version of the same zero, and the difference is that somebody wrote it down: a
+guard may declare `dormant` with a reason, is then REPORTED every run, and cannot
+quietly stay dormant once its subject arrives. Undeclared, it is red. Proven able
+to fail by pointing a live guard at nothing.
+
+`exemption counts appear in the output`. 159 files accumulated in silence because
+no number was ever printed.
+
+### The `.tsx` proxy enforced a narrower property than the one stated
+
+The first version of the boundary guard banned transport vocabulary from `.tsx`.
+What is worth having is that a NAMED, SMALL set of files in `apps/` touches the
+generated client. Those coincided only because exactly one `.ts` imported it --
+one participant, two descriptions, agreeing. A second `.ts` helper would have
+reintroduced the second state machine without going near a `.tsx`.
+
+Replaced with an allowlist, which found a third participant on its first run:
+`app/api/[[...route]]/route.ts`, the server mount, legitimate and invisible to the
+extension rule.
+
+## What eats the backslash: answered
+
+Seven occurrences, and the mechanism was never established -- "the file tool
+holds" was a data point, not a cause. Established now, by probe:
+
+```
+emitted            reaches the interpreter as        lands on disk as
+'\n'   (two)      '
+'   (one)                       0x0A
+'
+'    (one)      newline                           0x0A
+'\0'   (two)      ' '   (one)                       0x00
+```
+
+**One backslash level is consumed in transport, before any interpreter**, inside a
+quoted heredoc that performs no expansion. Whatever the inner language does with
+the SURVIVING single backslash is what reaches disk. Every occurrence follows:
+`\b` became a backspace 0x08, and `\0` became a NUL -- the latter inside
+`trackedFiles()`, whose own binary detector would then have excluded its own
+source.
+
+It also predicts, rather than merely observing, that Write/Edit are safe: their
+content is a JSON argument, not interpreter source, and never passes through the
+halving step.
+
+The mitigation is now a rule with a reason: **build backslashes from
+`chr(92)` / `String.fromCharCode(92)`, or use the file tools. Never rely on
+doubling.**

@@ -160,6 +160,55 @@ export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
   return roots.flatMap((r) => (exts ? walk(r, exts) : walk(r)))
 }
 
+/**
+ * Every tracked textual file. An ENUMERATION, not a decision.
+ *
+ * `sourceFiles()` walked three roots and offered the guards 52 of 210 tracked
+ * files. That made the offered set a second owner of "is this file subject to
+ * guards", alongside each guard's own `applies()`. The two agreed for as long as
+ * nobody compared them: 159 files were claimable and never offered, and six real
+ * control characters sat in the guard runner's own source because `tooling/` was
+ * not a root.
+ *
+ * The fix is not a longer exclusion list here -- that keeps both owners and makes
+ * the second one longer. It is to enumerate, and let `applies()` be the only
+ * thing that decides. An exclusion then lives on the guard whose property it is
+ * an exclusion FROM, which is the only place the question can be answered: docs
+ * are exempt from the delete guard and emphatically not from the
+ * control-character one.
+ *
+ * BINARY IS THE ONLY EXCLUSION HERE, because "textual" is a property of the file
+ * rather than of any guard's subject matter. Detected by content -- a NUL byte --
+ * not by extension, so a new binary format needs no list entry.
+ *
+ * git is REQUIRED, and its absence throws rather than yielding an empty set. A
+ * scan that silently offers nothing reports PASS, which is the failure mode this
+ * whole change exists to remove.
+ */
+export function trackedFiles() {
+  const r = spawnSync('git', ['ls-files', '-z'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    shell: false,
+  })
+  if (r.status !== 0) {
+    throw new Error(`cannot enumerate the scan universe: git ls-files failed (${r.status})`)
+  }
+  const paths = (r.stdout ?? '').split(String.fromCharCode(0)).filter(Boolean)
+  if (paths.length === 0) {
+    throw new Error('cannot enumerate the scan universe: git ls-files returned nothing')
+  }
+  return paths.filter((f) => {
+    let buf
+    try {
+      buf = readFileSync(join(ROOT, f))
+    } catch {
+      return false
+    }
+    return !buf.includes(0)
+  })
+}
+
 export function read(file) {
   return readFileSync(join(ROOT, file), 'utf8')
 }

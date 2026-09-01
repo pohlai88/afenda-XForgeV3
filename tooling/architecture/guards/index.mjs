@@ -63,6 +63,32 @@ const isBusinessModule = (spec) =>
  */
 const notATest = (f) => classify(f) !== 'test'
 
+/**
+ * Executable TypeScript -- what the four tenancy and locale guards govern.
+ *
+ * DERIVED FROM EVIDENCE, not asserted. Widening the scan to every tracked file
+ * put 26 findings in front of them and every one was the same two shapes:
+ *
+ *   20 in `.md` -- prose QUOTING the rule in order to explain it. ADR-003 says
+ *      `withPlatformAccess` outside apps/admin is forbidden, and says so by
+ *      writing `withPlatformAccess`. Markdown cannot call anything.
+ *    6 in tooling `.mjs` -- a matcher containing the pattern it matches, and
+ *      the deliberate violating fixtures.
+ *
+ * The tooling six ARE checked, elsewhere and better: the mutation harness
+ * asserts every fixture is rejected and every clean counterpart accepted.
+ *
+ * The documentation twenty are NOT checked anywhere, and that is the price of
+ * this line. Nothing verifies that a code example in `.architecture/` still
+ * reflects the code; prose goes stale in silence. Written down rather than
+ * implied, because an exclusion whose cost is unrecorded reads as free.
+ *
+ * `no-control-characters-in-source` deliberately does NOT use this. An
+ * invisible byte is a hazard in documentation too, and six were living in this
+ * runner because a narrower universe never offered the file.
+ */
+const isTypeScript = (f) => /[.](ts|tsx|mts)$/.test(f)
+
 const line = (src, idx) => src.slice(0, idx).split('\n').length
 
 function imports(src) {
@@ -218,7 +244,7 @@ export const guards = [
     title: 'Every route contract declares a policy (ADR-014)',
   },
   {
-    applies: (f) => !/^packages\/(localisation|compliance)\//.test(f),
+    applies: (f) => isTypeScript(f) && !/^packages\/(localisation|compliance)\//.test(f),
     check(f, src) {
       const re = /\b(?:country|jurisdiction)\w*\s*(?:===|!==|==)\s*['"](MY|SG|VN|ID|TH|PH)['"]/g
       const out = []
@@ -368,6 +394,8 @@ export const guards = [
           message: `AI package imports a data path: ${i.spec} -- tools call application commands`,
         }))
     },
+    dormant:
+      'packages/ai does not exist yet. This guard governs the AI phase and must start governing files the moment that package lands -- which the dormancy report makes visible instead of leaving it at a silent zero.',
     id: 'ai-tool-no-data-access',
     law: 26,
     precision: 'text',
@@ -396,6 +424,8 @@ export const guards = [
       }
       return out
     },
+    dormant:
+      'modules/payroll/infrastructure does not exist yet. Declared dormant so that a guard governing nothing is a STATED condition rather than a silent zero, which is how a configured, green and blind tool looks from outside.',
     id: 'legal-entity-binding',
     law: 15,
     precision: 'text',
@@ -408,6 +438,8 @@ export const guards = [
     // platform access becomes the answer whenever a query is inconvenient, the
     // RLS architecture becomes decorative one call site at a time.
     applies: (f) =>
+      isTypeScript(f) &&
+      notATest(f) &&
       !(
         /^packages\/db\//.test(f) ||
         /^apps\/admin\//.test(f) ||
@@ -446,7 +478,7 @@ export const guards = [
     //
     // packages/tenancy holds the single cast, in `verify()`. Everywhere else,
     // asserting the brand is a build failure.
-    applies: (f) => !/^packages[/]tenancy[/]/.test(f),
+    applies: (f) => isTypeScript(f) && !/^packages[/]tenancy[/]/.test(f),
     check(f, src) {
       const out = []
       // Both assertion forms. `as unknown as X` is caught by the first.
@@ -478,6 +510,7 @@ export const guards = [
     // while they stay where they were reasoned about. A business module calling
     // hasActiveMembership is a module deciding its own authority.
     applies: (f) =>
+      isTypeScript(f) &&
       notATest(f) &&
       !/^packages[/]db[/]/.test(f) &&
       !/^packages[/]tenancy[/]/.test(f) &&
@@ -760,6 +793,18 @@ export const guards = [
       }
       return out
     },
+    exempt: [
+      {
+        checkedBy:
+          'the test itself, and more strictly than this guard: it asserts the ' +
+          'delete returned exactly [A_ROW] and that tenant B rows survived.',
+        path: 'tests/architecture/tenancy/T02-missing-app-predicate.test.ts',
+        why:
+          'the unqualified DELETE is the SUBJECT of the test, not its setup. T02 ' +
+          'exists to prove that a DELETE with no tenant predicate cannot reach ' +
+          'another tenant, which requires issuing one.',
+      },
+    ],
     id: 'fixtures-delete-only-what-they-own',
     law: 29,
     precision: 'text',
@@ -852,6 +897,85 @@ export const guards = [
     law: 8,
     precision: 'text',
     title: 'The stylesheet consumes semantic and component tokens, never primitives',
+  },
+  {
+    /**
+     * Law 5: business UI reaches the backend only through generated contract
+     * clients -- and only through the experience mapper that terminates them.
+     *
+     * `ui-holds-no-transport-vocabulary` keeps the transport out of the design
+     * SYSTEM. This keeps it out of the SCREENS, which is where the pressure
+     * actually is: a component already holding the data is one import away from
+     * reading `isPending` or `err.isForbidden` itself, and then the mapper is
+     * decorative -- correct, and bypassed.
+     *
+     * AN ALLOWLIST, NOT AN EXTENSION. The first version banned transport
+     * vocabulary from `.tsx`, using the extension as a proxy for "renders JSX".
+     * That enforced a narrower property than the one worth having: what matters
+     * is that a NAMED, SMALL set of files in `apps/` touches the generated
+     * client, and today `.tsx` and that set coincide only because exactly one
+     * `.ts` imports it. One participant, two descriptions, agreeing -- the shape
+     * this repository has now found seven times. The second `.ts` helper that
+     * imports the client reintroduces the second state machine without going
+     * anywhere near a `.tsx`, and the extension rule would have passed it.
+     *
+     * The allowlist is red the moment a third file appears, which is a property
+     * statable today because it is true today.
+     *
+     * `@tanstack/react-query` is deliberately NOT forbidden. The first draft
+     * banned it and went red on `providers.tsx`, which imports
+     * `QueryClientProvider` -- composition-root wiring, not interpretation. The
+     * distinction is real: react-query is a cache, and a cache carries no HTTP
+     * status, no problem shape and no completeness envelope. A component cannot
+     * obtain business data from it without also importing the generated client,
+     * which IS forbidden here.
+     *
+     * WHAT THIS DOES NOT COVER, stated rather than implied: a component that
+     * hand-rolls `fetch('/api/...')` bypasses the generated client and this
+     * guard together. That is a real law-5 violation and a different check.
+     *
+     * This guard was RED on the real tree when written -- `emergency-contacts.tsx`
+     * imported `ApiProblem` and read four query flags -- which is a stronger
+     * proof than a fixture, because the repository itself was the violation.
+     */
+    applies: (f) => /^apps[/]/.test(f) && isTypeScript(f),
+    check(f, src) {
+      const forbidden =
+        /^@xforge[/]api-client|^@xforge[/]api($|[/])|^@xforge[/]hr($|[/])|[/]generated[/]/
+      return imports(src)
+        .filter((i) => forbidden.test(i.spec))
+        .map((i) => ({
+          file: f,
+          line: line(src, i.at),
+          message:
+            `transport vocabulary outside the experience boundary: ${i.spec} -- ` +
+            'the mapper and its controller are the only files in apps/ that may name it',
+        }))
+    },
+    exempt: [
+      {
+        checkedBy:
+          'the contract tests and the tenancy proof suite, which exercise this mount directly.',
+        path: 'apps/web/app/api/[[...route]]/route.ts',
+        why: 'the SERVER side of the same app. It mounts the business modules and is the thing the browser talks TO, so naming @xforge/hr is its job. Found by widening this guard from a .tsx extension rule to an allowlist, which is the distinction the extension proxy could not draw.',
+      },
+      {
+        checkedBy:
+          'tests/unit/resource-state.test.ts, 16 cases including that an unknown wire code throws rather than being absorbed.',
+        path: 'apps/web/app/employees/[employeeId]/resource-state.ts',
+        why: 'the mapper. This file IS the boundary -- it exists to know both vocabularies.',
+      },
+      {
+        checkedBy:
+          'exhaustive switches ending in assertNever, so a new library status stops the build.',
+        path: 'apps/web/app/employees/[employeeId]/use-emergency-contacts.ts',
+        why: 'the controller. It turns query and mutation status into ReadOutcome and MutationOutcome, and hands the component nothing else.',
+      },
+    ],
+    id: 'transport-enters-apps-only-at-the-boundary',
+    law: 5,
+    precision: 'text',
+    title: 'Exactly the named boundary files in apps/ touch the generated client',
   },
 ]
 

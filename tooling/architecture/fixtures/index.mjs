@@ -407,7 +407,6 @@ export async function save(input: unknown) {
 `,
     },
   },
-
   'tenancy-primitives-confined': {
     clean: {
       path: 'modules/payroll/application/run.ts',
@@ -434,6 +433,17 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
       path: 'packages/ui/src/ui.css',
       source: `.xf-button { background: #2563eb; }
 `,
+    },
+  },
+
+  'transport-enters-apps-only-at-the-boundary': {
+    clean: {
+      path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
+      source: `import type { ResourceState } from '@xforge/ui/state'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
+      source: `import { ApiProblem } from '@xforge/api-client'${String.fromCharCode(10)}`,
     },
   },
   'ui-holds-no-transport-vocabulary': {

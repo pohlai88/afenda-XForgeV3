@@ -54,7 +54,14 @@ test.describe('emergency contacts', () => {
     // The page still holds the stale version. ADR-013: this must be rejected
     // and reported, never merged.
     await page.getByRole('button', { name: 'Save' }).first().click()
-    await expect(page.getByTestId('conflict')).toContainText('Someone else changed this contact')
+    // The wording moved into the mapper at 4C.0, so there is one source for it
+    // rather than a copy in every screen that can conflict. It lost the noun --
+    // 'this contact' became 'this' -- which is a small real regression, stated
+    // rather than absorbed: the banner sits directly above the contacts list, and
+    // a resource-neutral mapper cannot name a resource without becoming one.
+    await expect(page.getByTestId('conflict')).toContainText(
+      'Someone else changed this while you were editing',
+    )
 
     // And the other writer's value survived.
     await expect(page.getByTestId('contacts')).toContainText('+60 11-111 1111')

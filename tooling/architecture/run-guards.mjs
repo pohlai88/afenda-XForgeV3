@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { pathToFileURL } from 'node:url'
-import { posix, read, sourceFiles } from '../verify/lib/util.mjs'
+import { posix, read, trackedFiles } from '../verify/lib/util.mjs'
 import { fixtures } from './fixtures/index.mjs'
 /**
  * Architecture guard runner.
@@ -31,19 +31,35 @@ const C = {
 const paint = (c, s) => (process.stdout.isTTY ? c + s + C.reset : s)
 
 export function scanWorkspace() {
-  const files = sourceFiles().map(posix)
+  const files = trackedFiles().map(posix)
   const violations = []
+  const exemptions = []
+  const blind = []
+  const dormant = []
   let checked = 0
   for (const g of guards) {
-    const applicable = files.filter((f) => g.applies(f))
+    const claimed = files.filter((f) => g.applies(f))
+    const excused = new Set((g.exempt ?? []).map((e) => e.path))
+    for (const e of g.exempt ?? []) {
+      exemptions.push({ guard: g.id, ...e })
+    }
+    const applicable = claimed.filter((f) => !excused.has(f))
     checked += applicable.length
+    // A guard that governs nothing is the depcruise failure: configured, green,
+    // and blind. Dormancy is the honest version of the same zero -- a subject
+    // that does not exist YET -- and the difference is that somebody wrote it
+    // down. Undeclared, it is red; declared, it is reported every run so it
+    // cannot quietly stay dormant after its subject arrives.
+    if (claimed.length === 0) {
+      ;(g.dormant ? dormant : blind).push({ id: g.id, why: g.dormant })
+    }
     for (const f of applicable) {
       for (const v of g.check(f, read(f))) {
         violations.push({ guard: g.id, law: g.law, ...v })
       }
     }
   }
-  return { checked, files: files.length, violations }
+  return { blind, checked, dormant, exemptions, files: files.length, violations }
 }
 
 /**
@@ -172,12 +188,32 @@ function main() {
     process.exit(0)
   }
 
-  const { files, checked, violations } = scanWorkspace()
+  const { blind, dormant, files, checked, exemptions, violations } = scanWorkspace()
+
+  // The number that accumulated in silence. 159 files were claimable by a guard
+  // and never offered to one, for as long as nothing printed a count.
+  for (const e of exemptions) {
+    console.log(`  ${paint(C.yellow, 'EXEMPT')} ${e.guard} does not check ${e.path}`)
+    console.log(`           ${paint(C.dim, e.why)}`)
+    console.log(`           ${paint(C.dim, `checked instead by: ${e.checkedBy}`)}`)
+  }
+  for (const d of dormant) {
+    console.log(`  ${paint(C.yellow, 'DORMANT')} ${d.id} governs no file yet`)
+    console.log(`           ${paint(C.dim, d.why)}`)
+  }
+  if (blind.length > 0) {
+    for (const b of blind) {
+      console.log(paint(C.red, `  ${b.id} governs no file at all, and does not say why.`))
+      console.log(paint(C.dim, '  Either its subject is gone, or a narrowing went too far.'))
+      console.log(paint(C.dim, '  Declare `dormant` if the subject has not arrived yet.'))
+    }
+    process.exit(1)
+  }
   if (violations.length === 0) {
     const note =
       files === 0
         ? paint(C.yellow, 'no source files yet — guards ran against an empty workspace')
-        : paint(C.dim, `${checked} file-checks across ${files} files`)
+        : paint(C.dim, `${checked} file-checks across ${files} files, ${exemptions.length} exempt`)
     console.log(`  ${paint(C.green, 'PASS')} architecture guards  ${note}`)
     process.exit(0)
   }
