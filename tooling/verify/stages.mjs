@@ -557,12 +557,12 @@ export const stages = [
       // so a preflight wired into that command cannot fire in the case that
       // motivated it, which is a stale server answering the health URL. The
       // gate owns this ordering; Playwright's config does not.
-      const port = run('node', ['tooling/e2e/preflight-port.mjs', '3100'])
+      const port = run('pnpm', ['-s', 'e2e:port'])
       if (port.code !== 0) {
         return { detail: port.out, status: FAIL }
       }
 
-      const r = run('pnpm', ['-s', 'exec', 'playwright', 'test'])
+      const r = run('pnpm', ['-s', 'e2e'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }

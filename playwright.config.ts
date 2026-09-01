@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import { appUrl } from './tests/fixtures/local-database'
+import { E2E_ORIGIN, E2E_PORT } from './tooling/e2e/config.ts'
 
 /**
  * Flagship E2E for the spine phase.
@@ -18,15 +19,14 @@ export default defineConfig({
   retries: 0,
   testDir: './e2e',
   use: {
-    baseURL: 'http://127.0.0.1:3100',
+    baseURL: E2E_ORIGIN,
     trace: 'retain-on-failure',
   },
   webServer: {
     // The preflight names whoever holds the port. It runs only when Playwright's
     // own URL probe does NOT pre-empt it -- see the note in that file; for the
     // pre-empted case the same diagnosis is available as `pnpm e2e:port`.
-    command:
-      'node tooling/e2e/preflight-port.mjs 3100 && pnpm --filter @xforge/web exec next start -p 3100',
+    command: `pnpm -s e2e:port && pnpm --filter @xforge/web exec next start -p ${E2E_PORT}`,
     // The app has no credential fallback by design, so the harness supplies one
     // explicitly rather than the application defaulting to a developer database.
     env: { APP_DATABASE_URL: appUrl() },
@@ -49,7 +49,7 @@ export default defineConfig({
      */
     reuseExistingServer: false,
     timeout: 120_000,
-    url: 'http://127.0.0.1:3100/employees/33333333-3333-4333-8333-333333333333',
+    url: `${E2E_ORIGIN}/employees/33333333-3333-4333-8333-333333333333`,
   },
   workers: 1,
 })

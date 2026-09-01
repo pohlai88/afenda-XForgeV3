@@ -31,10 +31,12 @@
  */
 import { execFileSync } from 'node:child_process'
 import { createServer } from 'node:net'
+import { E2E_PORT } from './config.ts'
 
-const port = Number(process.argv[2])
+// The owner supplies the port; an argument overrides it for ad-hoc diagnosis.
+const port = process.argv[2] === undefined ? E2E_PORT : Number(process.argv[2])
 if (!Number.isInteger(port)) {
-  process.stderr.write('usage: preflight-port.mjs <port>\n')
+  process.stderr.write('usage: preflight-port.mjs [port]\n')
   process.exit(2)
 }
 

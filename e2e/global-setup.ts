@@ -19,7 +19,7 @@ export default async function globalSetup(): Promise<void> {
   // The conformance harness is a build artefact, rebuilt here so it can never
   // be stale relative to the components it is meant to be evidence about --
   // the same reason the E2E stage refuses to adopt a server it did not start.
-  execFileSync('npx', ['vite', 'build', '--config', 'vite.harness.config.ts'], {
+  execFileSync('pnpm', ['-s', 'build:harness'], {
     shell: true,
     stdio: 'pipe',
   })
