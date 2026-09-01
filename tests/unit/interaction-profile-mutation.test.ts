@@ -127,6 +127,14 @@ const EXPECTED: Record<string, Expectation> = {
   Alert: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root carries aria-live' },
   Button: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root accepts focus' },
   Checkbox: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root accepts focus' },
+  // THE GATED SET GREW FROM ONE TO THREE when stage 6's two patterns landed,
+  // and these two rows are the whole cost of that arriving mechanically. Both
+  // were RUN, not reasoned about: flipping either to `none` removes it from
+  // `contractsOwingAtEvidence`, which is the one escape ADR-025's derivation has
+  // to make expensive -- a component quietly declaring itself inert is exactly
+  // how a screen-reader obligation disappears without anyone deciding to drop it.
+  CommandPalette: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
+  DataGrid: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
   Dialog: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
   Field: {
     provenElsewhere: 'e2e/inert-contracts.spec.ts',
@@ -236,9 +244,21 @@ describe('a dishonest interaction profile', () => {
    * The deferral is DORMANT rather than absent.
    *
    * Conformance written for a profile with no contracts would be green having
-   * governed nothing. Naming the empty profiles instead means the day a
-   * Combobox declares `composite`, this goes red -- which is exactly when
-   * somebody needs telling that no conformance exists for it.
+   * governed nothing. Naming the empty profiles instead means the day a contract
+   * declares one, this goes red -- which is exactly when somebody needs telling
+   * that no conformance exists for it.
+   *
+   * IT FIRED, and this comment is the record of what it caught rather than of
+   * what it was for. `composite` and `composite-grid` were both named here until
+   * `CommandPalette` and `DataGrid` declared them, and this test going red is
+   * how the behavioural-conformance debt for those two profiles was noticed at
+   * the moment it was incurred instead of at a certification gate. The debt
+   * itself is recorded in `project-state.md`; what belongs here is that the
+   * alarm worked.
+   *
+   * STILL A LIVE CHECK with an empty list. It fails the moment the
+   * `InteractionProfile` union grows a member no contract declares, which is
+   * the same alarm for the next pattern.
    */
   it('names every profile that has no contracts yet', () => {
     // Annotated, not inferred. Inference narrows this to the profiles that
@@ -263,7 +283,7 @@ describe('a dishonest interaction profile', () => {
       expect(all, `${profile} is declared but not in the known set`).toContain(profile)
     }
 
-    expect(all.filter((p) => !declared.has(p))).toEqual(['composite', 'composite-grid'])
+    expect(all.filter((p) => !declared.has(p))).toEqual([])
 
     // And the gate's own profiles are not all empty -- a gate over nothing is
     // the failure this repository has already paid for once.

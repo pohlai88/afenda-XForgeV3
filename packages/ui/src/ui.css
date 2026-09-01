@@ -73,16 +73,34 @@
   border-radius: var(--semantic-radius-container);
 }
 
+/*
+ * WEIGHT IS DECLARED, not inherited from the user agent, and that is the whole
+ * repair. `density.compact` rebinds `--semantic-type-heading` to the same step as
+ * `--semantic-type-body`, so at compact the two differed by nothing a token could
+ * name -- the hierarchy was whatever the UA happened to apply to an `h*` element.
+ * Weight cannot ride the density axis (`$axis` is `dimension`, and the generator
+ * refuses a type mismatch), which is exactly why it can carry hierarchy at BOTH
+ * densities where size cannot.
+ */
+/*
+ * A heading takes its own ink, and the role changes HUE between themes rather
+ * than lightness: executive navy in light, near-white in dark. Inheriting
+ * `text.default` here made a heading the same colour as the paragraph under it
+ * and lost the distinction in both themes at once.
+ */
 .xf-heading {
   margin: 0;
   font-size: var(--semantic-type-heading);
-  line-height: 1.3;
+  font-weight: var(--semantic-weight-heading);
+  line-height: var(--semantic-leading-heading);
+  color: var(--semantic-text-heading);
 }
 
 .xf-text {
   margin: 0;
   font-size: var(--semantic-type-body);
-  line-height: 1.5;
+  font-weight: var(--semantic-weight-body);
+  line-height: var(--semantic-leading-body);
 }
 .xf-text[data-tone="muted"] {
   font-size: var(--semantic-type-label);
@@ -120,12 +138,29 @@
   border: var(--semantic-stroke-width) solid transparent;
   border-radius: var(--semantic-radius-control);
 }
+/*
+ * PRESSED IS A STATE, and its absence was the kind that reads as fine. Both
+ * variants had rest, hover, focus and disabled and nothing for the moment the
+ * pointer is down -- so a button under the finger looked exactly like a button
+ * being pointed at, and on a touch screen, where there is no hover at all, it
+ * looked exactly like a button nobody had touched.
+ *
+ * SECONDARY HOVER MOVED, and that is the more interesting half. It was
+ * `--semantic-surface-sunken`, the recessed-container role, so a hovered button
+ * and an inset well were one token and neither could be adjusted alone. It is
+ * the collision the info banner had with the accent tint, one tier down: nothing
+ * looked wrong, because on paper a hover and a well happen to want the same grey.
+ * They do not on black, which is where the borrowing would have been found.
+ */
 .xf-button[data-variant="primary"] {
   color: var(--semantic-text-on-accent);
-  background: var(--semantic-accent-default);
+  background: var(--semantic-surface-accent);
 }
 .xf-button[data-variant="primary"]:hover:not(:disabled) {
-  background: var(--semantic-accent-hover);
+  background: var(--semantic-surface-accent-hover);
+}
+.xf-button[data-variant="primary"]:active:not(:disabled) {
+  background: var(--semantic-surface-accent-active);
 }
 .xf-button[data-variant="secondary"] {
   color: var(--semantic-text-default);
@@ -133,38 +168,100 @@
   border-color: var(--semantic-border-strong);
 }
 .xf-button[data-variant="secondary"]:hover:not(:disabled) {
-  background: var(--semantic-surface-sunken);
+  background: var(--semantic-surface-raised-hover);
 }
+.xf-button[data-variant="secondary"]:active:not(:disabled) {
+  background: var(--semantic-surface-raised-active);
+}
+/*
+ * Dimmed, never hidden, and never below the contrast a disabled control still
+ * needs to be readable. A disabled control the user cannot read is a control
+ * they cannot understand the absence of.
+ *
+ * That claim used to sit above `opacity: 0.6`, which rendered this button's label
+ * at 2.56:1 -- an assertion on top of code that did not hold it. `opacity`
+ * composites, so the token pair the generator could see reported the REST ratio
+ * (5.17:1) while the pixels showed less than half of it, and every check passed.
+ *
+ * Explicit roles instead of a multiplier: the values are now the values, the
+ * contrast invariant measures them like any other pair, and this comment is
+ * falsifiable. Equal specificity with the variant rules above, so it must stay
+ * BELOW them in source order to win.
+ */
 .xf-button:disabled {
+  color: var(--semantic-text-disabled);
   cursor: not-allowed;
-  /*
-   * Dimmed, never hidden, and never below the contrast a disabled control still
-   * needs to be readable. A disabled control the user cannot read is a control
-   * they cannot understand the absence of.
-   */
-  opacity: 0.6;
+  background: var(--semantic-surface-disabled);
+  border-color: var(--semantic-border-disabled);
 }
 
+/*
+ * TONE IS NO LONGER CARRIED BY COLOUR ALONE, which it was until the mark
+ * existed: four tones separated by hue and by nothing else, two of them the
+ * red/green pair that deficiency collapses. The rule this repository could not
+ * check anywhere is now structural in the one component that most needed it.
+ *
+ * The mark takes its size from the text rather than from a token. It is not a
+ * design value with a role -- it is "as tall as the sentence beside it", the
+ * same kind of fact as the checkbox tick's `0.7em`, and giving it a token would
+ * invite the two to drift apart.
+ */
 .xf-alert {
+  display: flex;
+  gap: var(--semantic-space-inline);
+  align-items: flex-start;
   padding: var(--component-alert-padding-block)
     var(--component-alert-padding-inline);
   border: var(--semantic-stroke-width) solid;
   border-radius: var(--semantic-radius-container);
 }
+
+.xf-alert-mark {
+  flex: none;
+  inline-size: 1.15em;
+  block-size: 1.15em;
+  margin-block-start: 0.1em;
+}
+
+.xf-alert-body {
+  min-inline-size: 0;
+}
 .xf-alert[data-tone="danger"] {
-  color: var(--semantic-danger-text);
-  background: var(--semantic-danger-surface);
-  border-color: var(--semantic-danger-border);
+  color: var(--semantic-text-danger);
+  background: var(--semantic-surface-danger);
+  border-color: var(--semantic-border-danger);
 }
 .xf-alert[data-tone="warning"] {
-  color: var(--semantic-warning-text);
-  background: var(--semantic-warning-surface);
-  border-color: var(--semantic-warning-border);
+  color: var(--semantic-text-warning);
+  background: var(--semantic-surface-warning);
+  border-color: var(--semantic-border-warning);
 }
+/*
+ * INFO WAS WEARING THE ACTION COLOUR. This rule read
+ * `background: var(--semantic-surface-accent-subtle)` -- the accent tint -- and
+ * `color: var(--semantic-text-default)`, because no info role existed to point
+ * at. So an informational banner and a selected, actionable thing were the same
+ * colour, which is the one collision the accent exists to avoid: teal means a
+ * thing you can press.
+ *
+ * The borrowing was not a shortcut, it was the only option at the time. It is
+ * not any more.
+ */
 .xf-alert[data-tone="info"] {
-  color: var(--semantic-text-default);
-  background: var(--semantic-accent-subtle);
-  border-color: var(--semantic-border-default);
+  color: var(--semantic-text-info);
+  background: var(--semantic-surface-info);
+  border-color: var(--semantic-border-info);
+}
+/*
+ * Success had no tone at all, so `approved`, `paid` and `posted` had nowhere to
+ * render. Forest rather than emerald, so it does not read as a neighbour of the
+ * accent -- and the copy carries the meaning, because success and danger are
+ * exactly the pair red/green deficiency collapses.
+ */
+.xf-alert[data-tone="success"] {
+  color: var(--semantic-text-success);
+  background: var(--semantic-surface-success);
+  border-color: var(--semantic-border-success);
 }
 
 .xf-list {
@@ -213,7 +310,7 @@
   max-height: calc(100vh - var(--semantic-space-section) * 2);
   padding: var(--semantic-container-padding);
   overflow: auto;
-  background: var(--semantic-surface-raised);
+  background: var(--semantic-surface-overlay);
   border: var(--semantic-stroke-width) solid var(--semantic-border-default);
   border-radius: var(--semantic-radius-container);
   translate: -50% -50%;
@@ -263,7 +360,7 @@
  */
 .xf-field-error {
   font-size: var(--semantic-type-label);
-  color: var(--semantic-danger-text);
+  color: var(--semantic-text-danger);
 }
 
 .xf-input {
@@ -278,8 +375,10 @@
   border-radius: var(--semantic-radius-control);
 }
 .xf-input:disabled {
+  color: var(--semantic-text-disabled);
   cursor: not-allowed;
-  opacity: 0.6;
+  background: var(--semantic-surface-disabled);
+  border-color: var(--semantic-border-disabled);
 }
 
 /*
@@ -311,12 +410,35 @@
   border-radius: var(--semantic-radius-control);
 }
 .xf-checkbox[data-checked] {
-  background: var(--semantic-accent-default);
-  border-color: var(--semantic-accent-default);
+  background: var(--semantic-surface-accent);
+  border-color: var(--semantic-surface-accent);
+}
+/*
+ * Both ladders, because a checkbox is two controls wearing one class: unchecked
+ * it is a neutral control and takes the neutral pointer states, checked it is an
+ * accent fill and takes the accent ones. The checked pair must be written out --
+ * `:hover:not(:disabled)` outweighs `[data-checked]` on specificity, so without
+ * them hovering a ticked box would turn it grey and read as unticking it.
+ */
+.xf-checkbox:hover:not(:disabled) {
+  background: var(--semantic-surface-raised-hover);
+}
+.xf-checkbox:active:not(:disabled) {
+  background: var(--semantic-surface-raised-active);
+}
+.xf-checkbox[data-checked]:hover:not(:disabled) {
+  background: var(--semantic-surface-accent-hover);
+  border-color: var(--semantic-surface-accent-hover);
+}
+.xf-checkbox[data-checked]:active:not(:disabled) {
+  background: var(--semantic-surface-accent-active);
+  border-color: var(--semantic-surface-accent-active);
 }
 .xf-checkbox:disabled {
+  color: var(--semantic-text-disabled);
   cursor: not-allowed;
-  opacity: 0.6;
+  background: var(--semantic-surface-disabled);
+  border-color: var(--semantic-border-disabled);
 }
 
 /*
@@ -334,6 +456,19 @@
 }
 
 /*
+ * The one case a multiplier handled for free and explicit roles do not.
+ *
+ * `opacity` faded the whole checked control together, mark included. Now that
+ * `:disabled` replaces the accent fill with `disabled.surface`, a mark still
+ * drawn in `text-on-accent` would be white on light grey -- 1.24:1, a checked box
+ * that reads as unchecked. Re-stating the mark against the disabled foreground is
+ * the cost of making the state measurable, and it is worth naming as a cost.
+ */
+.xf-checkbox:disabled .xf-checkbox-mark {
+  border-color: var(--semantic-text-disabled);
+}
+
+/*
  * The loading placeholder.
  *
  * The animation is OPTIONAL, not decoration with an accessibility footnote.
@@ -344,7 +479,8 @@
 .xf-skeleton {
   background: var(--semantic-surface-sunken);
   border-radius: var(--semantic-radius-control);
-  animation: xf-skeleton-pulse 1.6s ease-in-out infinite;
+  animation: xf-skeleton-pulse var(--semantic-motion-duration-pulse)
+    var(--semantic-motion-easing-default) infinite;
 }
 .xf-skeleton[data-variant="text"] {
   block-size: var(--semantic-type-body);
@@ -353,6 +489,15 @@
   block-size: var(--semantic-container-padding);
 }
 
+/*
+ * The two numbers here are the animation's own waveform, not design values
+ * applied to a component, and they are deliberately NOT tokens: `50%` is a
+ * keyframe position nobody would tokenize, and the amplitude beside it is the
+ * same kind of fact. Tokenizing one and not the other would be arbitrary.
+ *
+ * This is a scope claim the literal guard has to agree with, so it draws its
+ * boundary at `@keyframes` rather than at the `opacity` property.
+ */
 @keyframes xf-skeleton-pulse {
   50% {
     opacity: 0.55;
@@ -422,4 +567,123 @@
 .xf-table-cell[data-header] {
   font-size: var(--semantic-type-label);
   color: var(--semantic-text-muted);
+}
+
+/*
+ * Carried, not drawn.
+ *
+ * The clip-rect form rather than `display: none` or `visibility: hidden`, both
+ * of which remove the element from the accessibility tree -- which is the one
+ * thing this must not do, since its entire job is to give a name to something
+ * whose name should not be visible. Kept to one declaration block so there is
+ * one place to be wrong.
+ */
+.xf-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/*
+ * The command palette.
+ *
+ * It is a Dialog and takes the Dialog's own surface, border and scrim; what is
+ * here is only what differs. It sits HIGHER than a centred dialog because a
+ * list that grows downwards from the middle of the viewport ends up with its
+ * last results below the fold on a laptop, and the results are the point.
+ */
+.xf-command-palette {
+  inset-block-start: var(--semantic-space-section);
+  gap: var(--semantic-space-stack-tight);
+  translate: -50% 0;
+}
+
+.xf-command-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack-tight);
+  overflow-y: auto;
+}
+
+/*
+ * THE HIGHLIGHT IS NOT FOCUS, and the distinction is the whole reason a command
+ * palette can be operated at all. DOM focus never leaves the input; the item
+ * under the arrow keys is marked `data-highlighted` and pointed at by
+ * `aria-activedescendant`. So it cannot use `:focus-visible`, and painting it
+ * in the focus ring would claim a focus that is somewhere else.
+ *
+ * `accent-subtle` rather than the accent fill: the highlight tracks a moving
+ * cursor rather than marking a chosen thing, and a full accent fill sweeping
+ * down a list on every keystroke reads as ten selections in a row.
+ */
+.xf-command-item {
+  display: flex;
+  gap: var(--semantic-space-inline);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--component-list-item-padding);
+  cursor: pointer;
+  border-radius: var(--semantic-radius-control);
+}
+.xf-command-item[data-highlighted] {
+  background: var(--semantic-surface-accent-subtle);
+}
+.xf-command-item[data-disabled] {
+  color: var(--semantic-text-disabled);
+  cursor: not-allowed;
+}
+
+.xf-command-item-hint {
+  flex: none;
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-muted);
+}
+
+/*
+ * `:not(:empty)`, and the negation is load-bearing rather than tidy.
+ *
+ * Base UI keeps this element MOUNTED at all times and swaps its children,
+ * because a live region inserted in the same commit as its message is the
+ * pattern screen readers routinely miss -- its own documentation says not to
+ * hide it with `display: none`, `hidden`, `aria-hidden` or conditional
+ * rendering. So it cannot be hidden while silent, and padding it unconditionally
+ * would leave a permanent blank band above every result list. Styling only the
+ * state that has something to say satisfies both.
+ */
+.xf-command-empty:not(:empty) {
+  padding: var(--component-list-item-padding);
+  color: var(--semantic-text-muted);
+}
+
+/*
+ * The data grid.
+ *
+ * Almost all of its appearance is the Table's, which is correct -- the two look
+ * alike and behave differently. What it adds is that a CELL is focusable, so
+ * the shared ring lands on a cell rather than on a control inside one, and that
+ * an editable cell says so before it is entered. A cell the user cannot tell is
+ * editable is one they never edit.
+ */
+.xf-data-grid {
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+.xf-table-cell[data-editable] {
+  background: var(--semantic-surface-sunken);
+}
+
+/*
+ * The editor fills the cell it replaces, so a row does not change height on
+ * entering edit mode -- a grid that reflows under the pointer loses the place
+ * of anyone reading the row above.
+ */
+.xf-data-grid-editor {
+  inline-size: 100%;
+  min-block-size: 0;
 }

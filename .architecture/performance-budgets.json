@@ -37,6 +37,30 @@
         "exemption earned by bytes nobody downloads."
       ]
     },
+    "cssDeclarationsGzipBytes": {
+      "tool": "tooling/perf/css-asset-size.mjs",
+      "gzipLevel": 9,
+      "$comment": [
+        "A growth tripwire on the AUTHORED stylesheets, and deliberately not a",
+        "claim about transfer size. Nothing here measures shipped CSS: the route",
+        "metric above is JavaScript only, so CSS growth was unbudgeted by",
+        "construction rather than by oversight. Stating that plainly beats a",
+        "number that implies coverage it does not have.",
+        "",
+        "COMMENTS ARE STRIPPED BEFORE MEASURING. They are 44% of ui.css raw --",
+        "4770 B gzipped whole against 1570 B as declarations -- so gating the",
+        "file would spend two thirds of the budget on prose, in a repository",
+        "whose conventions ask for exactly that prose. A budget that taxes",
+        "documentation is one people route around, which is the failure",
+        "CLAUDE.md describes as a rule followed past the reason for it.",
+        "Minification removes them from what ships anyway.",
+        "",
+        "Both files sit near half the default, which is the headroom a TRIPWIRE",
+        "wants: it should fire on alarming growth, not on ordinary work. It is",
+        "not yet a hard budget, because normal movement is not yet known -- one",
+        "more wave of real numbers is what promotes it."
+      ]
+    },
     "largestContentfulPaintMs": {
       "tool": "not yet implemented -- Lighthouse CI, 5 runs, median",
       "$comment": [
@@ -50,7 +74,29 @@
   },
   "defaults": {
     "initialClientJsGzipBytes": 180000,
-    "largestContentfulPaintMs": 2500
+    "largestContentfulPaintMs": 2500,
+    "cssDeclarationsGzipBytes": 2400
+  },
+
+  "assets": {
+    "packages/tokens/generated/tokens.css": {
+      "status": "inherited",
+      "cssDeclarationsGzipBytes": 2400,
+      "$comment": [
+        "1352 B at the close of the P2 token wave. Generated, so it grows",
+        "whenever vocabulary is added -- which is precisely the growth worth",
+        "seeing, since adding a token costs nothing at the point of writing it."
+      ]
+    },
+    "packages/ui/src/ui.css": {
+      "status": "inherited",
+      "cssDeclarationsGzipBytes": 2400,
+      "$comment": [
+        "1570 B at the close of the P2 token wave, up from a stylesheet whose",
+        "growth nothing had ever measured. This is the file the design system is",
+        "written in, so it is the one where an unnoticed doubling would matter."
+      ]
+    }
   },
   "routes": {
     "/_global-error": {

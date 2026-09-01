@@ -54,6 +54,7 @@ Xforge tests answer: *"Did we implement the pattern correctly here?"*
 | Open-code UI primitives | E18 | V | design-system, a11y, ERP-primitive tests | REVERSIBLE |
 | Auth behind a facade | E19, E21 | V | business topology stays outside the provider | STABLE / provider REVERSIBLE |
 | Durable executor behind the outbox | E20 — *executor capability, not the source of durable business intent* | V | AQS-013 | REVERSIBLE |
+| DTCG-shaped token document, pinned at 2025.10 | E22, E23 — the version is real and its value shapes are normative. **What it does not prove:** that `tokens.json` conforms. It does not, deliberately and in writing — colour is a hex string where E23 requires `{colorSpace, components}`, dimension is a CSS length string where E22 requires `{value, unit}`, and `$modes` is a root property the schema does not enumerate. Precedent qualifies the TARGET, not the current document | S | `tokens.test.ts` value-shape suite, `assertContractVersions` | STABLE / migration tracked |
 
 ---
 
@@ -84,6 +85,8 @@ Every entry carries a URL. Entries without a verifiable retrieval are marked **U
 | **E19** | Better Auth — *Organization Plugin* | https://better-auth.com/docs/plugins/organization | not re-verified |
 | **E20** | Trigger.dev — *Idempotency* | https://trigger.dev/docs/idempotency | not re-verified |
 | **E21** | Vercel — *Vercel acquires Better Auth* (7 Jul 2026; MIT retained, framework-agnostic, agent identity focus) | https://vercel.com/blog/vercel-acquires-better-auth | **verified 31 Aug 2026** |
+| **E22** | W3C DTCG — *Design Tokens Format Module*, 2025.10 | https://www.designtokens.org/TR/2025.10/format | **verified 2 Sep 2026** |
+| **E23** | W3C DTCG — *Color type*, 2025.10 | https://www.designtokens.org/TR/2025.10/color | **verified 2 Sep 2026** |
 
 > **Sources marked "not re-verified" were cited by predecessor drafts and carried forward.** Their URLs are recorded so they can be checked; until they are, treat them as claims rather than as confirmed citations. Verify before any of them is used to justify reopening a FROZEN decision.
 

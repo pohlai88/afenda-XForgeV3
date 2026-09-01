@@ -62,9 +62,65 @@ two patterns, and its FIRST decision was its scope.
 
 ```
   Table            passive tabular content            DONE
-  CommandPalette   keyboard-first command surface     not started
-  DataGrid         composite grid, inline edit        not started
+  CommandPalette   keyboard-first command surface     DONE   (composite)
+  DataGrid         composite grid, inline edit        DONE   (composite-grid)
 ```
+
+**THE A11Y-3 DEBT WENT FROM ONE SESSION TO THREE, and that is the price of
+stage 6 rather than a surprise.** ADR-025's point was never that the number
+stays at one; it was that the number is known when the obligation is INCURRED.
+It was: `contractsOwingAtEvidence()` moved the moment the two contracts declared
+their profiles, four tests went red naming them, and the gate now reports
+`CommandPalette, DataGrid, Dialog`. Nobody edited a list. What is owed is three
+sittings with a real screen reader, and none has happened.
+
+**BEHAVIOURAL CONFORMANCE FOR TWO PROFILES IS NOW OWED TOO, and it was found by
+a test that existed to find exactly this.** `names every profile that has no
+contracts yet` listed `composite` and `composite-grid` as dormant, and its
+comment said the day a contract declares one, this goes red -- "which is exactly
+when somebody needs telling that no conformance exists for it". It went red. So:
+
+```
+  none            e2e/inert-contracts.spec.ts          DERIVED from profile
+  live-region     e2e/live-region-politeness.spec.ts   DERIVED from profile
+  native-control  e2e/native-control.spec.ts           DERIVED from profile
+  modal           e2e/conformance-harness.spec.ts      Dialog BY NAME
+  form-control    e2e/conformance-harness.spec.ts      Field, Input, Checkbox BY NAME
+  composite       --                                   OWED
+  composite-grid  --                                   OWED
+```
+
+**That third column is the part worth having looked up.** The first draft of this
+table said "exists" five times, which was written from memory and was wrong twice:
+only three suites derive their subjects from `interaction.profile`. `modal` and
+`form-control` are covered by specs naming Dialog, Field, Input and Checkbox
+individually. So the property ADR-025 relies on -- a contract joining the gate by
+declaring what it is -- holds for the A11Y-3 obligation and does NOT hold for
+behavioural conformance in two of five profiles. A second `modal` contract would
+inherit the evidence debt automatically and inherit no conformance at all.
+
+Not written in the same commit, deliberately. A browser spec cannot be executed
+from the authorship loop -- `globalSetup` builds the app and seeds PostgreSQL --
+and an unrun spec is the thing this repository is most careful not to count as a
+check. Writing two suites nobody has watched fail would buy the appearance of
+coverage for the two profiles with the least of it.
+
+**WHAT IS PROVEN TODAY, precisely.** `CommandPalette` delegates nearly all of its
+gated behaviour to Base UI -- focus trap, `aria-activedescendant`, listbox and
+option roles, arrow traversal -- so what is unproven here is the composition, not
+the mechanics. `DataGrid` has no such backing: Base UI ships no grid, so its
+one-tab-stop roving focus, its arrow and Home/End traversal, and its Enter/F2
+editor are written in `data-grid.tsx` and asserted only at source level by
+`the grid implements the model it claims`. That test proves the branches EXIST.
+It cannot prove focus lands where they say.
+
+**A LINT SUPPRESSION IS LOAD-BEARING, so it was made to rest on something.**
+`<table role="grid">` trips `noNoninteractiveElementToInteractiveRole`, and the
+rule is right in general: it guards against markup claiming a widget nobody
+implemented. Suppressing it on a sentence would be the "a named control is not a
+control" trade. The suppression names the test above, and the test asserts every
+key the sentence claims -- so trimming the model turns a green test red instead
+of leaving a comment describing a component that no longer exists.
 
 **Table first, and the reason is A11y-3 debt rather than difficulty.** Every
 gated contract stage 6 adds is another screen-reader session, and the first one
@@ -91,6 +147,49 @@ needs it.
 from the registry, so the four contracts arrived already covered: unit tests
 went 533 to 589, and inertness picked all four up with generated documents. That
 is what the derivation was for.
+
+### Two states the vocabulary was missing, found by looking rather than by a check
+
+Neither is a stage-6 pattern; both are the existing components being finished.
+
+**TONE REACHED THE READER THROUGH HUE AND NOTHING ELSE.** An Alert's four tones
+differed by colour alone, two of them the red/green pair that deficiency
+collapses, and the defence was a sentence: two comments in `packages/ui` said the
+copy carries the meaning. That is true when the author writes "Payroll run
+failed" and false when they write "Cannot continue", and nothing anywhere
+executed the difference. `09-xforge.md` had already named this as the one rule
+uncovered by every automated check here. `tone-mark.ts` draws one silhouette per
+tone -- a triangle for warning so the "look before you act" tone survives at a
+size where an inner glyph is a smudge -- and the assertion is keyed off the
+contract's tone enum, so a fifth tone is red the day it is declared. The mark
+paints in `currentColor`, which means it lands on a text/surface pair the
+generator already measures rather than becoming the first foreground nothing
+checks.
+
+**PRESSED DID NOT EXIST, AND SECONDARY HOVER WAS BORROWED.** Every control had
+rest, hover, focus and disabled and nothing for the moment the pointer is down --
+so on a touch screen, where there is no hover at all, a tapped button looked
+exactly like an untouched one. Fixing it surfaced the more interesting half:
+secondary hover read `surface.sunken`, the recessed-container role, so a hovered
+button and an inset well were one token and neither could move alone. That is the
+`surface.info`-wearing-the-accent-tint collision one tier down, and it was
+invisible because on paper a hover and a well happen to want the same grey. They
+do not on black. Three roles now exist -- `surface.accent-active`,
+`surface.raised-hover`, `surface.raised-active` -- and the pressed direction is
+theme-dependent by construction: darker on paper, lighter on obsidian, stopping
+at ink.800 rather than 750 because 750 is the disabled fill and a pressed control
+must not land on a dead one's colour.
+
+**A NEW SOURCE FILE IS INVISIBLE TO EVERY GUARD UNTIL IT IS TRACKED.** The guards
+enumerate `git ls-files`, which reads the INDEX, so `tone-mark.ts` and the whole
+of `tooling/design-system/` were skipped in silence while the run reported green
+over 915 file-checks. Staging them took it to 954. This is the "runner never sees
+the file" shape and it hides one level up from where anyone looks: the guard is
+correct, the file simply is not in its universe. No check is proposed here
+because the guard that would catch it needs the same universe to be complete;
+what is recorded is the working rule -- **regenerate, `git add`, then gate**, and
+that applies to new SOURCE for guard visibility, not only to generated output for
+cleanliness.
 
 ## Stage 4C — the breakdown, complete
 

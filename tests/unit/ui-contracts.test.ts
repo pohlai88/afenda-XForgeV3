@@ -28,6 +28,7 @@ import {
   UI_LANGUAGE_VERSION,
 } from '@xforge/ui/contracts'
 import { resolvableIds, resolve, runtime } from '@xforge/ui/runtime'
+import { TONE_MARK } from '@xforge/ui/tone-mark'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = join(import.meta.dirname, '../..')
@@ -383,7 +384,7 @@ describe('accessibility obligations', () => {
    */
   it('derives the obligation from profile, never from kind', () => {
     const owing = contractsOwingAtEvidence()
-    expect([...owing].sort()).toEqual(['Dialog'])
+    expect([...owing].sort()).toEqual(['CommandPalette', 'DataGrid', 'Dialog'])
 
     // The pair that makes the point. Dialog is `layout` and owes evidence
     // because it traps focus; Alert is `feedback` and owes none because it only
@@ -403,11 +404,17 @@ describe('accessibility obligations', () => {
    */
   it('names every contract that owes assistive-technology evidence', () => {
     const owing = contractsOwingAtEvidence()
-    // Dialog alone, because it is the only shipped contract that manages its
-    // own focus. Combobox, CommandPalette and DataGrid will join by declaring a
-    // composite profile -- nobody has to remember to add them. Dialog still has
-    // no recorded session, which is one sitting rather than a dozen.
-    expect(owing).toEqual(['Dialog'])
+    // ONE BECAME THREE, exactly as predicted and without anybody editing a list.
+    // The sentence here used to read "Combobox, CommandPalette and DataGrid will
+    // join by declaring a composite profile -- nobody has to remember to add
+    // them", and two of the three now have. They joined by declaring what they
+    // are; this line moved because the derived set moved.
+    //
+    // THREE SESSIONS ARE OWED AND NONE IS RECORDED. That is the honest cost of
+    // stage 6, and ADR-025's point was never that the number stays at one -- it
+    // was that the number is known when the obligation is incurred rather than
+    // discovered in a batch at certification. Dialog has owed its since 4C.
+    expect(owing).toEqual(['CommandPalette', 'DataGrid', 'Dialog'])
     // The revision assertion that stood here is gone rather than moved: the
     // protocol-version rule above covers EVERY contract with a behavioural
     // profile, so restating it for the owing subset was a second assertion of
@@ -437,5 +444,180 @@ describe('accessibility obligations', () => {
     const source = readFileSync(spec, 'utf8')
     expect(source, 'the A11y-1 scan ADR-025 cites').toMatch(/\bscan\(page,/)
     expect(existsSync(join(ROOT, 'e2e/axe.ts')), 'the scan it imports').toBe(true)
+  })
+})
+
+/**
+ * A TONE THE CONTRACT DECLARES MUST RENDER AS ITSELF.
+ *
+ * Nothing tied the tone enum to the stylesheet, and the gap was not theoretical:
+ * `info` shipped painted with `--semantic-surface-accent-subtle`, because at the
+ * time no info role existed to point at. An informational banner and a selected,
+ * actionable thing were the same colour -- the one collision the accent exists to
+ * avoid, since teal means a thing you can press.
+ *
+ * Asserting only that a rule EXISTS would not have caught that: `info` had a
+ * rule. So this asserts the rule reaches for its OWN colour family, which is the
+ * property that was actually violated. It catches both failures -- a tone added
+ * to the contract with no rule at all, and a tone rendering as somebody else.
+ */
+describe('every alert tone renders as itself', () => {
+  const css = readFileSync(join(ROOT, 'packages/ui/src/ui.css'), 'utf8')
+  const tones = contracts.Alert.props.tone.values as readonly string[]
+
+  it('declares more than one tone, or this proves nothing', () => {
+    expect(tones.length).toBeGreaterThan(1)
+    expect(tones).toContain('success')
+  })
+
+  for (const tone of tones) {
+    it(`${tone} has a rule drawn from the ${tone} family`, () => {
+      const rule = css.match(new RegExp(`\\.xf-alert\\[data-tone="${tone}"\\]\\s*\\{([^}]*)\\}`))
+      expect(rule, `no .xf-alert[data-tone="${tone}"] rule in ui.css`).not.toBeNull()
+
+      const body = rule?.[1] ?? ''
+      for (const role of ['text', 'surface', 'border']) {
+        expect(body, `${tone} should take its ${role} from --semantic-${role}-${tone}`).toContain(
+          `--semantic-${role}-${tone}`,
+        )
+      }
+    })
+  }
+})
+
+/**
+ * The half of a tone that survives greyscale.
+ *
+ * WHAT THIS EXISTS TO CATCH is not a missing icon -- it is the reappearance of
+ * colour as the sole carrier of meaning, which is the one rule `09-xforge.md`
+ * records as uncovered by every automated check here. Three ways it comes back,
+ * and each has an assertion: a tone added without a mark, two tones sharing a
+ * mark, and the component quietly ceasing to render one.
+ *
+ * KEYED OFF THE CONTRACT, so a fifth tone is red on the day it is declared
+ * rather than on the day somebody audits the stylesheet.
+ */
+describe('every alert tone carries a cue that is not colour', () => {
+  const source = readFileSync(join(ROOT, 'packages/ui/src/index.tsx'), 'utf8')
+  const tones = contracts.Alert.props.tone.values as readonly string[]
+  const marks = TONE_MARK as Record<string, string>
+
+  it('has a mark for every declared tone and no orphan marks', () => {
+    expect(Object.keys(marks).sort()).toEqual([...tones].sort())
+  })
+
+  it('draws each tone a different shape', () => {
+    const drawn = Object.values(marks)
+    expect(new Set(drawn).size, 'two tones share a silhouette, so they read alike').toBe(
+      drawn.length,
+    )
+  })
+
+  it('renders the mark rather than merely declaring it', () => {
+    expect(source, 'Alert stopped drawing TONE_MARK').toContain('TONE_MARK[tone]')
+    expect(source, 'the mark is decoration and must not be announced twice').toMatch(
+      /<svg aria-hidden="true"/,
+    )
+  })
+})
+
+/**
+ * A control under the finger looks like a control being pressed.
+ *
+ * THE STATE WAS MISSING RATHER THAN WRONG, which is why nothing complained: rest,
+ * hover, focus and disabled were all present, and on a touch screen -- where
+ * hover does not exist -- a tapped button looked exactly like an untouched one.
+ *
+ * ALSO GUARDS THE ROLE. `:hover` reading `--semantic-surface-sunken` is how the
+ * borrowing got in: a hovered button and a recessed well were one token. The
+ * assertion is that each pointer state names the role for THAT state, so the
+ * next borrowing is red rather than invisible.
+ */
+describe('every button variant answers the pointer', () => {
+  const css = readFileSync(join(ROOT, 'packages/ui/src/ui.css'), 'utf8')
+  const variants = contracts.Button.props.variant.values as readonly string[]
+
+  const family = (variant: string) => (variant === 'primary' ? 'accent' : 'raised')
+
+  it('declares more than one variant, or the loop below proves nothing', () => {
+    expect(variants.length).toBeGreaterThan(1)
+  })
+
+  for (const variant of variants) {
+    for (const state of ['hover', 'active']) {
+      it(`${variant} takes its ${state} fill from its own family`, () => {
+        const rule = css.match(
+          new RegExp(
+            `\\.xf-button\\[data-variant="${variant}"\\]:${state}:not\\(:disabled\\)\\s*\\{([^}]*)\\}`,
+          ),
+        )
+        expect(rule, `no :${state} rule for the ${variant} button`).not.toBeNull()
+        expect(rule?.[1] ?? '').toContain(`--semantic-surface-${family(variant)}-${state}`)
+      })
+    }
+  }
+})
+
+/**
+ * The grid implements the model it claims.
+ *
+ * WHY THIS EXISTS AT ALL: `data-grid.tsx` suppresses
+ * `lint/a11y/noNoninteractiveElementToInteractiveRole` to put `role="grid"` on a
+ * `<table>`. That rule is right in general -- it guards against markup CLAIMING
+ * a widget nobody implemented -- so the suppression buys something, and a
+ * suppression justified by a sentence is the "named control is not a control"
+ * trade this repository refuses. The sentence points here; here is what it
+ * points at.
+ *
+ * A SOURCE-LEVEL TEST, and its limit is worth stating rather than leaving to be
+ * discovered. It proves the branches EXIST, not that they move focus correctly
+ * -- that needs a browser, and the behavioural conformance for `composite-grid`
+ * is owed and recorded in `project-state.md`. What it does catch is the failure
+ * that would otherwise be silent: the keyboard model being trimmed while the
+ * suppression, the profile and the contract all go on asserting it is there.
+ */
+describe('the grid implements the model it claims', () => {
+  const source = readFileSync(join(ROOT, 'packages/ui/src/data-grid.tsx'), 'utf8')
+
+  it('declares composite-grid, or the rest of this asserts nothing', () => {
+    expect(contracts.DataGrid.interaction.profile).toBe('composite-grid')
+    expect(source, 'the suppression this test justifies is gone').toContain('role="grid"')
+  })
+
+  // APG's grid: arrows in both dimensions, Home and End along a row, and the
+  // ctrl- forms to the grid's own corners. Every one is a `case` in `target`.
+  for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+    it(`answers ${key}`, () => {
+      expect(source, `no branch handles ${key}`).toContain(`case '${key}':`)
+    })
+  }
+
+  it('reaches the grid corners with ctrl', () => {
+    expect(source).toContain('event.ctrlKey')
+  })
+
+  it('opens an editor with Enter and with F2, and cancels with Escape', () => {
+    expect(source).toContain("event.key === 'F2'")
+    expect(source).toContain("event.key === 'Escape'")
+  })
+
+  /**
+   * The property the whole profile rests on. Two tab stops is an ordinary table
+   * wearing a grid role; none is a grid a keyboard cannot reach at all.
+   */
+  it('keeps exactly one tab stop', () => {
+    expect(source, 'nothing takes the tab stop away from the other cells').toContain(
+      'tabIndex = -1',
+    )
+    expect(source, 'nothing gives the tab stop to the active cell').toContain('tabIndex = 0')
+  })
+
+  /**
+   * The one that is easiest to lose in a refactor and worst to lose. Without it
+   * an arrow key inside an open editor moves the grid instead of the caret, so
+   * every value the grid can reach becomes one it cannot edit.
+   */
+  it('lets an open editor keep its own keys', () => {
+    expect(source).toContain('event.target instanceof HTMLInputElement')
   })
 })

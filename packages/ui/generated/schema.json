@@ -22,6 +22,24 @@
           "$ref": "#/$defs/Code"
         },
         {
+          "$ref": "#/$defs/CommandPalette"
+        },
+        {
+          "$ref": "#/$defs/DataGrid"
+        },
+        {
+          "$ref": "#/$defs/DataGridCell"
+        },
+        {
+          "$ref": "#/$defs/DataGridEditableCell"
+        },
+        {
+          "$ref": "#/$defs/DataGridHeaderCell"
+        },
+        {
+          "$ref": "#/$defs/DataGridRow"
+        },
+        {
           "$ref": "#/$defs/Dialog"
         },
         {
@@ -88,6 +106,7 @@
               "enum": [
                 "danger",
                 "warning",
+                "success",
                 "info"
               ]
             }
@@ -217,6 +236,24 @@
                     "$ref": "#/$defs/Code"
                   },
                   {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGrid"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridRow"
+                  },
+                  {
                     "$ref": "#/$defs/Dialog"
                   },
                   {
@@ -336,6 +373,247 @@
       "title": "Code",
       "type": "object"
     },
+    "CommandPalette": {
+      "additionalProperties": false,
+      "description": "layout / composite (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "CommandPalette"
+        },
+        "props": {
+          "properties": {
+            "emptyMessage": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "placeholder": {
+              "type": "string"
+            },
+            "searchLabel": {
+              "type": "string"
+            },
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "emptyMessage",
+            "label",
+            "searchLabel"
+          ],
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "trigger": {
+              "items": {
+                "$ref": "#/$defs/Button"
+              },
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 1
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props"
+      ],
+      "title": "CommandPalette",
+      "type": "object"
+    },
+    "DataGrid": {
+      "additionalProperties": false,
+      "description": "collection / composite-grid (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "DataGrid"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "caption": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "children": {
+              "items": {
+                "$ref": "#/$defs/DataGridRow"
+              },
+              "type": "array",
+              "minItems": 1
+            },
+            "header": {
+              "items": {
+                "$ref": "#/$defs/DataGridHeaderCell"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "caption",
+            "children",
+            "header"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "DataGrid",
+      "type": "object"
+    },
+    "DataGridCell": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "DataGridCell"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props"
+      ],
+      "title": "DataGridCell",
+      "type": "object"
+    },
+    "DataGridEditableCell": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "DataGridEditableCell"
+        },
+        "props": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "testId": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "label",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props"
+      ],
+      "title": "DataGridEditableCell",
+      "type": "object"
+    },
+    "DataGridHeaderCell": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "DataGridHeaderCell"
+        },
+        "props": {
+          "properties": {
+            "label": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props"
+      ],
+      "title": "DataGridHeaderCell",
+      "type": "object"
+    },
+    "DataGridRow": {
+      "additionalProperties": false,
+      "description": "collection / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "DataGridRow"
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "DataGridRow",
+      "type": "object"
+    },
     "Dialog": {
       "additionalProperties": false,
       "description": "layout / modal (contract v1, interaction r1)",
@@ -375,6 +653,24 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGrid"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridRow"
                   },
                   {
                     "$ref": "#/$defs/Dialog"
@@ -722,6 +1018,9 @@
                     "$ref": "#/$defs/Code"
                   },
                   {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
                     "$ref": "#/$defs/Dialog"
                   },
                   {
@@ -789,6 +1088,24 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGrid"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridRow"
                   },
                   {
                     "$ref": "#/$defs/Dialog"
@@ -927,6 +1244,24 @@
                   },
                   {
                     "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGrid"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridRow"
                   },
                   {
                     "$ref": "#/$defs/Dialog"

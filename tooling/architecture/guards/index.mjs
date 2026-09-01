@@ -23,6 +23,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isGovernedName } from '../../design-system/token-policy/index.mjs'
 import { classify } from '../../source-universe.mjs'
 
 /**
@@ -313,6 +314,53 @@ function isNonCallContext(src, at) {
  */
 const withCommentsBlanked = (src) =>
   src.replace(/[/][*][\s\S]*?[*][/]/g, (c) => c.replace(/[^\n]/g, ' '))
+
+/**
+ * Every custom property a stylesheet REFERENCES, by name.
+ *
+ * ONE EXTRACTION FOR EVERY RULE ABOUT REFERENCES, because the previous regex
+ * closed on `\)` and therefore could not see `var(--x, 4px)` at all. A primitive
+ * smuggled in behind a fallback was invisible to the guard forbidding
+ * primitives -- not argued about, simply unmatched -- and any second rule
+ * written to its own pattern would have inherited the same blind spot
+ * independently. That is the defect CLAUDE.md keeps a list of: one fact, two
+ * regexes, agreeing right up until they do not.
+ *
+ * The NAME is what is extracted. Whether a fallback's VALUE is an unauthorised
+ * literal is a different question, owned by `tokens-are-the-authority`.
+ *
+ * Comments are blanked at equal length, so a comment may discuss a token while
+ * explaining why it is not used, and reported line numbers stay true.
+ */
+/**
+ * The generated token names, read once and refused if absent.
+ *
+ * A MISSING MANIFEST IS A FAILURE, never an empty set. Returning `new Set()`
+ * would make every reference unresolvable and the guard would scream; returning
+ * it silently the other way -- skipping the check -- is the ADR-024 failure
+ * exactly, a tool reporting green having inspected nothing. So it throws, and
+ * the guard run stops with a reason.
+ */
+let tokenNamesCache
+const tokenManifest = () => {
+  if (tokenNamesCache === undefined) {
+    const path = join(REPO_ROOT, 'packages/tokens/generated/token-names.json')
+    if (!existsSync(path)) {
+      throw new Error(
+        `no token manifest at ${path} -- run \`pnpm gen:tokens\`. An unreadable manifest ` +
+          'is not an empty one, and a check that inspected nothing has not passed',
+      )
+    }
+    tokenNamesCache = new Set(JSON.parse(readFileSync(path, 'utf8')))
+  }
+  return tokenNamesCache
+}
+
+const tokenReferences = (src) =>
+  [...withCommentsBlanked(src).matchAll(/var\(\s*(--[a-z0-9-]+)/g)].map((m) => ({
+    index: m.index,
+    name: m[1],
+  }))
 
 /**
  * React UI surfaces.
@@ -987,13 +1035,112 @@ export const guards = [
     //
     // Checked on DECLARATIONS only, so a comment may still name a colour while
     // explaining why it is not used.
+    //
+    // PROPERTY-AWARE, NOT A WIDER REGEX, and the difference decides whether the
+    // guard is usable at all. The colour rule could be a pattern because a hex
+    // code is a design value wherever it appears. A duration is not: `animation:
+    // none` is structural, and a rule forbidding literals in `animation` by
+    // pattern would have failed against this repository's own reduced-motion CSS
+    // on the day it was written. So each governed property names what it will
+    // accept, and structural keywords pass.
+    //
+    // FALLBACKS ARE VALUES. `var(--x, 4px)` hides a literal behind a reference,
+    // so custom-property NAMES are stripped and whatever remains is inspected.
+    // The authority guard deliberately does not do this -- it owns whether the
+    // NAME resolves; this owns whether the VALUE is a literal. One defect, one
+    // law, one refusal, twice over.
+    //
+    // SCOPE, stated because the gap is real rather than overlooked: lengths at
+    // large are NOT governed here, so `border-block-end: 2px solid var(...)` and
+    // the checkbox mark's `0.35em` still pass. They are literal design values and
+    // they want a wave of their own, with a spacing and sizing vocabulary to land
+    // in. Claiming them now would mean either tokenizing hairlines nobody has
+    // designed, or an exemption list long enough to be its own authority.
     applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
       const declarations = withCommentsBlanked(src)
-      const re = /:[^;{}]*(#[0-9a-fA-F]{3,8}|rgba?[(]|hsla?[(])/g
+
+      // A keyframe's own waveform is not a design value applied to a component:
+      // the `50%` stop and the amplitude beside it are one fact, and tokenizing
+      // half of it would be arbitrary. Blanked at equal length so offsets, and
+      // therefore reported line numbers, stay true.
+      const outsideKeyframes = declarations.replace(
+        /@keyframes[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g,
+        (block) => ' '.repeat(block.length),
+      )
+
+      const TIME = /(?:^|[\s,(])\d*\.?\d+m?s(?![\w-])/
+      const EASING =
+        /(?:^|[\s,])(?:ease(?:-in)?(?:-out)?|linear|step-(?:start|end))(?![\w-])|cubic-bezier\(|steps\(/
+      const NUMBER = /(?:^|[\s,(])\d*\.?\d+(?![\w-])/
+      const LENGTH = /(?:^|[\s,(])-?\d*\.?\d+(?:px|rem|em|ch|ex|vh|vw|%)(?![\w-])/
+
+      // property -> what makes its value a literal, and what it may say instead.
+      const GOVERNED = [
+        { keywords: ['inherit', 'initial', 'unset'], property: 'opacity', reject: NUMBER },
+        {
+          keywords: ['normal', 'inherit', 'initial', 'unset'],
+          property: 'line-height',
+          reject: NUMBER,
+        },
+        {
+          keywords: ['inherit', 'initial', 'unset'],
+          property: 'font-weight',
+          reject: /(?:^|[\s,(])(?:\d+|bold|bolder|lighter|normal)(?![\w-])/,
+        },
+        {
+          keywords: ['normal', 'inherit', 'initial', 'unset'],
+          property: 'letter-spacing',
+          reject: LENGTH,
+        },
+        {
+          keywords: ['none', 'inherit', 'initial', 'unset'],
+          property: 'box-shadow',
+          reject: /\S/,
+        },
+        {
+          keywords: ['none', 'all', 'inherit', 'initial', 'unset'],
+          property: 'animation|transition',
+          reject: new RegExp(`${TIME.source}|${EASING.source}`),
+        },
+        {
+          keywords: ['inherit', 'initial', 'unset'],
+          property: '(?:animation|transition)-(?:duration|delay)',
+          reject: TIME,
+        },
+        {
+          keywords: ['inherit', 'initial', 'unset'],
+          property: '(?:animation|transition)-timing-function',
+          reject: EASING,
+        },
+      ]
+
+      for (const { keywords, property, reject } of GOVERNED) {
+        const re = new RegExp(`(?:^|[;{])\\s*(${property})\\s*:\\s*([^;{}]*)`, 'g')
+        let m
+        while ((m = re.exec(outsideKeyframes)) !== null) {
+          // Custom-property names carry no value; a fallback beside one does.
+          const value = m[2].replace(/--[\w-]+/g, '').trim()
+          if (keywords.includes(value) || !reject.test(value)) {
+            continue
+          }
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message:
+              `literal design value in '${m[1]}' -- every value comes from a semantic ` +
+              'token, or packages/tokens has stopped being the authority',
+          })
+        }
+      }
+
+      // Colour stays a pattern: a hex code is a design value wherever it lands.
+      // `oklch`, `color`, `lab`, `lch` and `hwb` were missing and are not
+      // hypothetical -- they are the notations a wide-gamut palette arrives in.
+      const colour = /:[^;{}]*(#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb|color)[(])/g
       let m
-      while ((m = re.exec(declarations)) !== null) {
+      while ((m = colour.exec(declarations)) !== null) {
         out.push({
           file: f,
           line: line(src, m.index),
@@ -1249,19 +1396,16 @@ export const guards = [
     applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
-      const declarations = withCommentsBlanked(src)
-      const re = /var\([\s]*--([a-z0-9-]+)[\s]*\)/g
-      let m
-      while ((m = re.exec(declarations)) !== null) {
-        if (/^(semantic|component)-/.test(m[1])) {
+      for (const { index, name } of tokenReferences(src)) {
+        if (isGovernedName(name)) {
           continue
         }
         out.push({
           file: f,
-          line: line(src, m.index),
+          line: line(src, index),
           message:
-            `primitive token '--${m[1]}' -- a primitive carries a value and no role, ` +
-            'so a mode has nothing to rebind. Name the semantic or component role instead',
+            `'${name}' is not a semantic or component role -- a primitive carries a value ` +
+            'and no role, so a mode has nothing to rebind. Name the role instead',
         })
       }
       return out
@@ -1270,6 +1414,58 @@ export const guards = [
     law: 8,
     precision: 'text',
     title: 'The stylesheet consumes semantic and component tokens, never primitives',
+  },
+
+  {
+    /**
+     * Law 8: the planes are joined by STABLE semantic identifiers -- and an
+     * identifier nothing checks is not stable, it is merely unchallenged.
+     *
+     * THE ASYMMETRY THIS CLOSES. Adding a token was always safe; renaming one
+     * was not. `var(--semantic-type-heading)` naming a token that no longer
+     * exists is valid CSS: the declaration is simply dropped, the element
+     * inherits or falls back to an initial value, and the page renders looking
+     * plausible. No build error, no lint error, no failing test -- the exact
+     * shape of failure this repository's tooling exists to refuse.
+     *
+     * THE MANIFEST WAS ORPHANED. `packages/tokens/generated/token-names.json`
+     * has been emitted by the generator and read by NOTHING, alongside an
+     * `isGovernedName` in the token policy documented as the authority for this
+     * check and called by nobody. Two artefacts built for a guard that was never
+     * written, both of which read from outside like coverage.
+     *
+     * FALLBACKS ARE REFERENCES. `var(--semantic-gone, 4px)` is rejected for the
+     * same reason as `var(--semantic-gone)`: the NAME does not resolve, and a
+     * fallback that silently absorbs a rename is worse than a missing value,
+     * because it looks deliberate.
+     *
+     * SCOPED TO GOVERNED NAMESPACES, derived from the token policy rather than
+     * matched by pattern. Legitimate non-token custom properties exist, and the
+     * primitive groups are ordinary English words -- claiming them would fire on
+     * `--color-picker-bg`, which is nobody's token.
+     */
+    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    check(f, src) {
+      const manifest = tokenManifest()
+      const out = []
+      for (const { index, name } of tokenReferences(src)) {
+        if (!isGovernedName(name) || manifest.has(name)) {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(src, index),
+          message:
+            `'${name}' is not a token -- no such custom property is generated from ` +
+            'packages/tokens, so this declaration is silently dropped at render',
+        })
+      }
+      return out
+    },
+    id: 'tokens-referenced-are-tokens-that-exist',
+    law: 8,
+    precision: 'text',
+    title: 'Every token a stylesheet names is one the token file generates',
   },
   {
     /**

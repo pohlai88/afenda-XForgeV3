@@ -22,13 +22,47 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { measureAssets } from './css-asset-size.mjs'
 import { measureRoutes } from './route-bundle-size.mjs'
 
 const ROOT = join(import.meta.dirname, '../..')
 const BUDGETS = join(ROOT, '.architecture/performance-budgets.json')
 
-const METRIC = 'initialClientJsGzipBytes'
 const STATUSES = ['inherited', 'explicit', 'exempt']
+
+/**
+ * WHAT IS BEING BUDGETED, as data rather than as a second copy of the gate.
+ *
+ * Law 31 permits generalising a platform abstraction once a SECOND real use
+ * case proves it, and stylesheet bytes are that second case. Everything the
+ * gate actually decides -- set equality in both directions, a numeric
+ * threshold, honest provenance, a reason where one is owed -- is identical for
+ * a route and for a stylesheet. Only the nouns differ, so only the nouns are
+ * parameterised. Forking a second evaluator would have duplicated the policy
+ * and left two authorities on what a budget entry must look like.
+ *
+ * The route wording is reproduced EXACTLY, because those messages are asserted
+ * by the tests that prove this gate rejects things.
+ */
+export const ROUTE_BUDGETS = {
+  absent: 'not built',
+  collection: 'routes',
+  key: 'route',
+  metric: 'initialClientJsGzipBytes',
+  present: 'built',
+  thresholdless: 'section 22 requires one on every route',
+  unbudgeted: 'section 22 requires every route to carry a numeric threshold',
+}
+
+export const ASSET_BUDGETS = {
+  absent: 'not present',
+  collection: 'assets',
+  key: 'asset',
+  metric: 'cssDeclarationsGzipBytes',
+  present: 'present',
+  thresholdless: 'a budget entry carrying no number gates nothing',
+  unbudgeted: 'a stylesheet nobody budgeted is growth nothing is watching',
+}
 
 /**
  * Compare a set of measurements against a budget configuration.
@@ -41,31 +75,34 @@ const STATUSES = ['inherited', 'explicit', 'exempt']
  * Returns every problem found rather than the first, because a contributor who
  * has to rebuild once per violation stops reading the output.
  */
-export function evaluateBudgets(config, measured) {
-  const fallback = config.defaults?.[METRIC]
+export function evaluateBudgets(config, measured, kind = ROUTE_BUDGETS) {
+  const { collection, key, metric } = kind
+  const fallback = config.defaults?.[metric]
   if (typeof fallback !== 'number') {
-    throw new Error(`budget config has no numeric defaults.${METRIC}`)
+    throw new Error(`budget config has no numeric defaults.${metric}`)
   }
 
-  const budgeted = config.routes ?? {}
+  const budgeted = config[collection] ?? {}
   const problems = []
   const checked = []
 
-  for (const route of Object.keys(budgeted).sort()) {
-    if (!measured.some((m) => m.route === route)) {
+  for (const subject of Object.keys(budgeted).sort()) {
+    if (!measured.some((m) => m[key] === subject)) {
       problems.push(
-        `${route}: budgeted but not built -- a stale entry silently stops gating anything`,
+        `${subject}: budgeted but ${kind.absent} -- a stale entry silently stops gating anything`,
       )
     }
   }
 
-  for (const { route, [METRIC]: actual } of measured) {
-    const entry = budgeted[route]
+  for (const measurement of measured) {
+    const subject = measurement[key]
+    const actual = measurement[metric]
+    const entry = budgeted[subject]
 
     if (!entry) {
       problems.push(
-        `${route}: built but has no budget entry (measured ${actual} B) -- ` +
-          'section 22 requires every route to carry a numeric threshold',
+        `${subject}: ${kind.present} but has no budget entry (measured ${actual} B) -- ` +
+          kind.unbudgeted,
       )
       continue
     }
@@ -73,65 +110,91 @@ export function evaluateBudgets(config, measured) {
     const { status } = entry
     if (!STATUSES.includes(status)) {
       problems.push(
-        `${route}: status ${JSON.stringify(status)} is not one of ${STATUSES.join(', ')}`,
+        `${subject}: status ${JSON.stringify(status)} is not one of ${STATUSES.join(', ')}`,
       )
       continue
     }
 
-    const threshold = entry[METRIC]
+    const threshold = entry[metric]
     if (typeof threshold !== 'number') {
-      problems.push(`${route}: no numeric ${METRIC} -- section 22 requires one on every route`)
+      problems.push(`${subject}: no numeric ${metric} -- ${kind.thresholdless}`)
       continue
     }
 
     if (status !== 'inherited' && !entry.reason?.trim()) {
-      problems.push(`${route}: status ${status} requires a recorded reason`)
+      problems.push(`${subject}: status ${status} requires a recorded reason`)
       continue
     }
 
     if (status === 'inherited' && threshold !== fallback) {
       problems.push(
-        `${route}: labelled inherited but its threshold is ${threshold}, not the default ` +
+        `${subject}: labelled inherited but its threshold is ${threshold}, not the default ` +
           `${fallback} -- an exception must say that it is one, so mark it explicit with a reason`,
       )
       continue
     }
 
     if (status === 'exempt') {
-      checked.push({ actual, route, status, threshold: null })
+      checked.push({ actual, [key]: subject, status, threshold: null })
       continue
     }
 
     if (actual > threshold) {
       problems.push(
-        `${route}: ${actual} B exceeds its ${threshold} B budget by ${actual - threshold} B`,
+        `${subject}: ${actual} B exceeds its ${threshold} B budget by ${actual - threshold} B`,
       )
     }
-    checked.push({ actual, route, status, threshold })
+    checked.push({ actual, [key]: subject, status, threshold })
   }
 
   return { checked, problems }
 }
 
-/** Read the budget file and measure the current build. */
-export function checkBudgets() {
+function readConfig() {
   if (!existsSync(BUDGETS)) {
     throw new Error(`no budget file at ${BUDGETS}`)
   }
-  return evaluateBudgets(JSON.parse(readFileSync(BUDGETS, 'utf8')), measureRoutes())
+  return JSON.parse(readFileSync(BUDGETS, 'utf8'))
+}
+
+/** Read the budget file and measure the current build. */
+export function checkBudgets() {
+  return evaluateBudgets(readConfig(), measureRoutes())
+}
+
+/**
+ * The same gate over the authored stylesheets, which need no build.
+ *
+ * That is why this is a separate entry point rather than another metric on the
+ * route pass: the subjects are readable from the checkout, so the stage can be
+ * an AUTHORSHIP one and catch growth in the twenty-second loop instead of
+ * behind a production build. The measured pain was that P2 grew the stylesheet
+ * with nothing watching.
+ *
+ * The asset list comes from the config, so a stylesheet is gated by being
+ * budgeted -- and `evaluateBudgets` refuses in both directions, so a file that
+ * is budgeted but gone, or measured but unbudgeted, is a failure either way.
+ */
+export function checkAssetBudgets() {
+  const config = readConfig()
+  const paths = Object.keys(config[ASSET_BUDGETS.collection] ?? {})
+  return evaluateBudgets(config, measureAssets(paths), ASSET_BUDGETS)
 }
 
 /** A one-line summary of headroom, which is the number worth watching. */
-export function summarise(checked) {
+export function summarise(checked, kind = ROUTE_BUDGETS) {
   const gated = checked.filter((c) => c.threshold !== null)
   if (gated.length === 0) {
-    return 'no gated routes'
+    return `no gated ${kind.collection}`
   }
   const tightest = gated.reduce((a, b) =>
     a.threshold - a.actual <= b.threshold - b.actual ? a : b,
   )
   const headroom = tightest.threshold - tightest.actual
-  return `${gated.length} routes within budget, tightest ${tightest.route} with ${headroom} B spare`
+  return (
+    `${gated.length} ${kind.collection} within budget, tightest ` +
+    `${tightest[kind.key]} with ${headroom} B spare`
+  )
 }
 
 function report() {

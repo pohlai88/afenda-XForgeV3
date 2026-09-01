@@ -25,7 +25,12 @@ import { join } from 'node:path'
 import { scanConfig } from '../architecture/config-guards.mjs'
 import { scanContract } from '../architecture/contract-guards.mjs'
 import { mutationTest, scanWorkspace } from '../architecture/run-guards.mjs'
-import { checkBudgets, summarise } from '../perf/check-budgets.mjs'
+import {
+  ASSET_BUDGETS,
+  checkAssetBudgets,
+  checkBudgets,
+  summarise,
+} from '../perf/check-budgets.mjs'
 import { GENERATED_PATHS } from '../source-universe.mjs'
 import {
   BLOCKED,
@@ -766,6 +771,46 @@ export const stages = [
         : { detail: summarise(checked), status: PASS }
     },
     title: 'per-route performance budgets',
+  },
+
+  {
+    authorship: true,
+    enforces: [],
+    id: 'css-budgets',
+    phase: 'spine',
+    /**
+     * The stylesheets' own growth, which nothing measured until now.
+     *
+     * AN AUTHORSHIP STAGE ON PURPOSE. The route budget beside it needs a
+     * production build, so CSS growth would have been visible only behind three
+     * minutes of building -- and the whole point is to see it while the edit
+     * that caused it is still on screen. These subjects are readable straight
+     * from the checkout, which is the criterion `stages.mjs` uses, so it
+     * declares `authorship` and joins the twenty-second loop.
+     *
+     * NOT DEFERRED to the design-system phase. The files exist, the numbers are
+     * real, and the check runs today; `unmet()` is for obligations that cannot
+     * be evaluated yet, never for ones it would be tidier to postpone.
+     */
+    run() {
+      let result
+      try {
+        result = checkAssetBudgets()
+      } catch (err) {
+        // Same lesson as the route gate: a budget that could not measure has
+        // not passed. ADR-024's whole subject is a tool reporting green having
+        // inspected nothing.
+        return { detail: `css budgets could not be evaluated: ${err?.message}`, status: FAIL }
+      }
+      const { checked, problems } = result
+      if (problems.length > 0) {
+        return { detail: problems.join(NL), status: FAIL }
+      }
+      return checked.length === 0
+        ? { detail: 'no stylesheets are budgeted', status: EMPTY }
+        : { detail: summarise(checked, ASSET_BUDGETS), status: PASS }
+    },
+    title: 'stylesheet growth budgets',
   },
 
   {

@@ -54,5 +54,9 @@ export type Announcement = keyof typeof ANNOUNCEMENT
 export const TONE_ANNOUNCEMENT = {
   danger: 'assertive',
   info: 'polite',
+  // POLITE, and the asymmetry with danger is the point: a thing that went right
+  // has no deadline. Interrupting a screen-reader user mid-sentence to say a
+  // payroll run posted is the announcement equivalent of a modal for good news.
+  success: 'polite',
   warning: 'assertive',
 } as const satisfies Record<string, Announcement>

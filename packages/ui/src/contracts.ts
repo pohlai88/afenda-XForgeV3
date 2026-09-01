@@ -227,7 +227,7 @@ export const contracts = {
     kind: 'feedback',
     props: {
       testId: { type: 'string' },
-      tone: { required: true, type: 'enum', values: ['danger', 'warning', 'info'] },
+      tone: { required: true, type: 'enum', values: ['danger', 'warning', 'success', 'info'] },
     },
     slots: { children: { acceptsKinds: ['content'], max: null, min: 1 } },
   },
@@ -315,6 +315,132 @@ export const contracts = {
    * covered by a hand-authored conformance spec; the AT evidence itself is
    * owed and not yet recorded.
    */
+  /**
+   * A keyboard-first surface for finding and running a command.
+   *
+   * `composite`, and the profile is honest rather than aspirational: there is
+   * ONE tab stop -- the search input -- and arrow keys move a highlight through
+   * the list via `aria-activedescendant` without focus leaving it. Base UI's
+   * Autocomplete owns that, inside Base UI's Dialog, which owns the trap.
+   *
+   * THREE REQUIRED NAMES, and each one names a different thing. `label` names
+   * the modal surface, `searchLabel` names the combobox inside it -- a named
+   * dialog containing an unnamed control is the same defect one level down --
+   * and `emptyMessage` is what a query matching nothing produces, because a
+   * palette that renders an empty list has said nothing and is
+   * indistinguishable from a broken filter.
+   *
+   * THE COMMANDS ARE NOT HERE, and that is this file's own rule rather than an
+   * omission. A command is an ACTION; `onSelect` is a function, exactly as
+   * `Button.onClick` is, and the header above says actions arrive by identifier
+   * through the command layer. Metadata can place a palette today and cannot
+   * populate one. Recorded rather than worked around with a prop shape
+   * pretending to be configuration.
+   */
+  CommandPalette: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'composite', revision: 1 },
+    kind: 'layout',
+    props: {
+      emptyMessage: { required: true, type: 'string' },
+      label: { required: true, type: 'string' },
+      placeholder: { type: 'string' },
+      searchLabel: { required: true, type: 'string' },
+      testId: { type: 'string' },
+    },
+    slots: {
+      // A palette reachable only by a shortcut nobody can see is not
+      // discoverable. The component installs no global key binding -- two
+      // mounted palettes would both claim it -- so this is the half that makes
+      // the surface findable without documentation.
+      trigger: { accepts: ['Button'], max: 1, min: 0 },
+    },
+  },
+
+  /**
+   * Tabular data that is OPERATED, where `Table` is tabular content that is
+   * READ. The pair is deliberate and the profiles are the difference: `none`
+   * against `composite-grid`.
+   *
+   * `caption` is required and is the grid's only name, wired by
+   * `aria-labelledby`. `header` is required for `Table`'s reason -- a grid whose
+   * columns are unnamed is close to unreadable with a screen reader, and a
+   * grammar that permits one produces it eventually.
+   */
+  DataGrid: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'composite-grid', revision: 1 },
+    kind: 'collection',
+    props: { testId: { type: 'string' } },
+    slots: {
+      caption: { text: true },
+      children: { accepts: ['DataGridRow'], max: null, min: 1 },
+      header: { accepts: ['DataGridHeaderCell'], max: null, min: 1 },
+    },
+  },
+
+  /** One value, read only. A LEAF: a grid cell holds data, not components. */
+  DataGridCell: {
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    props: {
+      testId: { type: 'string' },
+      value: { required: true, type: 'string' },
+    },
+  },
+
+  /**
+   * One value, editable in place -- and a SEPARATE contract rather than an
+   * `editable` flag on the cell above, for the reason `TableHeaderCell` is
+   * separate from `TableCell`.
+   *
+   * An editable cell must carry a name: a `<td>` is announced with its column
+   * header, an `<input>` inside that cell is not. A contract cannot say
+   * "required only when another prop is set", so one flagged cell contract
+   * leaves a choice between a runtime throw -- a metadata document able to
+   * crash a screen -- and a silently unnamed field. Two contracts make `label`
+   * simply required, and "editable without a name" unsayable.
+   */
+  DataGridEditableCell: {
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    props: {
+      label: { required: true, type: 'string' },
+      testId: { type: 'string' },
+      value: { required: true, type: 'string' },
+    },
+  },
+
+  DataGridHeaderCell: {
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    props: { label: { required: true, type: 'string' } },
+  },
+
+  DataGridRow: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'collection',
+    slots: {
+      children: { accepts: ['DataGridCell', 'DataGridEditableCell'], max: null, min: 1 },
+    },
+  },
+
   Dialog: {
     composition: 'container',
     contractVersion: 1,

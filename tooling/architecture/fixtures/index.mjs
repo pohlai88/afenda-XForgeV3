@@ -615,6 +615,22 @@ export async function save(input: unknown) {
 `,
     },
   },
+  // The blind spot the shared extractor closed: the old pattern closed on `)`,
+  // so a primitive behind a fallback was not argued about -- it was unmatched.
+  'stylesheet-names-roles-not-primitives-fallback': {
+    clean: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-card { padding: var(--component-card-padding, 1rem); }
+`,
+    },
+    guardId: 'stylesheet-names-roles-not-primitives',
+    violating: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-card { padding: var(--space-5, 1rem); }
+`,
+    },
+  },
+
   'tenancy-primitives-confined': {
     clean: {
       path: 'modules/payroll/application/run.ts',
@@ -634,12 +650,28 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
     clean: {
       path: 'packages/ui/src/ui.css',
       source: `/* #2563eb lives in tokens.json, not here */
-.xf-button { background: var(--semantic-accent-default); }
+.xf-button { background: var(--semantic-surface-accent); }
 `,
     },
     violating: {
       path: 'packages/ui/src/ui.css',
       source: `.xf-button { background: #2563eb; }
+`,
+    },
+  },
+
+  // A `var()` naming a token that no longer exists is VALID CSS: the declaration
+  // is dropped and the page still renders. Adding a token was always safe;
+  // renaming one was not, and nothing said so.
+  'tokens-referenced-are-tokens-that-exist': {
+    clean: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-card { padding: var(--component-card-padding); }
+`,
+    },
+    violating: {
+      path: 'packages/ui/src/ui.css',
+      source: `.xf-card { padding: var(--semantic-space-gone, 4px); }
 `,
     },
   },

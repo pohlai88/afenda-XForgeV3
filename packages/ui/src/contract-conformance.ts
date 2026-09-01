@@ -25,8 +25,24 @@
  * wrong -- and the answer is not automatically the contract.
  */
 import type { ReactElement, ReactNode } from 'react'
+import type * as commandPalette from './command-palette'
 import type { ContractId, DeclaredProps } from './contracts'
+import type * as dataGrid from './data-grid'
 import type * as components from './index'
+
+/**
+ * EVERY MODULE A CONTRACT CAN LIVE IN, and the union is the maintenance cost of
+ * the client-boundary split rather than a design choice.
+ *
+ * `CommandPalette` and the DataGrid family hold interactive state, so they are
+ * `'use client'` and cannot sit in the barrel that server components import --
+ * `boundary.tsx` records why. This file consequently holds a second copy of
+ * "where components live", which the runtime map also holds. Nothing derives
+ * one from the other, so the failure to watch for is a contract added to a
+ * module missing here: it would resolve to `undefined`, and the weld below
+ * would go red naming the id, which is the outcome worth having.
+ */
+type Implementations = typeof components & typeof commandPalette & typeof dataGrid
 
 /**
  * Parameter positions are contravariant under `strictFunctionTypes`, so this
@@ -42,7 +58,7 @@ type AcceptsItsContract<Id extends ContractId> = (
 
 /** The ids whose component disagrees with its contract. Empty, or a compile error. */
 type Mismatched = {
-  [Id in ContractId]: (typeof components)[Id] extends AcceptsItsContract<Id> ? never : Id
+  [Id in ContractId]: Implementations[Id] extends AcceptsItsContract<Id> ? never : Id
 }[ContractId]
 
 /** Resolves only when `Mismatched` is empty; otherwise the error names the id. */

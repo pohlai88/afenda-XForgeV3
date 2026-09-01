@@ -12,7 +12,9 @@
  */
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-import { evaluateBudgets, summarise } from '../../tooling/perf/check-budgets.mjs'
+import { ASSET_BUDGETS, evaluateBudgets, summarise } from '../../tooling/perf/check-budgets.mjs'
+// @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
+import { declarationGzipBytes } from '../../tooling/perf/css-asset-size.mjs'
 
 interface Measured {
   initialClientJsGzipBytes: number
@@ -158,6 +160,116 @@ describe('the performance budget gate', () => {
       const entry = { initialClientJsGzipBytes: 1, reason: 'stated', status: 'exempt' }
       const { checked } = evaluateBudgets(config({ '/a': entry }), measured(['/a', 5]))
       expect(summarise(checked)).toBe('no gated routes')
+    })
+  })
+})
+
+/**
+ * The same gate over stylesheet growth, which nothing measured before.
+ *
+ * `route-bundle-size.mjs` reports `initialClientJsGzipBytes` and nothing else,
+ * so CSS growth was unbudgeted BY CONSTRUCTION rather than by oversight. The
+ * token wave that added typography, disabled and motion roles is the first to
+ * grow these files materially -- the measured pain law 30 asks for.
+ *
+ * Every rule is stated as a violation first, for the reason at the top of this
+ * file: a gate is only known to work at the point something has failed it.
+ */
+describe('the stylesheet growth gate', () => {
+  const assets = (entries: Record<string, unknown>, defaults = 2400) => ({
+    assets: entries,
+    defaults: { cssDeclarationsGzipBytes: defaults },
+  })
+  const owned = { cssDeclarationsGzipBytes: 2400, status: 'inherited' }
+  const sized = (...as: [string, number][]) =>
+    as.map(([asset, cssDeclarationsGzipBytes]) => ({ asset, cssDeclarationsGzipBytes }))
+
+  it('passes a stylesheet inside its budget', () => {
+    const { checked, problems } = evaluateBudgets(
+      assets({ 'a.css': owned }),
+      sized(['a.css', 1570]),
+      ASSET_BUDGETS,
+    )
+    expect(problems).toEqual([])
+    expect(checked).toEqual([
+      { actual: 1570, asset: 'a.css', status: 'inherited', threshold: 2400 },
+    ])
+  })
+
+  it('rejects a stylesheet that outgrew its budget, and says by how much', () => {
+    const { problems } = evaluateBudgets(
+      assets({ 'a.css': owned }),
+      sized(['a.css', 2401]),
+      ASSET_BUDGETS,
+    )
+    expect(problems[0]).toContain('exceeds its 2400 B budget by 1 B')
+  })
+
+  // The direction that matters most here. A stylesheet nobody budgeted is
+  // exactly the state every stylesheet in this repository was in until now.
+  it('rejects a stylesheet that nobody budgeted', () => {
+    const { problems } = evaluateBudgets(
+      assets({ 'a.css': owned }),
+      sized(['a.css', 100], ['unwatched.css', 100]),
+      ASSET_BUDGETS,
+    )
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('unwatched.css: present but has no budget entry')
+    expect(problems[0]).toContain('growth nothing is watching')
+  })
+
+  it('rejects a budgeted stylesheet that is no longer present', () => {
+    const { problems } = evaluateBudgets(
+      assets({ 'a.css': owned, 'gone.css': owned }),
+      sized(['a.css', 100]),
+      ASSET_BUDGETS,
+    )
+    expect(problems[0]).toContain('gone.css: budgeted but not present')
+  })
+
+  it('rejects a raised ceiling still labelled inherited, as it does for routes', () => {
+    const raised = { cssDeclarationsGzipBytes: 9000, status: 'inherited' }
+    const { problems } = evaluateBudgets(
+      assets({ 'a.css': raised }),
+      sized(['a.css', 100]),
+      ASSET_BUDGETS,
+    )
+    expect(problems[0]).toContain('labelled inherited but its threshold is 9000')
+  })
+
+  it('summarises against stylesheets rather than routes', () => {
+    const { checked } = evaluateBudgets(
+      assets({ 'roomy.css': owned, 'tight.css': owned }),
+      sized(['roomy.css', 100], ['tight.css', 2000]),
+      ASSET_BUDGETS,
+    )
+    expect(summarise(checked, ASSET_BUDGETS)).toBe(
+      '2 assets within budget, tightest tight.css with 400 B spare',
+    )
+  })
+
+  /**
+   * THE METRIC'S LOAD-BEARING PROPERTY, and the reason it is declarations and
+   * not the file.
+   *
+   * Comments are 44% of `ui.css` raw. A budget on the file would have taxed the
+   * long explanatory comments this repository's conventions ask for on every
+   * non-obvious decision -- and a budget that penalises documentation is one
+   * people rightly route around, which CLAUDE.md names as how a gate stops
+   * being a gate. Asserted rather than trusted, because the claim is the only
+   * thing justifying the strip.
+   */
+  describe('the measurement', () => {
+    const sheet = '.a {\n  color: var(--semantic-text-default);\n}\n'
+
+    it('does not grow when a comment is added, however long', () => {
+      const documented = `/*\n * ${'why this exists, at length. '.repeat(40)}\n */\n${sheet}`
+      expect(declarationGzipBytes(documented)).toBe(declarationGzipBytes(sheet))
+    })
+
+    it('does grow when a declaration is added, which is what it exists to catch', () => {
+      const grown = `${sheet}.b {\n  padding: var(--semantic-container-padding);\n}\n`
+      expect(declarationGzipBytes(grown)).toBeGreaterThan(declarationGzipBytes(sheet))
     })
   })
 })

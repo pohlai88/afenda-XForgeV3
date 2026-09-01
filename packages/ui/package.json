@@ -6,11 +6,14 @@
   "exports": {
     ".": "./src/index.tsx",
     "./boundary": "./src/boundary.tsx",
+    "./command-palette": "./src/command-palette.tsx",
     "./contracts": "./src/contracts.ts",
+    "./data-grid": "./src/data-grid.tsx",
     "./live-region": "./src/live-region.ts",
     "./runtime": "./src/runtime.ts",
     "./schema": "./generated/schema.json",
     "./state": "./src/state.ts",
+    "./tone-mark": "./src/tone-mark.ts",
     "./ui.css": "./src/ui.css"
   },
   "main": "./src/index.tsx",

@@ -21,6 +21,7 @@ import { Field as BaseField } from '@base-ui/react/field'
 import { Input as BaseInput } from '@base-ui/react/input'
 import type { ReactElement, ReactNode } from 'react'
 import { ANNOUNCEMENT, TONE_ANNOUNCEMENT } from './live-region'
+import { TONE_MARK } from './tone-mark'
 
 type Gap = 'tight' | 'normal' | 'loose'
 
@@ -151,6 +152,12 @@ export function Button({
  *
  * What belongs here is why the component decides at all: leaving the role to
  * each screen is how half of them end up with none.
+ *
+ * THE MARK IS NOT DECORATION and is not optional, which is why it is drawn here
+ * rather than offered as a prop. Tone reached the reader through hue alone until
+ * it existed, and an optional redundant cue is one that is absent exactly when
+ * somebody was in a hurry. `TONE_MARK` owns which shape; this owns that there is
+ * one.
  */
 export function Alert({
   children,
@@ -158,7 +165,7 @@ export function Alert({
   testId,
 }: {
   children: ReactNode
-  tone: 'danger' | 'warning' | 'info'
+  tone: 'danger' | 'warning' | 'success' | 'info'
   testId?: string
 }) {
   return (
@@ -169,7 +176,10 @@ export function Alert({
       data-tone={tone}
       role={ANNOUNCEMENT[TONE_ANNOUNCEMENT[tone]].role}
     >
-      {children}
+      <svg aria-hidden="true" className="xf-alert-mark" viewBox="0 0 24 24">
+        <path d={TONE_MARK[tone]} fill="currentColor" fillRule="evenodd" />
+      </svg>
+      <div className="xf-alert-body">{children}</div>
     </div>
   )
 }
