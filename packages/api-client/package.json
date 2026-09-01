@@ -9,10 +9,10 @@
   },
   "main": "./src/index.ts",
   "dependencies": {
-    "@tanstack/react-query": "catalog:",
-    "msw": "catalog:"
+    "@tanstack/react-query": "catalog:"
   },
   "devDependencies": {
+    "msw": "catalog:",
     "vitest": "catalog:"
   }
 }
