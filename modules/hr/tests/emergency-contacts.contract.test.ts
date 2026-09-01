@@ -33,7 +33,18 @@ import { hrModuleRoutes } from '../index'
 
 const TENANT = '11111111-1111-4111-8111-111111111111'
 const OTHER_TENANT = '22222222-2222-4222-8222-222222222222'
-const CONTACT = '44444444-4444-4444-8444-444444444444'
+/**
+ * The contact row this suite creates, at an id it chooses rather than one the
+ * server invents, so the version-conflict cases can address it directly.
+ *
+ * DISTINCT FROM EVERY EMPLOYEE ID ON PURPOSE. This was 44444444, which is also
+ * the employee `e2e/conformance-harness.spec.ts` deliberately uses to avoid
+ * sharing state with the emergency-contacts specs. One literal, two unrelated
+ * facts, agreeing by coincidence -- and a shared spelling is exactly what
+ * invites someone to consolidate them later, coupling a contact row to an
+ * employee for no reason either file records.
+ */
+const CONTACT = '77777777-7777-4777-8777-777777777777'
 
 /** Reachability is probed at MODULE scope: describe.skipIf runs at collection. */
 let owner!: ReturnType<typeof postgres>
