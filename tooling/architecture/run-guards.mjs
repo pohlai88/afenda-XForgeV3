@@ -15,13 +15,18 @@ import { fixtures } from './fixtures/index.mjs'
  */
 import { guards } from './guards/index.mjs'
 
+// Built from a char code, never written literally. A literal ESC is an
+// invisible byte in source -- precisely what `no-control-characters-in-source`
+// refuses -- and this file was carrying six of them, unseen because the
+// workspace scan offers that guard no file under `tooling/`.
+const ESC = String.fromCharCode(27)
 const C = {
-  bold: '[1m',
-  dim: '[2m',
-  green: '[32m',
-  red: '[31m',
-  reset: '[0m',
-  yellow: '[33m',
+  bold: `${ESC}[1m`,
+  dim: `${ESC}[2m`,
+  green: `${ESC}[32m`,
+  red: `${ESC}[31m`,
+  reset: `${ESC}[0m`,
+  yellow: `${ESC}[33m`,
 }
 const paint = (c, s) => (process.stdout.isTTY ? c + s + C.reset : s)
 
@@ -41,6 +46,45 @@ export function scanWorkspace() {
   return { checked, files: files.length, violations }
 }
 
+/**
+ * A rejection nobody can act on is barely better than no rejection.
+ *
+ * The harness proved a guard can FAIL. It said nothing about whether the failure
+ * explains itself, and one guard was reported PROVEN while its message read
+ * `NaN` -- found by eye, which is exactly the coverage this file exists to
+ * replace. Asserting the property of all of them at once costs a few lines and
+ * removes the need to have noticed.
+ *
+ * `NaN` and `undefined` in a message are interpolation failures, not prose: no
+ * guard says either word on purpose, and a guard that needs to may say it
+ * differently.
+ *
+ * Compared token-wise rather than with a word-boundary escape, so "nullable"
+ * and "undefined behaviour" do not read as failures -- and so this file needs
+ * no backslash at all. The first draft of this constant was written with one
+ * and arrived on disk without it: the escape-mangling defect, seventh
+ * appearance, inside the check written to close the sixth.
+ */
+const INTERPOLATION_FAILURE = ['NaN', 'null', 'undefined']
+
+const words = (message) => message.split(/[^A-Za-z]+/)
+
+function unusableFinding(findings) {
+  for (const f of findings) {
+    if (typeof f.message !== 'string' || f.message.trim() === '') {
+      return 'rejected, but a finding carries no message'
+    }
+    const failed = words(f.message).find((w) => INTERPOLATION_FAILURE.includes(w))
+    if (failed) {
+      return `rejected, but a message interpolated ${failed}: "${f.message}"`
+    }
+    if (!(Number.isInteger(f.line) && f.line >= 1)) {
+      return `rejected, but a finding points at line ${f.line}`
+    }
+  }
+  return null
+}
+
 export function mutationTest() {
   const results = []
   for (const g of guards) {
@@ -50,7 +94,8 @@ export function mutationTest() {
       results.push({ detail: 'no mutation fixture', guard: g.id, status: 'UNPROVEN' })
       continue
     }
-    const rejects = g.check(fx.violating.path, fx.violating.source).length > 0
+    const findings = g.check(fx.violating.path, fx.violating.source)
+    const rejects = findings.length > 0
     const appliesToViolating = g.applies(fx.violating.path)
     const cleanPasses =
       !g.applies(fx.clean.path) || g.check(fx.clean.path, fx.clean.source).length === 0
@@ -70,15 +115,21 @@ export function mutationTest() {
     } else if (cleanPasses) {
       // Extra fixtures for the same guard: each must also be rejected/accepted.
       let extraOk = true
+      const everyFinding = [...findings]
       for (const [, x] of extra) {
-        if (g.check(x.violating.path, x.violating.source).length === 0) {
+        const extraFindings = g.check(x.violating.path, x.violating.source)
+        everyFinding.push(...extraFindings)
+        if (extraFindings.length === 0) {
           extraOk = false
         }
         if (g.applies(x.clean.path) && g.check(x.clean.path, x.clean.source).length > 0) {
           extraOk = false
         }
       }
-      if (extraOk) {
+      const unusable = extraOk ? unusableFinding(everyFinding) : null
+      if (extraOk && unusable) {
+        results.push({ detail: unusable, guard: g.id, status: 'BROKEN' })
+      } else if (extraOk) {
         results.push({
           detail: `rejects violation, accepts clean${extra.length ? ` (+${extra.length} case)` : ''}`,
           guard: g.id,

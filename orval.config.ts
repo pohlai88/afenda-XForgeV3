@@ -21,6 +21,12 @@ export default defineConfig({
       mock: { generators: [{ type: 'msw' }], useExamples: false },
       mode: 'split',
       override: {
+        // Plain literal unions, not `typeof C[keyof typeof C]` over a const
+        // object. The const form made two type checkers disagree about the same
+        // fact: tsc read the literal union, Biome read `never` and called every
+        // `case` unreachable. A union removes the disagreement rather than
+        // annotating it, and nothing consumed the const objects as values.
+        enumGenerationType: 'union',
         // Our fetcher throws ApiProblem on !ok and returns parsed JSON on
         // success, so the {data,status,headers} envelope would be a second
         // representation of the same fact. One shape, not two.

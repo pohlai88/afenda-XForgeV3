@@ -12,19 +12,25 @@
  * chose to produce -- the producer rule violated by omission rather than by
  * declaration, and the quietest way for a speculative ontology to arrive.
  *
+ * WHEN THE THROW FIRES, AND WHO CATCHES IT. The API is mounted inside this app
+ * at `app/api/[[...route]]/route.ts`: one build, one process, so client and
+ * server cannot version-skew independently and there is no permanently-old
+ * client. The residual window is a tab already open across a rolling deploy --
+ * bounded, minutes -- in which a server emitting a new reason code meets a
+ * mapper that refuses it. Refusing is the right trade there, because the
+ * alternative weakens the model permanently to cover a transient window.
+ *
+ * But it relocates the risk rather than removing it: this function is pure and
+ * runs during render, so an unhandled throw takes the tree, not the list. The
+ * containment is an error boundary resolving to the `error` state, and that is
+ * a RENDERING concern owned by 4C -- named here so it is a scheduled decision
+ * rather than a surprise.
+ *
  * THE TWO VOCABULARIES ARE NOT MIRRORED, deliberately. The transport may grow
  * `redacted` and `enrichment_unavailable`; both would still be `partial` here,
  * differing only in the reason shown. The experience layer describes what a
  * person sees, not what happened in a datastore.
  *
- * ON THE SUPPRESSIONS BELOW. orval emits its string enums as
- * `typeof Code[keyof typeof Code]` over a `const` object. Biome's type
- * inference resolves that to `never` and reports every `case` as unreachable;
- * tsc resolves it to the literal union, and tsc is the one that is right --
- * `assertNever` type-checks only BECAUSE the cases narrow the union to nothing,
- * so if Biome were correct this file would not compile. Two tools, one fact,
- * disagreeing: suppressed at each site rather than file-wide, so the blindness
- * stays where the evidence for it is and does not silently spread.
  */
 import type { Completeness, PartialReason } from '@xforge/api-client'
 import { ApiProblem } from '@xforge/api-client'
@@ -50,7 +56,6 @@ export type ReadOutcome<T> =
 /** A transport reason becomes something a person could be told. */
 function toUiReason(reason: PartialReason): UiPartialReason {
   switch (reason.code) {
-    // biome-ignore lint/suspicious/noUnnecessaryConditions: generated enum, see header
     case 'result_cap':
       return { kind: 'truncated', limit: reason.limit, shown: reason.returned }
     default:
@@ -84,12 +89,10 @@ function toProblem(error: unknown): UiProblem {
 
 function toSucceeded<T>(items: T[], meta: Completeness): ResourceState<T[]> {
   switch (meta.completeness) {
-    // biome-ignore lint/suspicious/noUnnecessaryConditions: generated enum, see header
     case 'complete':
       // Empty is NOT partial-with-nothing and NOT a failure. It asks the user to
       // create the first record; the other two ask them to wait or to retry.
       return items.length === 0 ? { status: 'empty' } : { data: items, status: 'ready' }
-    // biome-ignore lint/suspicious/noUnnecessaryConditions: generated enum, see header
     case 'partial':
       return {
         data: items,

@@ -6,9 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type PartialReasonCode = typeof PartialReasonCode[keyof typeof PartialReasonCode];
-
-
-export const PartialReasonCode = {
-  result_cap: 'result_cap',
-} as const;
+export type PartialReasonCode = 'result_cap';

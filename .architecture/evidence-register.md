@@ -847,22 +847,112 @@ producer rule exists to catch.
 
 ### Finding: two type systems, one type, opposite answers
 
-orval emits string enums as `typeof Code[keyof typeof Code]` over a `const`
-object. Biome's type inference resolves that to `never` and reports every
-`case` in a switch over it as unreachable ("the value passed to switch can never
-equal this value"). tsc resolves it to the literal union.
+orval emitted its string enums as `typeof Code[keyof typeof Code]` over a `const`
+object. Biome's type inference resolved that to `never` and reported every `case`
+in a switch over it as unreachable ("the value passed to switch can never equal
+this value"). tsc resolved it to the literal union.
 
-tsc is right, and it is provable without appeal to authority: `assertNever` in
-the default branch type-checks ONLY IF the cases narrow the discriminant to
-`never`. If Biome's reading were correct the file would not compile.
+**The first argument recorded here was wrong, and is kept because the correction
+is the point.** It said tsc must be right because `assertNever` in the default
+branch type-checks ONLY IF the cases narrow the discriminant to `never`. That
+does not discriminate between the two hypotheses: `assertNever(x)` accepts `x`
+whenever `x` is `never`, and `x` is `never` both when a union was narrowed away
+AND when it was `never` from the start. The observation is equally consistent
+with Biome being right.
 
-Suppressed at each site rather than file-wide, with the reasoning in the file
-header. A file-wide disable would have been shorter and would have removed the
-rule from four switches, three of which it is right about; keeping the blindness
-where the evidence for it is means the next generated enum gets the same
-scrutiny rather than inheriting an exemption.
+What actually settles it is the case clause. Against a `never` discriminant,
+`case 'result_cap':` is a comparison between types with no overlap, and tsc
+rejects that. tsc accepts it here, so the discriminant is not `never` -- and
+Biome is wrong.
 
-This is the defect class again, in its seventh costume: one fact, two sources,
-agreeing right up until they did not. It was caught by a red lint stage rather
-than by a guard -- and no guard is proposed, because "the linter and the compiler
-disagree about a type" is not a shape a path regex can see.
+The conclusion was right and the reason was not, which matters because the reason
+is what the next reader reasons FROM. A comment asserting a fact about a type,
+with nothing producing that fact, is the same shape as the RLS safety comment one
+week earlier.
+
+**Resolved rather than annotated.** orval 8.27 takes
+`override.enumGenerationType: 'union'`, which emits `export type PartialReasonCode
+= 'result_cap'`. Biome and tsc then agree, all three suppressions are retired, and
+the header paragraph explaining them is deleted. Nothing outside `generated/`
+consumed the const objects as values, so the change cost two regenerated files.
+
+No type-level assertion pinning the members was added, deliberately. It would
+have earned its place while the suppressions existed -- something had to fail if
+the emit shape changed. With them gone, two checks already cover it: `assertNever`
+breaks the build if the union grows a member, and reverting the config turns the
+lint stage red again by reproducing the false positives. A third would be
+infrastructure without a named pain.
+
+This is the defect class again, one fact and two sources agreeing until they did
+not. Caught by a red lint stage, not a guard, and no guard is proposed: "two type
+checkers disagree" is not a shape a path regex can see.
+
+## The guard suite checks 52 of 210 files, and claims to check 159 more
+
+Extending the mutation harness to assert that a rejection is ACTIONABLE -- a
+non-empty message, no interpolated `NaN`/`null`/`undefined`, a real line number --
+found nothing: 23 proven, 0 broken. The check was then proven able to fail by
+breaking a guard's message on purpose and observing BROKEN, because a check that
+has never rejected anything is not yet evidence.
+
+Writing it surfaced something larger. `file` reports `run-guards.mjs` as
+containing escape sequences, and it does: six literal ESC bytes in the ANSI colour
+constants. `no-control-characters-in-source` refuses exactly that, and its
+`applies()` returns true for the path. The workspace scan never asks it, because
+`sourceFiles()` offers **zero** files under `tooling/`.
+
+Two sources for "what is source", agreeing for as long as nobody compared them:
+
+```
+repository files tracked by git      210
+offered to the guards                 52
+claimed by some guard, never offered 159
+findings hiding in those files        38
+```
+
+Classified, because the number alone would be alarming and misleading:
+
+| class | count | verdict |
+|---|---|---|
+| `.architecture/*.md`, `CLAUDE.md` -- prose QUOTING a forbidden pattern | 20 | not violations |
+| `tooling/architecture/fixtures/index.mjs` -- the deliberate violating fixtures | 7 | not violations |
+| `tooling/architecture/guards/index.mjs` -- a guard's own matching source | 2 | not violations |
+| `tests/architecture/tenancy/*` -- architecture tests exercising the pattern | 3 | needs a decision |
+| `tooling/architecture/run-guards.mjs` -- literal ESC in source | **6** | **real, and fixed** |
+
+So the narrow scan universe is not an oversight; it is an unstated exclusion list
+doing real work. What it is not is a DECIDED one. It excludes documentation and
+fixtures for good reasons that were never written down, and it excluded the
+harness's own source for no reason at all.
+
+The six were fixed by building the colour constants from `String.fromCharCode(27)`,
+so no literal control character remains in any tracked file -- verified by
+scanning all 210.
+
+**Deliberately NOT done here:** widening `sourceFiles()`. That is a decision with
+32 exclusions to design, and designing them badly would produce a guard suite that
+is green because it was told to be. Recorded with the counts so the next person
+inherits the measurement rather than the impression.
+
+**What this does not prove:** that 52 is the right universe, or that the other 22
+guards have accurate `applies()` predicates. It proves only that `applies()` and
+`sourceFiles()` disagree by 159 files and that the disagreement was concealing
+real findings.
+
+## `WriteOutcome` has five members and one producer
+
+Reads got the producer discipline applied member by member. Writes did not, and
+the provenance table above showed it by having a single row.
+
+| `WriteOutcome` | producer today | status |
+|---|---|---|
+| `conflict` | `modules/hr/index.ts` returns 409; `ApiProblem.isVersionConflict` | REAL, tested |
+| `idle` / `saving` / `saved` / `failed` | the mutation hook's own states | NOT YET WIRED |
+
+The last four are not speculative -- react-query genuinely produces idle/pending/
+success/error, and `MutationOutcome` is a faithful restatement of them. But
+"faithful restatement of a library's states" is a weaker claim than "a code path
+in this repository constructs it", and the difference is exactly what rule 5 is
+for. They become producer-backed at 4C.0, when the screen stops reading
+`list.isPending` and `create.isPending` directly. Until then the honest word is
+PENDING, not PROVEN.

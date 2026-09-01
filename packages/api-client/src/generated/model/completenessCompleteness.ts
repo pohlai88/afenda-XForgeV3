@@ -6,10 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CompletenessCompleteness = typeof CompletenessCompleteness[keyof typeof CompletenessCompleteness];
-
-
-export const CompletenessCompleteness = {
-  complete: 'complete',
-  partial: 'partial',
-} as const;
+export type CompletenessCompleteness = 'complete' | 'partial';
