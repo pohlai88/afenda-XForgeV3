@@ -25,6 +25,7 @@ import {
   CURRENT_PHASE,
   EMPTY,
   FAIL,
+  IS_CI,
   PASS,
   PENDING,
   ROOT,
@@ -173,6 +174,37 @@ function coverage() {
  * @param {{ blocked: number, ci: boolean, fail: number, pass: number }} tally
  * @returns {{ exit: number, kind: string }}
  */
+/**
+ * A stage duration, fixed width so the column cannot float.
+ *
+ * Deliberately not appended to `r.detail`, which is variable-length: the number
+ * has to line up to be read down, and a number nobody reads is not a
+ * measurement.
+ */
+export function formatDuration(ms) {
+  return `${(ms / 1000).toFixed(2)}s`.padStart(7)
+}
+
+/**
+ * The slowest three, and the two totals that differ.
+ *
+ * They differ because `stages.mjs` runs `treeState()` at module scope on
+ * import, so wall time includes work no stage is charged for. Printing both
+ * makes that gap visible rather than leaving it to be inferred from a
+ * discrepancy nobody can name.
+ *
+ * A FAILING stage carries a duration like any other -- the time is taken before
+ * the fail-fast branch, because a stage that fails after 40s is the most
+ * interesting number in the run.
+ */
+export function summariseTimings(results) {
+  const timed = results.filter((r) => typeof r.ms === 'number')
+  return {
+    slowest: [...timed].sort((a, b) => b.ms - a.ms).slice(0, 3),
+    total: timed.reduce((n, r) => n + r.ms, 0),
+  }
+}
+
 export function decideGateOutcome({ blocked, ci, fail, pass }) {
   if (fail > 0) {
     return { exit: 1, kind: 'failed' }
@@ -194,7 +226,7 @@ function main() {
     return coverage()
   }
 
-  const ci = process.argv.includes('--ci') || process.env.CI === 'true'
+  const ci = IS_CI
   const fast = process.argv.includes('--fast')
   if (fast && ci) {
     console.log(paint(C.red, 'refusing --fast --ci: the CI gate is not a subset'))
@@ -209,6 +241,7 @@ function main() {
 
   for (const stage of selected) {
     let r
+    const started = performance.now()
     try {
       r = stage.run()
     } catch (err) {
@@ -219,12 +252,15 @@ function main() {
       r = { detail: `stage threw: ${reason}`, status: FAIL }
     }
 
+    // Before `settleStatus` and before the fail-fast branch, so every stage is
+    // charged for its own time whatever verdict it reaches.
+    const ms = performance.now() - started
     r = settleStatus(stage, r)
 
-    results.push({ stage, ...r })
+    results.push({ ms, stage, ...r })
     const c = COLOUR[r.status] || C.reset
     console.log(
-      `  ${paint(c, r.status.padEnd(8))} ${stage.title.padEnd(TITLE_WIDTH)}${paint(C.dim, r.detail.split('\n')[0])}`,
+      `  ${paint(c, r.status.padEnd(8))}${paint(C.dim, formatDuration(ms))}  ${stage.title.padEnd(TITLE_WIDTH)}${paint(C.dim, r.detail.split('\n')[0])}`,
     )
     if (r.status === FAIL) {
       failed = true
@@ -248,6 +284,21 @@ function main() {
       `   of ${stages.length} stages, phase: ${CURRENT_PHASE}`,
     )}`,
   )
+
+  const timings = summariseTimings(results)
+  if (timings.slowest.length > 0) {
+    const slowest = timings.slowest
+      .map((r) => `${r.stage.title} ${formatDuration(r.ms).trim()}`)
+      .join(' · ')
+    console.log(paint(C.dim, `  slowest: ${slowest}`))
+    console.log(
+      paint(
+        C.dim,
+        `  ${formatDuration(timings.total).trim()} in stages, ` +
+          `${formatDuration(process.uptime() * 1000).trim()} wall`,
+      ),
+    )
+  }
 
   const outcome = decideGateOutcome({
     blocked: blocked.length,

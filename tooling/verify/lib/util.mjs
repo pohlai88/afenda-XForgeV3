@@ -104,9 +104,16 @@ export function resolvePhase({ ci = false } = {}) {
   return requested
 }
 
-export const CURRENT_PHASE = resolvePhase({
-  ci: process.argv.includes('--ci') || process.env.CI === 'true',
-})
+/**
+ * Whether this is a CI run. ONE home.
+ *
+ * The same expression stood here and in `verify.mjs`, which is the defect this
+ * repository keeps having: two sources that agree until one of them learns
+ * about a new environment variable and the other does not.
+ */
+export const IS_CI = process.argv.includes('--ci') || process.env.CI === 'true'
+
+export const CURRENT_PHASE = resolvePhase({ ci: IS_CI })
 
 export function phaseHasStarted(phase) {
   const at = PHASES.indexOf(CURRENT_PHASE)

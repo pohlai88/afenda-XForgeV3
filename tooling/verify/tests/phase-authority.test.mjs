@@ -21,7 +21,7 @@ import {
   settleStatus,
 } from '../lib/util.mjs'
 import { stages } from '../stages.mjs'
-import { decideGateOutcome } from '../verify.mjs'
+import { decideGateOutcome, formatDuration, summariseTimings } from '../verify.mjs'
 
 describe('the repository owns the phase', () => {
   it('reads a committed phase that is a known phase', () => {
@@ -245,5 +245,55 @@ describe('the gate cannot report success without enforcing something', () => {
 
   it('fails on a failing stage whatever else is true', () => {
     expect(decideGateOutcome({ blocked: 0, ci: false, fail: 1, pass: 99 }).exit).toBe(1)
+  })
+})
+
+/**
+ * Timings are printed on every run, so they are output the gate is read from.
+ *
+ * The first draft printed `NaNs` in every row: the duration was attached to the
+ * pushed result and the print read it from the raw one. Nothing caught it --
+ * `unusableFinding()` asserts a GUARD's message carries no interpolated NaN, and
+ * nothing makes the same demand of the gate's own output. These tests are that
+ * demand, at the only place it is mechanically expressible.
+ */
+describe('stage timings', () => {
+  it('formats a fixed-width duration', () => {
+    expect(formatDuration(1234).trim()).toBe('1.23s')
+    expect(formatDuration(0).trim()).toBe('0.00s')
+    expect(formatDuration(1234)).toHaveLength(formatDuration(9).length)
+  })
+
+  it('never renders a duration as NaN', () => {
+    expect(formatDuration(510)).not.toContain('NaN')
+  })
+
+  it('reports the slowest three, in order', () => {
+    const { slowest } = summariseTimings([
+      { ms: 10, stage: { title: 'a' } },
+      { ms: 400, stage: { title: 'b' } },
+      { ms: 200, stage: { title: 'c' } },
+      { ms: 300, stage: { title: 'd' } },
+    ])
+    expect(slowest.map((r) => r.stage.title)).toEqual(['b', 'd', 'c'])
+  })
+
+  it('sums only what was actually timed', () => {
+    const { total } = summariseTimings([{ ms: 10 }, { stage: { title: 'untimed' } }, { ms: 5 }])
+    expect(total).toBe(15)
+  })
+
+  /**
+   * The most interesting number in a run is how long the FAILING stage took.
+   * The duration is captured before the fail-fast branch precisely so it
+   * survives, and this is what would notice if that moved.
+   */
+  it('charges a failing stage for its own time', () => {
+    const { slowest, total } = summariseTimings([
+      { ms: 40_000, stage: { title: 'integration tests' }, status: 'FAIL' },
+      { ms: 10, stage: { title: 'lint' }, status: 'PASS' },
+    ])
+    expect(total).toBe(40_010)
+    expect(slowest[0]?.stage.title).toBe('integration tests')
   })
 })
