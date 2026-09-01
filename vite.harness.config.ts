@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+import { aliases } from './workspace.aliases.ts'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
@@ -35,12 +36,10 @@ export default defineConfig({
   // classic runtime and the bundle referenced a global `React` that an inlined
   // script has no way to provide.
   esbuild: { jsx: 'automatic' },
-  resolve: {
-    alias: [
-      { find: /^@xforge\/ui$/, replacement: r('./packages/ui/src/index.tsx') },
-      { find: /^@xforge\/ui\/contracts$/, replacement: r('./packages/ui/src/contracts.ts') },
-      { find: /^@xforge\/ui\/runtime$/, replacement: r('./packages/ui/src/runtime.ts') },
-      { find: /^@xforge\/ui\/schema$/, replacement: r('./packages/ui/generated/schema.json') },
-    ],
-  },
+  // The workspace owner, not a copy of four of its entries. This block used to
+  // spell them out and had already diverged in both directions: it carried
+  // @xforge/ui/schema, which the shared table lacked, and lacked
+  // @xforge/ui/state, which three files under apps/web import. Stage 4C renders
+  // the state vocabulary through this harness, so that second gap had a date.
+  resolve: { alias: aliases },
 })

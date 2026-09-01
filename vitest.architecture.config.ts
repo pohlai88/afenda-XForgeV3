@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { aliases } from './vitest.aliases.ts'
+import { aliases } from './workspace.aliases.ts'
 
 /**
  * The Architecture Qualification Suite.

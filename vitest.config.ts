@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { aliases } from './vitest.aliases.ts'
+import { aliases } from './workspace.aliases.ts'
 
 export default defineConfig({
   resolve: { alias: aliases },
