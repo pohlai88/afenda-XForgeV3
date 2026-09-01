@@ -308,3 +308,67 @@ describe('ci-provides-fixture-env', () => {
     expect(found[0]?.message).toMatch(/REQUIRED_DATABASE_ENV is missing/)
   })
 })
+
+describe('fixtures-are-not-production-dependencies', () => {
+  const guard = byId('fixtures-are-not-production-dependencies')
+
+  const manifest = (path, json) => ({ path, source: JSON.stringify(json) })
+  const withManifests = (...files) => ({ ...goodEnv(), files })
+
+  it('accepts a fixture package declared as a devDependency', () => {
+    const env = withManifests(
+      manifest('tests/fixtures/package.json', { name: '@xforge/fixtures' }),
+      manifest('packages/db/package.json', {
+        devDependencies: { '@xforge/fixtures': 'workspace:*' },
+        name: '@xforge/db',
+      }),
+    )
+    expect(guard.check(env)).toHaveLength(0)
+  })
+
+  it('rejects a fixture package declared as a production dependency', () => {
+    const env = withManifests(
+      manifest('tests/fixtures/package.json', { name: '@xforge/fixtures' }),
+      manifest('packages/db/package.json', {
+        dependencies: { '@xforge/fixtures': 'workspace:*' },
+        name: '@xforge/db',
+      }),
+    )
+    const found = guard.check(env)
+    expect(found).toHaveLength(1)
+    expect(found[0]?.message).toContain('@xforge/fixtures')
+    expect(found[0]?.where).toBe('packages/db/package.json')
+  })
+
+  it('derives which packages are fixtures rather than naming them', () => {
+    // A fixture package added tomorrow under tests/ is covered without anyone
+    // remembering to extend a list -- the guard asks classify(), which is the
+    // one authority on whether a path is test material.
+    const env = withManifests(
+      manifest('tests/scenarios/package.json', { name: '@xforge/scenarios' }),
+      manifest('modules/hr/package.json', {
+        dependencies: { '@xforge/scenarios': 'workspace:*' },
+        name: '@xforge/hr',
+      }),
+    )
+    expect(guard.check(env)).toHaveLength(1)
+  })
+
+  it('says nothing about a production package depended on normally', () => {
+    const env = withManifests(
+      manifest('packages/tenancy/package.json', { name: '@xforge/tenancy' }),
+      manifest('packages/db/package.json', {
+        dependencies: { '@xforge/tenancy': 'workspace:*' },
+        name: '@xforge/db',
+      }),
+    )
+    expect(guard.check(env)).toHaveLength(0)
+  })
+
+  it('holds on the real repository', () => {
+    const violations = scanConfig().violations.filter(
+      (v) => v.guard === 'fixtures-are-not-production-dependencies',
+    )
+    expect(violations).toEqual([])
+  })
+})

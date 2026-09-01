@@ -379,6 +379,74 @@ export const configGuards = [
     law: 32,
     title: 'CI supplies every environment variable the qualification suite declares',
   },
+  {
+    /**
+     * Test scaffolding never enters a production dependency closure.
+     *
+     * `@xforge/fixtures` sat in `dependencies` of packages/db and modules/hr,
+     * imported by nothing but their tests. Nothing in the repository could say
+     * so. Biome's `noUndeclaredDependencies` answers the opposite question --
+     * imported but not declared -- and is silent about declared in the wrong
+     * section, so a test-only package rode in the shipped closure of two
+     * production packages while every gate stayed green.
+     *
+     * WHICH PACKAGES ARE FIXTURES IS DERIVED, never listed. `classify()` already
+     * decides whether a path is test material, and a manifest under tests/ makes
+     * its package test material. A fixture package added tomorrow is covered
+     * without anyone remembering to extend a pattern.
+     *
+     * NARROW ON PURPOSE, and this is the interesting part. The general rule --
+     * every production dependency must be imported by some production file --
+     * was measured against this repository before being rejected: it flags
+     * react-dom, @xforge/tokens (consumed as CSS, never imported), and several
+     * type-only imports. Seven legitimate declarations, which would have had to
+     * be silenced with exemptions until the guard's name meant nothing. A guard
+     * that must be muzzled to stay green is the depcruise failure with extra
+     * steps.
+     *
+     * So this asks the question that has a decidable answer. It would have
+     * caught the real defect and it has no false positive to excuse.
+     */
+    check(env) {
+      const manifests = (env.files ?? []).filter((f) => f.path.endsWith('package.json'))
+      const parse = (source) => {
+        try {
+          return JSON.parse(source)
+        } catch {
+          return null
+        }
+      }
+
+      const fixtures = new Set()
+      for (const m of manifests) {
+        if (classify(m.path) !== 'test') {
+          continue
+        }
+        const name = parse(m.source)?.name
+        if (name) {
+          fixtures.add(name)
+        }
+      }
+
+      const out = []
+      for (const m of manifests) {
+        for (const dep of Object.keys(parse(m.source)?.dependencies ?? {})) {
+          if (fixtures.has(dep)) {
+            out.push({
+              message:
+                `'${dep}' is test material and is declared under dependencies -- ` +
+                'test scaffolding must not sit in a production closure; move it to devDependencies',
+              where: m.path,
+            })
+          }
+        }
+      }
+      return out
+    },
+    id: 'fixtures-are-not-production-dependencies',
+    law: 29,
+    title: 'Test fixtures never enter a production dependency closure',
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
