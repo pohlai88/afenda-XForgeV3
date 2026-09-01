@@ -34,15 +34,26 @@ remote because no line said which of the two to believe.
 
 ## As of
 
+This file describes the tree at the commit that last modified it:
+
 ```
-  commit    76ffcdb   Wire the experience mapper into the screen
-  date      2026-09-01
-  branch    feature/design-system-language
-  gate      pnpm verify — 13 pass · 0 fail · 1 pending · tree unchanged
+  git log -1 --format='%h %ad  %s' --date=short -- .architecture/project-state.md
 ```
 
-The gate result was measured at that commit. This file is added on top of it, so
-it describes the tree it ships in.
+Neither that commit nor the gate result at it is written down here.
+
+A block used to stand in this place naming the commit, the date, the branch, and
+`pnpm verify — 13 pass · 0 fail · 1 pending · tree unchanged`. That last line was
+transcribed from commit 76ffcdb's own message: this file took ownership of a fact
+the rules table one section above assigns to `git log`, four lines below the
+sentence declaring it must never restate what was done. The easiest place in a
+repository for a fact to acquire a second source turned out to be the paragraph
+warning about it.
+
+A gate result is derived from execution. It is true at the moment it is measured
+and silently untrue afterwards, and nothing in the sentence tells a reader which
+one they are holding. `pnpm verify` is the only thing that can answer it for the
+tree in front of you, so it is referenced and never quoted.
 
 ## In flight — Phase 2 design system, stage 4C
 
