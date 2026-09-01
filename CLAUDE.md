@@ -192,16 +192,21 @@ subsystem.
 
 # Verification
 
-  pnpm verify:fast  while writing. Four stages, ~20s. NOT the gate.
-  pnpm verify       before every commit. BLOCKED reported loudly and tolerated.
+  pnpm verify:fast  while writing, and for a commit that cannot change behaviour.
+  pnpm verify       before committing anything executable. BLOCKED tolerated.
   pnpm verify:ci    BLOCKED is a failure. CI MUST use this.
 
-WHICH ONE, AND WHEN. Run the fast loop while authoring; run the full gate before
-committing; CI runs --ci. Running the full gate after editing a markdown file is
-not rigour, it is several minutes spent to learn nothing, and a gate that costs
-minutes to say nothing is a gate people start skipping. That is how this rule
-came to be written: it had been ignored for a whole session in the direction
-that looks diligent.
+WHICH ONE, AND WHEN. The full gate is for changes that can alter behaviour. A
+commit of prose, a deletion of files nothing imports, a comment -- the fast loop
+already answers those, and the full gate answers them in three minutes instead
+of twenty seconds.
+
+The first version of this rule said "before every commit", and that was worse
+than useless: it got applied to a markdown edit and to a three-file deletion,
+and defended as consistency. A rule followed past the reason for it is how a
+gate becomes something people route around, which is the failure this whole
+section exists to prevent. If a change cannot alter a verdict, the fast loop IS
+the check.
 
 The fast loop is guards, typecheck, lint and unit. The criterion is mechanical
 rather than a judgement about importance -- an authorship stage needs NO external
