@@ -436,6 +436,17 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
 `,
     },
   },
+  'ui-holds-no-transport-vocabulary': {
+    clean: {
+      path: 'packages/ui/src/state.ts',
+      source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'packages/ui/src/state.ts',
+      source: `import type { Completeness } from '@xforge/api-client'${String.fromCharCode(10)}`,
+    },
+  },
+
   'ui-no-data-imports': {
     clean: {
       path: 'apps/web/app/employees/page.tsx',

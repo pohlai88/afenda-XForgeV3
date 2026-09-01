@@ -682,6 +682,44 @@ export const guards = [
 
   {
     /**
+     * Law 5: the API and its transport influence application composition and
+     * are never dependencies of the UI.
+     *
+     *  sits at the bottom of the dependency direction. If a
+     * component could import the generated client, the completeness envelope or
+     * an HTTP problem shape, then every component would know how its data
+     * arrived -- and a new wire code would oblige a UI change, which is the
+     * coupling the experience mapper exists to prevent.
+     *
+     * The permitted path is: generated client -> experience mapper ->
+     * ResourceState -> @xforge/ui. The mapper is a real boundary, not a helper
+     * somebody may bypass when a field is convenient.
+     *
+     * Stated as a property because a comment is a discipline that lasts until
+     * the second person needs a field.
+     */
+    applies: (f) => /^packages[/]ui[/]/.test(f),
+    check(f, src) {
+      const forbidden =
+        /^@xforge[/]api-client|^@xforge[/]api($|[/])|^@xforge[/]hr($|[/])|[/]generated[/]/
+      return imports(src)
+        .filter((i) => forbidden.test(i.spec))
+        .map((i) => ({
+          file: f,
+          line: line(src, i.at),
+          message:
+            `the design system imports transport vocabulary: ${i.spec} -- the ` +
+            'experience mapper is where that terminates',
+        }))
+    },
+    id: 'ui-holds-no-transport-vocabulary',
+    law: 5,
+    precision: 'text',
+    title: 'The design system never imports the API, its client or its envelope',
+  },
+
+  {
+    /**
      * A fixture may delete state it UNIQUELY OWNS. It may not restore global
      * truth by emptying a shared table.
      *

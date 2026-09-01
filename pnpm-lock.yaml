@@ -29,6 +29,9 @@ importers:
       '@xforge/api':
         specifier: workspace:*
         version: link:packages/api
+      '@xforge/api-client':
+        specifier: workspace:*
+        version: link:packages/api-client
       '@xforge/db':
         specifier: workspace:*
         version: link:packages/db

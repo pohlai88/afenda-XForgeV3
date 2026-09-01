@@ -42,4 +42,5 @@ export const aliases: Alias[] = [
   exact('@xforge/ui', './packages/ui/src/index.tsx'),
   exact('@xforge/ui/contracts', './packages/ui/src/contracts.ts'),
   exact('@xforge/ui/runtime', './packages/ui/src/runtime.ts'),
+  exact('@xforge/ui/state', './packages/ui/src/state.ts'),
 ]

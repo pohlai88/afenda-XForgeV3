@@ -811,3 +811,58 @@ this time wearing a comment that read as reassurance.
 The rule is deliberately an under-approximation: "additive" is not decidable by
 pattern, an unqualified DELETE is, and the defect actually hit sits inside what
 it catches.
+
+## Stage 4B — the experience state vocabulary, and who produces each member
+
+`no semantic state without a producer` was until now a rule applied by hand. This
+records the four facts a state must satisfy and names the owner of each, because
+they are genuinely different questions and this project has twice mistaken one
+for another.
+
+| `ResourceState` member | PRODUCED BY (a real code path, today)                         | proven by |
+|---|---|---|
+| `loading`   | the query has not settled                                       | mapper test |
+| `empty`     | 200, `completeness: 'complete'`, zero rows                      | mapper test |
+| `ready`     | 200, `completeness: 'complete'`, >= 1 row                       | mapper test |
+| `partial`   | `emergency-contact` repository probes `LIMIT + 1` and reports `hasMore` (4A) | 4A repo + contract tests, mapper test |
+| `forbidden` | `ApiProblem` with 403 from the policy layer                     | mapper test |
+| `error`     | any other rejection                                             | mapper test |
+
+`WriteOutcome.conflict` is produced by a 409 carrying a stale version token
+(ADR-013). It is deliberately NOT a `ResourceState` member: no read can produce
+it, and a union member no reader can construct is the exact modelling error the
+producer rule exists to catch.
+
+### What this does NOT prove
+
+- That the states RENDER correctly, or that each is distinguishable to a screen
+  reader. Producibility and renderability have separate owners; 4C owns the
+  second and it is not yet done.
+- That the real screen uses this mapper. `emergency-contacts.tsx` still reads raw
+  query flags. Until it is wired, the mapper is correct and unused -- which is a
+  weaker claim than it looks, and is recorded rather than glossed.
+- That the vocabulary is complete. It is complete with respect to what the
+  transport can say TODAY; `redacted` and `enrichment_unavailable` are named as
+  absent-with-no-producer, not as omissions.
+
+### Finding: two type systems, one type, opposite answers
+
+orval emits string enums as `typeof Code[keyof typeof Code]` over a `const`
+object. Biome's type inference resolves that to `never` and reports every
+`case` in a switch over it as unreachable ("the value passed to switch can never
+equal this value"). tsc resolves it to the literal union.
+
+tsc is right, and it is provable without appeal to authority: `assertNever` in
+the default branch type-checks ONLY IF the cases narrow the discriminant to
+`never`. If Biome's reading were correct the file would not compile.
+
+Suppressed at each site rather than file-wide, with the reasoning in the file
+header. A file-wide disable would have been shorter and would have removed the
+rule from four switches, three of which it is right about; keeping the blindness
+where the evidence for it is means the next generated enum gets the same
+scrutiny rather than inheriting an exemption.
+
+This is the defect class again, in its seventh costume: one fact, two sources,
+agreeing right up until they did not. It was caught by a red lint stage rather
+than by a guard -- and no guard is proposed, because "the linter and the compiler
+disagree about a type" is not a shape a path regex can see.

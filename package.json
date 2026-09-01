@@ -32,6 +32,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@xforge/api": "workspace:*",
+    "@xforge/api-client": "workspace:*",
     "@xforge/db": "workspace:*",
     "@xforge/fixtures": "workspace:*",
     "@xforge/hr": "workspace:*",
