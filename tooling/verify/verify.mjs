@@ -149,6 +149,43 @@ function coverage() {
   console.log('')
 }
 
+/**
+ * The gate's verdict, as a pure function of the tallies.
+ *
+ * Extracted because it WAS statement ordering, and the ordering was wrong: the
+ * zero-pass branch sat above the CI blocked-is-failure rule and exited 0
+ * unconditionally, so a `--ci` run in which every stage was empty, pending or
+ * blocked reported success. That is the sentence this module's own header
+ * forbids -- "verify was green" coming to mean "the database tests never ran".
+ *
+ * The invariant is deliberately stronger than the bug that prompted it.
+ * Reordering two branches would have fixed the blocked case and left this one:
+ *
+ *   0 pass · 0 blocked · 10 empty · 4 pending · --ci   ->  success
+ *
+ * so the rule is stated positively instead. **A CI verification with zero PASS
+ * stages is never successful**, whatever the other tallies say. Locally the
+ * same state is legitimate on an empty repository and keeps its message.
+ *
+ * `pending` and `empty` are not parameters. They do not decide anything here,
+ * and taking them would invite a reader to believe they might.
+ *
+ * @param {{ blocked: number, ci: boolean, fail: number, pass: number }} tally
+ * @returns {{ exit: number, kind: string }}
+ */
+export function decideGateOutcome({ blocked, ci, fail, pass }) {
+  if (fail > 0) {
+    return { exit: 1, kind: 'failed' }
+  }
+  if (pass === 0) {
+    return ci ? { exit: 1, kind: 'nothing-enforced-ci' } : { exit: 0, kind: 'nothing-enforced' }
+  }
+  if (blocked > 0) {
+    return ci ? { exit: 1, kind: 'blocked-ci' } : { exit: 0, kind: 'blocked' }
+  }
+  return { exit: 0, kind: 'green' }
+}
+
 function main() {
   if (process.argv.includes('--list')) {
     return list()
@@ -205,12 +242,16 @@ function main() {
     )}`,
   )
 
-  if (failed) {
-    console.log(paint(C.red, '\n  RED -- an enforcing stage failed\n'))
-    process.exit(1)
-  }
+  const outcome = decideGateOutcome({
+    blocked: blocked.length,
+    ci,
+    fail: failed ? 1 : 0,
+    pass: n(PASS),
+  })
 
-  if (n(PASS) === 0) {
+  if (outcome.kind === 'failed') {
+    console.log(paint(C.red, '\n  RED -- an enforcing stage failed\n'))
+  } else if (outcome.kind === 'nothing-enforced' || outcome.kind === 'nothing-enforced-ci') {
     console.log(
       paint(C.yellow, '\n  Nothing is actually enforced yet.') +
         paint(
@@ -219,15 +260,18 @@ function main() {
             '  repository; a defect at any point after the spine phase.\n',
         ),
     )
-    process.exit(0)
-  }
-
-  if (blocked.length > 0) {
+    if (outcome.kind === 'nothing-enforced-ci') {
+      console.log(
+        paint(C.red, '  RED in CI: a run that enforced nothing is not a pass.') +
+          paint(C.dim, '\n  Merge authority requires that something actually ran.\n'),
+      )
+    }
+  } else if (outcome.kind === 'blocked' || outcome.kind === 'blocked-ci') {
     console.log(paint(C.yellow, `\n  PARTIAL GREEN -- ${blocked.length} stage(s) could not run:`))
     for (const b of blocked) {
       console.log(paint(C.yellow, `    ${b.stage.title} -- ${b.detail}`))
     }
-    if (ci) {
+    if (outcome.kind === 'blocked-ci') {
       console.log(
         paint(C.red, '\n  RED in CI: a blocked stage is a failure.') +
           paint(
@@ -235,19 +279,19 @@ function main() {
             '\n  "verify was green" must never come to mean "the database tests never ran".\n',
           ),
       )
-      process.exit(1)
+    } else {
+      console.log(
+        paint(
+          C.dim,
+          '\n  Tolerated locally. `pnpm verify:ci` treats this as failure, and CI must use it.\n',
+        ),
+      )
     }
-    console.log(
-      paint(
-        C.dim,
-        '\n  Tolerated locally. `pnpm verify:ci` treats this as failure, and CI must use it.\n',
-      ),
-    )
-    process.exit(0)
+  } else {
+    console.log(paint(C.green, '\n  FULL GREEN -- every stage whose phase has started passed\n'))
   }
 
-  console.log(paint(C.green, '\n  FULL GREEN -- every stage whose phase has started passed\n'))
-  process.exit(0)
+  process.exit(outcome.exit)
 }
 
 // argv[1] is absent when this module is imported (node -e, a test), so the

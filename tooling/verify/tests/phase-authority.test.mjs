@@ -21,6 +21,7 @@ import {
   settleStatus,
 } from '../lib/util.mjs'
 import { stages } from '../stages.mjs'
+import { decideGateOutcome } from '../verify.mjs'
 
 describe('the repository owns the phase', () => {
   it('reads a committed phase that is a known phase', () => {
@@ -203,5 +204,46 @@ describe('the gate leaves no trace', () => {
     // development -- and an ignored gate is the same as no gate. This test runs
     // with whatever the working tree happens to hold, which is the point.
     expect([PASS, BLOCKED]).toContain(stage.run().status)
+  })
+})
+
+/**
+ * The gate's verdict is a state machine, so it is tested as one.
+ *
+ * It was statement ordering, and the ordering was wrong: the zero-pass branch
+ * sat above the CI blocked-is-failure rule and exited 0 unconditionally. A
+ * `--ci` run in which every stage was empty, pending or blocked reported
+ * success -- the exact sentence verify.mjs's header forbids.
+ *
+ * Reordering two branches would have fixed the observed case and left
+ * `0 pass, 0 blocked, --ci` still green, so the rule under test is the stronger
+ * one: a CI verification with zero PASS stages is never successful.
+ */
+describe('the gate cannot report success without enforcing something', () => {
+  const outcome = (pass, blocked, ci) => decideGateOutcome({ blocked, ci, fail: 0, pass })
+
+  it.each([
+    [1, 0, true, 0],
+    [1, 1, true, 1],
+    [0, 1, true, 1],
+    [0, 0, true, 1],
+    [0, 0, false, 0],
+  ])('pass=%i blocked=%i ci=%s exits %i', (pass, blocked, ci, exit) => {
+    expect(outcome(pass, blocked, ci).exit).toBe(exit)
+  })
+
+  // The one the reordering would have missed. Nothing ran, nothing was blocked,
+  // and under merge authority that is not a pass.
+  it('refuses a CI run that enforced nothing, even with nothing blocked', () => {
+    expect(outcome(0, 0, true)).toEqual({ exit: 1, kind: 'nothing-enforced-ci' })
+  })
+
+  // Locally the same state is legitimate on an empty repository.
+  it('keeps the local message for the same state', () => {
+    expect(outcome(0, 0, false)).toEqual({ exit: 0, kind: 'nothing-enforced' })
+  })
+
+  it('fails on a failing stage whatever else is true', () => {
+    expect(decideGateOutcome({ blocked: 0, ci: false, fail: 1, pass: 99 }).exit).toBe(1)
   })
 })

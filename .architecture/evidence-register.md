@@ -1283,3 +1283,58 @@ committed composition root at line 60 and accepts the fixed one. 25 guards prove
 root. `devPrincipal` was found by following a UUID, not by asking the question;
 nothing enumerates the places where a phase artefact stands in for a real
 subsystem, and no guard proposed here would find the next one.
+
+## `verify --ci` could exit 0 having enforced nothing
+
+Three branches, in this order: fail, then zero-pass, then blocked. The zero-pass
+branch exited 0 unconditionally and sat ABOVE the rule that makes a blocked stage
+a failure in CI. So a `--ci` run in which every stage was empty, pending or
+blocked reported success -- the literal sentence `verify.mjs`'s own header
+forbids: *"verify was green" eventually comes to mean "the database tests never
+ran"*. The header was right and the control flow did not implement it.
+
+**Reordering two branches would have been the wrong fix.** It repairs the
+observed case and leaves this one:
+
+```
+0 pass · 0 blocked · 10 empty · 4 pending · --ci   ->  success
+```
+
+still green, and the finding's title still true. So the rule is stated
+positively rather than as branch order: **a CI verification with zero PASS
+stages is never successful.**
+
+`decideGateOutcome({ blocked, ci, fail, pass })` is now a pure function and the
+verdict is a state machine tested as one. `pending` and `empty` are deliberately
+NOT parameters: they decide nothing, and taking them would invite a reader to
+believe they might.
+
+| PASS | BLOCKED | ci | exit | kind |
+|---:|---:|---|---:|---|
+| 1+ | 0 | yes | 0 | green |
+| 1+ | 1+ | yes | 1 | blocked-ci |
+| 0 | 1+ | yes | 1 | nothing-enforced-ci |
+| 0 | 0 | yes | **1** | nothing-enforced-ci |
+| 0 | 0 | no | 0 | nothing-enforced |
+
+The fourth row is the one a reorder would have left green.
+
+**`pnpm verify:ci` was executed, not merely described.** The previous draft of
+this work claimed a first `--ci` execution and then ran only `pnpm verify`. Both
+now run and both report FULL GREEN, and `--ci` had never executed anywhere before
+this.
+
+**What this does not prove.** That `--ci` is safe as remote merge authority.
+Nothing has run it on a machine that inherited nothing from this workstation,
+and `.github/workflows/verify.yml` triggers only on pull requests and pushes to
+`main`, so a branch push would not execute it either. The semantics are fixed;
+the independence is not established.
+
+### The escape halving, fourth occurrence
+
+Writing the replacement console output introduced real newlines into JS string
+literals, because `\n` arrives halved and the interpreter read it as an escape.
+It was a parse error rather than a silent defect this time, and rebuilt from
+`chr(92)`. Recorded because the mitigation was already written down in this file
+and doubling was still the first thing reached for -- which is the argument for
+using the file tools rather than for trying harder.
