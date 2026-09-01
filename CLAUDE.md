@@ -56,6 +56,7 @@ Canonical architecture: .architecture/architecture-final.md
 Decisions:              .architecture/adr/
 Evidence:               .architecture/evidence-register.md
 Next phase's spec:      .architecture/phase-1-attack-matrix.md
+Current state:          .architecture/project-state.md
 
 # Prior art
 
@@ -119,10 +120,23 @@ written down reads exactly like a policy enforced:
   branch policy         DEFINED     this file
   CI workflow           DEFINED     .github/workflows/verify.yml
   remote CI execution   NOT SHOWN   nothing has ever run it
-  branch protection     NOT ACTIVE  there is no remote to configure
+  branch protection     NOT ACTIVE  the remote exists, nothing is set
 
-Once a remote exists, apply exactly this -- a protection rule weaker than the
-local gate teaches people the gate is optional:
+That last row read "there is no remote to configure" until 2026-09-01, when it
+was found stale by the simple act of looking: origin has been
+github.com/pohlai88/afenda-XForgeV3 for some time, carrying main and four
+feature branches. The paragraph documenting facts that drift from their
+documentation had itself drifted. Corrected in place AND recorded, because the
+correction is the more useful artefact -- and because nothing here could have
+caught it. No guard reads a claim about a remote.
+
+One consequence is easy to assume wrongly, so it is written down: pushing a
+feature branch runs NO CI. verify.yml triggers on pull_request and push against
+main only. A pushed branch is off-machine backup; the pull request is the check.
+
+The remote exists. Apply exactly this, BEFORE the first merge and not after --
+a protection rule weaker than the local gate teaches people the gate is
+optional:
 
   required check        verify / verify  (pnpm verify --ci)
   pull request          required, no direct push, no force push
