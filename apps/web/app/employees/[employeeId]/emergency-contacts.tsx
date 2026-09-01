@@ -88,7 +88,7 @@ function Resource({
 }) {
   switch (state.status) {
     case 'loading':
-      return <Status>Loading emergency contacts…</Status>
+      return <Status testId="loading">Loading emergency contacts…</Status>
 
     case 'empty':
       return (

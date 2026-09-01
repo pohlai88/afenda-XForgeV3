@@ -172,9 +172,9 @@ export function Alert({
 }
 
 /** A live region for work in progress. Polite: it must not interrupt. */
-export function Status({ children }: { children: ReactNode }) {
+export function Status({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
-    <p aria-live="polite" className="xf-text" role="status">
+    <p aria-live="polite" className="xf-text" data-testid={testId} role="status">
       {children}
     </p>
   )

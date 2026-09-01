@@ -26,11 +26,13 @@ import { EMPLOYEE } from '@xforge/fixtures/employee'
  * element it addresses, so that "progress is exposed" means exposed to a screen
  * reader rather than merely painted.
  *
- * Addressed by test id and CHECKED for its role, rather than queried by role.
- * Next injects `#__next-route-announcer__` with `role="alert"`, so a page-scoped
- * role query resolves to two elements -- and did, intermittently, because the
- * announcer appears on client navigation. Asserting the role on a known element
- * proves the same property without depending on the framework owning none.
+ * ALL SIX ADDRESSED THE SAME WAY: by test id, with the role asserted ON that
+ * element. Never by a page-scoped role query. Next injects
+ * `#__next-route-announcer__` with `role="alert"`, and an info-toned `Alert`
+ * carries `role="status"` alongside `Status` itself, so both roles are ambiguous
+ * at page scope. One spec here already passed by timing rather than by being
+ * right. Asserting the role on a known element proves the same property and
+ * gives all six specs one failure mode instead of two.
  */
 
 const PAGE = `/employees/${EMPLOYEE}`
@@ -88,7 +90,9 @@ test.describe('4C.2 — what each read state must prove', () => {
     })
     await page.goto(PAGE)
 
-    await expect(page.getByRole('status')).toContainText('Loading emergency contacts')
+    const progress = page.getByTestId('loading')
+    await expect(progress).toContainText('Loading emergency contacts')
+    await expect(progress).toHaveAttribute('role', 'status')
 
     await expect(page.getByTestId('contacts')).toHaveCount(0)
     await expect(page.getByTestId('empty')).toHaveCount(0)

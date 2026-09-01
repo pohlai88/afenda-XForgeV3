@@ -548,10 +548,16 @@ export const contracts = {
 
   Status: {
     composition: 'container',
-    contractVersion: 1,
+    // 2: gained `testId`, which Alert and List already declared. Status lacking
+    // it was the inconsistency, and it left one read state addressable only by a
+    // role that info-toned Alerts also carry. contractVersion moves because the
+    // public vocabulary grew; interaction.revision does not, because nothing
+    // about the behaviour changed and no AT evidence is invalidated.
+    contractVersion: 2,
     exposure: 'metadata',
     interaction: { profile: 'live-region', revision: 1 },
     kind: 'feedback',
+    props: { testId: { type: 'string' } },
     slots: { children: { text: true } },
   },
 

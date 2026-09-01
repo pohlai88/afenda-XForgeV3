@@ -1150,3 +1150,55 @@ unrelated to the edit that caused it.
 **What this does not prove.** That no other classifier in the repository decides
 by content. `classify()` in `tooling/source-universe.mjs` is path-based and was
 not audited for this property; only the binary decision was found and fixed.
+
+## Six read-state obligations, six mutation proofs
+
+4C.2 landed with one of its six specs shown able to fail. The other five carried
+the risk the first one demonstrated: `forbidden` had passed by TIMING rather than
+by being right -- `getByRole('alert')` matched Next's route announcer as well as
+the component's alert, and which one won depended on when the announcer appeared.
+That is the E2E form of a guard matching nothing, and it was found by accident.
+
+Each spec was then mutated at the claim it makes, rebuilt, and run alone:
+
+| claim broken | verdict |
+|---|---|
+| nothing from a settled state is on screen while loading | RED |
+| empty states its meaning instead of rendering a list | RED |
+| ready offers a Save on every row | RED |
+| partial keeps the data usable | RED |
+| forbidden offers no retry affordance | RED |
+| error offers a retry affordance | RED |
+
+Six of six falsified. The battery is a throwaway probe, not a standing check, and
+that is the honest description: it is a measurement taken at one commit, not a
+mechanism that will notice if a spec later stops checking its claim.
+
+**The first attempt was not a proof and looked like one.** Flipping `retryable` to
+`true` for a forbidden problem left the `forbidden` spec green, and the reason is
+that `toResourceState` branches on `code`, never on `retryable`, so the flag never
+reaches that rendering. A mutation that changes a fact the spec does not claim
+demonstrates nothing, and it demonstrates nothing in the same shape as a passing
+test.
+
+### One selection strategy, so all six share a failure mode
+
+Every state is now addressed by its own `data-testid`, with its ARIA role asserted
+ON that element. Never by a page-scoped role query.
+
+Both roles are ambiguous at page scope, not just one: Next injects
+`#__next-route-announcer__` with `role="alert"`, and an info-toned `Alert` carries
+`role="status"` alongside `Status` itself, so `empty` and `partial` each render a
+second one.
+
+`Status` gained `testId`, which `Alert` and `List` already declared -- the
+inconsistency was `Status` lacking it, not the specs needing it. `contractVersion`
+1 -> 2 because the public vocabulary grew; `interaction.revision` unchanged,
+because no behaviour moved and no assistive-technology evidence is invalidated.
+
+**Still not producer-proven, deliberately:** `ResourceState.error` with
+`retryable: false`. `toProblem` sets that flag false only together with
+`code: 'forbidden'`, which routes to the `forbidden` state, so the false branch of
+the retry conditional cannot be reached today. No synthetic fixture was added to
+manufacture coverage for it. 4C.5 is the named owner: an unknown wire code needs a
+reload rather than a retry, and that is the second producer.

@@ -912,10 +912,19 @@
     },
     "Status": {
       "additionalProperties": false,
-      "description": "feedback / live-region (contract v1, interaction r1)",
+      "description": "feedback / live-region (contract v2, interaction r1)",
       "properties": {
         "component": {
           "const": "Status"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
         },
         "slots": {
           "properties": {
