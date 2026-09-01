@@ -1,27 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@xforge/api": ["./packages/api/src/index.ts"],
-      "@xforge/api-client": ["./packages/api-client/src/index.ts"],
-      "@xforge/api-client/mocks": ["./packages/api-client/src/mocks.ts"],
-      "@xforge/db": ["./packages/db/src/index.ts"],
-      "@xforge/policy": ["./packages/policy/src/index.ts"],
-      "@xforge/hr": ["./modules/hr/index.ts"],
-      "@xforge/tenancy": ["./packages/tenancy/src/index.ts"],
-      "@xforge/db/postgres": ["./packages/db/src/postgres-driver.ts"],
-      "@xforge/hr/repository": [
-        "./modules/hr/infrastructure/repository/emergency-contact.ts"
-      ],
-      "@xforge/fixtures/local-database": ["./tests/fixtures/local-database.ts"],
-      "@xforge/fixtures/tenancy": ["./tests/fixtures/tenancy.ts"],
-      "@xforge/fixtures/rls-checks": ["./tests/fixtures/rls-checks.ts"],
-      "@xforge/ui": ["./packages/ui/src/index.tsx"],
-      "@xforge/ui/contracts": ["./packages/ui/src/contracts.ts"],
-      "@xforge/ui/runtime": ["./packages/ui/src/runtime.ts"],
-      "@xforge/ui/state": ["./packages/ui/src/state.ts"]
-    }
-  },
   "include": [
     "packages/**/*.ts",
     "packages/**/*.tsx",

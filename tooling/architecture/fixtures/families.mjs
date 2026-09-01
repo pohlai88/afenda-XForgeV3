@@ -366,4 +366,46 @@ export const configFixtures = {
       ],
     }),
   },
+
+  /**
+   * The state `tsconfig.json` was actually in when this guard was written: an
+   * alias for `@xforge/db` beside a manifest that also declares
+   * `@xforge/db/schema`, which the alias table had never carried.
+   *
+   * THE CLEAN SIDE KEEPS A `paths` MAP rather than deleting it, because the
+   * rule is not "no paths". A repository may alias whatever it likes as long as
+   * it does not shadow a package the workspace already resolves -- so the clean
+   * fixture aliases `#internal/*`, which no manifest declares, and proves the
+   * guard accepts it. A clean side with no paths at all would pass a guard that
+   * merely rejected the key's existence, and prove nothing about what it means.
+   *
+   * The violating side uses a BARE NAME rather than a wildcard so the exact
+   * matching branch is the one exercised here; `config-guards.test.mjs` covers
+   * the pattern branch, where a set intersection would silently pass.
+   */
+  'workspace-packages-resolve-as-packages': {
+    because: 'shadows',
+    clean: envWith({
+      files: [
+        manifest('packages/db/package.json', {
+          exports: { '.': './src/index.ts', './schema': './src/schema/index.ts' },
+          name: '@xforge/db',
+        }),
+        manifest('tsconfig.json', {
+          compilerOptions: { paths: { '#internal/*': ['./src/*'] } },
+        }),
+      ],
+    }),
+    violating: envWith({
+      files: [
+        manifest('packages/db/package.json', {
+          exports: { '.': './src/index.ts', './schema': './src/schema/index.ts' },
+          name: '@xforge/db',
+        }),
+        manifest('tsconfig.json', {
+          compilerOptions: { paths: { '@xforge/db': ['./packages/db/src/index.ts'] } },
+        }),
+      ],
+    }),
+  },
 }

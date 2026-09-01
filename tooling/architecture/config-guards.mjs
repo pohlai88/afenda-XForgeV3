@@ -535,6 +535,138 @@ export const configGuards = [
     law: 7,
     title: 'A dependency declared by more than one package reads its version from the catalog',
   },
+  {
+    /**
+     * `workspace.aliases.ts` derives module resolution from the `exports` maps
+     * the manifests already declare, and says why: "A package's `exports` map is
+     * what Node and pnpm already obey; a table that restates it is a fact with
+     * two sources, and the day they disagree the suites resolve a different
+     * module graph than the application does."
+     *
+     * That derivation reached the two Vitest configs and the harness build. It
+     * never reached `tsconfig.json`, which kept a hand-written `paths` map --
+     * the fifth consumer, and the only one still holding a list.
+     *
+     * It had gone lossy exactly as predicted. At the commit this guard was
+     * written against, 22 TS-resolvable specifiers were declared across the
+     * manifests and `paths` carried 16. Missing: @xforge/db/schema,
+     * @xforge/ui/schema, @xforge/hr/contract, @xforge/hr/manifest,
+     * @xforge/fixtures/employee and @xforge/fixtures/hr. So sixteen specifiers
+     * resolved by relative-path alias and six by package lookup, inside one
+     * program, and nothing could report it.
+     *
+     * TypeScript's own module-resolution reference states the rule this
+     * enforces, under the heading "paths should not point to monorepo packages
+     * or node_modules packages": a matched alias resolves as a RELATIVE PATH
+     * rather than a package lookup, which bypasses `exports` and overrides
+     * `main`/`types`/`exports`. The recommendation is to let the workspace
+     * manager's symlinks carry it so every consumer performs the same lookup.
+     *
+     * MEASURED BEFORE DELETING, because "the docs say so" is not evidence about
+     * this repository: with `paths` removed, `tsc --noEmit` and `next build`
+     * both exit 0, `--listFiles` reports a byte-identical program (1898 files,
+     * 98 outside node_modules), and `--traceResolution` shows '@xforge/ui'
+     * resolving to packages/ui/src/index.tsx -- source, not a built .d.ts. No
+     * workspace package has a dist/, so there is nothing for it to resolve to.
+     *
+     * DERIVED, NOT PREFIXED. The first draft rejected keys matching `@xforge/*`.
+     * That is a new implicit fact -- "@xforge/ means workspace package" -- of
+     * exactly the kind this guard exists to remove, and it would miss a package
+     * scoped differently tomorrow. The manifests decide.
+     *
+     * PATTERN-AWARE, NOT A SET INTERSECTION. A `paths` key is itself a pattern:
+     * a key of '@xforge/' followed by a star shadows every workspace specifier
+     * while intersecting none of them as a string. Matching follows
+     * TypeScript's own rule -- at most one star, matching any substring,
+     * otherwise exact.
+     */
+    check(env) {
+      // Every consumer of this rule reads the manifests. So does the rule.
+      const specifiers = []
+      for (const m of (env.files ?? []).filter(
+        (f) => f.path.endsWith('package.json') && f.path !== 'package.json',
+      )) {
+        let pkg
+        try {
+          pkg = JSON.parse(m.source)
+        } catch {
+          continue
+        }
+        if (!pkg?.name) {
+          continue
+        }
+        specifiers.push(pkg.name)
+        for (const sub of Object.keys(pkg.exports ?? {})) {
+          if (sub !== '.') {
+            specifiers.push(`${pkg.name}/${sub.replace(/^\.\//, '')}`)
+          }
+        }
+      }
+
+      // A guard handed nothing reports PASS. Say so instead.
+      if (specifiers.length === 0) {
+        return [
+          {
+            message:
+              'no workspace package manifests were offered, so this guard cannot ' +
+              'know what a workspace specifier is -- it would approve every ' +
+              'paths entry by having nothing to compare them against',
+            where: 'package manifests',
+          },
+        ]
+      }
+
+      /** TypeScript's `paths` matching: at most one `*`, matching any substring. */
+      const shadows = (pattern, specifier) => {
+        const star = pattern.indexOf('*')
+        if (star === -1) {
+          return pattern === specifier
+        }
+        const prefix = pattern.slice(0, star)
+        const suffix = pattern.slice(star + 1)
+        return (
+          specifier.length >= prefix.length + suffix.length &&
+          specifier.startsWith(prefix) &&
+          specifier.endsWith(suffix)
+        )
+      }
+
+      const out = []
+      for (const m of (env.files ?? []).filter((f) => /(^|\/)tsconfig[^/]*\.json$/.test(f.path))) {
+        let cfg
+        try {
+          cfg = JSON.parse(m.source)
+        } catch {
+          // A tsconfig this guard cannot parse is not a tsconfig it may ignore.
+          out.push({
+            message: 'is not parseable JSON, so its paths map cannot be checked',
+            where: m.path,
+          })
+          continue
+        }
+        for (const key of Object.keys(cfg?.compilerOptions?.paths ?? {})) {
+          const shadowed = specifiers.filter((s) => shadows(key, s))
+          if (shadowed.length === 0) {
+            continue
+          }
+          out.push({
+            message:
+              `compilerOptions.paths["${key}"] shadows ${shadowed.length} workspace ` +
+              `specifier(s) -- ${shadowed.slice(0, 3).join(', ')}` +
+              `${shadowed.length > 3 ? ', ...' : ''}. A matched alias resolves as a ` +
+              'relative path rather than a package lookup, which bypasses the ' +
+              "package's exports map. pnpm already symlinks the workspace; delete " +
+              'the entry and let the package resolve as a package',
+            where: m.path,
+          })
+        }
+      }
+      return out
+    },
+    id: 'workspace-packages-resolve-as-packages',
+    law: 7,
+    title: 'A tsconfig paths alias never shadows a workspace package or its declared exports',
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
