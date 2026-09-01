@@ -7,11 +7,14 @@
  */
 import { join } from 'node:path'
 import postgres from 'postgres'
-import { applyMigrations } from '../../db/apply-migrations.mjs'
+import { LOCAL_OWNER_URL } from '../../../tests/fixtures/local-database.ts'
+import { applyMigrations, MIGRATIONS_DIR } from '../../db/apply-migrations.mjs'
 
-const ADMIN = process.env.DATABASE_URL ?? 'postgres://postgres:xforge@127.0.0.1:55432/xforge'
+const ADMIN = process.env.DATABASE_URL ?? LOCAL_OWNER_URL
 const SCRATCH = 'xforge_migrate_check'
-const dir = join(process.cwd(), 'packages/db/migrations')
+// MIGRATIONS_DIR, not the literal it holds. It is documented as existing "so no
+// caller has to restate it", and this was the only caller -- restating it.
+const dir = join(process.cwd(), MIGRATIONS_DIR)
 
 let admin
 try {

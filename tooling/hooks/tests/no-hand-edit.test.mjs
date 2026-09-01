@@ -7,6 +7,7 @@
  * an exit code out. Exit 2 blocks the write; 0 lets it through.
  */
 import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -62,6 +63,23 @@ describe('law 27: generated state is refused at authorship time', () => {
 })
 
 describe('the phase authority is not edited in passing', () => {
+  /**
+   * THE PATH IS A LITERAL IN THREE PLACES -- the hook, `verify/lib/util.mjs`,
+   * and this file -- and the hook never stats it. Move the phase authority and
+   * `util.mjs` fails loudly on the next run ("state.json is missing"), while
+   * the hook silently stops protecting anything and this test stays green,
+   * because it asserts against the same stale literal.
+   *
+   * That is the shape CLAUDE.md names: two sources agreeing until they do not,
+   * with nothing in between to complain. This is the something in between. It
+   * deliberately does not unify the constant -- the hook must stay
+   * side-effect-free on import, and `util.mjs` reads the file at module scope,
+   * so which module should own the path is a decision rather than a cleanup.
+   */
+  it('and the file it protects actually exists', () => {
+    expect(existsSync(join(ROOT, '.architecture/state.json'))).toBe(true)
+  })
+
   it('blocks the canonical phase file', () => {
     const { code, stderr } = runHook(edit('.architecture/state.json'))
     expect(code).toBe(2)

@@ -12,8 +12,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   classify,
+  GENERATED_DIRS,
   GENERATED_FILES,
+  GENERATED_PATHS,
+  isUncommittablePath,
   NON_SOURCE_DIRS,
+  OUTPUT_FILES,
   UNCOMMITTABLE,
 } from '../../source-universe.mjs'
 import { configGuards } from '../config-guards.mjs'
@@ -91,6 +95,81 @@ describe('generated source is classified explicitly, not as output', () => {
 
   it('generated is NOT uncommittable -- it is committed and diffed', () => {
     expect(UNCOMMITTABLE).not.toContain('generated')
+  })
+
+  it('every declared generated PATH classifies as generated', () => {
+    // The mirror of the NON_SOURCE_DIRS loop below, and the test that was
+    // missing: GENERATED_PATHS was declared and never read, while classify()
+    // hardcoded `contracts/` beside it. Three of the four entries are covered
+    // incidentally by GENERATED_DIRS, which is exactly why the fourth being
+    // special-cased by hand went unnoticed. Walking the declared list means a
+    // future entry cannot be added without also being genuinely recognised.
+    for (const g of GENERATED_PATHS) {
+      expect(classify(`${g}file.ts`), `${g} not recognised`).toBe('generated')
+      expect(classify(g.replace(/\/+$/, '')), `bare ${g} not recognised`).toBe('generated')
+    }
+  })
+
+  it('a trailing slash is normalised, so a prefix cannot bleed into a sibling', () => {
+    // GENERATED_PATHS entries are documented as directory prefixes. Nothing
+    // enforces the trailing slash, so the matcher must not depend on it --
+    // otherwise an entry written `contracts` would swallow `contracts-draft/`.
+    expect(classify('contracts-draft/x.ts')).toBe('source')
+    expect(classify('packages/ui/generated-notes/x.ts')).toBe('source')
+  })
+})
+
+describe('output outranks generated', () => {
+  // OUTPUT_FILES says next-env.d.ts must NEVER be tracked, unconditionally. An
+  // ordering that let a generated DIRECTORY win would make that claim depend on
+  // location -- and a copy under generated/ would classify as committable and
+  // walk straight past no-committed-build-output.
+  it('an output FILE inside a generated directory is still output', () => {
+    expect(classify('packages/ui/generated/next-env.d.ts')).toBe('output')
+    expect(isUncommittablePath('packages/ui/generated/next-env.d.ts')).toBe(true)
+  })
+
+  it('a generated directory inside build output is still output', () => {
+    expect(classify('dist/generated/x.ts')).toBe('output')
+  })
+})
+
+describe('the module is the authority, and cannot be edited by a consumer', () => {
+  it('every exported list is frozen', () => {
+    // `const` prevents reassignment, not mutation. A consumer that appended to
+    // one of these would be a fifth tool with its own opinion, changing
+    // classification process-wide for everyone else in the same process.
+    for (const [name, list] of Object.entries({
+      GENERATED_DIRS,
+      GENERATED_FILES,
+      GENERATED_PATHS,
+      NON_SOURCE_DIRS,
+      OUTPUT_FILES,
+      UNCOMMITTABLE,
+    })) {
+      expect(Object.isFrozen(list), `${name} is mutable`).toBe(true)
+    }
+  })
+
+  it('rejects a path it cannot classify rather than guessing source', () => {
+    // Returning 'source' for junk means a consumer passing nothing checks
+    // nothing, and says so to no one.
+    expect(() => classify('')).toThrow(TypeError)
+    expect(() => classify(undefined)).toThrow(TypeError)
+  })
+
+  it('isUncommittablePath agrees with UNCOMMITTABLE for every class', () => {
+    for (const [path, kind] of [
+      ['test-results/.last-run.json', 'output'],
+      ['contracts/openapi.generated.json', 'generated'],
+      ['packages/api/src/app.ts', 'source'],
+      ['packages/api/tests/policy-declaration.test.ts', 'test'],
+      ['biome.jsonc', 'config'],
+      ['CLAUDE.md', 'documentation'],
+    ]) {
+      expect(classify(path)).toBe(kind)
+      expect(isUncommittablePath(path), path).toBe(UNCOMMITTABLE.includes(kind))
+    }
   })
 })
 

@@ -297,6 +297,24 @@ function isNonCallContext(src, at) {
 }
 
 /**
+ * A stylesheet with its comments BLANKED rather than removed, so every index
+ * still addresses the same character of the original.
+ *
+ * Both CSS guards stripped comments to empty and then located the finding with
+ * `line(src, src.indexOf(match))`, which is wrong twice. A declaration whose
+ * match text exists only AFTER stripping -- an inline comment between the colon
+ * and the value leaves two spaces where the comment stood -- is not in `src` at
+ * all, so `indexOf` returns -1 and `line()` reports the END of the file. And a
+ * value appearing more than once reports every occurrence at the FIRST one's
+ * line: a three-violation stylesheet reported lines 1, 2, 1.
+ *
+ * Blanking preserves length and newlines, so the match index IS the source
+ * index and no lookup is needed.
+ */
+const withCommentsBlanked = (src) =>
+  src.replace(/[/][*][\s\S]*?[*][/]/g, (c) => c.replace(/[^\n]/g, ' '))
+
+/**
  * React UI surfaces.
  *
  * `apps/web/app/api/` is deliberately excluded: it is the API mount and the
@@ -332,14 +350,35 @@ export const guards = [
     title: 'UI never imports repositories, Drizzle or a DB handle',
   },
   {
+    /**
+     * PROVEN AGAINST A SHAPE NOTHING WRITES, which is the depcruise failure in
+     * miniature. The matcher led with `(?:^|@xforge/)modules?/([^/]+)/(.+)`,
+     * and `@xforge/modules/...` exists nowhere in this repository except in
+     * this guard's own fixture -- the identical mistake the header of this file
+     * records as already fixed for `isBusinessModule`, whose comment says
+     * modules are imported by PACKAGE NAME.
+     *
+     * The real violation shape is `@xforge/<module>/<private-path>`, and it is
+     * not hypothetical: modules/hr/package.json exports `./repository` as
+     * `./infrastructure/repository/emergency-contact.ts`, so law 16's "never
+     * import another module's repository" is one import away and the guard
+     * could not see it.
+     *
+     * The module set is DERIVED from BUSINESS_MODULES rather than spelled, so a
+     * second module is covered the day it lands -- which is also the day this
+     * guard can fire at all, since `other === self` short-circuits every case
+     * while `hr` is the only one.
+     */
     applies: (f) => !!moduleOf(f),
     check(f, src) {
       const self = moduleOf(f)
       return imports(src)
         .map((i) => {
+          const pkg = i.spec.match(/^@xforge\/([^/]+)\/(.+)$/)
           const m =
-            i.spec.match(/(?:^|@xforge\/)modules?\/([^/]+)\/(.+)$/) ||
-            i.spec.match(/^\.\.\/\.\.\/([^/]+)\/(.+)$/)
+            pkg && BUSINESS_MODULES.includes(pkg[1])
+              ? pkg
+              : i.spec.match(/^\.\.\/\.\.\/([^/]+)\/(.+)$/)
           if (!m) {
             return null
           }
@@ -403,6 +442,23 @@ export const guards = [
             }
           }
         }
+        // A GUARD THAT CANNOT DELIMIT ITS SUBJECT MUST SAY SO. This counts
+        // braces without skipping strings, templates or comments, so a single
+        // unmatched `{` inside any route's text runs the scan to end-of-file --
+        // and the slice then contains a LATER route's `policy:`, which silently
+        // satisfies the policy-less one. The mirror case, an unmatched `}`,
+        // ends the span early and accuses a route that does declare a policy.
+        // Both are indistinguishable from a correct answer at the call site.
+        if (depth !== 0) {
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message:
+              'route object could not be delimited -- brace counting ran past the end of the ' +
+              'file, so this route was not evaluated. That is not the same as it holding',
+          })
+          continue
+        }
         if (!/\bpolicy\s*:/.test(src.slice(start, i + 1))) {
           out.push({
             file: f,
@@ -425,6 +481,16 @@ export const guards = [
       const out = []
       let m
       while ((m = re.exec(src)) !== null) {
+        // PROSE QUOTING THE RULE IS NOT A BREACH OF IT, and this was the one
+        // guard of its family that said otherwise: money-float,
+        // no-wall-clock-in-modules, platform-access-outside-admin and
+        // tenancy-primitives-confined all compose this in, and the reasoning is
+        // written out at `isTypeScript` above -- twenty of twenty-six findings
+        // from a widened scan were documents explaining the rule by writing it.
+        // A comment reading "never write country === 'MY'" was a violation here.
+        if (isNonCallContext(src, m.index)) {
+          continue
+        }
         out.push({
           file: f,
           line: line(src, m.index),
@@ -439,7 +505,27 @@ export const guards = [
     title: 'No country conditionals outside localisation and compliance',
   },
   {
-    applies: (f) => /(^packages\/money\/)|(^modules\/payroll\/)|money|amount|payslip/i.test(f),
+    /**
+     * EXECUTABLE TYPESCRIPT, which this did not require -- and the omission
+     * inverted the guard. The unanchored `money|amount|payslip` alternative
+     * matched exactly one tracked file: `.architecture/adr/ADR-006-money.md`,
+     * the document that forbids float arithmetic. So law 19 was enforced over
+     * zero lines of code while a prose example writing `.toFixed(` in order to
+     * explain the prohibition drew findings against the ADR.
+     *
+     * Governing one file also hid it from both honest reports: `claimed.length`
+     * was 1, so the runner called it neither BLIND nor DORMANT. Anchoring makes
+     * the zero visible, and `dormant` states it -- the same treatment
+     * `ai-tool-no-data-access` and `legal-entity-binding` already get.
+     *
+     * The substring alternative is KEPT, because a money path need not live
+     * under either root -- it just may not be a document.
+     */
+    applies: (f) =>
+      isTypeScript(f) &&
+      (/^packages\/money\//.test(f) ||
+        /^modules\/payroll\//.test(f) ||
+        /money|amount|payslip/i.test(f)),
     check(f, src) {
       const out = []
       for (const re of [/\bparseFloat\s*\(/g, /\.toFixed\s*\(/g]) {
@@ -457,6 +543,8 @@ export const guards = [
       }
       return out
     },
+    dormant:
+      'no money path exists yet -- packages/money and modules/payroll are both unbuilt, and no other TypeScript file names money, amount or payslip. Law 19 is therefore enforced over zero lines today, which is a fact worth reading every run rather than one hidden behind a single markdown match.',
     id: 'money-float',
     law: 19,
     precision: 'text',
@@ -596,14 +684,35 @@ export const guards = [
     title: 'Business modules never import a job-provider SDK',
   },
   {
+    /**
+     * GREEN AND BLIND TWICE OVER, and the two causes were independent.
+     *
+     * The block pattern was `pgTable[\s\S]{0,4000}?\n\}` -- a `}` at column
+     * zero, which only Drizzle's single-argument inline form emits. This
+     * repository writes the three-argument form, `pgTable(name, columns, (t) =>
+     * [...])`, which closes with `\n)`. Measured against the real
+     * packages/db/src/schema/index.ts: ONE match, labelled `emergencyContact`,
+     * spanning lines 32-103 -- swallowing `tenant` whole and never reaching
+     * `tenantDomain` or `tenantMembership`. Splitting each declaration at the
+     * start of the next one needs no guess about how it ends.
+     *
+     * And the trigger read `effective_from`, which appears nowhere in this
+     * repository's source. The schema and migration 0002 write `valid_from`,
+     * and both place it explicitly under law 20 / ADR-016, so it is the same
+     * concept under the name actually used. The fixture used the guard's
+     * vocabulary and its shape, which is how both halves stayed PROVEN.
+     *
+     * Measured after fixing both: `tenantMembership` is now seen, is correctly
+     * identified as effective-dated, and correctly carries `recorded_at` -- so
+     * the real schema is clean and the guard finally knows it.
+     */
     applies: (f) => /^packages\/db\//.test(f) || /schema.*\.(ts|mts)$/.test(f),
     check(f, src) {
       const out = []
-      const re = /export\s+const\s+(\w+)\s*=\s*pgTable[\s\S]{0,4000}?\n\}/g
-      let m
-      while ((m = re.exec(src)) !== null) {
-        const [block] = m
-        if (/effective_?[Ff]rom/.test(block) && !/recorded_?[Aa]t/.test(block)) {
+      const starts = [...src.matchAll(/export\s+const\s+(\w+)\s*=\s*pgTable/g)]
+      for (const [i, m] of starts.entries()) {
+        const block = src.slice(m.index, starts[i + 1]?.index ?? src.length)
+        if (/effective_?[Ff]rom|valid_?[Ff]rom/.test(block) && !/recorded_?[Aa]t/.test(block)) {
           out.push({
             file: f,
             line: line(src, m.index),
@@ -881,13 +990,13 @@ export const guards = [
     applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
-      const withoutComments = src.replace(/[/][*][\s\S]*?[*][/]/g, '')
+      const declarations = withCommentsBlanked(src)
       const re = /:[^;{}]*(#[0-9a-fA-F]{3,8}|rgba?[(]|hsla?[(])/g
       let m
-      while ((m = re.exec(withoutComments)) !== null) {
+      while ((m = re.exec(declarations)) !== null) {
         out.push({
           file: f,
-          line: line(src, src.indexOf(m[0])),
+          line: line(src, m.index),
           message:
             `literal design value '${m[1]}' -- every value comes from a semantic ` +
             'token, or packages/tokens has stopped being the authority',
@@ -984,7 +1093,7 @@ export const guards = [
      * Law 5: the API and its transport influence application composition and
      * are never dependencies of the UI.
      *
-     *  sits at the bottom of the dependency direction. If a
+     * `@xforge/ui` sits at the bottom of the dependency direction. If a
      * component could import the generated client, the completeness envelope or
      * an HTTP problem shape, then every component would know how its data
      * arrived -- and a new wire code would oblige a UI change, which is the
@@ -1140,16 +1249,16 @@ export const guards = [
     applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
-      const withoutComments = src.replace(/[/][*][\s\S]*?[*][/]/g, '')
+      const declarations = withCommentsBlanked(src)
       const re = /var\([\s]*--([a-z0-9-]+)[\s]*\)/g
       let m
-      while ((m = re.exec(withoutComments)) !== null) {
+      while ((m = re.exec(declarations)) !== null) {
         if (/^(semantic|component)-/.test(m[1])) {
           continue
         }
         out.push({
           file: f,
-          line: line(src, src.indexOf(m[0])),
+          line: line(src, m.index),
           message:
             `primitive token '--${m[1]}' -- a primitive carries a value and no role, ` +
             'so a mode has nothing to rebind. Name the semantic or component role instead',

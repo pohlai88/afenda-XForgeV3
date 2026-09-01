@@ -201,11 +201,14 @@ deliberately rather than discovering it.
                            stated price of narrowing four guards to executable
                            TypeScript, and it is paid nowhere else.
 
-  sourceFiles()            Still exists, still used by config-guards with
-                           explicit arguments. Only the guard runner was moved
-                           off it. Not a second scope owner today, because
-                           nothing calls it bare — worth re-checking if
-                           something does.
+  sourceFiles()            Gone. This row said it was "still used by
+                           config-guards with explicit arguments"; config-guards
+                           had already moved to trackedFiles(), so nothing
+                           called it at all — and the suppression keeping its
+                           default parameter alive cited a run-guards.mjs call
+                           site that no longer existed either. Three statements
+                           about one function, none of them true. Deleted with
+                           walk() and IGNORED_DIRS.
 ```
 
 ## What a resuming session needs, that the code does not say

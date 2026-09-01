@@ -79,6 +79,13 @@ export function scanWorkspace() {
     }
   }
   return {
+    // `precision` was recorded on every guard and read by nothing. A field
+    // stored and never consumed is documentation with a colon -- and its own
+    // comment argues that an over-trusted guard is worse than a known-approximate
+    // one, which is only true while the approximation is VISIBLE. Returned
+    // rather than computed in the CLI, because the CLI is not what most runs
+    // execute: the gate is, and it was the one that could not print this.
+    approximate: guards.filter((g) => g.precision === 'text').length,
     binary: binary.length,
     blind,
     checked,
@@ -173,6 +180,12 @@ const ADAPTERS = {
   },
   source: {
     accept: (g, fx) => (g.applies(fx.clean.path) ? g.check(fx.clean.path, fx.clean.source) : []),
+    // A clean fixture the guard does not govern answers a DIFFERENT question:
+    // "is this path exempt", not "is this content accepted". Both are worth
+    // pinning -- widening `applies` over an exemption should break something --
+    // but only one of them is what "accepts clean" claims, and the harness
+    // printed that phrase for either. Reported separately instead.
+    acceptsInScope: (g, fx) => g.applies(fx.clean.path),
     governs: (g, fx) => g.applies(fx.violating.path),
     locates: (f) => (Number.isInteger(f.line) && f.line >= 1 ? null : `points at line ${f.line}`),
     reject: (g, fx) => g.check(fx.violating.path, fx.violating.source),
@@ -234,8 +247,12 @@ function proveGuard(guard, primary, extras, adapter) {
   if (unusable) {
     return { detail: unusable, guard: guard.id, status: 'BROKEN' }
   }
+  const acceptance =
+    adapter.acceptsInScope?.(guard, primary) === false
+      ? 'clean fixture is out of scope (pins an exemption)'
+      : 'accepts clean'
   return {
-    detail: `rejects violation, accepts clean${extras.length ? ` (+${extras.length} case)` : ''}`,
+    detail: `rejects violation, ${acceptance}${extras.length ? ` (+${extras.length} case)` : ''}`,
     guard: guard.id,
     status: 'PROVEN',
   }
@@ -258,6 +275,33 @@ function fixturesFor(guardId, table) {
   return { extras, primary }
 }
 
+/**
+ * A fixture that reaches no guard proves nothing, and says nothing while doing
+ * it.
+ *
+ * CONSERVATION, the same law `scanWorkspace()` applies to files. Every entry in
+ * a fixture table is either a guard's primary case or declares its owner with
+ * `guardId`; there is no third outcome. Counting the guards proven cannot see
+ * the difference -- "42 proven" was true about the guards and silent about ten
+ * source fixtures that ran against nothing, left behind when `fixturesFor()`
+ * moved from prefix inference to declared ownership and only two of the three
+ * families were migrated.
+ *
+ * The lost cases included the zero-width and NUL-in-markdown ones, which are
+ * the two this repository has paid for twice.
+ */
+function orphanedFixtures(table, guardIds) {
+  return Object.entries(table)
+    .filter(([key, fx]) => !(guardIds.has(key) || guardIds.has(fx.guardId)))
+    .map(([key, fx]) => ({
+      detail: fx.guardId
+        ? `declares guardId '${fx.guardId}', which is not a guard in this family`
+        : 'names no guard -- its key matches none and it declares no guardId, so it runs against nothing',
+      guard: `fixture ${key}`,
+      status: 'BROKEN',
+    }))
+}
+
 export function mutationTest() {
   const families = [
     { adapter: ADAPTERS.source, guards, table: fixtures },
@@ -266,10 +310,12 @@ export function mutationTest() {
   ]
   const results = []
   for (const family of families) {
+    const guardIds = new Set(family.guards.map((g) => g.id))
     for (const g of family.guards) {
       const { extras, primary } = fixturesFor(g.id, family.table)
       results.push(proveGuard(g, primary, extras, family.adapter))
     }
+    results.push(...orphanedFixtures(family.table, guardIds))
   }
   return results
 }
@@ -291,24 +337,21 @@ function main() {
         `  ${paint(c, r.status.padEnd(9))} ${r.guard.padEnd(34)} ${paint(C.dim, r.detail)}`,
       )
     }
-    console.log(
-      `\n  ${proven.length} proven, ${broken.length} broken, ${unproven.length} unproven` +
-        `  ${paint(C.dim, '(Phase 0 exit requires >= 5 proven)')}\n`,
-    )
-    if (broken.length > 0) {
+    console.log(`\n  ${proven.length} proven, ${broken.length} broken, ${unproven.length} unproven`)
+    // UNPROVEN FAILS HERE TOO. The gate has always refused a guard with no
+    // mutation fixture -- "unproven guards are not trusted" -- and this command
+    // exited 0 on the same state, under a parenthetical claiming "Phase 0 exit
+    // requires >= 5 proven" that nothing asserted and no phase still needs. Two
+    // definitions of "the mutation test passed", and the one a person runs by
+    // hand was the permissive one.
+    if (broken.length > 0 || unproven.length > 0) {
       process.exit(1)
     }
     process.exit(0)
   }
 
-  const { binary, blind, dormant, files, checked, exemptions, tracked, violations } =
+  const { approximate, binary, blind, dormant, files, checked, exemptions, tracked, violations } =
     scanWorkspace()
-
-  // `precision` was recorded on every guard and read by nothing. A field stored
-  // and never consumed is documentation with a colon -- and its own comment
-  // argues that an over-trusted guard is worse than a known-approximate one,
-  // which is only true while the approximation is VISIBLE. Printed every run.
-  const approximate = guards.filter((g) => g.precision === 'text').length
 
   // The number that accumulated in silence. 159 files were claimable by a guard
   // and never offered to one, for as long as nothing printed a count.

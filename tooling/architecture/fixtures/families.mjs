@@ -102,12 +102,53 @@ export const contractFixtures = {
     },
   },
 
+  // The two ways the body was read as EMPTY rather than as unread, and the pair
+  // is what made them invisible: `commands-not-status-patches` went silently
+  // green on a PATCH plainly carrying `status`, while `version-token-on-updates`
+  // reported "no version token" for the same operation, with the token present
+  // and required. A red whose stated reason is false is not a finding; it is a
+  // second bug wearing the first one's clothes.
+  //
+  // `allOf` is what this repository's own generator emits for a registered
+  // schema extended with `.extend({ version })`, so it is the live half.
+  'version-token-on-updates-composed': {
+    because: 'composed with allOf',
+    clean: {
+      ...emptyDoc,
+      paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
+    },
+    guardId: 'version-token-on-updates',
+    violating: {
+      ...emptyDoc,
+      paths: {
+        '/a': {
+          patch: {
+            operationId: 'p',
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    allOf: [
+                      { properties: { status: {} } },
+                      { properties: { version: {} }, required: ['version'] },
+                    ],
+                  },
+                },
+              },
+            },
+            responses: { 200: { description: 'ok' }, 409: { description: 'conflict' } },
+          },
+        },
+      },
+    },
+  },
+
   // A cycle is not a malformed contract -- a recursive schema is legal and
   // common. What is malformed is a guard that cannot resolve one and reports
   // "no version token" anyway, which is what the depth-limited resolver did.
   // The fixture asserts the finding says the rule was NOT EVALUATED.
   'version-token-on-updates-cyclic': {
-    because: 'could not be resolved',
+    because: 'cycles through',
     clean: {
       ...emptyDoc,
       paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
@@ -124,6 +165,29 @@ export const contractFixtures = {
               content: {
                 'application/json': { schema: { $ref: '#/components/schemas/Loop' } },
               },
+            },
+            responses: { 200: { description: 'ok' }, 409: { description: 'conflict' } },
+          },
+        },
+      },
+    },
+  },
+
+  'version-token-on-updates-not-json': {
+    because: 'not application/json',
+    clean: {
+      ...emptyDoc,
+      paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
+    },
+    guardId: 'version-token-on-updates',
+    violating: {
+      ...emptyDoc,
+      paths: {
+        '/a': {
+          patch: {
+            operationId: 'p',
+            requestBody: {
+              content: { 'multipart/form-data': { schema: { properties: { status: {} } } } },
             },
             responses: { 200: { description: 'ok' }, 409: { description: 'conflict' } },
           },
@@ -150,7 +214,7 @@ export const contractFixtures = {
 
   // The other way resolution fails. Same rule: say so, do not invent a verdict.
   'version-token-on-updates-unresolvable': {
-    because: 'could not be resolved',
+    because: 'does not resolve',
     clean: {
       ...emptyDoc,
       paths: { '/a': { patch: { operationId: 'p', ...withBody({ version: {} }, ['version']) } } },
@@ -177,17 +241,29 @@ export const contractFixtures = {
 
 // ----------------------------------------------------------------- config
 
-/** A repository environment in which every config guard is satisfied. */
-const cleanEnv = () => ({
+/**
+ * A repository environment in which every config guard is satisfied.
+ *
+ * FORCE-IGNORES, spelled the way biome.jsonc spells them. The exclusions used
+ * a plain `!` here while the real config uses `!!` -- so the clean fixture
+ * described a configuration the repository deliberately does not have, and the
+ * one property biome.jsonc records as load-bearing was the one no fixture
+ * exercised.
+ *
+ * Exported because `tests/config-guards.test.mjs` built a second copy of this
+ * object, character for character. Two clean environments that must agree is
+ * the defect the config guards exist to catch, one level up.
+ */
+export const cleanEnv = () => ({
   adrs: [],
   biome: {
     files: {
       includes: [
-        ...NON_SOURCE_DIRS.map((d) => `!**/${d}/**`),
-        ...GENERATED_DIRS.map((d) => `!**/${d}`),
-        ...GENERATED_FILES.map((f) => `!**/${f}`),
-        ...OUTPUT_FILES.map((f) => `!**/${f}`),
-        '!contracts',
+        ...NON_SOURCE_DIRS.map((d) => `!!**/${d}`),
+        ...GENERATED_DIRS.map((d) => `!!**/${d}`),
+        ...GENERATED_FILES.map((f) => `!!**/${f}`),
+        ...OUTPUT_FILES.map((f) => `!!**/${f}`),
+        '!!contracts',
       ],
     },
   },
@@ -285,6 +361,23 @@ export const configFixtures = {
       env.biome.files.includes = env.biome.files.includes.filter(
         (p) => !p.includes('next-env.d.ts'),
       )
+      return env
+    })(),
+  },
+
+  // The half biome.jsonc calls load-bearing and no fixture exercised: every
+  // exclusion is still PRESENT, and every one is overridable. The preset's `**`
+  // merges after a plain `!`, which is how apps/web/.next came back the first
+  // time. Measured before this landed: the guard reported zero violations
+  // against exactly this environment, so its green light meant "the names are
+  // listed" rather than "the names are excluded".
+  'deterministic-source-set-plain-negation': {
+    because: 'force-ignored',
+    clean: cleanEnv(),
+    guardId: 'deterministic-source-set',
+    violating: (() => {
+      const env = cleanEnv()
+      env.biome.files.includes = env.biome.files.includes.map((p) => p.replace(/^!!/, '!'))
       return env
     })(),
   },

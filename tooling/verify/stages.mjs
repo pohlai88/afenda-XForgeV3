@@ -64,7 +64,37 @@ const hasGit = () => existsSync(join(ROOT, '.git'))
  */
 const TREE_AT_START = treeState()
 
-const _NL = String.fromCharCode(10)
+const NL = String.fromCharCode(10)
+
+/**
+ * How many tests a runner reported passing -- or `null`, which is never a pass.
+ *
+ * FIVE STAGES PARSE THIS, and four of them treated a miss as cosmetic:
+ * `${m ? m[1] : '?'} tests passed`, with `status: PASS` regardless. A suite
+ * that skipped every case EXITS 0 and prints no `passed` token at all, so the
+ * gate reported green having executed nothing, with a question mark standing
+ * where the evidence should be.
+ *
+ * It is not hypothetical for `contract`: its cases skip at module scope on
+ * `ownerUrl()`/`appUrl()`, while the stage's precondition probe connects using
+ * `DATABASE_URL` in a separate process. When those two disagree the probe
+ * succeeds, every case vanishes, and the stage printed
+ * "3 operations, ? contract tests passed" and went green.
+ *
+ * A count that cannot be read is not a count of zero, and neither is a pass.
+ * Both return null here; the caller decides whether a refusal is a FAIL or a
+ * named missing prerequisite, because that answer differs per stage.
+ *
+ * The pattern is a parameter because Playwright's epilogue is not vitest's --
+ * and it is ANCHORED, which the e2e stage's bare `(\d+) passed` was not. That
+ * one matched the first `passed` anywhere in stdout, so a spec logging
+ * `checks: 42 passed` made the stage report 42 against a real summary of 2.
+ */
+const passedCount = (out, re = /Tests\s+(\d+) passed/) => {
+  const m = out.match(re)
+  const n = m ? Number(m[1]) : 0
+  return n > 0 ? n : null
+}
 
 /**
  * Everything produced by `pnpm generate` is imported from the source universe,
@@ -110,10 +140,38 @@ export const stages = [
       // Scoped to GENERATED paths only. Diffing the whole tree would fail on
       // any uncommitted hand-written work, making the gate unusable during
       // development -- and an ignored gate is the same as no gate.
+      //
+      // AGAINST THE INDEX, deliberately. The question is "did regeneration
+      // produce anything you have not already accepted", so a developer who
+      // regenerated and staged the result stays green while a hand-edit that
+      // `pnpm generate` overwrites goes red. Diffing HEAD instead would make
+      // this stage red for every contract change until it was committed -- red
+      // exactly when CLAUDE.md says it is meant to run.
       const diff = run('git', ['diff', '--exit-code', '--stat', '--', ...GENERATED_PATHS])
-      return diff.code === 0
-        ? { detail: 'generated state is clean', status: PASS }
-        : { detail: `generated state drifted:\n${diff.out}`, status: FAIL }
+      if (diff.code !== 0) {
+        return { detail: `generated state drifted:${NL}${diff.out}`, status: FAIL }
+      }
+      // `git diff` cannot see a file git does not track, so a NEW generator
+      // output that nobody added read as "clean" -- and commit b29e68d added
+      // four such files at once, so new ones genuinely appear. Only a file that
+      // predates the run is invisible; one created during it is caught by the
+      // idempotence stage. This closes the other half.
+      const untracked = run('git', [
+        'ls-files',
+        '--others',
+        '--exclude-standard',
+        '--',
+        ...GENERATED_PATHS,
+      ])
+      if (untracked.code === 0 && untracked.out !== '') {
+        return {
+          detail:
+            `generated state is untracked, so nothing diffs it:${NL}${untracked.out}${NL}` +
+            '  Generated state is committed and asserted byte-identical. Add it.',
+          status: FAIL,
+        }
+      }
+      return { detail: 'generated state is clean', status: PASS }
     },
     title: 'generate cleanliness',
   },
@@ -124,7 +182,31 @@ export const stages = [
     id: 'guards',
     phase: 'spine',
     run() {
-      const { files, checked, violations: sourceViolations } = scanWorkspace()
+      const {
+        approximate,
+        blind,
+        dormant,
+        files,
+        checked,
+        violations: sourceViolations,
+      } = scanWorkspace()
+
+      // A GUARD THAT GOVERNS NO FILE IS THE ADR-024 FAILURE ITSELF: configured,
+      // green and blind. `run-guards.mjs` has always exited 1 on this and the
+      // gate discarded the field, so `pnpm guards` was strictly stronger than
+      // `pnpm verify` -- and the weaker of the two is the one merge authority
+      // rests on. Dormancy is the declared version of the same zero and is
+      // reported, not failed.
+      if (blind.length > 0) {
+        return {
+          detail:
+            'guard(s) govern no file at all, and do not say why:\n' +
+            `${blind.map((b) => `  ${b.id}`).join('\n')}\n` +
+            '  Either the subject is gone, or a narrowing went too far. Declare\n' +
+            '  `dormant` with a reason if the subject has not arrived yet.',
+          status: FAIL,
+        }
+      }
 
       // Contract rules are checked against the generated OpenAPI document,
       // where $refs are resolved -- not against source text, which cannot see
@@ -183,8 +265,13 @@ export const stages = [
         ? `, ${contract.checked} operations`
         : ', no contract yet'
       const configNote = `, ${config.checked} config guards`
+      // Dormancy and text-precision are LIMITS OF THIS RESULT, and both were
+      // printed only by `run-guards.mjs` -- the command almost nobody runs. A
+      // limitation visible only in the tool nobody invokes is not recorded, and
+      // the argument for tracking either is that it stays in sight.
+      const limits = `${dormant.length} dormant, ${approximate} text-precision`
       return {
-        detail: `${checked} file-checks${contractNote}${configNote}, ${proven} guards proven`,
+        detail: `${checked} file-checks${contractNote}${configNote}, ${proven} guards proven (${limits})`,
         status: PASS,
       }
     },
@@ -259,8 +346,16 @@ export const stages = [
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
-      const m = r.out.match(/Tests\s+(\d+) passed/)
-      return { detail: `${m ? m[1] : '?'} tests passed`, status: PASS }
+      // FAIL, not `unmet`: this stage has no external prerequisite to name, so
+      // a run that asserted nothing is a defect rather than a missing service.
+      const passed = passedCount(r.out)
+      if (passed === null) {
+        return {
+          detail: `vitest exited 0 without reporting a passing test:${NL}${r.out}`,
+          status: FAIL,
+        }
+      }
+      return { detail: `${passed} tests passed`, status: PASS }
     },
     title: 'unit tests',
   },
@@ -347,9 +442,16 @@ export const stages = [
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
-      const m = r.out.match(/Tests\s+(\d+) passed/)
+      // The probe above proves a database answers `DATABASE_URL`. It does NOT
+      // prove the suite reached one -- the cases resolve their own URLs through
+      // `ownerUrl()`/`appUrl()`, and when those disagree with the probe's every
+      // case skips. BLOCKED names that; it is still a failure under --ci.
+      const passed = passedCount(r.out)
+      if (passed === null) {
+        return unmet(this, `a database the contract suite itself reaches${NL}${r.out}`)
+      }
       return {
-        detail: `${ops} operations, ${m ? m[1] : '?'} contract tests passed`,
+        detail: `${ops} operations, ${passed} contract tests passed`,
         status: PASS,
       }
     },
@@ -395,6 +497,40 @@ export const stages = [
       const specified = rows.map((row) => row.id)
       const reachable = rows.filter((row) => row.availableFrom === 'now').map((row) => row.id)
 
+      // THE PARSE IS ASSERTED, because `missing` is derived only from
+      // `specified` -- so anything that shrinks the parse shrinks the
+      // OBLIGATION, and the stage reports "complete" against a matrix it could
+      // no longer read. `implemented.size === 0` below guards the other side of
+      // that comparison; it detects missing TESTS and can never detect a
+      // missing SPEC.
+      //
+      // Measured against the real document: dropping the Expected column leaves
+      // 15 of 30 rows matching (the availability capture runs past the row's
+      // trailing pipe into the next line, because `[^|]+?` crosses newlines),
+      // and renumbering T01 to T001 leaves 9. Both print "complete". So an
+      // emptiness check alone is the cheap tripwire, not the check -- the
+      // load-bearing one is that the matrix cannot claim fewer cases than are
+      // implemented against it.
+      if (rows.length === 0) {
+        return {
+          detail:
+            'the attack matrix parsed to zero rows -- its table format changed under the row pattern',
+          status: FAIL,
+        }
+      }
+      // 'now' or the name of a slice. A row whose availability captured a
+      // newline is a row the pattern mis-read, and it collapses `reachable` to
+      // a number that reads as satisfied.
+      const unreadable = rows.filter((row) => !/^[\w -]+$/.test(row.availableFrom))
+      if (unreadable.length > 0) {
+        return {
+          detail:
+            'the attack matrix availability column did not parse: ' +
+            `${unreadable.map((row) => row.id).join(', ')}`,
+          status: FAIL,
+        }
+      }
+
       // Both matrices: tenancy (T) and policy (P). One case can cover a range,
       // so 'P01-P05-...' registers all five.
       const implemented = new Set()
@@ -425,6 +561,19 @@ export const stages = [
 
       if (implemented.size === 0) {
         return unmet(this, 'any implemented attack case')
+      }
+      // The ratio this stage prints is `implemented.size / specified.length`,
+      // and more implemented cases than specified ones is not a good result --
+      // it is arithmetic that only a half-read matrix can produce. "30/15 of
+      // the matrix, complete" was printable.
+      if (implemented.size > specified.length) {
+        return {
+          detail:
+            `${implemented.size} attack cases are implemented against a matrix that parsed to ` +
+            `${specified.length} -- the specification was read incompletely, so the ` +
+            'completeness half of this stage is measuring nothing',
+          status: FAIL,
+        }
       }
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest')
@@ -489,6 +638,13 @@ export const stages = [
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest')
       }
+      // A DATABASE IS A PREREQUISITE, checked BEFORE the suite rather than
+      // inferred from its output afterwards -- the same ordering the contract,
+      // tenancy and e2e stages use. This stage was the last one still
+      // diagnosing an outage from stdout.
+      if (run('node', [join(ROOT, 'tooling/db/probe.mjs')]).code !== 0) {
+        return unmet(this, 'a reachable database')
+      }
       // Through the script, so there is ONE way to run these and one
       // behaviour. The serial requirement, and the shared-database hazard it
       // exists for, are declared on the `integration` project in
@@ -500,14 +656,19 @@ export const stages = [
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
-      // A suite that skips because the database is unreachable has proven
-      // nothing, and must not be reported as a pass.
-      if (/skipped/.test(r.out) && !/\d+ passed/.test(r.out)) {
+      // COUNTED, NOT PATTERN-MATCHED. The rule was
+      // `/skipped/.test(out) && !/\d+ passed/.test(out)`, and `0 passed` matches
+      // `\d+ passed` -- so a run that skipped every case reported
+      // PASS "0 integration tests passed against real PostgreSQL". The cases
+      // guard themselves with skipIf, so that is precisely the shape an
+      // unreachable database produces, and it is the same defect the tenancy
+      // stage fixed one stage earlier with the same `=== 0` rule.
+      const passed = Number(r.out.match(/Tests\s+(\d+) passed/)?.[1] ?? 0)
+      if (passed === 0) {
         return unmet(this, 'a reachable database')
       }
-      const m = r.out.match(/Tests\s+(\d+) passed/)
       return {
-        detail: `${m ? m[1] : '?'} integration tests passed against real PostgreSQL`,
+        detail: `${passed} integration tests passed against real PostgreSQL`,
         status: PASS,
       }
     },
@@ -598,7 +759,7 @@ export const stages = [
       }
       const { checked, problems } = result
       if (problems.length > 0) {
-        return { detail: problems.join(_NL), status: FAIL }
+        return { detail: problems.join(NL), status: FAIL }
       }
       return checked.length === 0
         ? { detail: 'no routes ship client JavaScript', status: EMPTY }
@@ -638,8 +799,14 @@ export const stages = [
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
-      const m = r.out.match(/(\d+) passed/)
-      return { detail: `${m ? m[1] : '?'} flagship E2E specs passed`, status: PASS }
+      // Anchored to Playwright's own summary line. See `passedCount`: the bare
+      // pattern matched the first `passed` anywhere in stdout, including text a
+      // spec printed itself.
+      const passed = passedCount(r.out, /^\s*(\d+) passed/m)
+      if (passed === null) {
+        return unmet(this, `an E2E run that executed a spec${NL}${r.out}`)
+      }
+      return { detail: `${passed} flagship E2E specs passed`, status: PASS }
     },
     title: 'selected E2E',
   },
@@ -675,15 +842,22 @@ export const stages = [
       if (now === TREE_AT_START) {
         return { detail: 'the working tree is exactly as the run found it', status: PASS }
       }
-      const before = new Set(TREE_AT_START.split(_NL).filter(Boolean))
-      const touched = now
-        .split(_NL)
-        .filter(Boolean)
-        .filter((line) => !before.has(line))
+      // BOTH DIRECTIONS. This listed only lines the run ADDED, so a gate that
+      // removed one -- deleting an untracked artefact that was already there,
+      // or restoring a file somebody had edited -- failed with an empty list
+      // under the sentence "the gate mutated the repository", naming nothing.
+      // The last stage of a three-minute run is the worst possible place for a
+      // verdict with no evidence attached.
+      const before = new Set(TREE_AT_START.split(NL).filter(Boolean))
+      const after = new Set(now.split(NL).filter(Boolean))
+      const changes = [
+        ...[...after].filter((l) => !before.has(l)).map((l) => `+ ${l}`),
+        ...[...before].filter((l) => !after.has(l)).map((l) => `- ${l}`),
+      ]
       return {
         detail:
           'the gate mutated the repository -- a green run must leave the checkout as it ' +
-          `found it:${_NL}${touched.map((t) => `  ${t}`).join(_NL)}`,
+          `found it:${NL}${changes.map((c) => `  ${c}`).join(NL)}`,
         status: FAIL,
       }
     },

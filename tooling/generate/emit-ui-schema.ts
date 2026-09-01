@@ -126,9 +126,30 @@ function unionOf(ids: readonly MetadataContractId[]): Json {
   }
 }
 
+/**
+ * A slot is REQUIRED unless it says `min: 0`.
+ *
+ * The contract states that default and the compiler implements it --
+ * `OptionalSlotNames` in contracts.ts selects `{ min: 0 }`, so an absent `min`
+ * means required. This generator implemented `(min ?? 0) > 0` instead, which
+ * means the opposite for exactly the slots that omit it, and additionally
+ * excluded every text slot outright.
+ *
+ * Eight of eleven metadata components disagreed with their own contract:
+ * Button.children, Code.children, Dialog.title, EmptyState.title, Field.label,
+ * Heading.children, Status.children, Text.children. The compiler refused a
+ * Dialog with no title; the schema accepted one -- and the schema is the ONLY
+ * check a tenant's metadata document ever meets, because that document was
+ * never compiled against anything. A Dialog with no title is an unnamed
+ * region, which is the example the contract itself gives.
+ */
+const slotIsRequired = (spec: SlotSpec): boolean => (spec.min ?? 1) > 0
+
 function slotSchema(spec: SlotSpec): Json {
   if ('text' in spec) {
-    return { type: 'string' }
+    // A required text slot present as `""` is absent with extra steps, and the
+    // renderer cannot tell the difference either.
+    return slotIsRequired(spec) ? { minLength: 1, type: 'string' } : { type: 'string' }
   }
   const schema: Json = { items: unionOf(acceptedIds(spec)), type: 'array' }
   if (typeof spec.min === 'number') {
@@ -163,9 +184,7 @@ function nodeSchema(id: MetadataContractId, contract: Contract): Json {
 
   const slots = Object.entries(contract.slots ?? {})
   if (slots.length > 0) {
-    const requiredSlots = slots
-      .filter(([, s]) => !('text' in s) && (s.min ?? 0) > 0)
-      .map(([name]) => name)
+    const requiredSlots = slots.filter(([, s]) => slotIsRequired(s)).map(([name]) => name)
     properties.slots = {
       properties: Object.fromEntries(slots.map(([name, s]) => [name, slotSchema(s)])),
       type: 'object',

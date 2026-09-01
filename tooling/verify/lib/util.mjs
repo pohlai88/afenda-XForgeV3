@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
-import { NON_SOURCE_DIRS } from '../../source-universe.mjs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { join, sep } from 'node:path'
 
 export const ROOT = process.cwd()
 
@@ -125,74 +124,6 @@ export function phaseHasStarted(phase) {
 }
 
 /**
- * Directories the guards never walk.
- *
- * Derived from the single source universe rather than maintained here, so the
- * guards, Biome, tsc and Vitest cannot drift apart -- the drift that made the
- * lint stage order-dependent.
- */
-const IGNORED_DIRS = new Set([...NON_SOURCE_DIRS, '.architecture'])
-
-/** Recursively collect files under `dir` matching `exts`. */
-export function walk(dir, exts = ['.ts', '.tsx', '.mts', '.js', '.mjs'], acc = []) {
-  const abs = join(ROOT, dir)
-  if (!existsSync(abs)) {
-    return acc
-  }
-  for (const entry of readdirSync(abs)) {
-    if (IGNORED_DIRS.has(entry)) {
-      continue
-    }
-    const full = join(abs, entry)
-    const st = statSync(full)
-    if (st.isDirectory()) {
-      walk(relative(ROOT, full), exts, acc)
-    } else if (exts.some((e) => entry.endsWith(e))) {
-      acc.push(relative(ROOT, full))
-    }
-  }
-  return acc
-}
-
-/**
- * Source files across the workspace roots that guards police.
- *
- * `roots` KEEPS ITS DEFAULT. run-guards.mjs calls `sourceFiles()` with no
- * arguments, so removing it makes every source guard crash on
- * `undefined.flatMap`. An automatic lint fix has now done exactly that three
- * times, which is why the suppression is here rather than in a commit message.
- */
-// biome-ignore lint/style/useDefaultParameterLast: run-guards.mjs calls this with no arguments
-export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
-  return roots.flatMap((r) => (exts ? walk(r, exts) : walk(r)))
-}
-
-/**
- * Every tracked textual file. An ENUMERATION, not a decision.
- *
- * `sourceFiles()` walked three roots and offered the guards 52 of 210 tracked
- * files. That made the offered set a second owner of "is this file subject to
- * guards", alongside each guard's own `applies()`. The two agreed for as long as
- * nobody compared them: 159 files were claimable and never offered, and six real
- * control characters sat in the guard runner's own source because `tooling/` was
- * not a root.
- *
- * The fix is not a longer exclusion list here -- that keeps both owners and makes
- * the second one longer. It is to enumerate, and let `applies()` be the only
- * thing that decides. An exclusion then lives on the guard whose property it is
- * an exclusion FROM, which is the only place the question can be answered: docs
- * are exempt from the delete guard and emphatically not from the
- * control-character one.
- *
- * BINARY IS THE ONLY EXCLUSION HERE, because "textual" is a property of the file
- * rather than of any guard's subject matter. Detected by content -- a NUL byte --
- * not by extension, so a new binary format needs no list entry.
- *
- * git is REQUIRED, and its absence throws rather than yielding an empty set. A
- * scan that silently offers nothing reports PASS, which is the failure mode this
- * whole change exists to remove.
- */
-/**
  * Tracked paths that are genuinely binary, DECLARED BY PATH.
  *
  * Empty today, and that is a measured fact rather than an oversight: every
@@ -204,8 +135,22 @@ export function sourceFiles(roots = ['apps', 'modules', 'packages'], exts) {
 const DECLARED_BINARY = /[.](png|jpe?g|gif|ico|webp|avif|woff2?|ttf|otf|eot|pdf|zip|gz)$/
 
 /**
- * Every tracked textual file. An ENUMERATION, not a decision -- and now not a
- * content inspection either.
+ * Every tracked textual file. An ENUMERATION, not a decision -- and now neither
+ * a choice of roots nor a content inspection.
+ *
+ * THE ROOTS IT REPLACES WERE A SECOND OWNER. A walk of `apps`, `modules` and
+ * `packages` offered the guards 52 of 210 tracked files, which made the offered
+ * set a second owner of "is this file subject to guards" alongside each guard's
+ * own `applies()`. The two agreed for as long as nobody compared them: 159 files
+ * were claimable and never offered, and six real control characters sat in the
+ * guard runner's own source because `tooling/` was not a root.
+ *
+ * The fix was not a longer exclusion list -- that keeps both owners and makes the
+ * second one longer. It is to enumerate, and let `applies()` be the only thing
+ * that decides. An exclusion then lives on the guard whose property it is an
+ * exclusion FROM, which is the only place the question can be answered: docs are
+ * exempt from the delete guard and emphatically not from the control-character
+ * one.
  *
  * THE FILTER THIS REPLACES WAS A SELF-EXEMPTION PATH. It called a file binary if
  * it contained a NUL byte, so any file could remove itself from every guard by
@@ -232,9 +177,12 @@ const DECLARED_BINARY = /[.](png|jpe?g|gif|ico|webp|avif|woff2?|ttf|otf|eot|pdf|
  * Returns the offered set AND what was withheld, because the runner asserts they
  * add up. A count that is printed is evidence; only an assertion is a check, and
  * `211 files` becoming `210` was printed twice and read past both times.
- */
-/**
- * @returns {{ binary: string[], files: string[], tracked: number }}
+ *
+ * `missing` is part of that sum and not a detail: `scanWorkspace()` refuses to
+ * scan unless `files + binary + missing === tracked`, so a return shape that
+ * omitted it would describe a conservation law with a term left out.
+ *
+ * @returns {{ binary: string[], files: string[], missing: string[], tracked: number }}
  */
 export function trackedFiles() {
   const r = spawnSync('git', ['ls-files', '-z'], {

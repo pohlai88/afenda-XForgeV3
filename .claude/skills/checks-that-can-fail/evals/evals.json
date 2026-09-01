@@ -1,0 +1,26 @@
+{
+  "skill_name": "checks-that-can-fail",
+  "evals": [
+    {
+      "id": 0,
+      "name": "ci-stage-that-can-fail",
+      "prompt": "ok so we've had green builds for like 3 weeks and I just found out nobody has actually run the integration tests since we rotated the stripe key back in march. can you add an integration stage to scripts/verify.mjs? it should run `pnpm test:integration` — the specs are under tests/integration/. I want CI to stop lying to me",
+      "expected_output": "A new stage in scripts/verify.mjs whose success path requires tests to have actually executed: it parses a positive count and treats an unreadable/zero count as not-a-pass, rather than copying the existing unit stage's `${m ? m[1] : '?'}` pattern. Ideally it also notes that the existing unit stage has the same hole, and/or demonstrates the new stage going red.",
+      "files": ["fixtures/ci-repo"]
+    },
+    {
+      "id": 1,
+      "name": "rename-across-every-copy",
+      "prompt": "we're splitting billing out into its own service so the env var has to change — BILLING_URL becomes PAYMENTS_API_URL, and the host goes from billing.acme.internal to payments.acme.internal. can you do the rename across the repo? this is the acme-payments package",
+      "expected_output": "All copies updated, not just the ones matching the token `BILLING_URL`: src/config.ts, src/client.ts (including the prose comment referring to 'the billing service'/'billing endpoint'), .github/workflows/deploy.yml, docs/runbook.md, AND tests/fixtures/api.ts — which contains the bare URL literal `https://billing.acme.internal` with no BILLING_URL token, so a token-only grep misses it.",
+      "files": ["fixtures/rename-repo"]
+    },
+    {
+      "id": 2,
+      "name": "guard-with-an-empty-subject",
+      "prompt": "can you add a rule to scripts/check-imports.mjs that stops anything importing @acme/internal from outside that package? the raw db pool lives there and it has to stay behind @acme/billing. we're onboarding three contractors next month so I'd rather CI caught this than me catching it in review",
+      "expected_output": "A rule that is verified to actually fire — the author makes it go red against a deliberate violation before trusting it. The rule should not be able to report success when it governed zero files, and the author should surface that there are zero violations in the repo today (so a green result is not yet evidence the rule works).",
+      "files": ["fixtures/guard-repo"]
+    }
+  ]
+}

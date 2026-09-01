@@ -11,6 +11,28 @@
  * Fixtures carry a pretend `path` because most guards are path-scoped, and they
  * are plain strings rather than files on disk so the real workspace scan can
  * never accidentally pick them up.
+ *
+ * OWNERSHIP IS DECLARED. A fixture whose key is a guard id IS that guard's
+ * primary case; any other fixture names its guard with `guardId`. The prover
+ * used to infer the second kind from the key prefix, and `fixturesFor()` records
+ * why that was replaced -- a guard id that became another's prefix would
+ * silently steal its proof.
+ *
+ * THE MIGRATION WAS INCOMPLETE, and nothing said so. The contract and config
+ * families gained their `guardId` declarations; these ten did not, so they were
+ * matched by neither rule and ran against nothing:
+ *
+ *   kernel-independence-dynamic          no-control-characters-...-zero-width
+ *   kernel-independence-package-name     no-control-characters-...-nul-in-markdown
+ *   no-bespoke-styling-inline            no-forged-tenant-context-angle
+ *   ui-no-data-imports-page              production-source-...-type-only
+ *   ui-holds-no-transport-vocabulary-module
+ *   transport-enters-apps-only-at-the-boundary-module
+ *
+ * Ten of thirty-seven, written and committed and executed by nothing, while the
+ * harness reported "42 proven" -- a number that was true about the guards and
+ * silent about the cases. The zero-width and NUL-in-markdown cases are the two
+ * this repository paid for twice. Every one passes now that it runs.
  */
 
 export const fixtures = {
@@ -40,6 +62,34 @@ export const rulePacks = []
   if (country === 'MY') return 0.11
   return 0
 }
+`,
+    },
+  },
+
+  // THE ACCEPTANCE HALF, which neither guard had. Both primary fixtures put
+  // their clean case on a path their guard does not govern -- `apps/admin/` and
+  // `packages/localisation/` are exclusions -- so `accept` returned [] without
+  // calling check, and the harness printed "accepts clean" for a question it
+  // never asked. Those fixtures still pin the exclusions and are kept; these
+  // ask the other question, on paths the guard really claims.
+  //
+  // Both clean cases exercise `isNonCallContext`, the branch that separates a
+  // call from prose naming one. It was reachable from zero fixtures, so
+  // deleting it left the mutation test PROVEN and the workspace scan at zero.
+  'country-branching-in-core-in-scope': {
+    because: 'country conditional',
+    clean: {
+      path: 'modules/hr/application/queries.ts',
+      // A country comparison the rule does not govern, and the rule quoted in
+      // prose. Neither is a country conditional in core.
+      source: `// Never write: country === 'MY' -- see ADR on localisation.
+export const isSupported = (country: string) => country !== ''
+`,
+    },
+    guardId: 'country-branching-in-core',
+    violating: {
+      path: 'modules/hr/application/queries.ts',
+      source: `export const rate = (country: string) => (country === 'SG' ? 1 : 0)
 `,
     },
   },
@@ -80,6 +130,47 @@ export const add = (ctx) => withTenant(ctx, async (sql) => sql\`insert into x\`)
   effectiveFrom: date('effective_from').notNull(),
   effectiveTo: date('effective_to'),
 }
+`,
+    },
+  },
+
+  // THE SHAPE THIS REPOSITORY ACTUALLY WRITES, which the primary fixture above
+  // does not: three arguments, a table-extras callback, a chained `.enableRLS()`,
+  // and a SECOND declaration after it. The old block pattern ended a table at a
+  // `}` in column zero, so against the real schema it produced one match that
+  // swallowed the following table and skipped the two after that -- while
+  // passing the single-argument fixture. `valid_from` is the vocabulary too:
+  // `effective_from` appears in no source file here.
+  'effective-dated-recorded-at-multi-arg': {
+    because: 'recorded_at',
+    clean: {
+      path: 'packages/db/src/schema/index.ts',
+      source: `export const employment = pgTable(
+  'employment',
+  {
+    tenantId: uuid('tenant_id').notNull(),
+    validFrom: timestamp('valid_from').notNull(),
+    recordedAt: timestamp('recorded_at').notNull().defaultNow(),
+  },
+  (t) => [index('employment_tenant_idx').on(t.tenantId)]
+).enableRLS()
+
+export const tenant = pgTable('tenant', { id: uuid().primaryKey() })
+`,
+    },
+    guardId: 'effective-dated-recorded-at',
+    violating: {
+      path: 'packages/db/src/schema/index.ts',
+      source: `export const employment = pgTable(
+  'employment',
+  {
+    tenantId: uuid('tenant_id').notNull(),
+    validFrom: timestamp('valid_from').notNull(),
+  },
+  (t) => [index('employment_tenant_idx').on(t.tenantId)]
+).enableRLS()
+
+export const tenant = pgTable('tenant', { id: uuid().primaryKey() })
 `,
     },
   },
@@ -143,6 +234,7 @@ await owner\`insert into m (valid_from) values (\${FIXTURE_VALID_FROM})\`
       source: `export const go = async () => await import('@xforge/policy')
 `,
     },
+    guardId: 'kernel-independence',
     violating: {
       path: 'packages/api/src/app.ts',
       source: `export const go = async () => await import('@xforge/hr')
@@ -160,6 +252,7 @@ await owner\`insert into m (valid_from) values (\${FIXTURE_VALID_FROM})\`
       source: `import { withTenant } from '@xforge/db'
 `,
     },
+    guardId: 'kernel-independence',
     violating: {
       path: 'packages/policy/src/evaluate.ts',
       source: `import { hrRoutes } from '@xforge/hr'
@@ -184,15 +277,22 @@ await owner\`insert into m (valid_from) values (\${FIXTURE_VALID_FROM})\`
     },
   },
 
+  // BY PACKAGE NAME. This used `@xforge/modules/hr/...`, a specifier nothing in
+  // this repository can write and nothing resolves -- so the guard was PROVEN
+  // against a shape that does not exist while being unable to see the one that
+  // does. `@xforge/hr/repository` is a real declared export of modules/hr,
+  // pointing straight at its persistence layer, which is precisely what law 16
+  // forbids another module from reaching.
   'module-boundaries': {
+    because: 'private path',
     clean: {
       path: 'modules/payroll/application/commands/approve.ts',
-      source: `import { getEmployment } from '@xforge/modules/hr/application/queries'
+      source: `import { hrRoutes } from '@xforge/hr/contract'
 `,
     },
     violating: {
       path: 'modules/payroll/application/commands/approve.ts',
-      source: `import { employeeRepo } from '@xforge/modules/hr/infrastructure/repository'
+      source: `import { list } from '@xforge/hr/repository'
 `,
     },
   },
@@ -238,6 +338,7 @@ export default function Page() {
 export const Row = () => <Text tone="muted">fine</Text>
 `,
     },
+    guardId: 'no-bespoke-styling',
     violating: {
       path: 'modules/hr/ui/contact-row.tsx',
       source: `export const Row = () => <div style={{ marginTop: 8 }}>nope</div>
@@ -275,6 +376,7 @@ export const Row = () => <Text tone="muted">fine</Text>
       path: '.architecture/example.md',
       source: `a table row that survived intact${String.fromCharCode(10)}`,
     },
+    guardId: 'no-control-characters-in-source',
     violating: {
       path: '.architecture/example.md',
       source: `a table row that did not${String.fromCharCode(0)}${String.fromCharCode(10)}`,
@@ -287,6 +389,7 @@ export const Row = () => <Text tone="muted">fine</Text>
       path: 'tooling/x.mjs',
       source: `const tenantId = 1${String.fromCharCode(10)}`,
     },
+    guardId: 'no-control-characters-in-source',
     violating: {
       path: 'tooling/x.mjs',
       source: `const tenant${String.fromCharCode(8203)}Id = 1${String.fromCharCode(10)}`,
@@ -322,6 +425,7 @@ export const go = () => withTenant(ctx, async () => 1)
 }
 `,
     },
+    guardId: 'no-forged-tenant-context',
     violating: {
       path: 'apps/web/app/api/route.ts',
       source: `const ctx = <VerifiedTenantContext>{ tenantId: header }
@@ -398,6 +502,25 @@ export const all = () =>
 `,
     },
   },
+
+  'platform-access-outside-admin-in-scope': {
+    because: 'withPlatformAccess',
+    clean: {
+      path: 'modules/hr/application/queries.ts',
+      // Named, never called: an import and a comment. A guard that cannot tell
+      // those from a call site teaches people to stop reading it.
+      source: `import type { withPlatformAccess } from '@xforge/db'
+// withPlatformAccess( is forbidden here; the repository layer is the way in.
+export const list = () => []
+`,
+    },
+    guardId: 'platform-access-outside-admin',
+    violating: {
+      path: 'modules/hr/application/queries.ts',
+      source: `export const all = () => withPlatformAccess(async (sql) => sql\`select 1\`)
+`,
+    },
+  },
   'production-carries-no-fixture-identity': {
     clean: {
       path: 'apps/web/app/api/route.ts',
@@ -432,6 +555,7 @@ export const all = () =>
       path: 'modules/hr/src/thing.ts',
       source: `import type { Mock } from 'vitest'${String.fromCharCode(10)}`,
     },
+    guardId: 'production-source-declares-what-it-imports',
     violating: {
       path: 'modules/hr/src/thing.ts',
       source: `import { expect } from 'vitest'${String.fromCharCode(10)}`,
@@ -541,6 +665,7 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
       path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
       source: `import type { ResourceState } from '@xforge/ui/state'${String.fromCharCode(10)}`,
     },
+    guardId: 'transport-enters-apps-only-at-the-boundary',
     violating: {
       path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
       source: `import { listEmergencyContacts } from '@xforge/hr'${String.fromCharCode(10)}`,
@@ -561,6 +686,7 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
       path: 'packages/ui/src/state.ts',
       source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
     },
+    guardId: 'ui-holds-no-transport-vocabulary',
     violating: {
       path: 'packages/ui/src/state.ts',
       source: `import type { EmergencyContact } from '@xforge/hr/repository'${String.fromCharCode(10)}`,
@@ -592,6 +718,7 @@ export default function Page() { return null }
 setDriver(createMemoryDriver())
 `,
     },
+    guardId: 'ui-no-data-imports',
     violating: {
       path: 'apps/web/app/dashboard/page.tsx',
       source: `import { emergencyContact } from '@xforge/db/schema'

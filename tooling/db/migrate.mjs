@@ -15,9 +15,10 @@
  * "Could not apply" must never be reported as "applied".
  */
 import postgres from 'postgres'
+import { LOCAL_OWNER_URL } from '../../tests/fixtures/local-database.ts'
 import { applyMigrations } from './apply-migrations.mjs'
 
-const URL = process.env.DATABASE_URL ?? 'postgres://postgres:xforge@127.0.0.1:55432/xforge'
+const URL = process.env.DATABASE_URL ?? LOCAL_OWNER_URL
 
 let db
 try {

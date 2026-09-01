@@ -1,8 +1,9 @@
 import { defineConfig } from 'drizzle-kit'
+import { LOCAL_OWNER_URL } from './tests/fixtures/local-database.ts'
 
 export default defineConfig({
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgres://postgres:xforge@127.0.0.1:55432/xforge',
+    url: process.env.DATABASE_URL ?? LOCAL_OWNER_URL,
   },
   dialect: 'postgresql',
   out: './packages/db/migrations',

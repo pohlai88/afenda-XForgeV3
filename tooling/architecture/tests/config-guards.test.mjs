@@ -13,12 +13,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import {
-  GENERATED_DIRS,
-  GENERATED_FILES,
-  NON_SOURCE_DIRS,
-  OUTPUT_FILES,
-} from '../../source-universe.mjs'
+import { NON_SOURCE_DIRS } from '../../source-universe.mjs'
 import { ROOT } from '../../verify/lib/util.mjs'
 import {
   configGuards,
@@ -27,6 +22,10 @@ import {
   scanConfig,
   stillGrandfathered,
 } from '../config-guards.mjs'
+// The clean environment is the mutation harness's, not a second copy. This file
+// rebuilt it character for character, so a change to what "satisfied" means
+// reached one and not the other.
+import { cleanEnv } from '../fixtures/families.mjs'
 
 const byId = (id) => {
   const g = configGuards.find((x) => x.id === id)
@@ -36,34 +35,17 @@ const byId = (id) => {
   return g
 }
 
-const goodEnv = () => ({
-  biome: {
-    files: {
-      includes: [
-        ...NON_SOURCE_DIRS.map((d) => `!**/${d}/**`),
-        ...GENERATED_DIRS.map((d) => `!**/${d}`),
-        ...GENERATED_FILES.map((f) => `!**/${f}`),
-        ...OUTPUT_FILES.map((f) => `!**/${f}`),
-        '!contracts',
-      ],
-    },
-  },
-  files: [],
-  gitignore: NON_SOURCE_DIRS.map((d) => `${d}/`).join('\n'),
-  tsconfig: { exclude: ['node_modules', '**/node_modules', '**/.next', '**/dist'] },
-})
-
 describe('deterministic-source-set', () => {
   const guard = byId('deterministic-source-set')
 
   it('accepts a config that excludes every non-source directory', () => {
-    expect(guard.check(goodEnv())).toHaveLength(0)
+    expect(guard.check(cleanEnv())).toHaveLength(0)
   })
 
   it('REJECTS a Biome config that would FORMAT a build-output file', () => {
     // The concrete case: Biome rewrote next-env.d.ts, Next's build wrote it
     // back, and lint passed or failed depending on which ran last.
-    const env = goodEnv()
+    const env = cleanEnv()
     env.biome.files.includes = env.biome.files.includes.filter((p) => !p.includes('next-env.d.ts'))
     const found = guard.check(env)
     expect(found.length).toBeGreaterThan(0)
@@ -71,27 +53,49 @@ describe('deterministic-source-set', () => {
   })
 
   it('REJECTS a Biome config that would format the published contract', () => {
-    const env = goodEnv()
-    env.biome.files.includes = env.biome.files.includes.filter((p) => p !== '!contracts')
+    const env = cleanEnv()
+    env.biome.files.includes = env.biome.files.includes.filter((p) => p !== '!!contracts')
     expect(guard.check(env).length).toBeGreaterThan(0)
   })
 
   it('REJECTS a Biome config that would lint build output', () => {
-    const env = goodEnv()
+    const env = cleanEnv()
     env.biome.files.includes = env.biome.files.includes.filter((p) => !p.includes('.turbo'))
     const found = guard.check(env)
     expect(found.length).toBeGreaterThan(0)
     expect(found[0]?.message).toMatch(/whether a build ran first/)
   })
 
+  it('REJECTS an exclusion that is present but OVERRIDABLE', () => {
+    // Every name is still listed. `!` is merged past by the preset's `**`,
+    // which is how apps/web/.next came back once already -- so listing the name
+    // and excluding it are different claims, and the guard used to accept the
+    // first as proof of the second.
+    const env = cleanEnv()
+    env.biome.files.includes = env.biome.files.includes.map((p) => p.replace(/^!!/, '!'))
+    const found = guard.check(env)
+    expect(found.length).toBeGreaterThan(0)
+    expect(found.every((v) => v.message.includes('force-ignored'))).toBe(true)
+  })
+
+  it('does not let a longer name answer for a shorter one', () => {
+    // Substring-matched against the joined list, `!!**/distribution` contained
+    // `!!**/dist` and satisfied the requirement for `dist`.
+    const env = cleanEnv()
+    env.biome.files.includes = env.biome.files.includes.map((p) =>
+      p === '!!**/dist' ? '!!**/distribution' : p,
+    )
+    expect(guard.check(env).some((v) => v.message.includes("'dist'"))).toBe(true)
+  })
+
   it('REJECTS a tsconfig that would typecheck build output', () => {
-    const env = goodEnv()
+    const env = cleanEnv()
     env.tsconfig.exclude = []
     expect(guard.check(env).some((v) => v.where.includes('tsconfig'))).toBe(true)
   })
 
   it('REJECTS a .gitignore that would let build output be committed', () => {
-    const env = goodEnv()
+    const env = cleanEnv()
     env.gitignore = ''
     expect(guard.check(env).some((v) => v.where === '.gitignore')).toBe(true)
   })
@@ -101,7 +105,7 @@ describe('deterministic-source-set', () => {
     // guard covers the whole declared universe, so the next tool that writes
     // into the workspace is caught by construction rather than by incident.
     for (const d of NON_SOURCE_DIRS.filter((x) => x !== '.git')) {
-      const env = goodEnv()
+      const env = cleanEnv()
       env.biome.files.includes = env.biome.files.includes.filter((p) => !p.includes(d))
       env.gitignore = env.gitignore
         .split('\n')

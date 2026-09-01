@@ -48,8 +48,10 @@ const VERBS = ['get', 'post', 'put', 'patch', 'delete']
  * finding and a different one.
  */
 const RESOLUTION = {
+  COMPOSED: 'composed',
   CYCLIC: 'cyclic',
   DEPTH_LIMIT: 'depth-limit',
+  NOT_JSON: 'not-json',
   RESOLVED: 'resolved',
   UNRESOLVABLE: 'unresolvable',
 }
@@ -86,16 +88,51 @@ function resolve(doc, node, seen = new Set(), depth = 0) {
   return resolve(doc, target, new Set(seen).add(pointer), depth + 1)
 }
 
+/**
+ * The request body schema, or the reason it could not be read.
+ *
+ * TWO FAILURES USED TO RETURN THE SUCCESS VALUE, and both then read as "the
+ * body has no properties" -- which is the exact conflation the doc block above
+ * forbids, arriving through the one path that did not go through `resolve()`.
+ *
+ *   NO application/json  returned `{RESOLVED, node: null}`, indistinguishable
+ *                        from an operation with no request body at all.
+ *   allOf / oneOf / anyOf  resolves to a node whose `properties` is absent,
+ *                        because nothing descends into the members.
+ *
+ * The consequence is a matched pair, always: `commands-not-status-patches`
+ * goes silently green on a PATCH that plainly carries `status`, while
+ * `version-token-on-updates` reports "no version token in its request body"
+ * for the same operation -- a red whose stated reason is false. It is not
+ * hypothetical: this repository's generator emits `allOf` for a registered
+ * schema extended with `.extend({ version })`.
+ *
+ * Composition is REPORTED rather than resolved. Merging `allOf` members is a
+ * real feature and a guard may not guess at one; saying "not evaluated" is the
+ * honest answer, and it is the answer this file already gives for a cycle.
+ */
 function requestBodySchema(doc, op) {
   const body = resolve(doc, op.requestBody)
   if (body.kind !== RESOLUTION.RESOLVED) {
     return body
   }
-  const media = body.node?.content?.['application/json']
-  if (!media) {
+  // No request body at all is a fact about the operation, not a failure.
+  if (!body.node) {
     return { kind: RESOLUTION.RESOLVED, node: null }
   }
-  return resolve(doc, media.schema)
+  const media = body.node.content?.['application/json']
+  if (!media) {
+    return {
+      kind: RESOLUTION.NOT_JSON,
+      pointer: Object.keys(body.node.content ?? {}).join(', ') || 'no content',
+    }
+  }
+  const schema = resolve(doc, media.schema)
+  if (schema.kind !== RESOLUTION.RESOLVED) {
+    return schema
+  }
+  const composed = ['allOf', 'oneOf', 'anyOf'].find((k) => Array.isArray(schema.node?.[k]))
+  return composed ? { kind: RESOLUTION.COMPOSED, pointer: composed } : schema
 }
 
 /**
@@ -106,10 +143,18 @@ function requestBodySchema(doc, op) {
  * unresolved chain look like a missing version token.
  */
 function unevaluable(result, where) {
+  const WHY = {
+    [RESOLUTION.COMPOSED]: (p) =>
+      `its request body schema is composed with ${p}, and this guard does not merge members`,
+    [RESOLUTION.CYCLIC]: (p) => `its request body schema cycles through ${p}`,
+    [RESOLUTION.DEPTH_LIMIT]: (p) => `its request body schema nests past the depth ceiling at ${p}`,
+    [RESOLUTION.NOT_JSON]: (p) => `its request body declares ${p}, not application/json`,
+    [RESOLUTION.UNRESOLVABLE]: (p) =>
+      `its request body schema references ${p}, which does not resolve`,
+  }
+  const why = WHY[result.kind]?.(result.pointer) ?? `its request body schema is ${result.kind}`
   return {
-    message:
-      `the request body schema could not be resolved (${result.kind}: ${result.pointer}) -- ` +
-      'the rule was not evaluated, which is not the same as the rule holding or failing',
+    message: `${why} -- the rule was NOT EVALUATED, which is not the same as it holding or failing`,
     where,
   }
 }

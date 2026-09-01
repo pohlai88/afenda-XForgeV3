@@ -18,9 +18,9 @@ import {
   GENERATED_DIRS,
   GENERATED_FILES,
   GENERATED_PATHS,
+  isUncommittablePath,
   NON_SOURCE_DIRS,
   OUTPUT_FILES,
-  UNCOMMITTABLE,
 } from '../source-universe.mjs'
 import { COMMITTED_PHASE, PHASES, posix, ROOT, read, trackedFiles } from '../verify/lib/util.mjs'
 
@@ -57,7 +57,6 @@ export const SECRET_FIXTURE_ALLOWLIST = [
   'tests/fixtures/local-database.ts',
   // Provisioning artifacts, which cannot import TypeScript.
   'packages/db/bootstrap.sql',
-  'tooling/verify/lib/migrate-check.mjs',
 ]
 
 /**
@@ -100,20 +99,39 @@ export function stillGrandfathered(name, committedPhase = COMMITTED_PHASE) {
   return PHASES.indexOf(committedPhase) < PHASES.indexOf(required)
 }
 
+/**
+ * Does a Biome `files.includes` list FORCE-IGNORE `token`?
+ *
+ * `!!`, NOT `!`, and that is the entire property. biome.jsonc records why:
+ * adding `extends` merges the preset's `**` AFTER a plain `!` pattern, which
+ * re-included apps/web/.next -- the order-dependent lint bug returning through
+ * the fix for something else. A force-ignore is not overridable.
+ *
+ * This guard could not tell the two apart. It substring-matched `!${token}`
+ * against the joined list, which a plain `!` satisfies, so downgrading every
+ * `!!` in biome.jsonc to `!` left it green while reintroducing the exact defect
+ * it is named after. Measured: 0 violations either way.
+ *
+ * Matched PER ENTRY rather than against a joined string, so `!!**\/distribution`
+ * cannot answer for `dist` -- the same bleed the substring test allowed.
+ */
+const forceIgnores = (includes, token) =>
+  includes.some((p) => p === `!!${token}` || p === `!!**/${token}` || p === `!!**/${token}/**`)
+
 export const configGuards = [
   {
     check(env) {
       const out = []
 
       if (env.biome) {
-        const includes = (env.biome.files?.includes ?? []).join(' ')
+        const includes = env.biome.files?.includes ?? []
         for (const d of NON_SOURCE_DIRS) {
           if (d === '.git') {
             continue // biome never walks it
           }
-          if (!(includes.includes(`!**/${d}`) || includes.includes(`!${d}`))) {
+          if (!forceIgnores(includes, d)) {
             out.push({
-              message: `'${d}' is not excluded -- lint would depend on whether a build ran first`,
+              message: `'${d}' is not force-ignored -- lint would depend on whether a build ran first`,
               where: 'biome.jsonc files.includes',
             })
           }
@@ -126,7 +144,7 @@ export const configGuards = [
         // lint result then depends on which ran last. This is law 27 violated
         // by a tool rather than by a hand, and it is why the generated FILE
         // list exists beside the generated directory list.
-        const includes = (env.biome.files?.includes ?? []).join(' ')
+        const includes = env.biome.files?.includes ?? []
         const required = [
           ...GENERATED_DIRS.map((d) => ({ token: d, what: `generated directory '${d}'` })),
           ...GENERATED_FILES.map((f) => ({ token: f, what: `generated file '${f}'` })),
@@ -140,9 +158,9 @@ export const configGuards = [
           ).map((g) => ({ token: g.split('/')[0], what: `generated path '${g}'` })),
         ]
         for (const { what, token } of required) {
-          if (!(includes.includes(`!**/${token}`) || includes.includes(`!${token}`))) {
+          if (!forceIgnores(includes, token)) {
             out.push({
-              message: `${what} is not excluded -- the formatter would rewrite generated state`,
+              message: `${what} is not force-ignored -- the formatter would rewrite generated state`,
               where: 'biome.jsonc files.includes',
             })
           }
@@ -165,7 +183,10 @@ export const configGuards = [
         if (d === '.git') {
           continue
         }
-        const re = new RegExp(`(^|\\n)/?${d.replace('.', '\\.')}/?\\s*($|\\n)`)
+        // replaceAll, not replace: the string form of `replace` substitutes the
+        // FIRST match only, so a future entry with two dots would compile a
+        // pattern whose second dot still matches any character.
+        const re = new RegExp(`(^|\\n)/?${d.replaceAll('.', '\\.')}/?\\s*($|\\n)`)
         if (!re.test(env.gitignore ?? '')) {
           out.push({
             message: `'${d}' is not ignored -- build output could be committed`,
@@ -186,8 +207,12 @@ export const configGuards = [
       // The decisive invariant, and the one that would have caught the
       // Playwright test-results incident from the same classification system
       // rather than from someone noticing it in a diff.
+      // The rule itself is asked for, not rebuilt here: spelling
+      // `UNCOMMITTABLE.includes(classify(f))` at the call site is a second copy
+      // of a rule source-universe.mjs already answers. The message still calls
+      // classify() -- that REPORTS the class, where the filter APPLIES the rule.
       return (env.trackedFiles ?? [])
-        .filter((f) => UNCOMMITTABLE.includes(classify(f)))
+        .filter((f) => isUncommittablePath(f))
         .map((f) => ({
           message: `tracked in git but classified as '${classify(f)}' -- build output must never be committed`,
           where: f,
@@ -880,7 +905,6 @@ export const configGuards = [
 /** Load the real configuration and run every config guard against it. */
 export function scanConfig() {
   const gitignorePath = join(ROOT, '.gitignore')
-  const exts = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.sql', '.json', '.yaml', '.yml']
   // ONE ENUMERATION, shared with the source guards.
   //
   // This was a filesystem walk from '.', excluding NON_SOURCE_DIRS. The
@@ -911,10 +935,17 @@ export function scanConfig() {
     // guard that approves it, and the directory it cannot see is always the one
     // added last -- root-level config files, in this case. Source guards keep
     // their narrower roots: test code legitimately calls withTenant directly.
-    files: tracked
-      .filter((f) => exts.some((e) => f.endsWith(e)))
-      .map(posix)
-      .map((path) => ({ path, source: read(path) })),
+    //
+    // AND NOT A LIST OF EXTENSIONS EITHER, which is what stood here while the
+    // sentence above claimed otherwise. Nine extensions withheld 58 of 228
+    // tracked files from every config guard -- all 53 `.md`, `biome.jsonc`, the
+    // two stylesheets, and `.env.example`, which is precisely the file a
+    // credential gets pasted into "just for local". The exclusion list the
+    // comment condemns was five lines above it, spelled differently.
+    //
+    // Each guard already selects its own subjects by path, so widening changes
+    // only `no-shared-dev-secret`, which is the one that wanted the coverage.
+    files: tracked.map(posix).map((path) => ({ path, source: read(path) })),
     gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf8') : '',
     // The same enumeration, unfiltered. `trackedFiles()` throws when git is
     // unavailable rather than yielding an empty set, because a guard handed

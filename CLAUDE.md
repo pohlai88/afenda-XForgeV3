@@ -192,16 +192,37 @@ subsystem.
 
 # Verification
 
-  pnpm verify:fast  while writing, and for a commit that cannot change behaviour.
-  pnpm verify       before committing anything executable. BLOCKED tolerated.
+  pnpm verify:fast  the ONLY gate an agent runs. Humans too, while writing.
+  pnpm verify       a HUMAN, before committing anything executable. BLOCKED tolerated.
   pnpm verify:ci    BLOCKED is a failure. CI MUST use this.
 
-WHICH ONE, AND WHEN. The full gate is for changes that can alter behaviour. A
-commit of prose, a deletion of files nothing imports, a comment -- the fast loop
-already answers those, and the full gate answers them in three minutes instead
-of twenty seconds.
+WHO RUNS WHICH, BEFORE WHICH ONE AND WHEN. An agent runs `verify:fast` and
+stops there. `pnpm verify` and `verify:ci` are human commands. An agent whose
+change needs the full gate SAYS SO and hands it over; it does not run it and
+report the result.
 
-The first version of this rule said "before every commit", and that was worse
+Two reasons, and the second is the one that would not be obvious later:
+
+  COST     the full gate shells four generators, a production build, a database
+           and a browser. An agent iterates -- ten edits become ten full gates,
+           and minutes each. The fast loop is twenty seconds and answers the
+           question the edit actually raised.
+  CUSTODY  the gate is the thing that decides "green". An agent reporting a
+           green the human did not witness moves the authority for that verdict
+           into a transcript. The gate exists to be run BY the person who is
+           about to commit.
+
+Read-only reporting -- `verify:list`, `verify:coverage` -- executes no stage and
+is not covered by this. Neither is a single stage's own command (`pnpm guards`,
+`vitest run --project unit`); those are how an agent narrows a failure the fast
+loop found. It is the AGGREGATE gate that is not an agent's to run.
+
+WHICH ONE, AND WHEN, for the human. The full gate is for changes that can alter
+behaviour. A commit of prose, a deletion of files nothing imports, a comment --
+the fast loop already answers those, and the full gate answers them in three
+minutes instead of twenty seconds.
+
+The first version of that rule said "before every commit", and that was worse
 than useless: it got applied to a markdown edit and to a three-file deletion,
 and defended as consistency. A rule followed past the reason for it is how a
 gate becomes something people route around, which is the failure this whole
@@ -219,6 +240,12 @@ It names the stages it did not run, every single time, and says to run the full
 gate before committing. A fast check whose limits go unstated is the easiest
 thing in a repository to mistake for the gate -- and `--fast --ci` is refused
 outright, because the CI gate is not a subset of anything.
+
+That closing line is now also the HANDOVER POINT. For an agent it is not an
+instruction to run the full gate; it is the list to repeat to the human, so
+what remains unverified is stated rather than left as an absence. "The
+authorship loop is green and these stages did not run" is an honest report.
+"Verify is green" from an agent is not, because the agent did not run it.
 
 A stage is BLOCKED when its phase has started but a prerequisite is missing --
 no database, no browser. A check that did not run is not a check that passed,

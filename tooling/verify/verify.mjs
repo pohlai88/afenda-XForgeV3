@@ -151,30 +151,6 @@ function coverage() {
 }
 
 /**
- * The gate's verdict, as a pure function of the tallies.
- *
- * Extracted because it WAS statement ordering, and the ordering was wrong: the
- * zero-pass branch sat above the CI blocked-is-failure rule and exited 0
- * unconditionally, so a `--ci` run in which every stage was empty, pending or
- * blocked reported success. That is the sentence this module's own header
- * forbids -- "verify was green" coming to mean "the database tests never ran".
- *
- * The invariant is deliberately stronger than the bug that prompted it.
- * Reordering two branches would have fixed the blocked case and left this one:
- *
- *   0 pass · 0 blocked · 10 empty · 4 pending · --ci   ->  success
- *
- * so the rule is stated positively instead. **A CI verification with zero PASS
- * stages is never successful**, whatever the other tallies say. Locally the
- * same state is legitimate on an empty repository and keeps its message.
- *
- * `pending` and `empty` are not parameters. They do not decide anything here,
- * and taking them would invite a reader to believe they might.
- *
- * @param {{ blocked: number, ci: boolean, fail: number, pass: number }} tally
- * @returns {{ exit: number, kind: string }}
- */
-/**
  * A stage duration, fixed width so the column cannot float.
  *
  * Deliberately not appended to `r.detail`, which is variable-length: the number
@@ -205,6 +181,30 @@ export function summariseTimings(results) {
   }
 }
 
+/**
+ * The gate's verdict, as a pure function of the tallies.
+ *
+ * Extracted because it WAS statement ordering, and the ordering was wrong: the
+ * zero-pass branch sat above the CI blocked-is-failure rule and exited 0
+ * unconditionally, so a `--ci` run in which every stage was empty, pending or
+ * blocked reported success. That is the sentence this module's own header
+ * forbids -- "verify was green" coming to mean "the database tests never ran".
+ *
+ * The invariant is deliberately stronger than the bug that prompted it.
+ * Reordering two branches would have fixed the blocked case and left this one:
+ *
+ *   0 pass · 0 blocked · 10 empty · 4 pending · --ci   ->  success
+ *
+ * so the rule is stated positively instead. **A CI verification with zero PASS
+ * stages is never successful**, whatever the other tallies say. Locally the
+ * same state is legitimate on an empty repository and keeps its message.
+ *
+ * `pending` and `empty` are not parameters. They do not decide anything here,
+ * and taking them would invite a reader to believe they might.
+ *
+ * @param {{ blocked: number, ci: boolean, fail: number, pass: number }} tally
+ * @returns {{ exit: number, kind: string }}
+ */
 export function decideGateOutcome({ blocked, ci, fail, pass }) {
   if (fail > 0) {
     return { exit: 1, kind: 'failed' }

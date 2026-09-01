@@ -16,10 +16,16 @@
  * and this says who has the port and since when.
  *
  * So the `e2e` VERIFY STAGE runs this first, before invoking Playwright at all.
- * The gate owns that ordering and Playwright's config cannot; wiring it into
- * `webServer.command` left a check that was proven against a fixture and could
- * never fire in production, which is a worse state than not having it -- its
- * presence in the repository implied a coverage that did not exist.
+ * The gate owns that ordering and Playwright's config cannot; wiring it ONLY
+ * into `webServer.command` left a check that was proven against a fixture and
+ * could never fire in the case it was written for, which is a worse state than
+ * not having it -- its presence in the repository implied a coverage that did
+ * not exist.
+ *
+ * `webServer.command` still chains it, and that is deliberate rather than a
+ * leftover: `pnpm e2e` run directly does not pass through the stage, and there
+ * the chained copy is the only one. Two call sites, one of which the gate
+ * guarantees. Stated here because the paragraph above reads like a removal.
  *
  * `pnpm e2e:port` runs the same diagnosis on demand. The start time is the
  * useful field: "started two hours ago" identifies a forgotten process at a

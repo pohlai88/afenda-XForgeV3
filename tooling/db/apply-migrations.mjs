@@ -31,7 +31,7 @@ export const MIGRATIONS_DIR = 'packages/db/migrations'
  * water mark -- can silently interleave a generated migration with a reviewed
  * one.
  */
-export function migrationFiles(dir = MIGRATIONS_DIR) {
+function migrationFiles(dir = MIGRATIONS_DIR) {
   const files = readdirSync(dir)
     .filter((f) => f.endsWith('.sql'))
     .sort()

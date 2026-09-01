@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "$comment": "Law 29: architecture invariants are enforced by guards, not prose. pnpm verify runs them at gate time; these hooks run at authorship time, so a violation is reported against the edit that caused it rather than against a batch. Exit 2 is the blocking-error protocol: the output is fed back to the agent, which fixes it before continuing. PostToolUse runs the guards after a write -- read-only, ~1.4s over the whole workspace. PreToolUse refuses the write itself when it targets generated state or the phase authority, because for those there is nothing to fix afterwards: the file is derived, and regenerating it is the only correct answer. It restates no paths -- classify() in tooling/source-universe.mjs is the single authority -- and it fails OPEN, so it assists authorship without becoming a check the gate is not.",
+  "$comment": "Law 29: architecture invariants are enforced by guards, not prose. pnpm verify runs them at gate time; these hooks run at authorship time, so a violation is reported against the edit that caused it rather than against a batch. Exit 2 is the blocking-error protocol: the output is fed back to the agent, which fixes it before continuing. PostToolUse runs the guards after a write -- read-only, ~1.4s over the whole workspace. PreToolUse refuses the write itself when it targets generated state or the phase authority, because for those there is nothing to fix afterwards: the file is derived, and regenerating it is the only correct answer. It restates no paths -- classify() in tooling/source-universe.mjs is the single authority -- and it fails OPEN, so it assists authorship without becoming a check the gate is not. check-authorship.mjs is the third kind and the only one that decides nothing: when an edit lands on a file whose job is to detect a problem, it prints two questions and exits 0. It carries no rules, because every rule it could carry is already either a guard here or judgement in the checks-that-can-fail skill, and a third copy would be the defect this repository keeps having installed as infrastructure. It exists because the edits that most need that skill are the ones that least look like it -- a stage added beside an existing stage -- and a hook knows which file was just written, which a skill description cannot.",
   "hooks": {
     "PreToolUse": [
       {
@@ -35,6 +35,17 @@
           }
         ],
         "matcher": "Write|Edit"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node tooling/hooks/check-authorship.mjs",
+            "timeout": 10,
+            "statusMessage": "authoring a check"
+          }
+        ]
       }
     ]
   }

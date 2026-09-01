@@ -17,6 +17,6 @@
  */
 export const E2E_PORT = 3100
 
-export const E2E_HOST = '127.0.0.1'
+const E2E_HOST = '127.0.0.1'
 
 export const E2E_ORIGIN = `http://${E2E_HOST}:${E2E_PORT}`
