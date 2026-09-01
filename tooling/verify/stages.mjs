@@ -73,6 +73,21 @@ const _NL = String.fromCharCode(10)
  * the reason the source universe module exists at all.
  */
 
+/**
+ * `authorship: true` -- this stage belongs to the AUTHORSHIP LOOP.
+ *
+ * It is declared per stage rather than listed in the runner, because "which
+ * checks are cheap" is a property of the check and belongs with it. A list in
+ * `verify.mjs` would be a second source that agrees until a stage grows a
+ * database.
+ *
+ * The criterion is mechanical, not a judgement about importance: an authorship
+ * stage needs NO external service, NO build artefact and NO browser. Everything
+ * else -- contract, rls, integration, migration, build, perf-budgets, e2e,
+ * idempotence, generate -- runs only in the full gate. `generate` is excluded
+ * despite being fast-ish because it shells four generators; the PreToolUse hook
+ * already refuses writes to generated state, which is the hazard it covers.
+ */
 export const stages = [
   {
     enforces: [27],
@@ -104,6 +119,7 @@ export const stages = [
   },
 
   {
+    authorship: true,
     enforces: [3, 4, 5, 6, 12, 15, 16, 17, 19, 20, 21, 22, 23, 26, 29, 30, 34],
     id: 'guards',
     phase: 'spine',
@@ -176,6 +192,7 @@ export const stages = [
   },
 
   {
+    authorship: true,
     enforces: [9],
     id: 'typecheck',
     phase: 'spine',
@@ -195,6 +212,7 @@ export const stages = [
   },
 
   {
+    authorship: true,
     enforces: [],
     id: 'lint',
     phase: 'spine',
@@ -212,6 +230,7 @@ export const stages = [
   },
 
   {
+    authorship: true,
     enforces: [],
     id: 'unit',
     phase: 'spine',

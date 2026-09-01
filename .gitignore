@@ -9,6 +9,7 @@ coverage/
 .env.*
 !.env.example
 
+
 # Playwright
 test-results/
 playwright-report/
@@ -17,6 +18,9 @@ blob-report/
 
 # Storybook
 storybook-static/
+
+# Plan documents. Personal working notes, not repository artefacts.
+.human-plans-file/
 
 # Claude Code personal overrides (project settings.json IS committed)
 .claude/settings.local.json

@@ -192,8 +192,28 @@ subsystem.
 
 # Verification
 
-  pnpm verify      local. BLOCKED stages are reported loudly and tolerated.
-  pnpm verify:ci   BLOCKED is a failure. CI MUST use this.
+  pnpm verify:fast  while writing. Four stages, ~20s. NOT the gate.
+  pnpm verify       before every commit. BLOCKED reported loudly and tolerated.
+  pnpm verify:ci    BLOCKED is a failure. CI MUST use this.
+
+WHICH ONE, AND WHEN. Run the fast loop while authoring; run the full gate before
+committing; CI runs --ci. Running the full gate after editing a markdown file is
+not rigour, it is several minutes spent to learn nothing, and a gate that costs
+minutes to say nothing is a gate people start skipping. That is how this rule
+came to be written: it had been ignored for a whole session in the direction
+that looks diligent.
+
+The fast loop is guards, typecheck, lint and unit. The criterion is mechanical
+rather than a judgement about importance -- an authorship stage needs NO external
+service, NO build artefact and NO browser -- and each stage DECLARES it with
+`authorship: true` in tooling/verify/stages.mjs. The runner filters on that
+declaration and holds no list, so a stage that later grows a database leaves the
+fast loop by editing one line beside itself rather than by someone remembering.
+
+It names the stages it did not run, every single time, and says to run the full
+gate before committing. A fast check whose limits go unstated is the easiest
+thing in a repository to mistake for the gate -- and `--fast --ci` is refused
+outright, because the CI gate is not a subset of anything.
 
 A stage is BLOCKED when its phase has started but a prerequisite is missing --
 no database, no browser. A check that did not run is not a check that passed,

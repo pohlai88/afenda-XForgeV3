@@ -22,6 +22,7 @@
     "verify": "node tooling/verify/verify.mjs",
     "verify:ci": "node tooling/verify/verify.mjs --ci",
     "verify:coverage": "node tooling/verify/verify.mjs --coverage",
+    "verify:fast": "node tooling/verify/verify.mjs --fast",
     "verify:list": "node tooling/verify/verify.mjs --list"
   },
   "devDependencies": {

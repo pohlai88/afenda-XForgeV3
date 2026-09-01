@@ -195,12 +195,19 @@ function main() {
   }
 
   const ci = process.argv.includes('--ci') || process.env.CI === 'true'
+  const fast = process.argv.includes('--fast')
+  if (fast && ci) {
+    console.log(paint(C.red, 'refusing --fast --ci: the CI gate is not a subset'))
+    process.exit(1)
+  }
+  const selected = fast ? stages.filter((s) => s.authorship) : stages
+  const omitted = fast ? stages.filter((s) => !s.authorship) : []
 
-  console.log(paint(C.bold, `\npnpm verify${ci ? ' --ci' : ''}\n`))
+  console.log(paint(C.bold, `\npnpm verify${fast ? ' --fast' : ''}${ci ? ' --ci' : ''}\n`))
   const results = []
   let failed = false
 
-  for (const stage of stages) {
+  for (const stage of selected) {
     let r
     try {
       r = stage.run()
@@ -288,7 +295,19 @@ function main() {
       )
     }
   } else {
-    console.log(paint(C.green, '\n  FULL GREEN -- every stage whose phase has started passed\n'))
+    console.log(
+      fast
+        ? paint(C.green, '\n  AUTHORSHIP LOOP GREEN -- and this is not the gate.')
+        : paint(C.green, '\n  FULL GREEN -- every stage whose phase has started passed\n'),
+    )
+  }
+
+  if (omitted.length > 0) {
+    console.log(
+      paint(C.dim, `  ${omitted.length} stage(s) NOT run: `) +
+        paint(C.yellow, omitted.map((s) => s.title).join(', ')),
+    )
+    console.log(paint(C.dim, '  Run `pnpm verify` before committing.\n'))
   }
 
   process.exit(outcome.exit)

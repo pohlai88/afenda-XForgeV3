@@ -243,8 +243,13 @@ export function trackedFiles() {
     throw new Error('cannot enumerate the scan universe: git ls-files returned nothing')
   }
   const binary = tracked.filter((f) => DECLARED_BINARY.test(f))
-  const files = tracked.filter((f) => !DECLARED_BINARY.test(f))
-  return { binary, files, tracked: tracked.length }
+  // A tracked path with nothing on disk. Transient and legitimate mid-rename,
+  // and it CRASHED the whole scan: `read()` threw ENOENT and every guard stopped,
+  // in a repository where another process had just moved a file. Reported as its
+  // own outcome rather than skipped, so it still has to add up.
+  const missing = tracked.filter((f) => !(DECLARED_BINARY.test(f) || existsSync(join(ROOT, f))))
+  const files = tracked.filter((f) => !DECLARED_BINARY.test(f) && existsSync(join(ROOT, f)))
+  return { binary, files, missing, tracked: tracked.length }
 }
 
 export function read(file) {

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { pathToFileURL } from 'node:url'
 import { posix, read, trackedFiles } from '../verify/lib/util.mjs'
+import { configGuards } from './config-guards.mjs'
+import { contractGuards } from './contract-guards.mjs'
+import { configFixtures, contractFixtures } from './fixtures/families.mjs'
 import { fixtures } from './fixtures/index.mjs'
 /**
  * Architecture guard runner.
@@ -31,7 +34,7 @@ const C = {
 const paint = (c, s) => (process.stdout.isTTY ? c + s + C.reset : s)
 
 export function scanWorkspace() {
-  const { binary, files: offered, tracked } = trackedFiles()
+  const { binary, files: offered, missing, tracked } = trackedFiles()
   const files = offered.map(posix)
 
   // Conservation. Every tracked file is either offered to the guards or withheld
@@ -43,9 +46,9 @@ export function scanWorkspace() {
   // only trace was a printed count falling from 211 to 210, which was printed
   // twice and read past both times. A number is evidence; only an assertion is a
   // check.
-  if (files.length + binary.length !== tracked) {
+  if (files.length + binary.length + missing.length !== tracked) {
     throw new Error(
-      `scan universe does not conserve: ${files.length} offered + ${binary.length} declared binary != ${tracked} tracked`,
+      `scan universe does not conserve: ${files.length} offered + ${binary.length} declared binary + ${missing.length} missing != ${tracked} tracked`,
     )
   }
   const violations = []
@@ -110,7 +113,18 @@ const INTERPOLATION_FAILURE = ['NaN', 'null', 'undefined']
 
 const words = (message) => message.split(/[^A-Za-z]+/)
 
-function unusableFinding(findings) {
+/**
+ * Is a finding actionable? Message quality is universal; LOCATION IS NOT.
+ *
+ * A source finding locates by `line`, because it came from matching text. A
+ * contract or config finding locates by `where` -- an operation, a path, a
+ * manifest key -- because there is no line to point at. Requiring one shape
+ * would force a CSS-shaped evidence model onto guards whose findings are
+ * synthesised from structure rather than from a matched substring, and the
+ * honest general invariant is that a finding must be READABLE and LOCATABLE,
+ * not that it must carry a line number.
+ */
+function unusableFinding(findings, locates) {
   for (const f of findings) {
     if (typeof f.message !== 'string' || f.message.trim() === '') {
       return 'rejected, but a finding carries no message'
@@ -119,68 +133,142 @@ function unusableFinding(findings) {
     if (failed) {
       return `rejected, but a message interpolated ${failed}: "${f.message}"`
     }
-    if (!(Number.isInteger(f.line) && f.line >= 1)) {
-      return `rejected, but a finding points at line ${f.line}`
+    const misplaced = locates(f)
+    if (misplaced) {
+      return `rejected, but a finding ${misplaced}`
     }
   }
   return null
 }
 
-export function mutationTest() {
-  const results = []
-  for (const g of guards) {
-    const fx = fixtures[g.id]
-    const extra = Object.entries(fixtures).filter(([k]) => k.startsWith(`${g.id}-`))
-    if (!fx) {
-      results.push({ detail: 'no mutation fixture', guard: g.id, status: 'UNPROVEN' })
-      continue
-    }
-    const findings = g.check(fx.violating.path, fx.violating.source)
-    const rejects = findings.length > 0
-    const appliesToViolating = g.applies(fx.violating.path)
-    const cleanPasses =
-      !g.applies(fx.clean.path) || g.check(fx.clean.path, fx.clean.source).length === 0
+/**
+ * ONE PROOF PROTOCOL, THREE FAMILY ADAPTERS.
+ *
+ * Every guard in this repository owes the same two facts -- it rejects a
+ * deliberate violation, and it accepts the clean counterpart -- and until now
+ * only the source family was asked for them. Four contract guards and seven
+ * config guards ran in `pnpm verify` having never been observed to reject
+ * anything, which is ADR-024's depcruise failure: configured, green and blind.
+ * `version-token-on-updates` is the one whose predecessor SHIPPED BROKEN.
+ *
+ * The protocol is shared; the mechanics are not. A source guard takes a path and
+ * text, a contract guard takes an OpenAPI document, a config guard takes a
+ * repository environment. Collapsing those into one function whose parameters
+ * become `path? source? doc? env? root?` would satisfy DRY by weakening KISS.
+ */
+const ADAPTERS = {
+  config: {
+    accept: (g, fx) => g.check(fx.clean),
+    governs: () => true,
+    locates: (f) =>
+      typeof f.where === 'string' && f.where.trim() !== '' ? null : `points at ${f.where}`,
+    reject: (g, fx) => g.check(fx.violating),
+  },
+  contract: {
+    accept: (g, fx) => g.check(fx.clean),
+    governs: () => true,
+    locates: (f) =>
+      typeof f.where === 'string' && f.where.trim() !== '' ? null : `points at ${f.where}`,
+    reject: (g, fx) => g.check(fx.violating),
+  },
+  source: {
+    accept: (g, fx) => (g.applies(fx.clean.path) ? g.check(fx.clean.path, fx.clean.source) : []),
+    governs: (g, fx) => g.applies(fx.violating.path),
+    locates: (f) => (Number.isInteger(f.line) && f.line >= 1 ? null : `points at line ${f.line}`),
+    reject: (g, fx) => g.check(fx.violating.path, fx.violating.source),
+  },
+}
 
-    if (!appliesToViolating) {
-      results.push({
-        detail: 'guard does not apply to its own fixture path',
-        guard: g.id,
-        status: 'BROKEN',
-      })
-    } else if (!rejects) {
-      results.push({
-        detail: 'did NOT reject a deliberate violation',
-        guard: g.id,
-        status: 'BROKEN',
-      })
-    } else if (cleanPasses) {
-      // Extra fixtures for the same guard: each must also be rejected/accepted.
-      let extraOk = true
-      const everyFinding = [...findings]
-      for (const [, x] of extra) {
-        const extraFindings = g.check(x.violating.path, x.violating.source)
-        everyFinding.push(...extraFindings)
-        if (extraFindings.length === 0) {
-          extraOk = false
-        }
-        if (g.applies(x.clean.path) && g.check(x.clean.path, x.clean.source).length > 0) {
-          extraOk = false
-        }
-      }
-      const unusable = extraOk ? unusableFinding(everyFinding) : null
-      if (extraOk && unusable) {
-        results.push({ detail: unusable, guard: g.id, status: 'BROKEN' })
-      } else if (extraOk) {
-        results.push({
-          detail: `rejects violation, accepts clean${extra.length ? ` (+${extra.length} case)` : ''}`,
-          guard: g.id,
-          status: 'PROVEN',
-        })
-      } else {
-        results.push({ detail: 'failed an additional fixture', guard: g.id, status: 'BROKEN' })
-      }
-    } else {
-      results.push({ detail: 'false positive on the clean fixture', guard: g.id, status: 'BROKEN' })
+/**
+ * The reason a fixture is rejected must be the reason it was written.
+ *
+ * A fixture meant to violate `operation-id-required` that is rejected because
+ * the document is malformed proves nothing, and proves it in the same shape as a
+ * passing test. A fixture may declare `because` -- a substring the finding must
+ * carry -- and where it does, the rejection has to be the intended one.
+ */
+function wrongReason(findings, because) {
+  if (!because) {
+    return null
+  }
+  return findings.some((f) => String(f.message).includes(because))
+    ? null
+    : `rejected for the wrong reason: no finding mentions "${because}"`
+}
+
+function proveGuard(guard, primary, extras, adapter) {
+  if (!primary) {
+    return { detail: 'no mutation fixture', guard: guard.id, status: 'UNPROVEN' }
+  }
+  if (!adapter.governs(guard, primary)) {
+    return {
+      detail: 'guard does not apply to its own fixture path',
+      guard: guard.id,
+      status: 'BROKEN',
+    }
+  }
+  const findings = adapter.reject(guard, primary)
+  if (findings.length === 0) {
+    return { detail: 'did NOT reject a deliberate violation', guard: guard.id, status: 'BROKEN' }
+  }
+  if (adapter.accept(guard, primary).length > 0) {
+    return { detail: 'false positive on the clean fixture', guard: guard.id, status: 'BROKEN' }
+  }
+  const everyFinding = [...findings]
+  for (const x of extras) {
+    const extraFindings = adapter.reject(guard, x)
+    everyFinding.push(...extraFindings)
+    if (extraFindings.length === 0 || adapter.accept(guard, x).length > 0) {
+      return { detail: 'failed an additional fixture', guard: guard.id, status: 'BROKEN' }
+    }
+    const off = wrongReason(extraFindings, x.because)
+    if (off) {
+      return { detail: off, guard: guard.id, status: 'BROKEN' }
+    }
+  }
+  const off = wrongReason(findings, primary.because)
+  if (off) {
+    return { detail: off, guard: guard.id, status: 'BROKEN' }
+  }
+  const unusable = unusableFinding(everyFinding, adapter.locates)
+  if (unusable) {
+    return { detail: unusable, guard: guard.id, status: 'BROKEN' }
+  }
+  return {
+    detail: `rejects violation, accepts clean${extras.length ? ` (+${extras.length} case)` : ''}`,
+    guard: guard.id,
+    status: 'PROVEN',
+  }
+}
+
+/**
+ * Fixture ownership is DECLARED, never inferred from a key prefix.
+ *
+ * Extra fixtures were matched with `startsWith(id + '-')`, so a guard id that
+ * became another's prefix would silently steal its proof. No collision existed
+ * at 24 guards; at 37 the prover must not attribute proof ambiguously, and a
+ * proof harness with an ambiguity in it is the thing this whole file argues
+ * against.
+ */
+function fixturesFor(guardId, table) {
+  const primary = table[guardId]
+  const extras = Object.entries(table)
+    .filter(([, fx]) => fx.guardId === guardId)
+    .map(([, fx]) => fx)
+  return { extras, primary }
+}
+
+export function mutationTest() {
+  const families = [
+    { adapter: ADAPTERS.source, guards, table: fixtures },
+    { adapter: ADAPTERS.contract, guards: contractGuards, table: contractFixtures },
+    { adapter: ADAPTERS.config, guards: configGuards, table: configFixtures },
+  ]
+  const results = []
+  for (const family of families) {
+    for (const g of family.guards) {
+      const { extras, primary } = fixturesFor(g.id, family.table)
+      results.push(proveGuard(g, primary, extras, family.adapter))
     }
   }
   return results
