@@ -413,6 +413,48 @@ export const configFixtures = {
   },
 
   /**
+   * The state `next.config.mjs` was actually in: a workspace package listed by
+   * hand, beside a manifest that already declares it with `workspace:`.
+   *
+   * THE CLEAN SIDE KEEPS A NON-EMPTY `transpilePackages`, listing a published
+   * package instead of deleting the field. The rule is not "no
+   * transpilePackages" -- that field is exactly right for an npm package that
+   * ships untranspiled source. A clean side with the field removed would pass a
+   * guard that merely rejected its existence, and prove nothing about what the
+   * rule means.
+   *
+   * Both sides declare the same two dependencies, so the ONLY difference is
+   * which one the config names.
+   */
+  'workspace-packages-are-not-hand-transpiled': {
+    because: 'workspace: protocol',
+    clean: envWith({
+      files: [
+        {
+          path: 'apps/web/next.config.mjs',
+          source: "export default { transpilePackages: ['some-published-esm-pkg'] }",
+        },
+        manifest('apps/web/package.json', {
+          dependencies: { '@xforge/ui': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
+          name: '@xforge/web',
+        }),
+      ],
+    }),
+    violating: envWith({
+      files: [
+        {
+          path: 'apps/web/next.config.mjs',
+          source: "export default { transpilePackages: ['@xforge/ui'] }",
+        },
+        manifest('apps/web/package.json', {
+          dependencies: { '@xforge/ui': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
+          name: '@xforge/web',
+        }),
+      ],
+    }),
+  },
+
+  /**
    * The state `tsconfig.json` was actually in when this guard was written: an
    * alias for `@xforge/db` beside a manifest that also declares
    * `@xforge/db/schema`, which the alias table had never carried.

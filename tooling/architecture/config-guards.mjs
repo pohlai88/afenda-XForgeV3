@@ -778,6 +778,103 @@ export const configGuards = [
     law: 28,
     title: 'Every migration on disk is journalled, and every journal entry has a migration',
   },
+  {
+    /**
+     * THE THIRD RESTATEMENT OF WORKSPACE MEMBERSHIP, and the third to go lossy.
+     *
+     * `next.config.mjs` listed seven workspace packages by hand. Eight are
+     * declared. `@xforge/tenancy` was the missing one -- and it is IMPORTED, at
+     * apps/web/app/api/[[...route]]/route.ts, for `resolveRequestTenant`. The
+     * build stayed green only because that import is server-only, so the list
+     * and the truth agreed by coincidence and would have parted on the first
+     * client-side import.
+     *
+     * Same shape as the `tsconfig.json` paths map and the vite alias table
+     * before it: a hand-written copy of something the manifests already declare.
+     *
+     * DELETED RATHER THAN DERIVED, which is why this guard forbids the entry
+     * instead of checking the list is complete. Turbopack transpiles workspace
+     * packages in a pnpm monorepo automatically, and Next 16 uses Turbopack for
+     * `dev` and `build`. Measured before removing it: with the whole array gone,
+     * `next build` succeeds, `pnpm verify` is FULL GREEN including 49 E2E specs
+     * that exercise the route importing @xforge/tenancy, and the per-route
+     * budget is BYTE-IDENTICAL at 32,502 B spare. The list changed nothing; it
+     * only had to be kept correct.
+     *
+     * THE DISCRIMINATOR IS THE `workspace:` PROTOCOL, not an `@xforge/` prefix.
+     * A prefix rule would mint a new implicit fact -- "@xforge/ means workspace
+     * package" -- of exactly the kind this guard family removes, and would miss
+     * a package scoped differently tomorrow. The app's own manifest already
+     * declares which dependencies are workspace ones, and it is the source that
+     * would have caught the omission: it lists all eight, including tenancy.
+     *
+     * NOT A BAN ON THE FIELD. `transpilePackages` remains legitimate for a
+     * published npm package shipping untranspiled source, which is what it is
+     * for. Only workspace packages are forbidden, because only those does the
+     * bundler already own.
+     */
+    check(env) {
+      const files = env.files ?? []
+      const out = []
+
+      for (const cfg of files.filter((f) => /(^|\/)next\.config\.[mc]?[jt]s$/.test(f.path))) {
+        const array = /transpilePackages\s*:\s*\[([\s\S]*?)\]/.exec(cfg.source)
+        if (!array) {
+          continue
+        }
+        const listed = [...array[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1])
+        if (listed.length === 0) {
+          continue
+        }
+
+        // The manifest beside the config decides what a workspace package is.
+        const dir = cfg.path.slice(0, cfg.path.lastIndexOf('/'))
+        const manifest = files.find((f) => f.path === `${dir}/package.json`)
+        if (!manifest) {
+          out.push({
+            message:
+              'declares transpilePackages but has no sibling package.json, so this guard ' +
+              'cannot tell a workspace package from a published one -- it would approve ' +
+              'every entry by having nothing to compare them against',
+            where: cfg.path,
+          })
+          continue
+        }
+        let pkg
+        try {
+          pkg = JSON.parse(manifest.source)
+        } catch {
+          out.push({ message: 'is not parseable JSON', where: manifest.path })
+          continue
+        }
+        const workspaceDeps = new Set(
+          Object.entries({
+            ...(pkg.dependencies ?? {}),
+            ...(pkg.devDependencies ?? {}),
+          })
+            .filter(([, spec]) => typeof spec === 'string' && spec.startsWith('workspace:'))
+            .map(([name]) => name),
+        )
+
+        for (const name of listed) {
+          if (workspaceDeps.has(name)) {
+            out.push({
+              message:
+                `transpilePackages lists '${name}', which ${manifest.path} declares with the ` +
+                'workspace: protocol. Turbopack transpiles workspace packages automatically, ' +
+                'so the entry restates a fact the bundler already owns -- and a hand-kept ' +
+                'copy of workspace membership has gone lossy here twice before. Remove it',
+              where: cfg.path,
+            })
+          }
+        }
+      }
+      return out
+    },
+    id: 'workspace-packages-are-not-hand-transpiled',
+    law: 7,
+    title: 'next.config never restates workspace membership that the bundler already owns',
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */
