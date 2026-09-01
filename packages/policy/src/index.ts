@@ -78,8 +78,19 @@ export interface PolicyContext {
   /** Injected so evaluation never reads a clock directly (ADR-016). */
   readonly asOf: string
   readonly principal: Principal
-  /** The scope the operation targets, e.g. the legal entity a payroll run belongs to. */
-  readonly scopeId?: string
+  /**
+   * The scope the operation targets, e.g. the legal entity a payroll run
+   * belongs to.
+   *
+   * `| undefined` is deliberate under `exactOptionalPropertyTypes`. A route
+   * that declares no `scopeParam` has no scope, and `c.req.param()` returns
+   * undefined for one that does -- two routes to the same fact, and evaluation
+   * already treats them as one: `wanted !== undefined` is the guard, so an
+   * absent scope and an undefined scope match nothing by the same code path.
+   * Forbidding the explicit form would make every caller spread conditionally
+   * to express a distinction this engine does not draw.
+   */
+  readonly scopeId?: string | undefined
   /**
    * The verified tenant, passed from the request's VerifiedTenantContext.
    * Policy answers "what may this principal do INSIDE this tenant"; it never

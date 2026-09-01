@@ -54,7 +54,18 @@ export interface UiPartialReason {
  */
 export interface UiProblem {
   code: 'forbidden' | 'unavailable'
-  detail?: string
+  /**
+   * `| undefined` is deliberate under `exactOptionalPropertyTypes`, not a
+   * widening to silence it. A problem with no detail and a problem whose
+   * upstream carried no detail render identically -- there is no third state to
+   * distinguish -- and the mapper reaches the second by asking an ApiProblem for
+   * a field it may not have. Forbidding the explicit form would buy a
+   * conditional spread at every producer and no meaning.
+   *
+   * Contrast `Grant.validTo`, where absent means open-ended and the producer
+   * omits the key precisely so the two stay distinguishable.
+   */
+  detail?: string | undefined
   retryable: boolean
   title: string
 }

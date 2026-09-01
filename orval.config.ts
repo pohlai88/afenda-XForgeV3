@@ -31,6 +31,7 @@ export default defineConfig({
         // success, so the {data,status,headers} envelope would be a second
         // representation of the same fact. One shape, not two.
         fetch: { includeHttpResponseReturnType: false },
+        mock: { required: true },
         mutator: {
           name: 'apiFetch',
           path: './packages/api-client/src/fetcher.ts',

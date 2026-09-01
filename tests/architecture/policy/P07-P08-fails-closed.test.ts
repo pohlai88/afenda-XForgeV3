@@ -25,8 +25,20 @@ afterAll(closeAll)
 
 describe.skipIf(!reachable)('P07 -- a grant that has expired stops working', () => {
   it('allows inside the window and denies outside it, same principal', async () => {
+    // The key is OMITTED rather than set to undefined, and under
+    // `exactOptionalPropertyTypes` that is now the difference between two
+    // grants rather than two spellings of one. An absent `validTo` is a grant
+    // that does not expire; `validTo: undefined` would be an expiry somebody
+    // computed and lost. P07 asserts the first, so it must construct the first.
     const scoped = (validTo?: string) =>
-      principalWith([{ permission: READ, scopeId: TENANT_A, scopeType: 'tenant', validTo }])
+      principalWith([
+        {
+          permission: READ,
+          scopeId: TENANT_A,
+          scopeType: 'tenant',
+          ...(validTo === undefined ? {} : { validTo }),
+        },
+      ])
 
     expect((await request(LIST, scoped())).status).toBe(200)
     // ADR-018: delegation expires by construction rather than by someone
