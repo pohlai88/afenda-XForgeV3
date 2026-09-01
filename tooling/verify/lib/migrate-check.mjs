@@ -5,9 +5,9 @@
  * Exit codes: 0 applied cleanly · 1 a migration failed · 2 no database reachable.
  * The distinction matters -- "could not check" must never be reported as "checked".
  */
-import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import postgres from 'postgres'
+import { applyMigrations } from '../../db/apply-migrations.mjs'
 
 const ADMIN = process.env.DATABASE_URL ?? 'postgres://postgres:xforge@127.0.0.1:55432/xforge'
 const SCRATCH = 'xforge_migrate_check'
@@ -28,18 +28,11 @@ try {
   const scratchUrl = ADMIN.replace(/\/[^/?]+(\?|$)/, `/${SCRATCH}$1`)
   const db = postgres(scratchUrl, { max: 1, onnotice: () => {}, prepare: false })
 
-  const files = readdirSync(dir)
-    .filter((f) => f.endsWith('.sql'))
-    .sort()
-  for (const f of files) {
-    const sql = readFileSync(join(dir, f), 'utf8')
-    for (const stmt of sql.split('--> statement-breakpoint')) {
-      const trimmed = stmt.trim()
-      if (trimmed) {
-        await db.unsafe(trimmed)
-      }
-    }
-  }
+  // Shared with `pnpm db:migrate`, so the command a developer runs against a
+  // real database and the one the gate runs against a scratch database cannot
+  // diverge. Two implementations of "apply the migrations" is how the drizzle
+  // journal came to describe a different set from this directory.
+  await applyMigrations(db, dir)
 
   // The schema the migrations produce must satisfy the invariant the
   // architecture actually cares about, not merely apply without error.

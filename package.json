@@ -5,6 +5,7 @@
   "scripts": {
     "build:harness": "vite build --config vite.harness.config.ts",
     "check": "biome ci .",
+    "db:migrate": "node tooling/db/migrate.mjs",
     "e2e": "playwright test",
     "e2e:port": "node tooling/e2e/preflight-port.mjs",
     "fix": "ultracite fix",

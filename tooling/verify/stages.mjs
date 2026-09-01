@@ -313,6 +313,24 @@ export const stages = [
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest for boundary-hardening tests')
       }
+      // A DATABASE IS A PREREQUISITE OF THIS STAGE, so its absence is BLOCKED
+      // rather than FAIL.
+      //
+      // These cases mount the real app: the tenant-resolution middleware runs
+      // before any assertion, so with no driver configured every case returns
+      // 500 and the boundary-hardening tests report "expected 500 to be less
+      // than 500". That is a database outage wearing the costume of a
+      // contract violation, and it cost a real diagnosis -- the honest reading
+      // of twelve failed cases was "Docker is not running".
+      //
+      // The integration and tenancy stages already refuse to call an unrun
+      // suite a pass; this stage was the one that called it a FAILURE instead.
+      // BLOCKED is still a failure under --ci, so nothing is weakened: what
+      // changes is that the report names the missing prerequisite rather than
+      // an assertion nobody broke.
+      if (run('node', [join(ROOT, 'tooling/db/probe.mjs')]).code !== 0) {
+        return unmet(this, 'a reachable database for the boundary-hardening cases')
+      }
       // `--project contract`, not the positional filter `contract.test`. The
       // filter was a substring match against file paths -- a fourth encoding of
       // the partition, and one that would silently widen the moment a file
@@ -410,6 +428,23 @@ export const stages = [
       }
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest')
+      }
+      // MEASURED, 2026-09-01: with DATABASE_URL pointed at a dead port this
+      // stage reported PASS -- "21 assertions, 29/29 reachable, 30/30 of the
+      // matrix, complete". Sixty-seven assertions run against a live database.
+      //
+      // So the security gate declared the matrix COMPLETE on a third of its
+      // proof. The `passed === 0` check below is what was supposed to prevent
+      // this, and it only catches a TOTAL outage: the cases guard themselves
+      // with `skipIf(!reachable)`, so an unreachable database silently removes
+      // every case that needs one and leaves the rest to report success.
+      //
+      // "A suite that skipped because no database was reachable has proven
+      // nothing" is this stage's own comment. It was right about the principle
+      // and wrong about the threshold. Reachability is now a precondition, so
+      // the stage cannot report on a partial matrix at all.
+      if (run('node', [join(ROOT, 'tooling/db/probe.mjs')]).code !== 0) {
+        return unmet(this, 'a reachable database for the attack suite')
       }
 
       const r = run('pnpm', ['-s', 'test:architecture:tenancy'])
@@ -579,6 +614,14 @@ export const stages = [
     run() {
       if (!hasBin('playwright')) {
         return unmet(this, 'Playwright')
+      }
+      // The app under test talks to a database, so this stage needs one as
+      // surely as the integration stage does. Without it Playwright reports
+      // `connect ECONNREFUSED` as a FAILED spec -- a missing prerequisite
+      // wearing the costume of a broken flow, which is the same confusion the
+      // contract stage was making one stage earlier.
+      if (run('node', [join(ROOT, 'tooling/db/probe.mjs')]).code !== 0) {
+        return unmet(this, 'a reachable database for the application under test')
       }
 
       // The port preflight runs HERE, before Playwright, because Playwright
