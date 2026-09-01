@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.tsx",
+    "./boundary": "./src/boundary.tsx",
     "./contracts": "./src/contracts.ts",
     "./runtime": "./src/runtime.ts",
     "./schema": "./generated/schema.json",
@@ -15,6 +16,6 @@
   "dependencies": {
     "@base-ui/react": "1.7.0",
     "@xforge/tokens": "workspace:*",
-    "react": "^19.0.0"
+    "react": "catalog:"
   }
 }

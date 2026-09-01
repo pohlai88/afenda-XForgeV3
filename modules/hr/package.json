@@ -16,8 +16,8 @@
     "@xforge/db": "workspace:*",
     "@xforge/policy": "workspace:*",
     "@xforge/tenancy": "workspace:*",
-    "hono": "^4.9.0",
-    "zod": "^4.0.0"
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@xforge/fixtures": "workspace:*",

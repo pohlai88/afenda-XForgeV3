@@ -133,10 +133,22 @@
         "noEmptyBlockStatements": "off"
       },
       "correctness": {
-        // Our module resolution is bundler-style: tsconfig has no
-        // allowImportingTsExtensions, so writing `./thing.ts` in an import is a
-        // type error. The rule targets ESM-strict resolution, which this
-        // repository does not use.
+        // Our module resolution is bundler-style (`moduleResolution: "bundler"`),
+        // where extensionless relative imports resolve and are what almost all of
+        // this codebase writes. The rule targets ESM-strict resolution, which
+        // requires them; this repository does not use it.
+        //
+        // THE REASON RECORDED HERE UNTIL 2026-09-01 WAS THE NEGATION OF THE
+        // CONFIG. It said tsconfig has no `allowImportingTsExtensions`, so
+        // writing `./thing.ts` is a type error. tsconfig.base.json sets that flag
+        // TRUE, and ten files import with explicit extensions -- including
+        // tests/unit/workspace-aliases.test.ts, which imports
+        // '../../workspace.aliases.ts' to assert alias derivation.
+        //
+        // The rule still belongs off. The premise under it was inverted, which
+        // is worse than no reason: it sends the next reader to fix the config
+        // rather than to re-evaluate the rule. Same shape as the tenant_domain
+        // comment in CLAUDE.md's list.
         "useImportExtensions": "off",
 
         // Biome's resolver cannot follow pnpm's symlinked node_modules through
@@ -148,6 +160,22 @@
       },
       "style": {
         "useConst": "error",
+
+        // THE COMPILER OWNS IMPORT ELISION. `verbatimModuleSyntax` is true in
+        // tsconfig.base.json, and under `module: "Preserve"` with `noEmit` it
+        // asserts the same property this rule does: a type-only import must be
+        // written `import type`.
+        //
+        // Leaving both on is two tools enforcing one fact. They agree today --
+        // which is precisely when a duplicate is cheapest to remove, and the
+        // only time removing one is provably safe. Measured at the moment of
+        // the switch: `tsc --noEmit --verbatimModuleSyntax` reported 0 errors
+        // against this tree, while this rule was erroring on a probe file.
+        //
+        // The compiler wins because it is the authority on what it erases. A
+        // linter agreeing with the compiler about the compiler's own behaviour
+        // is the second source, not the first.
+        "useImportType": "off",
 
         // The attack-case filenames are an INTERFACE, not a preference. The
         // tenancy + policy stage parses case ids out of them -- T04, P01-P05 --

@@ -22,12 +22,35 @@ packages:
 #
 # Named catalogs exist if a range must differ on purpose. That is the point: an
 # exception would then be declared rather than accidental.
+#
+# THE RECONCILIATION ABOVE STOPPED ONE LAYER SHORT. It fixed the three that were
+# noticed and left six more in the same state: hono in three manifests, react in
+# three, and react-dom, zod, @tanstack/react-query and msw in two each. The
+# sharpest of those is `hono` -- @hono/zod-openapi was catalogued precisely
+# because two sources for one contract library mattered, and the library it
+# extends sat inline in the same two packages plus the app. Every one of the six
+# resolved to a single version, so nothing was broken and nothing could report
+# it. Same ranges as were declared, so this changed nothing installed either.
+#
+# `catalogMode` is NOT what enforces this, and believing it was is why the six
+# survived. It governs how `pnpm add` writes, and -- measured on 11.20.0 --
+# `pnpm up --latest` will rewrite repeated inline versions to `catalog:` and
+# invent the entries itself. Not inert, deferred: left alone, the next version
+# bump would have made this same edit unreviewed. The rule is now enforced by
+# the `shared-dependency-uses-catalog` config guard, which was written first and
+# observed to reject all fourteen sites before any of them were fixed.
 catalogMode: strict
 
 catalog:
   '@hono/zod-openapi': ^1.6.1
+  '@tanstack/react-query': ^5.60.0
+  hono: ^4.9.0
+  msw: ^2.15.0
   postgres: ^3.4.9
+  react: ^19.0.0
+  react-dom: ^19.0.0
   vitest: ^4.1.11
+  zod: ^4.0.0
 
 # ONE FIELD decides whether a dependency may run its install scripts.
 #
@@ -39,3 +62,33 @@ catalog:
 allowBuilds:
   esbuild: true
   msw: true
+
+# VERIFICATION MUST OBSERVE REPOSITORY STATE, NEVER REPAIR IT.
+#
+# pnpm 11 defaults this to `install`, and the check runs on `pnpm run` and
+# `pnpm exec` -- which is `pnpm verify` and every stage inside it. Measured on
+# 11.20.0 against a deliberately stale tree, that default behaves two ways and
+# neither is acceptable for a gate:
+#
+#   local, no CI    exit 0, EMPTY stderr, dependency installed. The gate
+#                   repairs itself mid-run and reports nothing at all -- an
+#                   install nobody asked for, inside whichever stage happened
+#                   to trigger it.
+#   CI=true         exit 1, but as a nested subprocess error: "Command failed
+#                   with exit code 1: node ... pnpm.mjs install" wrapping
+#                   ERR_PNPM_OUTDATED_LOCKFILE.
+#
+# `error` gives one named condition in both:
+# ERR_PNPM_VERIFY_DEPS_BEFORE_RUN, and `Run "pnpm install"`.
+#
+# This is the same argument the repository already makes for --ci treating
+# BLOCKED as failure: a check that did not run as specified is not a check that
+# passed, and a gate that silently fixes its own preconditions has stopped
+# being a measurement.
+#
+# Known upstream hazard, not yet observed here: pnpm #9777 reports a stale
+# lastValidatedTimestamp demanding an install when the lockfile is already
+# current, notably with patches. This checkout has no such key in
+# node_modules/.modules.yaml and uses no patches. If it appears, the symptom is
+# a verify run demanding an install that changes nothing.
+verifyDepsBeforeRun: error

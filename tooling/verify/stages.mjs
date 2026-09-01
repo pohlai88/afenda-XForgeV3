@@ -250,17 +250,12 @@ export const stages = [
       // `seedTenancy`, which this comment used to name, has scoped its own
       // deletes since. A comment naming the wrong function is worse than none,
       // because it sends the next reader to a file that looks correct.)
-      const r = run('pnpm', [
-        '-s',
-        'exec',
-        'vitest',
-        'run',
-        '--reporter=dot',
-        '--exclude',
-        '**/*.contract.test.ts',
-        '--exclude',
-        '**/*.integration.test.ts',
-      ])
+      //
+      // The exclusion used to be stated HERE, as two `--exclude` flag pairs --
+      // a copy of a fact `vitest.config.ts` also held, which is why it could be
+      // wrong here while being right there. The stage now names a project and
+      // owns no opinion about which files are units.
+      const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--project', 'unit', '--reporter=dot'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
@@ -318,7 +313,19 @@ export const stages = [
       if (!hasBin('vitest')) {
         return unmet(this, 'vitest for boundary-hardening tests')
       }
-      const r = run('pnpm', ['-s', 'exec', 'vitest', 'run', '--reporter=dot', 'contract.test'])
+      // `--project contract`, not the positional filter `contract.test`. The
+      // filter was a substring match against file paths -- a fourth encoding of
+      // the partition, and one that would silently widen the moment a file
+      // unrelated to contracts happened to contain that substring.
+      const r = run('pnpm', [
+        '-s',
+        'exec',
+        'vitest',
+        'run',
+        '--project',
+        'contract',
+        '--reporter=dot',
+      ])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
@@ -448,13 +455,12 @@ export const stages = [
         return unmet(this, 'vitest')
       }
       // Through the script, so there is ONE way to run these and one
-      // behaviour. Integration files share a single database, and
-      // `resetEmergencyContacts` clears its table unscoped -- deliberately, as
-      // the owner role bypasses RLS regardless -- which two files running in
-      // parallel do to each other, mid-run. The failure is an assertion whose
-      // rows another file has just deleted, and it appears only when both files
-      // exist and only sometimes. (`seedTenancy` was named here until its own
-      // deletes were scoped; the hazard moved and the comment did not.)
+      // behaviour. The serial requirement, and the shared-database hazard it
+      // exists for, are declared on the `integration` project in
+      // `vitest.config.ts` -- beside the collection they govern, rather than as
+      // a `--no-file-parallelism` flag this script could be run without.
+      // Restating the hazard here would make it a fact with two sources again,
+      // which is what this stage's own history is a post-mortem of.
       const r = run('pnpm', ['-s', 'test:integration'])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }

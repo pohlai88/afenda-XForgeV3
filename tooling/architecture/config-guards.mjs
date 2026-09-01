@@ -440,6 +440,101 @@ export const configGuards = [
     law: 29,
     title: 'Test fixtures never enter a production dependency closure',
   },
+  {
+    /**
+     * `pnpm-workspace.yaml` states the rule -- "ONE VERSION PER DEPENDENCY,
+     * declared here and referenced as `catalog:`" -- and nothing enforced it.
+     *
+     * `catalogMode: strict` looks like the enforcement and is not. Measured on
+     * pnpm 11.20.0: `pnpm install` and `pnpm up` leave inline versions alone;
+     * `pnpm up --latest` REWRITES every repeated inline dependency to
+     * `catalog:` and adds the entry itself. So the setting is not inert, it is
+     * DEFERRED -- and when it fires it catalogues everything at once, inside a
+     * commit whose stated purpose is a version bump.
+     *
+     * Six dependencies were in that state when this guard was written: hono in
+     * three manifests, react in three, and react-dom, zod,
+     * @tanstack/react-query and msw in two each. Every one resolved to a single
+     * version, which is the hazard rather than a mitigation of it -- agreement
+     * is indistinguishable from correctness right up to the moment it ends.
+     * @hono/zod-openapi was catalogued precisely because two sources for one
+     * contract library mattered; `hono` itself, underneath it, was not.
+     *
+     * NOT CHECKED HERE: whether a `catalog:` reference has a catalog entry.
+     * pnpm already fails that with CATALOG_ENTRY_NOT_FOUND_FOR_SPEC, and a
+     * second copy of that rule is the defect this guard exists to prevent.
+     */
+    check(env) {
+      // peerDependencies are deliberately WIDER than dependency ranges -- a
+      // peer range is a compatibility claim, not a statement about what this
+      // workspace installs -- so collapsing them into one version would be
+      // wrong. No manifest declares any today, which is why the rule below can
+      // stay simple. If one appears, that assumption has expired and the
+      // decision must be made explicitly rather than inherited from silence.
+      const SECTIONS = ['dependencies', 'devDependencies', 'optionalDependencies']
+      // Specifiers that name a location rather than a version. A catalog entry
+      // cannot hold them (pnpm rejects workspace:, file: and link: as catalog
+      // values), so they are outside this rule by construction.
+      const LOCAL = ['workspace:', 'file:', 'link:', 'catalog:']
+
+      const parse = (source) => {
+        try {
+          return JSON.parse(source)
+        } catch {
+          return null
+        }
+      }
+
+      const out = []
+      const occurrences = new Map()
+      for (const m of (env.files ?? []).filter((f) => f.path.endsWith('package.json'))) {
+        const pkg = parse(m.source)
+        if (!pkg) {
+          continue
+        }
+        if (Object.keys(pkg.peerDependencies ?? {}).length > 0) {
+          out.push({
+            message:
+              'declares peerDependencies -- this guard covers ' +
+              `${SECTIONS.join('/')} only, because a peer range is a compatibility ` +
+              'claim rather than an installed version. Decide explicitly whether ' +
+              'peers join the catalog, and widen this guard with that decision',
+            where: m.path,
+          })
+        }
+        for (const section of SECTIONS) {
+          for (const [name, spec] of Object.entries(pkg[section] ?? {})) {
+            if (typeof spec !== 'string') {
+              continue
+            }
+            occurrences.set(name, [...(occurrences.get(name) ?? []), { path: m.path, spec }])
+          }
+        }
+      }
+
+      for (const [name, rows] of occurrences) {
+        if (rows.length < 2) {
+          continue
+        }
+        for (const row of rows) {
+          if (LOCAL.some((p) => row.spec.startsWith(p))) {
+            continue
+          }
+          out.push({
+            message:
+              `'${name}' is declared in ${rows.length} workspace manifests and this one ` +
+              `pins '${row.spec}' inline -- a dependency with more than one declaration ` +
+              "must read 'catalog:' so the version has a single source",
+            where: row.path,
+          })
+        }
+      }
+      return out
+    },
+    id: 'shared-dependency-uses-catalog',
+    law: 7,
+    title: 'A dependency declared by more than one package reads its version from the catalog',
+  },
 ]
 
 /** Load the real configuration and run every config guard against it. */

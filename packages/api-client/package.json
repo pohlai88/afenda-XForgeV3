@@ -9,8 +9,8 @@
   },
   "main": "./src/index.ts",
   "dependencies": {
-    "@tanstack/react-query": "^5.60.0",
-    "msw": "^2.15.0"
+    "@tanstack/react-query": "catalog:",
+    "msw": "catalog:"
   },
   "devDependencies": {
     "vitest": "catalog:"

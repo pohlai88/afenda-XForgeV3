@@ -240,3 +240,120 @@ describe('the tenancy phase can be certified without tripping law 34', () => {
     expect(byId('adr-has-evidence').check({ adrs })).toEqual([])
   })
 })
+
+describe('shared-dependency-uses-catalog', () => {
+  const guard = byId('shared-dependency-uses-catalog')
+  const manifest = (path, pkg) => ({ path, source: JSON.stringify(pkg) })
+
+  /**
+   * The six violations this guard was written against, recorded BEFORE they
+   * were fixed.
+   *
+   * Not decoration. `pnpm up --latest` rewrites exactly these to `catalog:`
+   * automatically -- so the live corpus could disappear into somebody's version
+   * bump, and a guard whose only evidence was "the repository is green" would
+   * have proven nothing. Frozen here, the rejection stays reproducible after
+   * the tree is clean.
+   */
+  const THE_SIX = [
+    ['hono', ['apps/web', 'modules/hr', 'packages/api'], '^4.9.0'],
+    ['react', ['apps/web', 'packages/ui', '.'], '^19.0.0'],
+    ['react-dom', ['apps/web', '.'], '^19.0.0'],
+    ['zod', ['modules/hr', 'packages/api'], '^4.0.0'],
+    ['@tanstack/react-query', ['apps/web', 'packages/api-client'], '^5.60.0'],
+    ['msw', ['.', 'packages/api-client'], '^2.15.0'],
+  ]
+
+  const asFound = () =>
+    [...new Set(THE_SIX.flatMap(([, dirs]) => dirs))].map((dir) => {
+      const deps = {}
+      for (const [name, dirs, spec] of THE_SIX) {
+        if (dirs.includes(dir)) {
+          deps[name] = spec
+        }
+      }
+      return manifest(dir === '.' ? 'package.json' : `${dir}/package.json`, {
+        dependencies: deps,
+        name: dir,
+      })
+    })
+
+  it('REJECTS every inline declaration of the six, one violation per site', () => {
+    const v = guard.check({ files: asFound() })
+    // 3 + 3 + 2 + 2 + 2 + 2 -- the site is the unit, because the fix is
+    // per-manifest and a count of six would not say which.
+    expect(v).toHaveLength(14)
+    for (const [name] of THE_SIX) {
+      expect(
+        v.some((x) => x.message.includes(`'${name}'`)),
+        name,
+      ).toBe(true)
+    }
+  })
+
+  it('accepts the same six once every declaration reads catalog:', () => {
+    const fixed = asFound().map((m) => {
+      const pkg = JSON.parse(m.source)
+      for (const k of Object.keys(pkg.dependencies)) {
+        pkg.dependencies[k] = 'catalog:'
+      }
+      return manifest(m.path, pkg)
+    })
+    expect(guard.check({ files: fixed })).toEqual([])
+  })
+
+  it('ignores a dependency only one package declares', () => {
+    const files = [
+      manifest('packages/db/package.json', { dependencies: { drizzle: '^0.1.0' }, name: 'db' }),
+      manifest('packages/api/package.json', { dependencies: { hono: 'catalog:' }, name: 'api' }),
+    ]
+    expect(guard.check({ files })).toEqual([])
+  })
+
+  it('ignores specifiers a catalog entry cannot hold', () => {
+    // pnpm rejects workspace:, file: and link: AS catalog values, so these are
+    // outside the rule by construction rather than by exemption.
+    const files = [
+      manifest('apps/web/package.json', {
+        dependencies: { '@xforge/ui': 'workspace:*' },
+        name: 'w',
+      }),
+      manifest('modules/hr/package.json', {
+        dependencies: { '@xforge/ui': 'workspace:*' },
+        name: 'h',
+      }),
+    ]
+    expect(guard.check({ files })).toEqual([])
+  })
+
+  it('REJECTS a mix -- one catalog reference does not excuse the other site', () => {
+    const files = [
+      manifest('packages/api/package.json', { dependencies: { zod: 'catalog:' }, name: 'api' }),
+      manifest('modules/hr/package.json', { dependencies: { zod: '^4.0.0' }, name: 'hr' }),
+    ]
+    const v = guard.check({ files })
+    expect(v).toHaveLength(1)
+    expect(v[0].where).toBe('modules/hr/package.json')
+  })
+
+  it('REJECTS a peerDependencies declaration, because the rule for peers is undecided', () => {
+    const files = [
+      manifest('packages/ui/package.json', {
+        name: 'ui',
+        peerDependencies: { react: '^18 || ^19' },
+      }),
+    ]
+    const v = guard.check({ files })
+    expect(v).toHaveLength(1)
+    expect(v[0].message).toMatch(/peerDependencies/)
+  })
+
+  it('and the real workspace has none, which is what lets the rule stay simple', () => {
+    // The acceptance half, through the real rule against the real tree. If a
+    // peer declaration ever lands, this goes red before the question is
+    // answered by accident.
+    expect(
+      scanConfig().violations.filter((v) => v.guard === 'shared-dependency-uses-catalog'),
+    ).toEqual([])
+  })
+})

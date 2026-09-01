@@ -1,3 +1,4 @@
+import { ResourceBoundary } from '@xforge/ui/boundary'
 import { EmergencyContacts } from './emergency-contacts'
 
 /**
@@ -16,7 +17,14 @@ export default async function EmployeePage({
   return (
     <main>
       <h1>Employee</h1>
-      <EmergencyContacts employeeId={employeeId} />
+      {/* Contained HERE, not inside the component. The mapper refuses an
+          unrecognised wire code and runs during render -- but it runs in the
+          controller HOOK, before any JSX exists, so a boundary inside
+          EmergencyContacts cannot catch its own hook. The surface is the whole
+          section; the shell above it survives. */}
+      <ResourceBoundary testId="stale-client">
+        <EmergencyContacts employeeId={employeeId} />
+      </ResourceBoundary>
     </main>
   )
 }

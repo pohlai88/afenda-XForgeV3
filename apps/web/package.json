@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.60.0",
+    "@tanstack/react-query": "catalog:",
     "@xforge/api": "workspace:*",
     "@xforge/api-client": "workspace:*",
     "@xforge/db": "workspace:*",
@@ -18,9 +18,9 @@
     "@xforge/tenancy": "workspace:*",
     "@xforge/tokens": "workspace:*",
     "@xforge/ui": "workspace:*",
-    "hono": "^4.9.0",
+    "hono": "catalog:",
     "next": "^16.2.11",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

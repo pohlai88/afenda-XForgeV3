@@ -93,11 +93,10 @@ describe('workspace module resolution has one owner', () => {
   })
 
   it('no config restates an alias instead of importing the owner', () => {
-    const consumers = [
-      'vitest.config.ts',
-      'vitest.architecture.config.ts',
-      'vite.harness.config.ts',
-    ]
+    // `vitest.architecture.config.ts` was a third consumer until the test
+    // partition was consolidated into `vitest.config.ts`'s projects. It is
+    // named here so its absence reads as a deletion rather than an omission.
+    const consumers = ['vitest.config.ts', 'vite.harness.config.ts']
     for (const file of consumers) {
       const source = readFileSync(join(ROOT, file), 'utf8')
       expect(source).toContain("from './workspace.aliases.ts'")

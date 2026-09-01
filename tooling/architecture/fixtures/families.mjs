@@ -326,4 +326,44 @@ export const configFixtures = {
       files: [{ path: 'packages/api/src/app.ts', source: `const pw = '${FIXTURE_SECRET}'` }],
     }),
   },
+
+  /**
+   * The state the repository was actually in when this guard was written.
+   *
+   * `hono` in three manifests, inline, while `@hono/zod-openapi` -- the library
+   * that extends it -- was already catalogued. The pair is the fixture because
+   * it is the case that shows the rule is not pedantry: one contract library
+   * with one source, sitting on another with three.
+   *
+   * The clean side keeps BOTH declarations rather than deleting one, so the
+   * fixture proves the guard accepts a shared dependency that is catalogued --
+   * not merely that it accepts a dependency nobody shares twice.
+   */
+  'shared-dependency-uses-catalog': {
+    because: 'single source',
+    clean: envWith({
+      files: [
+        manifest('packages/api/package.json', {
+          dependencies: { '@hono/zod-openapi': 'catalog:', hono: 'catalog:' },
+          name: '@xforge/api',
+        }),
+        manifest('modules/hr/package.json', {
+          dependencies: { hono: 'catalog:' },
+          name: '@xforge/hr',
+        }),
+      ],
+    }),
+    violating: envWith({
+      files: [
+        manifest('packages/api/package.json', {
+          dependencies: { '@hono/zod-openapi': 'catalog:', hono: '^4.9.0' },
+          name: '@xforge/api',
+        }),
+        manifest('modules/hr/package.json', {
+          dependencies: { hono: '^4.9.0' },
+          name: '@xforge/hr',
+        }),
+      ],
+    }),
+  },
 }
