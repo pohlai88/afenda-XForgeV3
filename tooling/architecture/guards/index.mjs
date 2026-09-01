@@ -41,6 +41,56 @@ const MODULES_DIR = join(import.meta.dirname, '../../../modules')
 
 const FIXTURES_DIR = join(import.meta.dirname, '../../../tests/fixtures')
 
+const REPO_ROOT = join(import.meta.dirname, '../../..')
+
+/**
+ * Manifest sections a PRODUCTION import may legitimately rely on.
+ *
+ * Derived from what a package contract can mean, not narrowed to
+ * `dependencies`: a peer is a declared expectation the consumer satisfies, and
+ * an optional one is declared and handled. `devDependencies` is the single
+ * section that says "not needed to run this package", which is exactly the
+ * claim a production import contradicts.
+ */
+const PRODUCTION_LEGAL = ['dependencies', 'peerDependencies', 'optionalDependencies']
+
+/** `@scope/name/sub` -> `@scope/name`; `name/sub` -> `name`. */
+function packageOf(spec) {
+  const parts = spec.split('/')
+  return spec.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]
+}
+
+const manifestCache = new Map()
+
+/**
+ * The manifest that DECLARES what a file may import: the nearest package.json
+ * above it. Walked rather than listed, so a new package needs no edit here.
+ */
+function declaringManifest(file) {
+  let dir = file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : ''
+  for (;;) {
+    if (manifestCache.has(dir)) {
+      return manifestCache.get(dir)
+    }
+    const candidate = join(REPO_ROOT, dir, 'package.json')
+    if (existsSync(candidate)) {
+      let parsed = null
+      try {
+        parsed = JSON.parse(readFileSync(candidate, 'utf8'))
+      } catch {
+        parsed = null
+      }
+      manifestCache.set(dir, parsed)
+      return parsed
+    }
+    if (dir === '') {
+      manifestCache.set(dir, null)
+      return null
+    }
+    dir = dir.includes('/') ? dir.slice(0, dir.lastIndexOf('/')) : ''
+  }
+}
+
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
 
 /**
@@ -1061,6 +1111,82 @@ export const guards = [
     law: 7,
     precision: 'text',
     title: 'A fixture identity never appears in production source',
+  },
+  {
+    /**
+     * Law 5, the direction nobody was checking.
+     *
+     * `fixtures-are-not-production-dependencies` stops TEST MATERIAL entering a
+     * production closure. This is its mirror: production source relying on a
+     * package its own manifest declares as `devDependencies` only. Biome's
+     * noUndeclaredDependencies cannot see it -- it accepts any manifest section
+     * as "declared" -- so the pair had one half enforced and one half not.
+     *
+     * It breaks at INSTALL TIME IN A CONSUMER, not here. `pnpm install --prod`
+     * omits devDependencies, so the import resolves on this machine and on CI,
+     * where everything is installed, and fails wherever the package is actually
+     * consumed for real. A green gate for a closure that cannot be installed.
+     *
+     * The manifest is the nearest package.json ABOVE the file, walked rather
+     * than listed.
+     *
+     * SUBJECT STATED POSITIVELY: source that SHIPS. Two narrower statements were
+     * tried first and each let something correct through. `!== 'test'` let
+     * `vitest.config.ts` in -- a config importing its own tool from
+     * devDependencies is the right arrangement. `classify(f) === 'source'` then
+     * let `tooling/` in, where the nearest manifest is the root, which declares
+     * ZERO dependencies and 27 devDependencies by design: build tooling depending
+     * on build tools is not a defect, it is the arrangement.
+     *
+     * The property is about a package a CONSUMER installs, so the subject is the
+     * three roots a consumer gets. `classify()` has no `tooling` class -- it
+     * returns `source` for that tree -- which is why the root prefix is stated
+     * here rather than derived.
+     */
+    applies: (f) =>
+      /^(apps|modules|packages)[/]/.test(f) && isTypeScript(f) && classify(f) === 'source',
+    check(f, src) {
+      const manifest = declaringManifest(f)
+      if (!manifest) {
+        return []
+      }
+      const legal = new Set(
+        PRODUCTION_LEGAL.flatMap((section) => Object.keys(manifest[section] ?? {})),
+      )
+      const dev = new Set(Object.keys(manifest.devDependencies ?? {}))
+      const out = []
+      for (const i of imports(src)) {
+        if (i.spec.startsWith('.') || i.spec.startsWith('node:')) {
+          continue
+        }
+        // A TYPE-ONLY import is erased. It has no runtime existence, so a
+        // production install omitting the package cannot break it, and the
+        // types are needed at BUILD time -- which is exactly when
+        // devDependencies are present. Found by the guard on its first run:
+        // `workspace.aliases.ts` takes `Alias` from vite and nothing resolves
+        // vite at runtime. Declaration-time and consumer-time are separate
+        // questions and this is the line between them.
+        if (/^[\s]*import[\s]+type[\s]/.test(src.slice(i.at, i.at + 40))) {
+          continue
+        }
+        const pkg = packageOf(i.spec)
+        if (dev.has(pkg) && !legal.has(pkg)) {
+          out.push({
+            file: f,
+            line: line(src, i.at),
+            message:
+              `production source imports ${pkg}, which this package declares only ` +
+              'in devDependencies -- a production install omits it and the import ' +
+              'resolves here while failing wherever the package is consumed',
+          })
+        }
+      }
+      return out
+    },
+    id: 'production-source-declares-what-it-imports',
+    law: 5,
+    precision: 'text',
+    title: 'Production source relies on no dev-only declaration',
   },
 ]
 

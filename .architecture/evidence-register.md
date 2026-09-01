@@ -1338,3 +1338,64 @@ It was a parse error rather than a silent defect this time, and rebuilt from
 `chr(92)`. Recorded because the mitigation was already written down in this file
 and doubling was still the first thing reached for -- which is the argument for
 using the file tools rather than for trying harder.
+
+## The inverse of F7: production source relying on a dev-only declaration
+
+`fixtures-are-not-production-dependencies` stops test material entering a
+production closure. Nothing checked the mirror. Biome's
+`noUndeclaredDependencies` cannot: it accepts any manifest section as
+"declared", so `import x from 'vitest'` in shipped source is silent.
+
+It breaks at INSTALL TIME IN A CONSUMER rather than here. `pnpm install --prod`
+omits devDependencies, so the import resolves on this machine and in CI, where
+everything is installed, and fails wherever the package is actually consumed.
+A green gate for a closure that cannot be installed.
+
+`production-source-declares-what-it-imports` resolves each import against the
+nearest `package.json` ABOVE the file -- walked, not listed -- and rejects one
+declared only in `devDependencies`.
+
+**"Production-legal" is derived, not narrowed to `dependencies`.** A peer is a
+declared expectation the consumer satisfies; an optional one is declared and
+handled. `devDependencies` is the single section that says "not needed to run
+this package", which is exactly the claim a production import contradicts.
+
+### It found two things about itself before it found anything about the code
+
+**Type-only imports are erased**, so a production install omitting the package
+cannot break them, and the types are needed at BUILD time -- when
+devDependencies are present. Found on the guard's first run:
+`workspace.aliases.ts` takes `Alias` from vite and nothing resolves vite at
+runtime. Declaration-time and consumer-time are separate questions, which is the
+distinction raised earlier about `postgres` in `@xforge/fixtures` and is why it
+was not assumed either way.
+
+**The subject took three statements to state.** `!== 'test'` let
+`vitest.config.ts` through -- a config importing its own tool is correct.
+`classify(f) === 'source'` then let `tooling/` through, where the nearest
+manifest is the root, which declares ZERO dependencies and 27 devDependencies by
+design. The property is about a package a CONSUMER installs, so the subject is
+the three roots a consumer gets: `apps`, `modules`, `packages`.
+
+Each narrowing was found by the guard rejecting something correct, not by
+reasoning ahead of it.
+
+| case | verdict |
+|---|---|
+| production source -> dev-only | REJECT |
+| test source -> dev-only | ACCEPT (not governed) |
+| production source -> dependency | ACCEPT |
+| production source -> dev-only, TYPE import | ACCEPT |
+
+Two fixtures, resolved against the real `modules/hr` manifest so the proof is of
+derivation rather than of a list: change that manifest and the fixtures change
+meaning with it. 26 guards proven.
+
+**What this does not prove.** That the closure actually installs. Nothing here
+runs `pnpm install --prod` and imports the result; the guard reasons from
+manifests, which is a strictly weaker claim than the one the defect is about.
+
+**Observation, not acted on:** `classify()` has no `tooling` class and returns
+`source` for that tree, which is why this guard states its roots rather than
+deriving them. Adding one would touch every consumer of `classify()` and is not
+in this change.

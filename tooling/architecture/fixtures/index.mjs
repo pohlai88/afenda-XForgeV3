@@ -381,6 +381,33 @@ export const all = () =>
       source: `const tenant = '11111111-1111-4111-8111-111111111111'${String.fromCharCode(10)}`,
     },
   },
+  // Resolved against the REAL modules/hr manifest, which declares vitest in
+  // devDependencies and hono in dependencies. Deriving from the manifest rather
+  // than from a list in the guard is the property under proof: change that
+  // manifest and this fixture changes meaning with it.
+  'production-source-declares-what-it-imports': {
+    clean: {
+      path: 'modules/hr/src/thing.ts',
+      source: `import { Hono } from 'hono'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'modules/hr/src/thing.ts',
+      source: `import { vi } from 'vitest'${String.fromCharCode(10)}`,
+    },
+  },
+  // The erasure case, which the guard found on its own first run: a type import
+  // has no runtime existence, so a production install omitting the package
+  // cannot break it.
+  'production-source-declares-what-it-imports-type-only': {
+    clean: {
+      path: 'modules/hr/src/thing.ts',
+      source: `import type { Mock } from 'vitest'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'modules/hr/src/thing.ts',
+      source: `import { expect } from 'vitest'${String.fromCharCode(10)}`,
+    },
+  },
 
   'route-policy-declaration': {
     clean: {
