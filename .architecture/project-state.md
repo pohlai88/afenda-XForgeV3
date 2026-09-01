@@ -63,8 +63,8 @@ something a person can be shown, and proves it.
 ```
   4C.0  wire the mapper into the real screen              DONE    76ffcdb
   4C.1  one owner for enforcement scope                   DONE    76ffcdb
-  4C.2  read-state behavioural conformance                NEXT
-  4C.3  write-outcome behavioural conformance
+  4C.2  read-state behavioural conformance                DONE    2273122
+  4C.3  write-outcome behavioural conformance              NEXT
   4C.4  cross-axis composition
   4C.5  accessibility, and error containment
   4C.6  interaction and action conformance
@@ -118,12 +118,19 @@ problem code. Blocks 4C.5. The boundary should also scope to the resource
 surface rather than the app shell: one unknown code should not turn the whole
 product into an error screen.
 
-**Whether `76ffcdb` should be two commits.** It carries 4C.0 and 4C.1 together
-because `tooling/architecture/guards/index.mjs` holds both the `.tsx` boundary
-guard and the allowlist that replaced it within the same session. Splitting means
-reconstructing an intermediate file state whose only content is a design already
-known wrong, plus an independent gate run on the first tree. Left as one, noted
-rather than assumed settled.
+**The gate has a flake, and the machine accumulates load.**
+`tests/unit/ui-contracts.test.ts` timed out at 5s in one full run and passed
+251/251 in isolation; repeated gate runs leave chrome and node processes behind.
+A gate that goes red for reasons unrelated to the code trains people to re-run
+rather than read, which is the same failure as a verdict that does not mean what
+it says. Whole-gate totals moved 135 -> 153 -> 173 -> 164 with no corresponding
+change. GE-005 records the measurement rule; it does not cover contention.
+
+**Two singletons still force per-file test isolation.** `driver` and `sink` in
+`packages/db` are set-at-boot wiring and benign in production, but they are the
+whole reason the tenancy stage instantiates its module graph 22 times for ~23s.
+Removing them permits `isolate: false` on those projects. Not a correctness
+defect -- the one that was is fixed in `0c8d022`.
 
 **Whether to open the PR now.** Opening it against `main` is the first execution
 of `pnpm verify --ci` on a machine that inherited nothing from the workstation,
