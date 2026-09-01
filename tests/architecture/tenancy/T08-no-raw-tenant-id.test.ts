@@ -19,10 +19,9 @@
  * tested against a violating and a clean fixture.
  */
 import { withTenant } from '@xforge/db'
+import { TENANT_A } from '@xforge/fixtures/tenancy'
 import { candidateFromHost } from '@xforge/tenancy'
 import { describe, expect, it } from 'vitest'
-
-const TENANT_A = '11111111-1111-4111-8111-111111111111'
 
 describe('T08 -- only a verified context reaches the chokepoint', () => {
   it('a raw tenant id does not typecheck', () => {

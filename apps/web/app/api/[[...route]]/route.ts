@@ -57,7 +57,29 @@ function ensureDriver(): void {
   configured = true
 }
 
-const DEV_TENANT = process.env.DEV_TENANT_ID ?? '11111111-1111-4111-8111-111111111111'
+/**
+ * The development tenant. NO FALLBACK, for the reason stated 20 lines above.
+ *
+ * This fell back to the fixture tenant's literal id -- that fixture,
+ * compiled into the application, directly contradicting `appDatabaseUrl()`'s
+ * rule that a fixture credential in the application is no longer a fixture. A
+ * comment asserting something the code beside it refutes.
+ *
+ * It cannot import the fixture package to fix that: `@xforge/fixtures` is test
+ * material and the production closure guard would reject the edge. So the
+ * environment supplies it, and `e2e/global-setup.ts` -- which already derives
+ * its own from TENANT_A -- stops being the second definition of one fact.
+ */
+function devTenantId(): string {
+  const id = process.env.DEV_TENANT_ID
+  if (!id) {
+    throw new Error(
+      'DEV_TENANT_ID is not set. The development principal is scoped to it, and ' +
+        'there is no default: see .env.example.',
+    )
+  }
+  return id
+}
 
 /**
  * Development principal.
@@ -71,13 +93,45 @@ const DEV_TENANT = process.env.DEV_TENANT_ID ?? '11111111-1111-4111-8111-1111111
  * applies middleware only to routes registered after it, so calling use() on a
  * built app silently does nothing and every request would 401.
  */
-const devPrincipal: Principal = {
-  grants: [
-    { permission: 'hr.employee.read', scopeId: DEV_TENANT, scopeType: 'tenant' },
-    { permission: 'hr.employee.update', scopeId: DEV_TENANT, scopeType: 'tenant' },
-  ],
-  id: 'dev-user',
-  kind: 'user',
+function developmentPrincipal(): Principal {
+  // FAILS CLOSED, on an EXPLICIT opt-in rather than on NODE_ENV.
+  //
+  // This was a module-level constant applied to every request with no gate at
+  // all, so every caller authenticated as `dev-user` holding read and update.
+  // Membership re-verification stood between that and access -- `dev-user` owns
+  // no tenant_membership row, so a clean production database refused at "Tenant
+  // not resolved" -- which made it reachable and inert. One row from not being
+  // inert.
+  //
+  // The first fix tested `NODE_ENV === 'production'` and was wrong in BOTH
+  // directions. `next start` sets NODE_ENV to production, so the E2E suite --
+  // which exists precisely to exercise the shipped artefact -- lost its
+  // principal and seven specs went red. And a real deployment that never set
+  // NODE_ENV would have been handed one. A variable that means "which build" is
+  // not a variable that means "who may authenticate".
+  //
+  // So the stub is turned ON deliberately. Absent the opt-in there is no
+  // principal, which is what fail-closed has to mean when the signal is missing
+  // rather than when it says the wrong thing.
+  //
+  // The tenancy suite proves the MECHANISM: 67 assertions, 30/30 of the matrix.
+  // Nothing asserted the composition root was wired to it rather than to a stub.
+  if (process.env.XFORGE_DEV_PRINCIPAL !== 'enabled') {
+    throw new Error(
+      'No principal. The development stub requires XFORGE_DEV_PRINCIPAL=enabled ' +
+        'and is never enabled by default; real authentication arrives with the ' +
+        'identity phase. See .env.example.',
+    )
+  }
+  const tenant = devTenantId()
+  return {
+    grants: [
+      { permission: 'hr.employee.read', scopeId: tenant, scopeType: 'tenant' },
+      { permission: 'hr.employee.update', scopeId: tenant, scopeType: 'tenant' },
+    ],
+    id: 'dev-user',
+    kind: 'user',
+  }
 }
 
 /**
@@ -103,8 +157,13 @@ const app = createApp(hrModuleRoutes, {
       // The detail is verbose in development and generic in production, because
       // configuration detail is a mild information leak to an untrusted client
       // and no help to one.
+      // Both resolved here, so a missing configuration AND a production build
+      // present as the same 500 the developer already knows how to read, rather
+      // than as an unhandled throw inside the request.
+      let principal: Principal
       try {
         ensureDriver()
+        principal = developmentPrincipal()
       } catch (err) {
         const inProduction = process.env.NODE_ENV === 'production'
         return c.json(
@@ -129,7 +188,7 @@ const app = createApp(hrModuleRoutes, {
       // of the request, rather than three reads of a moving clock.
       const asOf = new Date()
       const hostname = (c.req.header('host') ?? '').split(':')[0] ?? ''
-      const resolved = await resolveRequestTenant(hostname, devPrincipal, queries, asOf)
+      const resolved = await resolveRequestTenant(hostname, principal, queries, asOf)
       if (resolved.kind !== 'verified') {
         return c.json(
           {
@@ -145,7 +204,7 @@ const app = createApp(hrModuleRoutes, {
         )
       }
       c.set('tenant', resolved.context)
-      c.set('principal', devPrincipal)
+      c.set('principal', principal)
       c.set('asOf', asOf.toISOString())
       c.set('requestId', crypto.randomUUID())
       await next()

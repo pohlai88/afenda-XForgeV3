@@ -21,7 +21,7 @@
  * one.
  */
 
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { classify } from '../../source-universe.mjs'
 
@@ -38,6 +38,33 @@ import { classify } from '../../source-universe.mjs'
  * anyone remembering to extend a pattern.
  */
 const MODULES_DIR = join(import.meta.dirname, '../../../modules')
+
+const FIXTURES_DIR = join(import.meta.dirname, '../../../tests/fixtures')
+
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
+
+/**
+ * The identities `tests/fixtures` declares, READ FROM IT rather than copied.
+ *
+ * Derived the same way BUSINESS_MODULES is derived from the modules directory:
+ * the guard consults the owner instead of holding a second list that agrees
+ * until it does not.
+ */
+const FIXTURE_IDENTITIES = (() => {
+  const found = new Set()
+  if (!existsSync(FIXTURES_DIR)) {
+    return found
+  }
+  for (const entry of readdirSync(FIXTURES_DIR)) {
+    if (!entry.endsWith('.ts')) {
+      continue
+    }
+    for (const m of readFileSync(join(FIXTURES_DIR, entry), 'utf8').matchAll(UUID)) {
+      found.add(m[0].toLowerCase())
+    }
+  }
+  return found
+})()
 const BUSINESS_MODULES = existsSync(MODULES_DIR)
   ? readdirSync(MODULES_DIR, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -992,6 +1019,48 @@ export const guards = [
     law: 5,
     precision: 'text',
     title: 'Exactly the named boundary files in apps/ touch the generated client',
+  },
+  {
+    /**
+     * Law 7: every fact has one authoritative source.
+     *
+     * A fixture identity belongs to `tests/fixtures`. Production source carrying
+     * one is the seeded world compiled into the application, and it is the exact
+     * shape `appDatabaseUrl()` already refuses for credentials: "a fixture
+     * credential in the application is no longer a fixture".
+     *
+     * FOUND BY MEASUREMENT, not by suspicion. The composition root fell back to
+     * the fixture tenant when DEV_TENANT_ID was unset, nineteen lines below the
+     * comment forbidding exactly that, and three test files restated TENANT_A
+     * rather than importing it. The employee sweep had given EMPLOYEE one owner
+     * and left the tenants with eight declaration sites.
+     *
+     * Tests are out of scope: a test naming a fixture identity is a test using
+     * its own world. The identities are read from the owner, so adding one needs
+     * no change here.
+     */
+    applies: (f) =>
+      /^(apps|modules|packages)[/]/.test(f) && isTypeScript(f) && classify(f) !== 'test',
+    check(f, src) {
+      const out = []
+      for (const m of src.matchAll(UUID)) {
+        if (FIXTURE_IDENTITIES.has(m[0].toLowerCase())) {
+          out.push({
+            file: f,
+            line: line(src, m.index),
+            message:
+              `production source carries the fixture identity ${m[0]} -- it belongs ` +
+              'to tests/fixtures, and reaching it from here would put test material ' +
+              'in a production closure',
+          })
+        }
+      }
+      return out
+    },
+    id: 'production-carries-no-fixture-identity',
+    law: 7,
+    precision: 'text',
+    title: 'A fixture identity never appears in production source',
   },
 ]
 

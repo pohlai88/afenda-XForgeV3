@@ -15,12 +15,10 @@
 import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
 import { checkApplicationRole, checkRlsCoverage } from '@xforge/fixtures/rls-checks'
+import { TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createPostgresDriver } from '../src/postgres-driver'
-
-const TENANT_A = '11111111-1111-4111-8111-111111111111'
-const TENANT_B = '22222222-2222-4222-8222-222222222222'
 
 /**
  * Reachability is probed at MODULE scope, not in beforeAll.

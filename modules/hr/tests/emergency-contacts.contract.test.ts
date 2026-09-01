@@ -24,15 +24,16 @@ import {
 import { createPostgresDriver } from '@xforge/db/postgres'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
-import { HOST_A, seedTenancy } from '@xforge/fixtures/tenancy'
+import { HOST_A, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
 import type { Principal } from '@xforge/policy'
 import { type MembershipQueries, resolveRequestTenant } from '@xforge/tenancy'
 import postgres from 'postgres'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { hrModuleRoutes } from '../index'
 
-const TENANT = '11111111-1111-4111-8111-111111111111'
-const OTHER_TENANT = '22222222-2222-4222-8222-222222222222'
+// Derived, not restated. The owner is @xforge/fixtures/tenancy.
+const TENANT = TENANT_A
+const OTHER_TENANT = TENANT_B
 /**
  * The contact row this suite creates, at an id it chooses rather than one the
  * server invents, so the version-conflict cases can address it directly.

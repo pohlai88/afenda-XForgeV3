@@ -1202,3 +1202,84 @@ because no behaviour moved and no assistive-technology evidence is invalidated.
 the retry conditional cannot be reached today. No synthetic fixture was added to
 manufacture coverage for it. 4C.5 is the named owner: an unknown wire code needs a
 reload rather than a retry, and that is the second producer.
+
+## The composition root authenticated every production request as a stub
+
+`apps/web/app/api/[[...route]]/route.ts` applied `devPrincipal` with no
+environment gate. Every request in a production build authenticated as
+`dev-user` holding `hr.employee.read` and `hr.employee.update`, scoped to
+`DEV_TENANT`, which fell back to the fixture tenant when `DEV_TENANT_ID` was
+unset.
+
+**What kept it inert.** `resolveRequestTenant` re-verifies against
+`tenant_membership` (ADR-022, ADR-023), and `dev-user` owns no membership row, so
+a clean production database refused at "Tenant not resolved". Reachable, inert,
+and one row from not being inert.
+
+**It was recorded nowhere and covered by nothing.** No ADR, no register entry, no
+deferral note; no guard and no test named `devPrincipal` or `dev-user`. The
+tenancy suite proves the MECHANISM -- 67 assertions, 30/30 of the matrix -- and
+nothing asserted the application was wired to that mechanism rather than to a
+stub. A stub is a legitimate phase artefact; an unrecorded one is not.
+
+The fallback contradicted a rule stated nineteen lines above it. `appDatabaseUrl()`
+refuses a default connection string because *"a fixture credential compiled into
+the application is no longer a fixture"* -- and directly below, the tenant did
+exactly that. The `tenant_domain` defect again: a comment asserting what the code
+beside it refutes.
+
+### Fixed by failing closed on an OPT-IN, and by moving the fact to its owner
+
+**The first fix was wrong in both directions, and the gate said so.** It tested
+`NODE_ENV === 'production'`. `next start` sets NODE_ENV to production, so the E2E
+suite -- which exists precisely to exercise the shipped artefact -- lost its
+principal and seven specs went red. And a real deployment that never set
+NODE_ENV would have been handed one. A variable meaning "which build" is not a
+variable meaning "who may authenticate", and using it as both is the two-sources
+defect in a single expression.
+
+So the stub is turned ON deliberately: `XFORGE_DEV_PRINCIPAL=enabled`, never
+enabled by default. That is what fail-closed has to mean when the signal is
+MISSING rather than when it says the wrong thing. Proven able to fail on its own
+terms rather than by borrowing the earlier red: removing the opt-in from the
+harness makes the empty-state spec fail because the API refuses. 33/33 with it,
+red without.
+
+`developmentPrincipal()` throws without that opt-in; `devTenantId()`
+has no fallback, mirroring `appDatabaseUrl()`. Both resolve inside the middleware
+try, so a misconfiguration and a production build present as the 500 a developer
+already knows how to read rather than an unhandled throw. The harness supplies
+`DEV_TENANT_ID` from `TENANT_A` exactly as it already supplied the credential.
+
+### The employee sweep had an unfinished half
+
+`7f4c51e` gave `EMPLOYEE` one owner. The tenants were left with eight declaration
+sites, measured:
+
+| site | before | now |
+|---|---|---|
+| `tests/fixtures/tenancy.ts` | the owner | unchanged |
+| `apps/web/.../route.ts` | literal fallback, PRODUCTION | env, no fallback |
+| `emergency-contacts.contract.test.ts` | two literals beside an import OF THE SAME MODULE | derived |
+| `isolation.integration.test.ts` | two literals | derived |
+| `platform-access.test.ts` (x3) | literals, no import | derived |
+| `T08-no-raw-tenant-id.test.ts` | literal | derived |
+
+`packages/policy/tests/evaluate.test.ts` keeps `11111111-1111-1111-1111-111111111111`
+-- all ones, not a v4 uuid, a different value for a different fact. That is the
+collision rule working as intended rather than an exception to it.
+
+### `production-carries-no-fixture-identity`
+
+A guard, because the sweep alone is a discipline. It reads the identities FROM
+`tests/fixtures` rather than holding a copy -- the same derivation
+`BUSINESS_MODULES` uses on the modules directory -- so adding a fixture identity
+needs no change to the guard.
+
+Proven twice: against a fixture, and against the real repository. It rejects the
+committed composition root at line 60 and accepts the fixed one. 25 guards proven.
+
+**What this does not prove.** That no other stub is wired into a composition
+root. `devPrincipal` was found by following a UUID, not by asking the question;
+nothing enumerates the places where a phase artefact stands in for a real
+subsystem, and no guard proposed here would find the next one.

@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
+import { TENANT_A } from '@xforge/fixtures/tenancy'
 import { appUrl } from './tests/fixtures/local-database'
 import { E2E_ORIGIN, E2E_PORT } from './tooling/e2e/config.ts'
 
@@ -30,7 +31,18 @@ export default defineConfig({
     command: `pnpm -s e2e:port && pnpm --filter @xforge/web exec next start -p ${E2E_PORT}`,
     // The app has no credential fallback by design, so the harness supplies one
     // explicitly rather than the application defaulting to a developer database.
-    env: { APP_DATABASE_URL: appUrl() },
+    // DEV_TENANT_ID joined it for the same reason: the composition root used to
+    // carry the fixture tenant as a literal default, which is the fixture
+    // becoming production configuration. The owner is TENANT_A and it is passed
+    // from here, so one fact has one definition.
+    // XFORGE_DEV_PRINCIPAL is enabled HERE and nowhere by default: `next start`
+    // runs with NODE_ENV=production, so the suite exercises the shipped artefact
+    // and needs the stub explicitly rather than by inference from the build mode.
+    env: {
+      APP_DATABASE_URL: appUrl(),
+      DEV_TENANT_ID: TENANT_A,
+      XFORGE_DEV_PRINCIPAL: 'enabled',
+    },
     /**
      * NEVER reuse a server, locally or in CI.
      *

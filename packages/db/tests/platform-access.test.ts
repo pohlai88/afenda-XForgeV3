@@ -7,6 +7,7 @@
  *   - the attempt is recorded durably BEFORE the work, so a failed or rolled-back
  *     privileged access still leaves a trace
  */
+import { TENANT_A } from '@xforge/fixtures/tenancy'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createMemoryAuditSink,
@@ -143,7 +144,7 @@ describe('the audit records where the privileged call came from', () => {
         actor: 'admin@xforge',
         correlationId: 'req-9',
         origin: 'request',
-        tenantId: '11111111-1111-4111-8111-111111111111',
+        tenantId: TENANT_A,
       },
       () =>
         withPlatformAccess(
@@ -154,9 +155,6 @@ describe('the audit records where the privileged call came from', () => {
     // Not scoping the access -- platform access is cross-tenant by definition.
     // Recording which tenant's console the operator was in when they reached
     // across, which is where an investigation starts.
-    expect(sink.read().map((r) => r.tenantId)).toEqual([
-      '11111111-1111-4111-8111-111111111111',
-      '11111111-1111-4111-8111-111111111111',
-    ])
+    expect(sink.read().map((r) => r.tenantId)).toEqual([TENANT_A, TENANT_A])
   })
 })

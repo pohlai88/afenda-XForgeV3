@@ -369,6 +369,18 @@ export const all = () =>
 `,
     },
   },
+  'production-carries-no-fixture-identity': {
+    clean: {
+      path: 'apps/web/app/api/route.ts',
+      source: `const tenant = process.env.DEV_TENANT_ID${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'apps/web/app/api/route.ts',
+      // TENANT_A's value, which the guard reads from tests/fixtures rather than
+      // from a copy. If the owner ever changes it, this fixture follows.
+      source: `const tenant = '11111111-1111-4111-8111-111111111111'${String.fromCharCode(10)}`,
+    },
+  },
 
   'route-policy-declaration': {
     clean: {
