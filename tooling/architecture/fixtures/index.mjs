@@ -446,6 +446,22 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
       source: `import { ApiProblem } from '@xforge/api-client'${String.fromCharCode(10)}`,
     },
   },
+
+  // The MODULE branch of transport vocabulary, which neither fixture above
+  // reached: both violate with '@xforge/api-client', so the alternative that
+  // covers business modules was never observed to reject anything. It is
+  // derived from BUSINESS_MODULES rather than spelled, and these two are what
+  // make that derivation proven rather than asserted.
+  'transport-enters-apps-only-at-the-boundary-module': {
+    clean: {
+      path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
+      source: `import type { ResourceState } from '@xforge/ui/state'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
+      source: `import { listEmergencyContacts } from '@xforge/hr'${String.fromCharCode(10)}`,
+    },
+  },
   'ui-holds-no-transport-vocabulary': {
     clean: {
       path: 'packages/ui/src/state.ts',
@@ -454,6 +470,16 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
     violating: {
       path: 'packages/ui/src/state.ts',
       source: `import type { Completeness } from '@xforge/api-client'${String.fromCharCode(10)}`,
+    },
+  },
+  'ui-holds-no-transport-vocabulary-module': {
+    clean: {
+      path: 'packages/ui/src/state.ts',
+      source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
+    },
+    violating: {
+      path: 'packages/ui/src/state.ts',
+      source: `import type { EmergencyContact } from '@xforge/hr/repository'${String.fromCharCode(10)}`,
     },
   },
 

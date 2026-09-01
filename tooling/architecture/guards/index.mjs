@@ -49,6 +49,26 @@ const isBusinessModule = (spec) =>
   BUSINESS_MODULES.some((m) => spec === `@xforge/${m}` || spec.startsWith(`@xforge/${m}/`))
 
 /**
+ * Transport vocabulary: the names an interpreting layer may not know.
+ *
+ * ONE definition, consumed by both law-5 guards. It was two character-identical
+ * regex literals -- `ui-holds-no-transport-vocabulary` for packages/ui and
+ * `transport-enters-apps-only-at-the-boundary` for apps/ -- and the second was
+ * copied from the first in this branch. The mutation test cannot see that class
+ * of drift: each fixture exercises its own copy, so both stay PROVEN while the
+ * two definitions diverge.
+ *
+ * The module alternative is DERIVED, never spelled. Both copies matched
+ * `^@xforge[/]hr($|[/])`, which restated what BUSINESS_MODULES already reads
+ * from disk -- the same second-source defect the comment above it was written
+ * about. The day modules/payroll lands, a hardcoded pattern covers hr and not
+ * payroll, and a component importing @xforge/payroll passes both law-5 guards
+ * silently. Neither fixture exercised that branch, so nothing would have said so.
+ */
+const TRANSPORT_SURFACE = /^@xforge[/]api-client|^@xforge[/]api($|[/])|[/]generated[/]/
+const isTransportVocabulary = (spec) => TRANSPORT_SURFACE.test(spec) || isBusinessModule(spec)
+
+/**
  * Test files, decided by the ONE classification authority rather than by each
  * guard inventing a path regex -- the second time this repository has paid for
  * two lists that were supposed to agree.
@@ -733,10 +753,8 @@ export const guards = [
      */
     applies: (f) => /^packages[/]ui[/]/.test(f),
     check(f, src) {
-      const forbidden =
-        /^@xforge[/]api-client|^@xforge[/]api($|[/])|^@xforge[/]hr($|[/])|[/]generated[/]/
       return imports(src)
-        .filter((i) => forbidden.test(i.spec))
+        .filter((i) => isTransportVocabulary(i.spec))
         .map((i) => ({
           file: f,
           line: line(src, i.at),
@@ -940,10 +958,8 @@ export const guards = [
      */
     applies: (f) => /^apps[/]/.test(f) && isTypeScript(f),
     check(f, src) {
-      const forbidden =
-        /^@xforge[/]api-client|^@xforge[/]api($|[/])|^@xforge[/]hr($|[/])|[/]generated[/]/
       return imports(src)
-        .filter((i) => forbidden.test(i.spec))
+        .filter((i) => isTransportVocabulary(i.spec))
         .map((i) => ({
           file: f,
           line: line(src, i.at),
