@@ -123,7 +123,7 @@ function Resource({
       return (
         <Stack gap="tight">
           <Heading>{state.issue.title}</Heading>
-          <Alert tone="danger">
+          <Alert testId="forbidden" tone="danger">
             <Text>
               Viewing emergency contacts needs the <Code>hr.employee.read</Code> permission. Ask an
               administrator.
@@ -136,7 +136,11 @@ function Resource({
       return (
         <Stack gap="tight">
           <Heading>{state.issue.title}</Heading>
-          <Alert tone="danger">
+          {/* Addressed by test id, not by role. Next injects its own
+              `role="alert"` route announcer, so the role is ambiguous at page
+              scope -- and `empty`, `partial` and `conflict` were already named
+              this way while the two failure alerts were not. */}
+          <Alert testId="read-error" tone="danger">
             <Text>{state.issue.detail ?? 'Something went wrong.'}</Text>
           </Alert>
           {/* Only when the problem says so. Offering "Try again" for a refusal
