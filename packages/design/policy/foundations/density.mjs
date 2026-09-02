@@ -52,8 +52,8 @@
  * whether the axis moved them in the direction it claims to.
  */
 
-import { deepFreeze, toPixels } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
@@ -192,78 +192,6 @@ export function assertDensityAxis(densityModes, themeModes = {}) {
 }
 
 /* ------------------------------------------------------------ evaluation -- */
-
-/**
- * The axis's direction, across every token the modes actually resolve.
- *
- * GENERIC ON PURPOSE. It does not read a role table, because the invariant is
- * not about spacing or about controls -- it is about the axis, and it must cover
- * `icon.size` and `control.min-size`, which no domain table here lists. A
- * per-domain direction check would leave exactly those two governed by nothing,
- * which is how they came to be unchecked in the first place.
- *
- * FAIL-CLOSED ON ITS OWN SUBJECT: it compares exactly the labels in `order` and
- * throws if one is absent, rather than quietly comparing the two it found.
- * Skipping `compact` would report green on the mode where compression is most
- * likely to have gone wrong.
- *
- * NON-DECREASING, not strictly increasing. `row-y` is 12px at both default and
- * comfortable, and demanding a change would force movement for its own sake.
- */
-export function densityFailures(resolvedByMode, order = DENSITY_ORDER) {
-  const missing = order.filter((label) => !resolvedByMode.has(label))
-  if (missing.length > 0) {
-    throw new Error(
-      `the density check was asked for (${order.join(', ')}) but ${missing.join(', ')} ` +
-        `${missing.length === 1 ? 'is' : 'are'} not in the resolved set -- comparing the ` +
-        'modes that happen to be present would report green on the axis it was told to check',
-    )
-  }
-
-  const failures = []
-  const maps = order.map((label) => ({ label, resolved: resolvedByMode.get(label) }))
-
-  /* Only tokens EVERY named mode resolves. One absent anywhere means the
-     comparison would be against a fallback rather than against a mode. */
-  const shared = [...maps[0].resolved.keys()].filter((path) =>
-    maps.every(({ resolved }) => resolved.get(path) !== undefined),
-  )
-
-  for (const path of shared) {
-    const series = maps.map(({ label, resolved }) => {
-      const raw = resolved.get(path)
-      if (typeof raw !== 'string') {
-        return { label, px: null }
-      }
-      try {
-        return { label, px: toPixels(raw, { rootPx: 16 }) }
-      } catch {
-        return { label, px: null }
-      }
-    })
-
-    /* A token that is not a length is not on this axis -- a colour, a weight, a
-       cubic-bezier. Density does not order those, and reporting them would bury
-       the ones it does. */
-    if (series.some(({ px }) => px === null)) {
-      continue
-    }
-
-    for (let i = 1; i < series.length; i += 1) {
-      const lower = series[i - 1]
-      const upper = series[i]
-      if (upper.px < lower.px) {
-        failures.push(
-          `'${path}' resolves to ${upper.px}px at ${upper.label} but ${lower.px}px at ` +
-            `${lower.label} -- density packs information, so a more generous mode must never ` +
-            'be tighter than the one below it',
-        )
-      }
-    }
-  }
-
-  return failures
-}
 
 /* --------------------------------------------------------------- policy -- */
 

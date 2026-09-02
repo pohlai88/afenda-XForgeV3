@@ -32,8 +32,8 @@
  * That is the difference between a tripwire and a rule.
  */
 
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
@@ -48,19 +48,6 @@ import { definePolicy } from './contract.mjs'
  * than stating where it sits.
  */
 export const LAYER_CEILING = 3
-
-/**
- * The gap a layer must keep from the one below it.
- *
- * NOT SO THAT ANYTHING CAN BE SLOTTED BETWEEN -- the opposite. A gap of 1 invites
- * `z-index: 11` at a call site, because the space exists and taking it changes
- * nothing visible that day. A wide gap makes an unroled value obviously foreign:
- * 10 and 50 are clearly roles, 11 is clearly somebody's afternoon.
- *
- * `no-raw-stacking-value` is what actually refuses the bare number. This makes
- * the refusal legible in the values themselves.
- */
-export const LAYER_GAP = 10
 
 /* ---------------------------------------------------------------- roles -- */
 
@@ -121,69 +108,6 @@ export function assertLayerRoles(roles = LAYER_ROLES) {
 }
 
 /* ------------------------------------------------------------ evaluation -- */
-
-/**
- * Every stacking failure, in every mode.
- *
- * A layer is an INTEGER, not a length -- there is no `toPixels` here and no grid.
- * That is the one place this foundation's shape departs from its neighbours, and
- * it is the same reason `--semantic-layer-*` is deliberately not projected into a
- * Tailwind namespace: `z-<number>` is computed from the number, so there is
- * nothing to project into and nothing to clear.
- */
-export function stackingFailures(resolvedByMode, roles = LAYER_ROLES) {
-  const failures = []
-  const ladder = Object.entries(roles).sort(([, a], [, b]) => a.rank - b.rank)
-
-  for (const [label, resolved] of resolvedByMode) {
-    const values = new Map()
-
-    for (const [role, policy] of ladder) {
-      const raw = resolved.get(policy.token)
-      if (raw === undefined) {
-        continue
-      }
-      const value = Number(raw)
-      if (!Number.isInteger(value)) {
-        failures.push(
-          `${label}: ${role} is ${JSON.stringify(raw)} -- a stacking layer is an integer. A ` +
-            'fractional z-index is a value someone reached for to sit between two roles ' +
-            'without adding one',
-        )
-        continue
-      }
-      values.set(role, value)
-    }
-
-    const present = ladder.filter(([role]) => values.has(role))
-
-    for (let i = 1; i < present.length; i += 1) {
-      const [lowerRole] = present[i - 1]
-      const [upperRole] = present[i]
-      const lower = values.get(lowerRole)
-      const upper = values.get(upperRole)
-
-      if (upper <= lower) {
-        failures.push(
-          `${label}: '${upperRole}' is ${upper} and '${lowerRole}' is ${lower} -- the layer ` +
-            'ranked above must paint above, or the order the roles declare is not the order ' +
-            'the browser applies',
-        )
-        continue
-      }
-
-      if (upper - lower < LAYER_GAP) {
-        failures.push(
-          `${label}: '${upperRole}' (${upper}) is only ${upper - lower} above '${lowerRole}' ` +
-            `(${lower}), under the ${LAYER_GAP} gap -- a narrow gap invites a raw number at a ` +
-            'call site, because the space exists and taking it changes nothing that day',
-        )
-      }
-    }
-  }
-
-  return failures
-}
 
 /* --------------------------------------------------------------- policy -- */
 

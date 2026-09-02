@@ -8,9 +8,9 @@
  * The reasoning lives in POLICY.md; this holds the tables and the refusals.
  */
 
+import { definePolicy } from '../define-policy.mjs'
 import { ACCESSIBILITY_POLICY } from '../interaction/accessibility.mjs'
 import { assertLifecycle, assertTokenPath, deepFreeze, HEX } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
 
 /**
  * THE ACCESSIBILITY FLOORS ARE NOT HERE, and this file is where a reader coming
@@ -500,6 +500,23 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     reason: 'a subtle tint behind a hovered or selected row, proved through accent-foreground',
   },
   'color.accent-foreground': { againstContexts: ['accent'], kind: 'text' },
+  // TONAL STATES, AND THEY ARE FILLS RATHER THAN OVERLAYS. Material 3 expresses
+  // these as a state layer -- the 'on' colour composited over the container at
+  // 8% and 10%. That is refused here for the reason 'color.primary-pressed'
+  // already states and 'button.tsx' records at its destructive variant: an
+  // opacity composite means the pair the token graph measures is not the pair a
+  // reader sees, which once reported 5.17:1 for a label rendering at 2.56:1.
+  // A third fill is measurable; a translucent overlay is not.
+  'color.accent-hover': {
+    kind: 'surface',
+    providesContexts: ['accent'],
+    reason: 'the hovered fill of a tonal control, proved through accent-foreground',
+  },
+  'color.accent-pressed': {
+    kind: 'surface',
+    providesContexts: ['accent'],
+    reason: 'the pressed fill of a tonal control, proved through accent-foreground',
+  },
   'color.background': {
     kind: 'surface',
     providesContexts: ['page'],
@@ -950,7 +967,7 @@ export function assertColorRoleRegistry(registry = COLOR_ROLE_POLICIES) {
  *
  * THE NAME CHANGED IN THE MERGE, and it is worth saying why rather than leaving
  * a reader to find it in a diff. It was `assertPolicyRegistry`, which is also
- * the name `contract.mjs` gives to the function that validates a list of
+ * the name `define-policy.mjs` gives to the function that validates a list of
  * POLICIES. Two different meanings, one name, in two files that now export
  * through one barrel — and `export *` DROPS an ambiguous name rather than
  * reporting it, so the colour registry's own validator would have vanished from

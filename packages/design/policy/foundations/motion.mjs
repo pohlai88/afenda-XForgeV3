@@ -50,8 +50,8 @@
  * the prose while moving both.
  */
 
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 

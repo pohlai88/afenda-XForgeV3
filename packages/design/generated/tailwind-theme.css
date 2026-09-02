@@ -25,11 +25,13 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 98 roles projected.
+ * 100 roles projected.
  */
 :root {
   --accent: var(--semantic-color-accent);
   --accent-foreground: var(--semantic-color-accent-foreground);
+  --accent-hover: var(--semantic-color-accent-hover);
+  --accent-pressed: var(--semantic-color-accent-pressed);
   --background: var(--semantic-color-background);
   --border: var(--semantic-color-border);
   --card: var(--semantic-color-card);
@@ -191,6 +193,8 @@
 
   --color-accent: var(--semantic-color-accent);
   --color-accent-foreground: var(--semantic-color-accent-foreground);
+  --color-accent-hover: var(--semantic-color-accent-hover);
+  --color-accent-pressed: var(--semantic-color-accent-pressed);
   --color-background: var(--semantic-color-background);
   --color-border: var(--semantic-color-border);
   --color-card: var(--semantic-color-card);

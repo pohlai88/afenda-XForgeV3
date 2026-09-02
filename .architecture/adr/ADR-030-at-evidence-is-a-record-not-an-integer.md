@@ -123,7 +123,8 @@ near-total on the static tree and zero on announcement order.
 ## Decision
 
 **1. A session is a record, and the gate enforces its shape.**
-`tooling/verify/lib/at-session.mjs` requires, per contract: `interactionRevision`,
+`packages/design/policy/interaction/assistive-technology.mjs` requires, per
+contract: `interactionRevision`,
 and one or more `runs`, each carrying `at{name,version}`, `browser{name,version}`,
 `os`, `date`, `tester`, and `scenarios[]` where every scenario has a `name` and a
 verbatim `announced`. Malformed evidence FAILS; **absent evidence stays PENDING
@@ -194,9 +195,20 @@ stage no agent edit can satisfy is a stage people learn to scroll past.
 
 Reverting Decision 3 means removing `'live-region'` from
 `PROFILES_REQUIRING_AT_EVIDENCE`; two tests fail immediately, which is the
-intended way to notice. Reverting Decision 1 means deleting `at-session.mjs` and
+intended way to notice. Reverting Decision 1 means deleting the validator and
 its call site — and `tests/unit/at-session.test.ts` fails, which is the point of
 it existing.
+
+**The validator moved after this ADR was accepted, and the decision is
+unchanged.** It was `tooling/verify/lib/at-session.mjs`, with `at-evidence.mjs`
+as the subprocess; both are deleted and their contents now live in
+`packages/design/policy/interaction/assistive-technology.mjs`, beside the
+`interaction.profile` declarations that decide who is gated. Recorded here as a
+location correction rather than a new decision: the shape a session must have,
+the two required pairings, and malformed-fails-absent-pends are all exactly as
+accepted above. ADR-024 required the superseded copy to go with the replacement;
+it did not, for the interval between the migration and the deletion, and the
+deletion commit is what closed it.
 
 ## Verification
 

@@ -43,7 +43,7 @@
  * would have been to change the component.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze, toPixels } from '../vocabulary.mjs'
 
 /* ------------------------------------------------------------- indicator -- */

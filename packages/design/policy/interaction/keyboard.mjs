@@ -48,7 +48,7 @@
  * would be the fail-open shape ADR-024 is about.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
 
 /* -------------------------------------------------------------- profiles -- */
@@ -71,9 +71,17 @@ export const KEYBOARD_SUPPLIERS = deepFreeze(['platform', 'library', 'this-syste
  * What each interaction profile owes a keyboard.
  *
  * KEYED BY PROFILE, and `assertProfileKeyboard` cross-checks the keys against
- * the registry's own list -- so this table cannot drift from `contracts.ts` in
- * either direction, and a profile added there without an entry here is a red
- * build rather than a silent hole.
+ * the registry's own list in both directions -- so a profile added to
+ * `contracts.ts` without an entry here is a red build rather than a silent hole,
+ * and an entry here for a profile no contract can declare is refused as coverage
+ * over nothing.
+ *
+ * THAT SENTENCE WAS WRITTEN BEFORE ANY OF IT WAS TRUE, and it is worth knowing
+ * which part was the lie. The validator existed and was correct; nothing called
+ * it, and the export it needed did not exist. "Cannot drift" described a
+ * function with no caller. It is now called from
+ * `tests/unit/interaction-policy.test.ts`, proven by planting a ninth profile
+ * and watching it go red.
  */
 export const PROFILE_KEYBOARD = deepFreeze({
   composite: {
@@ -208,14 +216,25 @@ export const PROFILE_COVERAGE = deepFreeze({
  * names a profile that does not exist.
  *
  * TAKES THE PROFILE LIST AS AN ARGUMENT rather than restating it. `contracts.ts`
- * owns `INTERACTION_PROFILES`, whose exhaustiveness the TypeScript compiler
- * checks against the `InteractionProfile` union -- so the union, the runtime
- * list and this table are one fact with one owner and two checks.
+ * owns `INTERACTION_PROFILES`, and the `InteractionProfile` union is DERIVED
+ * from it -- so the union and the runtime list are not two things that agree,
+ * they are one declaration read two ways, and this table is checked against it.
  *
- * Before that export existed, `tests/unit/design-contracts.test.ts` held a
- * hand-written copy of the eight names and asserted every contract's profile
- * against it. That check could only fail if the copy drifted, which is the
- * failure it was meant to prevent.
+ * THE EARLIER VERSION OF THIS PARAGRAPH CLAIMED EXACTLY THAT AND WAS FALSE. It
+ * read "whose exhaustiveness the TypeScript compiler checks against the
+ * `InteractionProfile` union -- so the union, the runtime list and this table are
+ * one fact with one owner and two checks". The export did not exist; grepped, the
+ * identifier appeared once in the repository, in that sentence. There were four
+ * copies of the eight names -- the union, this table, `PROFILE_COVERAGE`, and a
+ * hand-written array in `tests/unit/design-contracts.test.ts` -- and only the
+ * middle two were compared, by `assertKeyboardCoverage`.
+ *
+ * NOTE WHAT WOULD NOT HAVE BEEN ENOUGH, since the false comment described it:
+ * `as const satisfies readonly InteractionProfile[]` proves every member of the
+ * list is a profile and never that every profile is in the list. It is the right
+ * shape for `PROFILES_REQUIRING_AT_EVIDENCE`, which is deliberately a subset,
+ * and the wrong one here. Deriving the union removes the question instead of
+ * checking it.
  */
 export function assertProfileKeyboard(profiles, keyboard = PROFILE_KEYBOARD) {
   if (!Array.isArray(profiles) || profiles.length === 0) {

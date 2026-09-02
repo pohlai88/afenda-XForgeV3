@@ -1,4 +1,4 @@
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze, tierOf } from '../vocabulary.mjs'
 
 /**

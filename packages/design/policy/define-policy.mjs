@@ -1,4 +1,35 @@
-import { deepFreeze } from '../vocabulary.mjs'
+/**
+ * THE POLICY CONTRACT. What every policy in every tree must BE, and the registry
+ * invariant no single tree can check about itself.
+ *
+ * ── WHY IT SITS HERE AND NOT IN A TREE ─────────────────────────────────────
+ *
+ * It was `foundations/contract.mjs`, and it is not a foundation. A foundation
+ * answers "what may a value BE" and is checked against `tokens.json`; this
+ * answers "what may a POLICY be", and `interaction/` and `projection/` imported
+ * it across into `foundations/` to ask. Every module in all three trees depends
+ * on it, which is precisely the shape `index.mjs` records for `vocabulary.mjs` —
+ * "the kernel underneath the other three... it sits ABOVE the trees rather than
+ * inside one". The same sentence was true of this file while its location said
+ * otherwise, so the location moved to match.
+ *
+ * `foundations/index.mjs` no longer re-exports it either. That barrel is the
+ * foundations tree's surface; re-exporting the policy contract through it made
+ * `definePolicy` look like a foundation to anything reading the barrel, and the
+ * policy root now exports it directly beside `vocabulary.mjs`.
+ *
+ * ── THE NAME ───────────────────────────────────────────────────────────────
+ *
+ * `contract.mjs` collided with two unrelated meanings inside one package.
+ * `packages/design/policy/contracts.ts` is the COMPONENT registry — what a Button
+ * is, which profile it declares, what evidence it owes — and `packages/policy`
+ * is business authorisation. Three things called "contract" or "policy" within
+ * one repository, and the collision was not theoretical: it produced a request
+ * to delete `policy/contracts.ts` as redundant with this file. Named after its
+ * export instead, which is what a reader is actually looking for.
+ */
+
+import { deepFreeze } from './vocabulary.mjs'
 
 export const POLICY_KINDS = deepFreeze(['foundation', 'component', 'interaction', 'projection'])
 

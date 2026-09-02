@@ -72,7 +72,7 @@
 export * from './css.mjs'
 export * from './tailwind.mjs'
 
-import { assertPolicyRegistry } from '../foundations/contract.mjs'
+import { assertPolicyRegistry } from '../define-policy.mjs'
 import { assertCssModes, cssPolicy } from './css.mjs'
 import { assertTailwindTables, tailwindPolicy } from './tailwind.mjs'
 

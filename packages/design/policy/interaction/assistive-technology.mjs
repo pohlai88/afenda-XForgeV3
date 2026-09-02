@@ -5,14 +5,32 @@
  * ── WHERE THIS CAME FROM ───────────────────────────────────────────────────
  *
  * `tooling/verify/lib/at-session.mjs` and `at-evidence.mjs`, migrated here and
- * DELETED in the same commit (ADR-024: the guard a replacement supersedes goes
- * with it, or the repository briefly has two authorities for one rule and no
- * check that notices).
+ * now deleted (ADR-024: the guard a replacement supersedes goes with it, or the
+ * repository briefly has two authorities for one rule and no check that
+ * notices).
+ *
+ * THIS PARAGRAPH SAID "DELETED IN THE SAME COMMIT" AND IT WAS NOT TRUE. The
+ * migration landed; the deletion did not, and for the interval between them the
+ * repository had exactly the two authorities the sentence promises it does not
+ * -- with the copy in `tooling/` the live one, and everything here unreachable.
+ * The claim was found by reading the two headers in this directory against each
+ * other: `index.mjs` recorded the duplication accurately while this file
+ * recorded it as already resolved. Kept rather than smoothed over, because "a
+ * fact acquires a second source and the two agree until they do not" had
+ * reappeared inside the header of the file whose subject is that defect, and a
+ * deletion note that reads as though it always went to plan teaches nothing.
+ *
+ * WHAT THE INTERVAL COST, precisely: the CLI block below carried a `ROOT` depth
+ * copied from `tooling/verify/lib/` and never adjusted, so running this file
+ * resolved `packages/packages/design/policy/contracts.ts` and crashed. Nothing
+ * caught it, and nothing could have -- an import does not reach a block guarded
+ * by `argv[1]`, and no stage or suite invoked the file. Dead code is not
+ * verified code, and the first execution is the first check.
  *
  * The move is not tidying. Those two files answered a question about a DESIGN
  * SYSTEM CONTRACT -- which profile owes evidence, and what evidence is -- from
  * inside the verify runner, one directory away from the `interaction.profile`
- * declarations that decide it. `packages/design/src/contracts.ts` states the
+ * declarations that decide it. `packages/design/policy/contracts.ts` states the
  * profile; `keyboard.mjs` states what that profile owes a keyboard; this states
  * what it owes a screen reader. Those are three parts of one fact and they now
  * sit together.
@@ -61,7 +79,7 @@
  */
 
 import { pathToFileURL } from 'node:url'
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
 
 /**
@@ -357,10 +375,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { dirname, join } = await import('node:path')
   const { fileURLToPath } = await import('node:url')
 
-  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..')
+  // FOUR LEVELS, not three: interaction -> policy -> design -> packages -> root.
+  // It read `../../..` until the first time anything executed this block, which
+  // was the commit that deleted the module it was copied from. That depth was
+  // correct in `tooling/verify/lib/`, travelled with the code, and resolved to
+  // `packages/packages/design/policy/contracts.ts` here -- a defect no import, no
+  // suite and no stage could see, because a CLI block guarded by `argv[1]` is
+  // invisible to every one of them until somebody runs the file.
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../../..')
 
   const { contracts, contractsOwingAtEvidence } = await import(
-    pathToFileURL(join(ROOT, 'packages/design/src/contracts.ts')).href
+    pathToFileURL(join(ROOT, 'packages/design/policy/contracts.ts')).href
   )
   const { sessions = {} } = JSON.parse(
     readFileSync(join(ROOT, '.architecture/a11y-evidence.json'), 'utf8'),

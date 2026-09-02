@@ -40,6 +40,23 @@ const buttonVariants = cva(
           'border-border bg-background hover:bg-muted hover:text-foreground active:bg-accent aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-field dark:hover:bg-muted',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-muted active:bg-secondary-pressed aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        // MID-EMPHASIS, AND THE RUNG THE LADDER WAS MISSING. Material 3 calls
+        // this 'filled tonal' and places it between a filled button and an
+        // outlined one: the action you want found without claiming the page's
+        // single primary. Every other rung already existed here -- `default` is
+        // M3's filled, `outline` its outlined, `ghost` and `link` its text.
+        //
+        // IT REUSES `accent` RATHER THAN GROWING A CONTAINER ROLE. The tonal
+        // pair M3 asks for -- a low-chroma fill with a dark on-colour -- is
+        // exactly what `accent`/`accent-foreground` already are, in both themes.
+        // Adding `primary-container` beside it would have been a second name for
+        // one fact, agreeing until it did not.
+        //
+        // THE STATES ARE FILLS, NOT A STATE LAYER. M3 composites the on-colour
+        // over the container at 8% and 10%; `color.mjs` refuses that for the
+        // reason the destructive variant above records.
+        tonal:
+          'bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-pressed aria-expanded:bg-accent-hover',
       },
     },
   },

@@ -1015,7 +1015,7 @@ export const guards = [
      * colour, opacity, shadow, transform, filter) animates what should animate
      * and touches no layout property.
      */
-    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    applies: (f) => /^packages[/]design[/](?:src|policy)[/]/.test(f) && /[.](tsx?|css)$/.test(f),
     check(f, src) {
       const out = []
       const clean = withCommentsBlanked(src)
@@ -1066,7 +1066,7 @@ export const guards = [
      * deliberately not governed -- there is no dimension vocabulary yet, and
      * inventing one to give this guard more to do would be the wrong order.
      */
-    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    applies: (f) => /^packages[/]design[/](?:src|policy)[/]/.test(f) && /[.](tsx?|css)$/.test(f),
     check(f, src) {
       const out = []
       const clean = withCommentsBlanked(src)
@@ -1117,7 +1117,7 @@ export const guards = [
      * order, which nobody chose. The elevation policy had named that exact
      * condition as the point at which an explicit order earns itself.
      */
-    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    applies: (f) => /^packages[/]design[/](?:src|policy)[/]/.test(f) && /[.](tsx?|css)$/.test(f),
     check(f, src) {
       const out = []
       const clean = withCommentsBlanked(src)
@@ -1182,28 +1182,47 @@ export const guards = [
      * reasoning contains every word it looks for, and a check that reports the
      * prose explaining it is the exact failure the toast-layer test recorded --
      * "the prose describing a rule being counted as an instance of it".
+     *
+     * THE LOOKAROUNDS LOST THEIR BACKSLASHES, and that is the fifth appearance
+     * of the escape mangling ADR-024 records -- in a form the guard written for
+     * that class cannot see. `no-control-characters-in-source` catches a `\b`
+     * that BECAME 0x08: a substitution, leaving a byte no source should hold.
+     * Here `\w` was DELETED to `w`, which is valid printable source, so nothing
+     * looked wrong and nothing could look wrong. It survived because the
+     * fixture wrote `className="... uppercase"` -- the one input on which the
+     * mangled and the correct pattern agree.
+     *
+     * IT COST NO DETECTION, which is worth stating rather than implying. The
+     * mangled class `[w-]` is a SUBSET of `[\w-]`, so the pattern was wider
+     * than intended, not narrower: it would have flagged `capitalized` and
+     * `uppercaseLabel` and had simply not met one yet. A guard can break in the
+     * direction that makes it noisier, and "it found nothing" is evidence of
+     * neither health nor harm. Two fixtures now pin the boundary from both
+     * sides -- an identifier the mangled lookahead flagged, and a CSS
+     * declaration proving the surviving pattern still reaches that channel.
      */
-    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    applies: (f) => /^packages[/]design[/](?:src|policy)[/]/.test(f) && /[.](tsx?|css)$/.test(f),
     check(f, src) {
       const out = []
       const clean = withCommentsBlanked(src)
-      for (const re of [
-        // The Tailwind utilities, as whole class names.
-        /(?<![w-])(uppercase|lowercase|capitalize)(?![w-])/g,
-        // And the declaration, for anything authored in CSS.
-        /text-transforms*:s*(uppercase|lowercase|capitalize)/g,
-      ]) {
-        let m
-        while ((m = re.exec(clean)) !== null) {
-          out.push({
-            file: f,
-            line: line(clean, m.index),
-            message:
-              `case is transformed in CSS: ${m[1]} -- write the string as it should ` +
-              'read. A transform is invisible to whoever edits the copy, and does ' +
-              'nothing to non-Latin scripts',
-          })
-        }
+      // ONE pattern, deliberately. The Tailwind utility and the CSS
+      // declaration are the same token in two channels: in
+      // `text-transform: uppercase` the keyword is preceded by a space and
+      // followed by a semicolon, so the class-name pattern already reaches it.
+      // The second regex that used to sit here matched nothing this one does
+      // not, while stating the rule a second time -- so it was deleted rather
+      // than repaired.
+      const re = /(?<![\w-])(uppercase|lowercase|capitalize)(?![\w-])/g
+      let m
+      while ((m = re.exec(clean)) !== null) {
+        out.push({
+          file: f,
+          line: line(clean, m.index),
+          message:
+            `case is transformed in CSS: ${m[1]} -- write the string as it should ` +
+            'read. A transform is invisible to whoever edits the copy, and does ' +
+            'nothing to non-Latin scripts',
+        })
       }
       return out
     },
@@ -1250,6 +1269,50 @@ export const guards = [
   },
 
   {
+    // Law 7: the design system is where styling lives, which is why
+    // `no-bespoke-styling` exempts `packages/design/`. But that exemption is
+    // WIDER THAN THE SENTENCE THAT JUSTIFIES IT. Styling here means utilities,
+    // whose values come from the bridge and rebind with density and theme. A
+    // `style` attribute is a design value with no token behind it, no mode to
+    // rebind it, and -- until this guard -- nothing reading it.
+    //
+    // THE CHANNEL IS OPEN, not merely unguarded in principle.
+    // `tokens-are-the-authority` reads `.css` only, and `packages/design/src`
+    // holds exactly one `.css` file, so a box-shadow written as a style object
+    // inside a primitive is governed by nothing at all. There are zero today.
+    // That is a measurement, not a guarantee, and this guard is the difference.
+    //
+    // THE `-` IN THE LOOKBEHIND IS LOAD-BEARING. `no-bespoke-styling` omits it
+    // and would flag `data-style={x}`, which names an attribute rather than
+    // styling one. The clean fixture pins that boundary.
+    //
+    // Comments are blanked first, for the reason `case-lives-in-the-copy`
+    // records: a primitive explaining why it does NOT set a style attribute
+    // must not be counted as one setting it.
+    applies: (f) => /^packages[/]design[/]src[/].*[.]tsx$/.test(f),
+    check(f, src) {
+      const out = []
+      const clean = withCommentsBlanked(src)
+      const re = /(?<![-.\w])style\s*=\s*\{/g
+      let m
+      while ((m = re.exec(clean)) !== null) {
+        out.push({
+          file: f,
+          line: line(clean, m.index),
+          message:
+            'a style attribute in a primitive: a design value with no token behind ' +
+            'it and no mode to rebind it. Use a utility from the bridge, or mint a role',
+        })
+      }
+      return out
+    },
+    id: 'no-inline-style-in-primitives',
+    law: 7,
+    precision: 'text',
+    title: 'A primitive styles with utilities, never with a style attribute',
+  },
+
+  {
     // Law 7: every fact has one authoritative source. A hex code in the
     // stylesheet is a colour with two homes -- the token file and here -- and
     // the eighth instance of the defect this repository keeps having.
@@ -1284,7 +1347,7 @@ export const guards = [
     // reads the generated tokens.css and reports every primitive it DECLARES as
     // a primitive it USES. Law 27 covers that file: it is diffed after
     // regeneration, not linted.
-    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
+    applies: (f) => /^packages[/]design[/](?:src|policy)[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
       const declarations = withCommentsBlanked(src)
@@ -1379,6 +1442,8 @@ export const guards = [
       }
       return out
     },
+    dormant:
+      'packages/design held exactly one stylesheet -- design.css, the Tailwind entry -- and it was deleted. This guard refuses a literal design value in the design system CSS, so it governs zero files until a stylesheet exists again. Declared rather than left as a silent zero, and NOT deleted: the rule it enforces is unchanged, only its subject is absent.',
     id: 'tokens-are-the-authority',
     law: 7,
     precision: 'text',

@@ -49,9 +49,8 @@
  * scale's: `space.1` is 0.25rem and everything else is a multiple of it.
  */
 
-import { deepFreeze, toPixels } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
-import { ASSUMED_ROOT_PX, GRID_PX, GRID_TOLERANCE_PX } from './spacing.mjs'
+import { definePolicy } from '../define-policy.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
@@ -156,101 +155,6 @@ export function assertSizeRoles(roles = SIZE_ROLES) {
 }
 
 /* ------------------------------------------------------------ evaluation -- */
-
-const pixelOf = (raw, rootPx) => {
-  if (raw === undefined) {
-    return { px: null, why: null }
-  }
-  if (typeof raw !== 'string') {
-    return { px: null, why: `is ${JSON.stringify(raw)}, which is not a dimension` }
-  }
-  try {
-    const px = toPixels(raw, { rootPx })
-    return px === null
-      ? { px: null, why: `is '${raw}', a rem with no usable root size to measure it against` }
-      : { px, why: null }
-  } catch (error) {
-    return { px: null, why: error.message }
-  }
-}
-
-/**
- * Every sizing failure, in every mode.
- *
- * Three questions: is it on whichever grid it answers to, is a declared
- * exemption actually being used, and does a thing that must fit inside another
- * still fit once density has moved both.
- */
-export function sizingFailures(resolvedByMode, roles = SIZE_ROLES, rootPx = ASSUMED_ROOT_PX) {
-  const failures = []
-  const scale = rootPx / ASSUMED_ROOT_PX
-  const tolerance = GRID_TOLERANCE_PX * scale
-
-  for (const [label, resolved] of resolvedByMode) {
-    const pixels = new Map()
-
-    for (const [role, policy] of Object.entries(roles)) {
-      const { px, why } = pixelOf(resolved.get(policy.token), rootPx)
-      if (why !== null) {
-        failures.push(`${label}: ${role} ${why}`)
-        continue
-      }
-      if (px === null) {
-        continue
-      }
-      pixels.set(role, px)
-
-      const grid = (policy.grid ?? GRID_PX) * scale
-      const off = Math.abs(px - Math.round(px / grid) * grid)
-
-      if (policy.offGrid === undefined) {
-        if (off > tolerance) {
-          failures.push(
-            `${label}: ${role} is ${px}px, ${off.toFixed(2)}px off the ${grid}px grid, and ` +
-              `declares no exemption -- a value off the grid is a ${OFF_GRID_KINDS.join(', a ')}, ` +
-              'or it is a mistake',
-          )
-        }
-        continue
-      }
-
-      // AN EXEMPTION THAT IS NOT BEING USED. The role says it is a hairline or
-      // focus geometry, and it landed on the grid anyway -- so either the value
-      // moved and the exemption is now cover for nothing, or it never needed one.
-      // Either way the next off-grid value inherits a licence nobody re-examined.
-      if (off <= tolerance) {
-        failures.push(
-          `${label}: ${role} is ${px}px, which is ON the ${grid}px grid, while declaring the ` +
-            `'${policy.offGrid}' exemption -- an exemption in use by nothing is a licence the ` +
-            'next value will inherit without anyone re-deciding it',
-        )
-      }
-    }
-
-    // CONTAINMENT, which only density can break. An icon at 24px inside a 48px
-    // control is fine; the same icon inside a 32px compact control is the failure,
-    // and it can only appear when the two roles move by different amounts.
-    for (const [role, policy] of Object.entries(roles)) {
-      if (policy.fitsInside === undefined) {
-        continue
-      }
-      const inner = pixels.get(role)
-      const outer = pixels.get(policy.fitsInside)
-      if (inner === undefined || outer === undefined) {
-        continue
-      }
-      if (inner >= outer) {
-        failures.push(
-          `${label}: ${role} is ${inner}px inside ${policy.fitsInside} at ${outer}px -- the ` +
-            'two move on the same density axis and have moved into each other, so the ' +
-            'control has nothing left around its content',
-        )
-      }
-    }
-  }
-
-  return failures
-}
 
 /* --------------------------------------------------------------- policy -- */
 

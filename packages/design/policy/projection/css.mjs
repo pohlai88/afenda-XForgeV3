@@ -11,7 +11,7 @@
  * It does NOT own Tailwind namespace mapping.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { assertUniqueCssNames, cssNameOf, cssReferenceOf, deepFreeze } from '../vocabulary.mjs'
 
 export const CSS_MODE_AXES = deepFreeze({

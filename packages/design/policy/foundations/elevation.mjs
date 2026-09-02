@@ -16,9 +16,9 @@
  * The reasoning lives in POLICY.md; this holds the table and the refusals.
  */
 
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
 import { COLOR_ROLE_POLICIES } from './color.mjs'
-import { definePolicy } from './contract.mjs'
 
 /**
  * ELEVATION POLICY -- how a layer is separated from the one beneath it.

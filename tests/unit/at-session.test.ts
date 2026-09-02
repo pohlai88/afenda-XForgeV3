@@ -24,8 +24,11 @@ import {
   REQUIRED_PAIRINGS,
   SUPPORTED_AT,
   sessionFailures,
-  // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-} from '../../tooling/verify/lib/at-session.mjs'
+  // @ts-expect-error -- untyped .mjs policy module, deliberately outside the app
+  // graph. NOT the reason the old path carried ("tooling is untyped"): this
+  // module is in packages/, and it is the same shape for a different cause, so
+  // it gets its own sentence rather than inheriting a wrong one.
+} from '../../packages/design/policy/interaction/assistive-technology.mjs'
 
 /** One real sitting, with everything the ledger and ADR-025 promise. */
 const run = (at: string, browser: string) => ({
@@ -119,7 +122,7 @@ describe('the gate refuses', () => {
   })
 
   it('evidence recorded below the contract revision it claims to describe', () => {
-    // Staleness stays the CALLER's business -- `missing` in at-evidence.mjs --
+    // Staleness stays the CALLER's business -- `missing`, in `ledgerFailures` --
     // so this asserts the direction that is malformed rather than merely old:
     // a revision ABOVE the contract's describes a component that never shipped.
     expect(

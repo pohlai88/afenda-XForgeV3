@@ -28,8 +28,9 @@ import {
   contractIds,
   contracts,
   contractsOwingAtEvidence,
+  INTERACTION_PROFILES,
   PROFILES_REQUIRING_AT_EVIDENCE,
-} from '../../packages/design/src/contracts'
+} from '../../packages/design/policy/contracts'
 
 const ROOT = join(import.meta.dirname, '../..')
 const UI_DIR = join(ROOT, 'packages/design/src/components/ui')
@@ -42,16 +43,23 @@ const componentFiles = readdirSync(UI_DIR)
   .filter((f) => f.endsWith('.tsx'))
   .sort((a, b) => a.localeCompare(b))
 
-const PROFILES: readonly string[] = [
-  'none',
-  'native-control',
-  'form-control',
-  'modal',
-  'composite',
-  'composite-grid',
-  'live-region',
-  'disclosure',
-]
+/**
+ * A HAND-WRITTEN COPY OF THE EIGHT PROFILE NAMES STOOD HERE.
+ *
+ * It could only fail if the copy drifted from the union it was transcribed
+ * from -- which is the failure it existed to prevent, asserted against itself.
+ * `INTERACTION_PROFILES` is now the declaration the union is derived FROM, so
+ * the check below reads the same list the type does.
+ *
+ * WHAT THAT MAKES THE ASSERTION, stated honestly rather than left to look
+ * stronger than it is: the compiler already refuses a `profile` outside the
+ * union, so this is a RUNTIME reading of `contracts` as data -- the same way a
+ * schema generator or the accessibility gate reads it, neither of which the
+ * compiler protects. It catches the registry being edited as JSON, not a
+ * type error. The real cross-check between the profile list and what each
+ * profile owes is `assertProfileKeyboard`, in
+ * `tests/unit/interaction-policy.test.ts`.
+ */
 
 describe('the design system registry', () => {
   it('is not empty, so a passing suite cannot mean it checked nothing', () => {
@@ -76,7 +84,7 @@ describe('the design system registry', () => {
   it.each(Object.entries(contracts) as [string, Contract][])(
     '%s declares a profile the suites can dispatch on',
     (_id, contract) => {
-      expect(PROFILES).toContain(contract.interaction.profile)
+      expect(INTERACTION_PROFILES).toContain(contract.interaction.profile)
     },
   )
 

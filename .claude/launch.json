@@ -2,12 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "gallery",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["gallery"],
-      "port": 4300
-    },
-    {
       "name": "web",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@xforge/web", "dev"],

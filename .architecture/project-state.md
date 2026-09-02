@@ -83,7 +83,7 @@ when somebody needs telling that no conformance exists for it". It went red. So:
 ```
   STALE from the packages/design cutover until 2 Sep 2026: every spec named
   below had been DELETED while this table read as live coverage. Rewritten
-  against what exists; see ADR-030 and POLICY.md 3g.
+  against what exists; see ADR-030 and POLICY.md 3i.
 
   none            design-system-conformance.spec.ts    DERIVED from profile
   live-region     A11y-3 GATED (ADR-030)               Alert, Status

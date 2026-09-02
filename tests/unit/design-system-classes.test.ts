@@ -30,7 +30,7 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = join(import.meta.dirname, '../..')
 const PKG = join(ROOT, 'packages/design')
-const ENTRY = join(PKG, 'src/design.css')
+const ENTRY = join(PKG, 'policy/design.css')
 const BRIDGE = join(PKG, 'generated/tailwind-theme.css')
 
 /**

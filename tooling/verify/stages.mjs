@@ -844,9 +844,16 @@ export const stages = [
       if (!existsSync(evidencePath)) {
         return { detail: '.architecture/a11y-evidence.json is missing', status: FAIL }
       }
-      const sessions = JSON.parse(readFileSync(evidencePath, 'utf8')).sessions ?? {}
-
-      const r = run('node', [join(ROOT, 'tooling/verify/lib/at-evidence.mjs')])
+      // THE VERDICT IS COMPUTED IN ONE PLACE, and this stage no longer holds a
+      // second opinion about any part of it. `orphans` used to be derived here,
+      // from a copy of the ledger this function read itself, while `malformed`
+      // and `missing` came from the subprocess -- one question answered in two
+      // files, so the ordering that makes the answer honest was a comment in one
+      // of them and unenforceable from the other. `ledgerFailures` returns all
+      // four categories; this reads them.
+      const r = run('node', [
+        join(ROOT, 'packages/design/policy/interaction/assistive-technology.mjs'),
+      ])
       if (r.code !== 0) {
         return { detail: r.out, status: FAIL }
       }
@@ -856,10 +863,9 @@ export const stages = [
       // recorded session is an orphan, so checking EMPTY first would report "no
       // contract requires evidence" over a file full of sessions proving
       // nothing -- the reassuring answer, and the wrong one.
-      const orphans = Object.keys(sessions).filter((id) => !owing.gated.includes(id))
-      if (orphans.length > 0) {
+      if (owing.orphans.length > 0) {
         return {
-          detail: `evidence recorded for ${orphans.join(', ')}, which owes none`,
+          detail: `evidence recorded for ${owing.orphans.join(', ')}, which owes none`,
           status: FAIL,
         }
       }

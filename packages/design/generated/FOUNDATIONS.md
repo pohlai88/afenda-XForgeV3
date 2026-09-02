@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 228 custom properties: 116 primitive, 112 semantic, 0 component (ceiling 12).
+- 232 custom properties: 118 primitive, 114 semantic, 0 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -75,12 +75,14 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--color-sky-700` | `color.sky.700` | color | `#114a65` |
 | `--color-sky-950` | `color.sky.950` | color | `#10222c` |
 | `--color-teal-100` | `color.teal.100` | color | `#d9ecea` |
+| `--color-teal-200` | `color.teal.200` | color | `#c2e1dc` |
 | `--color-teal-300` | `color.teal.300` | color | `#52c9b8` |
 | `--color-teal-400` | `color.teal.400` | color | `#35b8a8` |
 | `--color-teal-500` | `color.teal.500` | color | `#2aa093` |
 | `--color-teal-600` | `color.teal.600` | color | `#2e7d7a` |
 | `--color-teal-700` | `color.teal.700` | color | `#24625f` |
 | `--color-teal-800` | `color.teal.800` | color | `#1c4b49` |
+| `--color-teal-900` | `color.teal.900` | color | `#163a38` |
 | `--color-teal-950` | `color.teal.950` | color | `#0f2523` |
 | `--duration-base` | `duration.base` | duration | `[object Object]` |
 | `--duration-deliberate` | `duration.deliberate` | duration | `[object Object]` |
@@ -153,6 +155,8 @@ elevation domains.
 | `--semantic-breakpoint-medium` | `semantic.breakpoint.medium` | dimension | `{breakpoint.medium}` | -- |
 | `--semantic-color-accent` | `semantic.color.accent` | color | `{color.teal.100}` | surface · provides accent |
 | `--semantic-color-accent-foreground` | `semantic.color.accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against accent |
+| `--semantic-color-accent-hover` | `semantic.color.accent-hover` | color | `{color.teal.200}` | surface · provides accent |
+| `--semantic-color-accent-pressed` | `semantic.color.accent-pressed` | color | `{color.teal.300}` | surface · provides accent |
 | `--semantic-color-background` | `semantic.color.background` | color | `{color.neutral.50}` | surface · provides page |
 | `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary |
 | `--semantic-color-card` | `semantic.color.card` | color | `{color.neutral.0}` | surface · provides card |
@@ -308,12 +312,14 @@ Selector `:root[data-density='compact']`, 11 rebound.
 
 ### `theme=dark`
 
-Selector `:root[data-theme='dark']`, 39 rebound.
+Selector `:root[data-theme='dark']`, 41 rebound.
 
 | Custom property | Value in this mode |
 | --- | --- |
 | `--semantic-color-accent` | `{color.teal.950}` |
 | `--semantic-color-accent-foreground` | `{color.teal.300}` |
+| `--semantic-color-accent-hover` | `{color.teal.900}` |
+| `--semantic-color-accent-pressed` | `{color.teal.800}` |
 | `--semantic-color-background` | `{color.ink.950}` |
 | `--semantic-color-border` | `{color.ink.600}` |
 | `--semantic-color-card` | `{color.ink.850}` |

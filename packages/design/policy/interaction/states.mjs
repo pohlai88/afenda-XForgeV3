@@ -9,13 +9,20 @@
  * combination, which is how a component API acquires forty booleans.
  *
  * So the axes are independent by construction, and the assertion below does NOT
- * demand that their value sets be disjoint: `success` is legitimately both a
- * validation outcome and a process outcome, and collapsing them would be the
- * same mistake one level up.
+ * demand that their value sets be disjoint. Two axes may legitimately share a
+ * word; collapsing them for tidiness would be the same mistake one level up.
+ *
+ * NO TWO AXES SHARE ONE TODAY, AND THAT IS A RESULT RATHER THAN A RULE. This
+ * paragraph used to offer `success` as the live example, on both `validation` and
+ * `process` -- and the overlap turned out to be the symptom, not the
+ * justification. `process` had borrowed `success` and `failure` from the
+ * validation vocabulary because nothing produced its own; once it names what
+ * writes actually report, the shared word is gone. The permission stays, because
+ * the day a real overlap appears the assertion must not refuse it.
  *
  * ── WHERE THIS CAME FROM ───────────────────────────────────────────────────
  *
- * POLICY.md 3e, which stated all of it in prose and enforced none of it. The
+ * POLICY.md 3f, which stated all of it in prose and enforced none of it. The
  * prohibition in particular was a paragraph -- and a paragraph cannot fail. What
  * moves here is the part a machine can hold: the axes, the prohibited word with
  * its five meanings, the derivation ratios, and which token each painted state
@@ -30,7 +37,7 @@
  * contrast sat directly above `opacity: 0.6`, which rendered at 2.56:1.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
 
 /* ----------------------------------------------------------------- axes -- */
@@ -40,12 +47,35 @@ import { deepFreeze } from '../vocabulary.mjs'
  *
  * `paints` says whether a value has a colour role of its own. Most do not: a
  * `loading` process state is a component swap, not a repaint, and declaring a
- * token for it would be vocabulary with no consumer.
+ * token for it would be vocabulary with no consumer. `process` is the only axis
+ * that does not paint, which is what keeps that field from being a constant.
+ *
+ * ── `process` IS THE ONE AXIS WHOSE WORDS BELONG TO ANOTHER FILE ───────────
+ *
+ * It read `idle · loading · saving · success · failure`, and two of those five
+ * were invented here. Nothing in this repository produces `success` or `failure`
+ * as a process state: writes report `saved`, `failed` and `conflict`, in
+ * `packages/design/policy/state.ts`, and the mappers, components and e2e specs all
+ * use those. `conflict` -- a whole write outcome -- was missing.
+ *
+ * NOTHING CAUGHT IT FOR AS LONG AS NOTHING READ THE AXIS. `paints: false` means
+ * it mints no token, so `stateFailures` never walks it; `assertStateAxes` checks
+ * the table's shape and not its agreement with anything. Two vocabularies for one
+ * concept, in one package, neither able to contradict the other -- the defect
+ * `CLAUDE.md` keeps a list of, in the form where the two do NOT even agree.
+ *
+ * `state.ts` OWNS THESE WORDS NOW, as `PROCESS_STATUSES`, because that is where
+ * the producers are. This axis is asserted equal to it in
+ * `tests/unit/interaction-policy.test.ts` -- from an `.mjs` table to a TypeScript
+ * union, which no import-time check in this tree can do and a test can.
  */
 export const STATE_AXES = deepFreeze({
   availability: { paints: true, values: ['enabled', 'read-only', 'disabled'] },
   interaction: { paints: true, values: ['rest', 'hover', 'focus', 'pressed', 'dragged'] },
-  process: { paints: false, values: ['idle', 'loading', 'saving', 'success', 'failure'] },
+  process: {
+    paints: false,
+    values: ['idle', 'loading', 'saving', 'saved', 'conflict', 'failed'],
+  },
   selection: {
     paints: true,
     values: ['unselected', 'selected', 'checked', 'indeterminate', 'expanded', 'current'],

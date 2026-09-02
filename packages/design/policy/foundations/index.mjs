@@ -116,43 +116,53 @@
  * it said it would collapse to nothing and its consumers would import the kernel
  * directly, and that is what happened.
  *
- * ── ELEVEN MORE FILES EXIST HERE THAT THIS INDEX REFUSES ───────────────────
+ * ── THE ELEVEN ARE DELETED, AND SO IS THE ENFORCEMENT THAT NEVER RAN ───────
  *
- * They were scaffolded, they load, and nothing exports them. The refusal is
- * per-domain and checkable rather than a preference:
+ * This section used to list eleven files that existed here and that nothing
+ * exported -- `grid`, `adaptive-layout`, `breakpoints`, `container`, `shell`,
+ * `shape`, `shadow`, `compositing`, `iconography`, `border`, `target-size` --
+ * and it closed by saying whether they were deleted or folded in was open.
  *
- *   grid, adaptive-layout   zero tokens, and zero `grid-cols-*` / `col-span-*` /
- *                           responsive variants in the product. Folded into
- *                           `layout.mjs` the day columns exist
- *   breakpoints, container,
- *   shell                   real tokens, but one domain -- they are `layout.mjs`
- *   shape                   duplicate of `radius`
- *   shadow, compositing     duplicate of `elevation`. That file says it outright:
- *                           "LAYER IS STRUCTURE; SHADOW IS ONE EXPRESSION OF IT.
- *                            The two get equated..."
- *   typeset                 the one entry with NO file on disk. Zero tokens, and
- *                           already refused on law 30 by
- *                           `.claude/skills/typeset/references/xforge.md` until a
- *                           renderer emits a tree no component authored
- *   iconography, border     one token each; they live in `sizing.mjs` until a
- *                           second gives them something to order
- *   target-size             a MOVE out of `color.mjs`, not a new domain -- and one
- *                           that is now half-done, since the floors it would hold
- *                           are in `interaction/accessibility.mjs` instead
+ * It is not open any more. They are deleted. A foundation governing zero tokens
+ * is a policy file that can only ever pass, which is ADR-024's failure and the
+ * phrase `elevation.mjs` uses twice: vocabulary with no consumer.
  *
- * A foundation governing zero tokens is a policy file that can only ever pass,
- * which is ADR-024's failure and the phrase `elevation.mjs` uses twice: the
- * problem is vocabulary with no consumer.
+ * SEVEN FUNCTIONS WENT WITH THEM, AND THEY ARE THE MORE IMPORTANT HALF, because
+ * they did not live in unreachable files. They lived in the six domains this
+ * barrel exports, and were exported alongside the tables that look enforced:
  *
- * THAT THE FILES ARE ON DISK IS ITSELF THE DEFECT THIS HEADER ONCE HID. It read
- * "ARE NOT BUILT" over a directory where `ls` said otherwise -- a claim and its
- * subject disagreeing with nothing to catch it, which is the shape CLAUDE.md
- * names. Whether the eleven are deleted, or folded into the domains named beside
- * them, is open. That none of them is reachable today is not.
+ *   densityFailures, spacingFailures, spacingDensityFailures, layoutFailures,
+ *   radiusFailures, sizingFailures, stackingFailures
+ *
+ * Each took a resolved mode set and returned a list of violations, in the same
+ * shape as `typographyFailures` and `motionFailures` -- which the generator
+ * calls. These were called by NOTHING. Not the generator, not the unit suite,
+ * not each other. Measured by planting violations rather than by reading:
+ * `space.4` at 15px, off the 4px grid that `spacing.mjs` spent 490 lines on,
+ * generated cleanly; so did `radius-sm` set larger than `radius-lg`, inverting
+ * the nesting order that is the whole of `radius.mjs`.
+ *
+ * DELETING THEM DOES NOT RESTORE THE CHECKS, AND THAT IS THE POINT OF SAYING SO
+ * HERE. Nothing was enforcing spacing, radius, sizing, stacking, layout or
+ * density against `tokens.json` before this commit, and nothing is now. What
+ * changed is that the tree no longer LOOKS like it does. The four constants only
+ * those functions read -- `FRAMEWORK_BREAKPOINTS_PX`, `READING_BAND_CHARACTERS`,
+ * `PX_PER_CHARACTER`, `LAYER_GAP` -- went too, for the same reason.
+ *
+ * WHAT REMAINS IN THOSE SIX FILES IS A TABLE AND A SELF-CHECK, and the
+ * distinction is the one this header opened with: an `assert*Roles` proves the
+ * table is internally coherent, which is a real check on a real subject. It is
+ * not a check on a token, and it never was. The two used to sit side by side
+ * exported from one file, which is precisely why the missing half went unnoticed.
+ *
+ * The three domains that ARE checked against tokens -- colour, typography,
+ * motion, plus elevation's layers and accessibility's floors -- are checked
+ * because the generator imports their failure functions and calls them. That is
+ * the only mechanism here that governs anything, and it is worth stating plainly
+ * so the next reader does not infer coverage from a policy file's existence.
  */
 
 export * from './color.mjs'
-export * from './contract.mjs'
 export * from './density.mjs'
 export * from './elevation.mjs'
 export * from './layout.mjs'
@@ -163,13 +173,13 @@ export * from './spacing.mjs'
 export * from './stacking.mjs'
 export * from './typography.mjs'
 
+import { assertPolicyRegistry } from '../define-policy.mjs'
 import {
   assertAlphaPermissions,
   assertColorPolicyKinds,
   assertColorRoleRegistry,
   colorPolicy,
 } from './color.mjs'
-import { assertPolicyRegistry } from './contract.mjs'
 import { densityPolicy } from './density.mjs'
 import { assertElevationLayers, elevationPolicy } from './elevation.mjs'
 import { assertLayoutRoles, layoutPolicy } from './layout.mjs'
@@ -214,13 +224,29 @@ export const FOUNDATION_POLICIES = assertPolicyRegistry([
  *
  * DENSITY IS THE ONE EXCEPTION, and it is stated rather than quietly skipped.
  * `assertDensityAxis` takes the `$modes` DECLARATIONS, not a role table -- density
- * declares no roles, so there is nothing beside it to self-check. It runs where
- * `tokens.json` is in scope: the unit suite and the generator.
+ * declares no roles, so there is nothing beside it to self-check.
  *
- * That is the same reasoning `elevation.mjs` records for `assertTypographyTokens`,
- * which is also absent: every synthetic source in the unit suite declares the two
- * or three tokens its case needs, so asserting against a real token file at
- * import would fail them for not being one.
+ * THIS PARAGRAPH USED TO END "it runs where `tokens.json` is in scope: the unit
+ * suite and the generator", AND THAT WAS FALSE. It ran in neither. Nothing called
+ * it, and the sentence was the only thing suggesting otherwise -- so the omission
+ * it was written to disclose read as a disclosed omission rather than as an
+ * absent check, which is worse than saying nothing.
+ *
+ * It was also SPENT. `interaction/index.mjs` justified two omissions of its own
+ * as "the same treatment `foundations/index.mjs` gives `assertDensityAxis`" --
+ * a control traded away for one that had never executed. No guard reads a
+ * sentence, so this is corrected here and there rather than caught.
+ *
+ * `assertDensityAxis` still runs nowhere. It is a real, falsifiable function
+ * taking its subject as an argument, and it is `densityPolicy`'s `assert`, so it
+ * survives the deletion below -- but nothing invokes it, and that is now what
+ * this paragraph says.
+ *
+ * The same holds for `assertTypographyTokens`, which is absent from the list for
+ * a reason that IS true: every synthetic source in the unit suite declares the
+ * two or three tokens its case needs, so asserting against a real token file at
+ * import would fail them for not being one. It is called by the generator, which
+ * is where a real token file exists.
  *
  * THE LAST THREE ARE ORDERED AND THE REST ARE NOT. Colour's three tables
  * reference each other, and the sequence is the token kernel's, kept because the

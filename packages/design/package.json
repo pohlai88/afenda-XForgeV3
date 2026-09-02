@@ -9,9 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./boundary": "./src/components/ui/resource-boundary.tsx",
-    "./contracts": "./src/contracts.ts",
-    "./design.css": "./src/design.css",
-    "./state": "./src/state.ts",
+    "./policy": "./policy/index.mjs",
     "./tailwind-theme.css": "./generated/tailwind-theme.css",
     "./tokens.css": "./generated/tokens.css",
     "./tokens.json": "./tokens.json"

@@ -57,7 +57,7 @@ function TooltipContent({
            * -- against law 34, and against the grain of the primitive.
            *
            * THE RULE THAT ACTUALLY PROTECTS A READER is therefore a rule about
-           * USE, and it lives in POLICY.md 3g: a tooltip may never be the only
+           * USE, and it lives in POLICY.md 3i: a tooltip may never be the only
            * carrier of its information, and the trigger's accessible name must
            * already say it. Base UI requires exactly that, and this component
            * cannot enforce it -- which is why Tooltip keeps `disclosure` and

@@ -36,7 +36,7 @@ not true here and following it will send you looking for a file that decides not
 
 ```
   design tokens        packages/design/tokens.json        W3C DTCG v2025.10
-  UI vocabulary        packages/design/src/contracts.ts   the contract registry
+  UI vocabulary        packages/design/policy/contracts.ts   the contract registry
   decisions            .architecture/adr/
   current state        .architecture/project-state.md
 ```
@@ -77,7 +77,7 @@ then run the gate — regenerating without staging reads as drift.
 
 Constitution rule 5 ("Core primitives → Semantic → Component") is exactly this
 repository's model, so the instinct transfers. What does not transfer is that here the
-rules are enforced rather than advised. `tooling/generators/tokens.mjs` throws on:
+rules are enforced rather than advised. `packages/design/policy/generators/tokens.mjs` throws on:
 
 - an alias to a token that does not exist, and alias cycles
 - a component token reaching past semantics to a primitive
@@ -132,7 +132,7 @@ directory up: the spec files are the most volatile thing this document could poi
 
 ```
   what runs        ls e2e/*.spec.ts
-  what is gated    contractsOwingAtEvidence() in packages/design/src/contracts.ts,
+  what is gated    contractsOwingAtEvidence() in packages/design/policy/contracts.ts,
                    which is what the `a11y-evidence` stage imports -- the gate is
                    derived from the contract profiles, never from a list
   target size      the WCAG 2.5.8 floor, statically in the generator and rendered

@@ -37,10 +37,29 @@
  *                seam that used to stand in front of it was deleted in the same
  *                pass: it existed to state the reach out of `packages/` into
  *                `tooling/` exactly once, and that boundary no longer exists
+ *   define-policy the shape a POLICY must have — id, kind, assert — and the
+ *                registry invariant no single tree can check about itself. The
+ *                SECOND module above the trees, for the same reason as
+ *                `vocabulary`: all three import it. It was
+ *                `foundations/contract.mjs`, where `interaction/` and
+ *                `projection/` reached across to fetch it, and where its name
+ *                collided with `policy/contracts.ts` — the COMPONENT registry —
+ *                closely enough to produce a request to delete one as redundant
+ *                with the other
  *   foundations  "what may a value BE" — checked against `tokens.json`
  *   interaction  "what must a component DO" — checked against `contracts.ts`
  *   projection   "what does a name BECOME" — checked against the generator's own
  *                output
+ *
+ * ── AND IT IS REACHABLE AS ONE NOW ─────────────────────────────────────────
+ *
+ * `@xforge/design/policy` resolves here. This file has always described itself
+ * as "the only thing a consumer outside this directory imports", and until the
+ * export was added there was no way to import it by that name at all — every
+ * caller used a relative path, and a deep path into `interaction/states.mjs`
+ * cost exactly as little as the sanctioned one. The claim is still a convention
+ * rather than a guard: nothing refuses a deep import. Saying which of the two it
+ * is beats leaving a reader to assume the stronger one.
  *
  * ── ORDER IS LOAD-BEARING AND IS NOT STATED HERE ───────────────────────────
  *
@@ -76,12 +95,13 @@
  *   a TypeScript projection   `token-names.json` is the only manifest
  */
 
+export * from './define-policy.mjs'
 export * from './foundations/index.mjs'
 export * from './interaction/index.mjs'
 export * from './projection/index.mjs'
 export * from './vocabulary.mjs'
 
-import { assertPolicyRegistry } from './foundations/contract.mjs'
+import { assertPolicyRegistry } from './define-policy.mjs'
 import { FOUNDATION_POLICIES } from './foundations/index.mjs'
 import { INTERACTION_POLICIES } from './interaction/index.mjs'
 import { PROJECTION_POLICIES } from './projection/index.mjs'

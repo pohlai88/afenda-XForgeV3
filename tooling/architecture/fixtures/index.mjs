@@ -68,6 +68,54 @@ export const fixtures = {
     },
   },
 
+  /**
+   * The CSS channel, which the deleted second pattern was supposed to own and
+   * never did: it required `text-transform:uppercase` with NO space, so every
+   * match it could make was already made by the class-name pattern. This
+   * fixture is the evidence that deleting it removed a duplicate rather than a
+   * rule -- without it, "the CSS declaration is still caught" is an assertion.
+   */
+  'case-lives-in-the-copy-css-declaration': {
+    because: 'case is transformed',
+    clean: {
+      path: 'packages/design/policy/design.css',
+      source: `.field-label { font-variant-caps: small-caps; }
+`,
+    },
+    guardId: 'case-lives-in-the-copy',
+    violating: {
+      path: 'packages/design/policy/design.css',
+      source: `.field-label { text-transform: uppercase; }
+`,
+    },
+  },
+
+  /**
+   * The mangled lookaround, from the side that shows it.
+   *
+   * `(?<![w-])` excluded only a literal `w`, so a word that merely CONTAINS a
+   * keyword -- `capitalized`, `uppercaseLabel` -- satisfied it and became a
+   * finding. The clean case is therefore the load-bearing half here: it is what
+   * the guard must stay SILENT about. The original fixture could not tell the
+   * mangled pattern from the correct one, because it wrote the keyword as a
+   * whole class name, which is the one input both accept.
+   */
+  'case-lives-in-the-copy-identifier': {
+    because: 'case is transformed',
+    clean: {
+      path: 'packages/design/src/components/ui/statutory.tsx',
+      source: `const capitalized = true
+export const uppercaseLabel = 'EPF'
+`,
+    },
+    guardId: 'case-lives-in-the-copy',
+    violating: {
+      path: 'packages/design/src/components/ui/statutory.tsx',
+      source: `export const CLASSES = 'text-label capitalize'
+`,
+    },
+  },
+
   'country-branching-in-core': {
     clean: {
       path: 'packages/localisation/my/payroll.ts',
@@ -461,6 +509,25 @@ export const go = () => ctx
     },
   },
   /**
+   * The clean case is a near-miss by construction: `data-style` is an attribute
+   * NAME containing the word, not an element being styled. `no-bespoke-styling`
+   * uses `(?<![.\w])` and would flag it; the `-` added to this lookbehind is
+   * what separates them, and deleting that `-` turns this fixture red.
+   */
+  'no-inline-style-in-primitives': {
+    because: 'style attribute in a primitive',
+    clean: {
+      path: 'packages/design/src/components/ui/tile.tsx',
+      source: `export const Tile = () => <div className="mt-tight" data-style="raised" />
+`,
+    },
+    violating: {
+      path: 'packages/design/src/components/ui/tile.tsx',
+      source: `export const Tile = () => <div style={{ marginBlockStart: 8 }} />
+`,
+    },
+  },
+  /**
    * THE CLEAN SIDE CALLS `revalidateTag`, deliberately.
    *
    * A fixture whose clean side merely omitted the cache would pass a guard that
@@ -489,6 +556,7 @@ export async function invalidateContacts() {
 `,
     },
   },
+
   'no-raw-spacing-value': {
     // The same row, naming the relationships. `p-0` is permitted: zero is the
     // absence of a spacing decision rather than one written as a number.
@@ -742,22 +810,22 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
   },
   'ui-holds-no-transport-vocabulary': {
     clean: {
-      path: 'packages/design/src/state.ts',
+      path: 'packages/design/policy/state.ts',
       source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
     },
     violating: {
-      path: 'packages/design/src/state.ts',
+      path: 'packages/design/policy/state.ts',
       source: `import type { Completeness } from '@xforge/api-client'${String.fromCharCode(10)}`,
     },
   },
   'ui-holds-no-transport-vocabulary-module': {
     clean: {
-      path: 'packages/design/src/state.ts',
+      path: 'packages/design/policy/state.ts',
       source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
     },
     guardId: 'ui-holds-no-transport-vocabulary',
     violating: {
-      path: 'packages/design/src/state.ts',
+      path: 'packages/design/policy/state.ts',
       source: `import type { EmergencyContact } from '@xforge/hr/repository'${String.fromCharCode(10)}`,
     },
   },

@@ -34,9 +34,8 @@
  * to name it.
  */
 
-import { deepFreeze, toPixels } from '../vocabulary.mjs'
-import { definePolicy } from './contract.mjs'
-import { ASSUMED_ROOT_PX, GRID_PX, GRID_TOLERANCE_PX } from './spacing.mjs'
+import { definePolicy } from '../define-policy.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /* ---------------------------------------------------------------- roles -- */
 
@@ -84,91 +83,6 @@ export function assertRadiusRoles(roles = RADIUS_ROLES) {
 }
 
 /* ------------------------------------------------------------ evaluation -- */
-
-const ladderOf = (roles) => Object.entries(roles).sort(([, a], [, b]) => a.rank - b.rank)
-
-/**
- * Every radius failure, in every mode.
- *
- * DENSITY DOES NOT REBIND RADIUS, and that is worth stating rather than assuming:
- * `$modes.density` touches eleven tokens and not one is a radius. A corner is not
- * information to be packed. So these checks are per-mode only because the
- * generator hands modes over -- the expectation is that every mode agrees, and
- * `density.mjs` is what would notice if one stopped.
- */
-export function radiusFailures(resolvedByMode, roles = RADIUS_ROLES, rootPx = ASSUMED_ROOT_PX) {
-  const failures = []
-  const scale = rootPx / ASSUMED_ROOT_PX
-  const grid = GRID_PX * scale
-  const tolerance = GRID_TOLERANCE_PX * scale
-
-  for (const [label, resolved] of resolvedByMode) {
-    const pixels = new Map()
-
-    for (const [role, policy] of Object.entries(roles)) {
-      const raw = resolved.get(policy.token)
-      if (raw === undefined) {
-        continue
-      }
-      if (typeof raw !== 'string') {
-        failures.push(`${label}: ${role} is ${JSON.stringify(raw)}, which is not a dimension`)
-        continue
-      }
-
-      let px
-      try {
-        px = toPixels(raw, { rootPx })
-      } catch (error) {
-        failures.push(`${label}: ${role} ${error.message}`)
-        continue
-      }
-      if (px === null) {
-        continue
-      }
-      pixels.set(role, px)
-
-      const off = Math.abs(px - Math.round(px / grid) * grid)
-      if (off > tolerance) {
-        failures.push(
-          `${label}: ${role} is ${px}px, ${off.toFixed(2)}px off the ${grid}px grid -- a corner ` +
-            'is the size of a thing, and sizes sit on the grid unless they are a hairline, ' +
-            'focus geometry or type',
-        )
-      }
-    }
-
-    const ladder = ladderOf(roles).filter(([role]) => pixels.has(role))
-
-    for (let i = 1; i < ladder.length; i += 1) {
-      const [innerRole] = ladder[i - 1]
-      const [outerRole] = ladder[i]
-      const inner = pixels.get(innerRole)
-      const outer = pixels.get(outerRole)
-
-      if (inner > outer) {
-        failures.push(
-          `${label}: '${innerRole}' (${inner}px) is rounder than '${outerRole}' (${outer}px), ` +
-            'which contains it -- an inner corner tighter than its parent is what keeps the ' +
-            'inner shape from appearing to bulge out at the join',
-        )
-        continue
-      }
-
-      // TWO ROLES AT ONE VALUE IS ONE ROLE WRITTEN TWICE. Unlike spacing, there is
-      // no headroom argument available: the radius scale is not compressed by any
-      // axis and has the whole grid to spread across, so a collision is a choice.
-      if (inner === outer) {
-        failures.push(
-          `${label}: '${innerRole}' and '${outerRole}' are both ${inner}px -- nothing ` +
-            'compresses the radius scale, so two roles at one value is one role written twice ' +
-            'and a reader cannot tell which a corner belongs to',
-        )
-      }
-    }
-  }
-
-  return failures
-}
 
 /* --------------------------------------------------------------- policy -- */
 

@@ -19,7 +19,7 @@
  *
  * ── WHAT IS NEW HERE, AND WHY IT IS NOT IN colour.mjs ──────────────────────
  *
- * THE THREE LEVELS. POLICY.md 3g states them as prose:
+ * THE THREE LEVELS. POLICY.md 3i states them as prose:
  *
  *     A11y-1   axe over WCAG 2.0/2.1/2.2 A + AA          mechanical
  *     A11y-2   keyboard, focus and ARIA, in a browser    mechanical
@@ -37,7 +37,7 @@
  * That is the whole of what this table buys, and it is deliberately not more:
  * `assertA11yLevels` proves the model is coherent, and `tests/unit/` is what
  * proves the named files exist. Neither can tell whether a scan was meaningful --
- * POLICY.md 3g records a green run over 27 rules with 36 INAPPLICABLE, because
+ * POLICY.md 3i records a green run over 27 rules with 36 INAPPLICABLE, because
  * five contracts appeared in no tree in the repository at all.
  *
  * THE `cannot` FIELD IS THE LOAD-BEARING HALF, for the same reason law 34 makes
@@ -46,7 +46,7 @@
  * a verdict.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
+import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze, toPixels } from '../vocabulary.mjs'
 
 /* ---------------------------------------------------------------- floors -- */

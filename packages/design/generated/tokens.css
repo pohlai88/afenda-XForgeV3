@@ -34,12 +34,14 @@
   --color-ink-950: #0a0a0c;
   --color-ink-1000: #000000;
   --color-teal-100: #d9ecea;
+  --color-teal-200: #c2e1dc;
   --color-teal-300: #52c9b8;
   --color-teal-400: #35b8a8;
   --color-teal-500: #2aa093;
   --color-teal-600: #2e7d7a;
   --color-teal-700: #24625f;
   --color-teal-800: #1c4b49;
+  --color-teal-900: #163a38;
   --color-teal-950: #0f2523;
   --color-brass-100: #efe4cf;
   --color-brass-300: #b8b49f;
@@ -121,6 +123,8 @@
   --easing-exit: cubic-bezier(0.2, 0, 1, 0.9);
   --semantic-color-accent: var(--color-teal-100);
   --semantic-color-accent-foreground: var(--color-teal-800);
+  --semantic-color-accent-hover: var(--color-teal-200);
+  --semantic-color-accent-pressed: var(--color-teal-300);
   --semantic-color-background: var(--color-neutral-50);
   --semantic-color-border: var(--color-neutral-300);
   --semantic-color-card: var(--color-neutral-0);
@@ -274,6 +278,8 @@
 :root[data-theme='dark'] {
   --semantic-color-accent: var(--color-teal-950);
   --semantic-color-accent-foreground: var(--color-teal-300);
+  --semantic-color-accent-hover: var(--color-teal-900);
+  --semantic-color-accent-pressed: var(--color-teal-800);
   --semantic-color-background: var(--color-ink-950);
   --semantic-color-border: var(--color-ink-600);
   --semantic-color-card: var(--color-ink-850);
