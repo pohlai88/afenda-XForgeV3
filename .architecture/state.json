@@ -8,7 +8,7 @@
       "completed": "2026-08-31",
       "commit": "955d416",
       "evidence": "local",
-      "$comment": "Certified on LOCAL evidence only. Independent CI has never executed this candidate: the remote exists and the workflow is configured, but no run has reproduced the proof on a machine that inherited nothing from the workstation. Recorded because the register must not claim more than it has. One unexplained RED in the tenancy stage also remains open and unreproduced."
+      "$comment": "Certified on LOCAL evidence only. Independent CI has never executed this candidate: the remote exists and the workflow is configured, but no run has reproduced the proof on a machine that inherited nothing from the workstation. Recorded because the register must not claim more than it has. The tenancy stage's unexplained RED is EXPLAINED and CLOSED as of 2026-09-02: the fixtures clear and re-insert rows at fixed primary keys, and nothing excluded a SECOND PROCESS from doing so mid-run. Reproduced by running a competing re-seeder against the suite -- six files down and six assertions broken, including T02 -- and by two concurrent suite runs, which corrupt each other with a duplicate-key error. RLS was never involved; only the fixture rows moved. tests/fixtures/fixture-lock.ts now serialises runners with a session-level advisory lock, proven load-bearing by neutralising it and watching the same pair of runs fail."
     }
   ]
 }

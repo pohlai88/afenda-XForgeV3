@@ -13,14 +13,17 @@
     "@xforge/api": "workspace:*",
     "@xforge/api-client": "workspace:*",
     "@xforge/db": "workspace:*",
+    "@xforge/design": "workspace:*",
     "@xforge/hr": "workspace:*",
     "@xforge/policy": "workspace:*",
     "@xforge/tenancy": "workspace:*",
-    "@xforge/tokens": "workspace:*",
-    "@xforge/ui": "workspace:*",
     "hono": "catalog:",
     "next": "^16.2.11",
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "tailwindcss": "catalog:"
   }
 }

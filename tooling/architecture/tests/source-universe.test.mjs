@@ -115,7 +115,7 @@ describe('generated source is classified explicitly, not as output', () => {
     // enforces the trailing slash, so the matcher must not depend on it --
     // otherwise an entry written `contracts` would swallow `contracts-draft/`.
     expect(classify('contracts-draft/x.ts')).toBe('source')
-    expect(classify('packages/ui/generated-notes/x.ts')).toBe('source')
+    expect(classify('packages/design/generated-notes/x.ts')).toBe('source')
   })
 })
 
@@ -125,8 +125,8 @@ describe('output outranks generated', () => {
   // location -- and a copy under generated/ would classify as committable and
   // walk straight past no-committed-build-output.
   it('an output FILE inside a generated directory is still output', () => {
-    expect(classify('packages/ui/generated/next-env.d.ts')).toBe('output')
-    expect(isUncommittablePath('packages/ui/generated/next-env.d.ts')).toBe(true)
+    expect(classify('packages/design/generated/next-env.d.ts')).toBe('output')
+    expect(isUncommittablePath('packages/design/generated/next-env.d.ts')).toBe(true)
   })
 
   it('a generated directory inside build output is still output', () => {

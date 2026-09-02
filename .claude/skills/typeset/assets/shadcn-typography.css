@@ -1,0 +1,477 @@
+/*
+ * shadcn/ui's typography scale, as a typeset.
+ *
+ * Every size, leading and weight below comes from the shadcn/ui Typography
+ * specification. Where the spec fixes a value that does not derive from the
+ * three controls, it is marked.
+ *
+ * ONE ADDITION, named so the sentence above stays true: `letter-spacing:
+ * -0.025em` on h1-h4. The pasted spec lists no tracking, but shadcn/ui's own
+ * heading components carry `tracking-tight`, and headings at 30-48px visibly
+ * loosen without it. Delete the four declarations to match the spec literally.
+ *
+ * WHAT IS AND IS NOT IN HERE. The spec lists eighteen roles, and they are two
+ * different kinds of thing:
+ *
+ *   DOCUMENT ELEMENTS   h1-h4, p, blockquote, list, table, code, inline code
+ *                       A renderer emits these. You cannot put a class on them.
+ *                       Typeset exists for exactly this, and governs them below.
+ *
+ *   UI ROLES            lead, large, small, muted, badge, card title, kb shortcut
+ *                       You apply these deliberately, to elements you authored.
+ *                       They are at the bottom of this file, OUTSIDE .typeset,
+ *                       because a container selector cannot tell a `lead`
+ *                       paragraph from any other paragraph -- both are just <p>.
+ *
+ * Putting the UI roles inside the container would mean either styling every
+ * paragraph as a lead, or inventing a class -- and once there is a class, the
+ * container was never needed. Keeping them out is not a limitation; it is the
+ * line between the two mechanisms.
+ *
+ * Import after Tailwind:
+ *   @import "tailwindcss";
+ *   @import "./typeset.css";
+ */
+
+@layer components {
+  /* ------------------------------------------------------------ container -- */
+
+  .typeset {
+    --typeset-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+    --typeset-font-heading: var(--typeset-font-body);
+    --typeset-font-mono:
+      Menlo, ui-monospace, SFMono-Regular, Consolas, monospace;
+
+    /* THE THREE CONTROLS, read off the spec's `p` role: 16px / 24px.
+       `1em` rather than `16px` so the block follows its container -- the same
+       stylesheet then reads correctly in a 14px chat bubble without a variant.
+       Flow is 1.5em = 24px, which is shadcn's own `mt-6` between blocks. */
+    --typeset-size: 1em;
+    --typeset-leading: 1.5;
+    --typeset-flow: 1.5em;
+
+    font-family: var(--typeset-font-body);
+    font-size: var(--typeset-size);
+    line-height: var(--typeset-leading);
+    color: var(--foreground);
+
+    /* No max-width. Measure belongs to the layout, not to this file. */
+  }
+
+  /* ---------------------------------------------------------------- flow -- */
+
+  /* ONE DIRECTION. Every block owns the space above itself and nothing owns the
+     space below, so appending a block never restyles one already on screen. */
+  .typeset :where(p, ul, ol, blockquote, pre, table, hr, figure) {
+    margin-block: 0;
+    margin-block-start: var(--typeset-flow);
+  }
+
+  /* `:first-child` is append-stable -- appending never changes which element is
+     first. `:last-child` appears nowhere in this file for the opposite reason. */
+  .typeset > :where(:first-child) {
+    margin-block-start: 0;
+  }
+
+  /* ------------------------------------------------------------- headings -- */
+
+  /* Sizes are multiples of --typeset-size, so a preset moves the whole scale.
+     LEADINGS ARE PER-ROLE AND DO NOT DERIVE: the spec tightens leading as size
+     grows -- 1.0 / 1.2 / 1.33 / 1.4 -- which is optical correction, not a
+     ratio. Deriving them from --typeset-leading would flatten that curve. */
+
+  .typeset :where(h1, h2, h3, h4, h5, h6) {
+    margin-block: 0;
+    margin-block-start: calc(var(--typeset-flow) * 1.6);
+    font-family: var(--typeset-font-heading);
+    text-wrap: balance;
+  }
+
+  /* The gap UNDER a heading, expressed as the next element's own top margin.
+     `+` is append-stable: the arriving element decides its spacing from what
+     precedes it, and nothing already rendered is touched. */
+  .typeset :where(:is(h1, h2, h3, h4, h5, h6) + *) {
+    margin-block-start: calc(var(--typeset-flow) * 0.5);
+  }
+
+  .typeset :where(h1) {
+    font-size: calc(var(--typeset-size) * 3); /* 48px */
+    font-weight: 800; /* Extra Bold */
+    line-height: 1; /* 48 / 48 */
+    letter-spacing: -0.025em;
+  }
+
+  .typeset :where(h2) {
+    font-size: calc(var(--typeset-size) * 1.875); /* 30px */
+    font-weight: 600; /* Semi Bold */
+    line-height: 1.2; /* 36 / 30 */
+    letter-spacing: -0.025em;
+  }
+
+  .typeset :where(h3) {
+    font-size: calc(var(--typeset-size) * 1.5); /* 24px */
+    font-weight: 600;
+    line-height: 1.3333; /* 32 / 24 */
+    letter-spacing: -0.025em;
+  }
+
+  .typeset :where(h4) {
+    font-size: calc(var(--typeset-size) * 1.25); /* 20px */
+    font-weight: 600;
+    line-height: 1.4; /* 28 / 20 */
+    letter-spacing: -0.025em;
+  }
+
+  /* The spec stops at h4. h5 and h6 track h4's treatment at body size rather
+     than inventing two steps nobody designed -- markdown that deep is rare, and
+     a guessed value is worse than an honest repeat. */
+  .typeset :where(h5, h6) {
+    font-size: var(--typeset-size);
+    font-weight: 600;
+    line-height: var(--typeset-leading);
+  }
+
+  /* ---------------------------------------------------------------- text -- */
+
+  .typeset :where(p) {
+    font-weight: 400; /* Regular, 16 / 24 -- the base */
+    /* `pretty` costs a little layout time and buys no orphans -- no single word
+       stranded on a paragraph's last line. Unlike `balance` it is meant for
+       multi-line running text, which is why headings get one and body the other.
+       It re-wraps a paragraph as it streams, which a paragraph does anyway. */
+    text-wrap: pretty;
+  }
+
+  .typeset :where(strong, b) {
+    font-weight: 600;
+  }
+
+  .typeset :where(em, i) {
+    font-style: italic;
+  }
+
+  .typeset :where(a) {
+    font-weight: 500;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  /* --------------------------------------------------------------- lists -- */
+
+  .typeset :where(ul, ol) {
+    padding-inline-start: var(--typeset-flow); /* 24px, shadcn's ml-6 */
+  }
+
+  .typeset :where(ul) {
+    list-style: disc;
+  }
+
+  .typeset :where(ol) {
+    list-style: decimal;
+  }
+
+  /* Items sit closer than blocks -- they are one thing, not several. 8px, which
+     is shadcn's `[&>li]:mt-2`, expressed as a fraction of flow so it moves. */
+  .typeset :where(li) {
+    margin-block-start: calc(var(--typeset-flow) * 0.3333);
+  }
+
+  .typeset :where(li:first-child) {
+    margin-block-start: 0;
+  }
+
+  .typeset :where(li > ul, li > ol) {
+    margin-block-start: calc(var(--typeset-flow) * 0.3333);
+  }
+
+  /* ---------------------------------------------------------- quote, rule -- */
+
+  .typeset :where(blockquote) {
+    padding-inline-start: var(--typeset-flow); /* 24px, shadcn's pl-6 */
+    font-style: italic; /* Inter Italic, 16 / 24 */
+    border-inline-start: 2px solid var(--border); /* Inter Italic, 16 / 24 */
+  }
+
+  .typeset :where(hr) {
+    margin-block-start: calc(var(--typeset-flow) * 2);
+    border: 0;
+    border-block-start: 1px solid var(--border);
+  }
+
+  /* ---------------------------------------------------------------- code -- */
+
+  /* 0.875em rather than a fixed 14px: monospace runs optically larger at the
+     same nominal size, and a relative value keeps the correction proportional
+     inside a heading as well as inside a paragraph. */
+  .typeset :where(code, kbd, samp) {
+    font-family: var(--typeset-font-mono);
+    font-size: 0.875em; /* 14px against a 16px parent */
+  }
+
+  /* Inline code. The spec says Bold; shadcn/ui's own component ships
+     `font-semibold`. Following the spec, with the alternative named rather than
+     silently chosen -- change to 600 to match the component. */
+  .typeset :where(:not(pre) > code) {
+    padding: 0.125em 0.375em;
+    font-weight: 700;
+    line-height: 1.4286; /* 20 / 14 */
+    background: var(--muted);
+    border-radius: calc(var(--radius) * 0.5); /* 20 / 14 */
+  }
+
+  .typeset :where(pre) {
+    padding: var(--typeset-flow);
+    overflow-x: auto;
+    line-height: 1.4286; /* 20 / 14 -- a code block sets its own */
+    background: var(--muted);
+    border-radius: var(--radius); /* 20 / 14 -- a code block sets its own */
+  }
+
+  .typeset :where(pre code) {
+    padding: 0;
+    font-size: inherit;
+    font-weight: 400; /* Menlo Regular */
+    background: none; /* Menlo Regular */
+  }
+
+  /* --------------------------------------------------------------- table -- */
+
+  .typeset :where(table) {
+    width: 100%;
+    font-size: 0.875em; /* 14px -- the spec sets both head and item here */
+    /*
+     * TABULAR FIGURES -- the one rule an editorial standard actually forces.
+     * AP prints figures for 10 and above, so a markdown table carries numerals
+     * by default; and in a proportional face the `1` is narrower than the `8`,
+     * so a column of numbers does not line up and cannot be scanned down.
+     * `tabular-nums` equalises the advance width without changing the face, and
+     * is inert on a font with no tabular set, so it costs nothing to state.
+     */
+    font-variant-numeric: tabular-nums;
+    line-height: 1.7143; /* 24 / 14 */
+    text-align: start;
+    border-collapse: collapse;
+  }
+
+  /* THE SEPARATOR IS ON THE ARRIVING ROW'S TOP EDGE, never the previous row's
+     bottom. A new row brings its own rule, nothing above it is restyled, and
+     there is no trailing border needing a `:last-child` to remove it. */
+  .typeset :where(th, td) {
+    padding: calc(var(--typeset-flow) * 0.3333)
+      calc(var(--typeset-flow) * 0.6667);
+    vertical-align: top;
+    border-block-start: 1px solid var(--border);
+  }
+
+  .typeset :where(th) {
+    font-weight: 500; /* Medium */
+  }
+
+  .typeset :where(thead tr:first-child th) {
+    border-block-start: 0;
+  }
+
+  /* -------------------------------------------------------------- figure -- */
+
+  .typeset :where(img, video, canvas, svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .typeset :where(figcaption) {
+    margin-block-start: calc(var(--typeset-flow) * 0.3333);
+    font-size: 0.875em;
+    line-height: 1.4286;
+    color: var(--muted-foreground);
+  }
+
+  /* ----------------------------------------------------------- editorial -- */
+
+  /*
+   * The marks a renderer emits that people forget to style. Every one of these
+   * comes out of ordinary markdown -- GFM footnotes, strikethrough, definition
+   * lists, abbreviations -- and the first three are bugs rather than omissions.
+   * See `references/editorial.md` for how each was found.
+   */
+
+  /*
+   * FOOTNOTE REFERENCES MUST NOT GROW THE LINE BOX, and `line-height: 0` is the
+   * whole fix. A default `vertical-align: super` raises the glyph while it keeps
+   * its own line-height, so the line box grows and one paragraph in a document
+   * sits taller than its neighbours -- for the single reason that it cites
+   * something. GFM footnotes emit `<sup>`, so this is common, and it reads as
+   * "the spacing is a bit off here" rather than as a cause.
+   */
+  .typeset :where(sup, sub) {
+    position: relative;
+    font-size: 0.75em;
+    line-height: 0;
+    vertical-align: baseline;
+  }
+  .typeset :where(sup) {
+    top: -0.5em;
+  }
+  .typeset :where(sub) {
+    bottom: -0.25em;
+  }
+
+  /*
+   * HIGHLIGHT, THEMED. The browser default is a yellow background with inherited
+   * text colour -- which in dark mode is light text on yellow, and unreadable.
+   * `--muted` is deliberately quiet; a product wanting a louder highlight should
+   * override this rule rather than reintroduce a literal colour here.
+   */
+  .typeset :where(mark) {
+    padding: 0.1em 0.2em;
+    color: inherit;
+    background: var(--muted);
+    border-radius: calc(var(--radius) * 0.25);
+  }
+
+  /* An abbreviation only announces itself if it is marked. Browsers disagree on
+     the default, so it is stated. */
+  .typeset :where(abbr[title]) {
+    text-decoration: underline dotted;
+    text-underline-offset: 0.2em;
+    cursor: help;
+  }
+
+  /* Definition lists: `dl` already takes block flow above; without these its
+     terms and definitions are indistinguishable, which looks deliberate. */
+  .typeset :where(dt) {
+    margin-block-start: var(--typeset-flow);
+    font-weight: 600;
+  }
+  .typeset :where(dt:first-child) {
+    margin-block-start: 0;
+  }
+  .typeset :where(dd) {
+    margin-inline-start: var(--typeset-flow);
+  }
+
+  /* Deleted text recedes; inserted text is marked but must not read as a link,
+     which is why the offset matches the link rule rather than the default. */
+  .typeset :where(del, s) {
+    color: var(--muted-foreground);
+  }
+  .typeset :where(ins) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .typeset :where(small) {
+    font-size: 0.875em;
+  }
+
+  .typeset :where(cite) {
+    font-style: italic;
+  }
+
+  /* GFM task lists. The checkbox is disabled by the renderer, so the only job
+     here is to stop it colliding with the list marker it replaces. */
+  .typeset :where(li > input[type="checkbox"]) {
+    margin-inline-end: 0.4em;
+    vertical-align: middle;
+  }
+
+  /* ------------------------------------------------------------- opt out -- */
+
+  /* LAST, so it wins at equal specificity. `revert-layer` drops the subtree back
+     to whatever the previous layer said -- the component's own styling, which is
+     what "untouched" should mean. */
+  .typeset :where(.not-typeset, [data-not-typeset]),
+  .typeset :where(.not-typeset, [data-not-typeset]) * {
+    all: revert-layer;
+  }
+
+  /* ------------------------------------------------------------- presets -- */
+
+  /* Chat: tighter rhythm, and the size follows the bubble because it is 1em. */
+  .typeset-chat {
+    --typeset-leading: 1.5;
+    --typeset-flow: 1em;
+  }
+
+  /* Docs: the spec's own rhythm, stated explicitly so it survives a change to
+     the container defaults. */
+  .typeset-docs {
+    --typeset-size: 1em;
+    --typeset-leading: 1.5;
+    --typeset-flow: 1.5em;
+  }
+
+  /* Reading: larger and roomier, for a long-form or accessibility setting. */
+  .typeset-reading {
+    --typeset-size: 1.125em;
+    --typeset-leading: 1.75;
+    --typeset-flow: 2em;
+  }
+}
+
+/* Outside the layer and outside `.typeset`: wrap any wide block -- usually a
+   table -- to scroll it instead of wrapping it. Works standalone, because a
+   renderer's table component may sit outside the container. */
+.typeset-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ======================================================================== *
+ *  UI ROLES -- NOT typeset, and deliberately so.
+ *
+ *  Every one of these is applied to an element you authored. A container
+ *  selector cannot distinguish a `lead` paragraph from any other <p>, so these
+ *  are classes, and being classes they need no container at all.
+ *
+ *  They sit outside `@layer components` at plain specificity because they are
+ *  the author's explicit choice and should not be beaten by an ambient rule.
+ * ======================================================================== */
+
+.type-lead {
+  font-size: 1.25rem; /* 20 / 28 Regular */
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.type-large {
+  font-size: 1.125rem; /* 18 / 28 Semi Bold */
+  font-weight: 600;
+  line-height: 1.5556;
+}
+
+.type-small {
+  font-size: 0.875rem; /* 14 / 14 Medium -- leading-none */
+  font-weight: 500;
+  line-height: 1;
+}
+
+.type-muted {
+  font-size: 0.875rem; /* 14 / 20 Regular */
+  line-height: 1.4286;
+  color: var(--muted-foreground);
+}
+
+.type-badge {
+  font-size: 0.75rem; /* 12 / 16 Semi Bold */
+  font-weight: 600;
+  line-height: 1.3333;
+}
+
+.type-card-title {
+  font-size: 1.5rem; /* 24 / 24 Semi Bold -- leading-none */
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+/* INTER, not mono. The spec lists `kb shortcut` as Inter Regular -- the one role
+   where the obvious guess (a keyboard shortcut must be monospace) is wrong.
+   `<kbd>` inside prose IS mono, up in the code section; this is the UI chip. */
+.type-kbd {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.75rem; /* 12 / 20 Regular */
+  font-weight: 400;
+  line-height: 1.6667;
+}

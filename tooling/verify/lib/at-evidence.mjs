@@ -13,14 +13,20 @@
  * it until somebody changed one, which is the defect this repository keeps
  * having. The same function is what the profile-mutation table interrogates.
  *
- * Prints JSON on stdout: `{ gated, missing }`. `gated` is who owes evidence at
- * all; `missing` is who owes it and has none current. A caller distinguishing
- * "nobody is gated" from "everybody is covered" needs both, because those are
- * different facts that a single number reports identically.
+ * Prints JSON on stdout: `{ gated, malformed, missing }`. `gated` is who owes
+ * evidence at all; `missing` is who owes it and has none current. A caller
+ * distinguishing "nobody is gated" from "everybody is covered" needs both,
+ * because those are different facts that a single number reports identically.
+ *
+ * `malformed` is the third, and it was absent while the ledger's own header
+ * described it: sentences naming every recorded entry that is not a session.
+ * Missing evidence is an honest state; malformed evidence is a claim, and only
+ * the second is a failure today.
  */
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { sessionFailures } from './at-session.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 
@@ -30,7 +36,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 // ERR_UNSUPPORTED_ESM_URL_SCHEME because the loader reads the drive letter as a
 // URL scheme.
 const { contracts, contractsOwingAtEvidence } = await import(
-  pathToFileURL(join(ROOT, 'packages/ui/src/contracts.ts')).href
+  pathToFileURL(join(ROOT, 'packages/design/src/contracts.ts')).href
 )
 
 const { sessions = {} } = JSON.parse(
@@ -51,4 +57,22 @@ const missing = gated.filter((id) => {
   return typeof recorded !== 'number' || recorded < contracts[id].interaction.revision
 })
 
-process.stdout.write(JSON.stringify({ gated, missing }))
+/**
+ * AND WHETHER WHAT IS RECORDED IS A SESSION AT ALL, which used to go unasked.
+ *
+ * `missing` above answers "is there a number, and is it current". That is the
+ * whole of what this gate checked, so `{ "Dialog": { "interactionRevision": 1 } }`
+ * satisfied it -- while the ledger's header promised a tool and a version and
+ * ADR-025 required a verbatim transcript per scenario. The two prose sources
+ * agreed with each other and neither agreed with the code.
+ *
+ * MALFORMED IS NOT MISSING. Absent evidence is honest and the phase gate treats
+ * it as a precondition; evidence that is not evidence is a claim of coverage
+ * that is not one, and fails today -- the same reasoning that puts the orphan
+ * check ahead of the empty check in the stage.
+ */
+const malformed = gated.flatMap((id) =>
+  sessionFailures(id, sessions[id], contracts[id].interaction.revision),
+)
+
+process.stdout.write(JSON.stringify({ gated, malformed, missing }))

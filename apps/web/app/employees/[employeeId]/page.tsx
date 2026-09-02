@@ -1,4 +1,5 @@
-import { ResourceBoundary } from '@xforge/ui/boundary'
+import { Heading } from '@xforge/design'
+import { ResourceBoundary } from '@xforge/design/boundary'
 import { EmergencyContacts } from './emergency-contacts'
 
 /**
@@ -16,13 +17,25 @@ export default async function EmployeePage({
   const { employeeId } = await params
   return (
     <main>
-      <h1>Employee</h1>
+      {/* The PRIMITIVE, not a raw <h1>, and Tailwind's preflight is what made
+          the difference visible. Preflight sets `h1..h6 { font-size: inherit;
+          font-weight: inherit }`, so this rendered at 16px/400 while the
+          Heading primitive beside it rendered at its token size. Every xf-*
+          component sets its own size, weight and margin, so preflight changed
+          nothing about the design system -- it changed only the one element on
+          this screen that had gone around it.
+
+          Worth keeping in mind rather than treating as a one-off fix:
+          `no-bespoke-styling` catches a screen that writes className or style.
+          It cannot catch a screen that writes a bare element and accepts the
+          browser's defaults, because there is nothing there to match on. */}
+      <Heading level={1}>Employee</Heading>
       {/* Contained HERE, not inside the component. The mapper refuses an
           unrecognised wire code and runs during render -- but it runs in the
           controller HOOK, before any JSX exists, so a boundary inside
           EmergencyContacts cannot catch its own hook. The surface is the whole
           section; the shell above it survives. */}
-      <ResourceBoundary testId="stale-client">
+      <ResourceBoundary data-testid="stale-client">
         <EmergencyContacts employeeId={employeeId} />
       </ResourceBoundary>
     </main>

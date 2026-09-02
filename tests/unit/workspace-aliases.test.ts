@@ -4,9 +4,9 @@
  * The hand-written alias table was a second source for the `exports` maps the
  * workspace packages already declare, and it had gone lossy without anything
  * noticing: seven declared exports existed in no alias table. Then
- * `vite.harness.config.ts` copied four entries out of it and diverged in both
- * directions -- it carried `@xforge/ui/schema`, which the table lacked, and
- * lacked `@xforge/ui/state`, which three files under apps/web import.
+ * a second config copied four entries out of it and diverged in both
+ * directions -- it carried a specifier the table lacked, and lacked
+ * `@xforge/design/state`, which three files under apps/web import.
  *
  * Nothing could have reported either. The suites were green because nothing
  * they ran imported the missing specifier YET, which is agreement rather than
@@ -21,7 +21,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import harnessConfig from '../../vite.harness.config.ts'
+import galleryConfig from '../../vite.gallery.config.ts'
 import { aliases } from '../../workspace.aliases.ts'
 
 const ROOT = join(import.meta.dirname, '../..')
@@ -88,15 +88,30 @@ describe('workspace module resolution has one owner', () => {
     }
   })
 
-  it('the conformance harness carries no alias list of its own', () => {
-    expect(harnessConfig.resolve?.alias).toBe(aliases)
+  /**
+   * The gallery is the surviving consumer of the table, and it is asserted by
+   * CONTAINMENT rather than by identity.
+   *
+   * This used to read `expect(harnessConfig.resolve?.alias).toBe(aliases)` --
+   * the same object, no copy possible. The harness was deleted with the design
+   * system it interpreted, and the gallery spreads the table alongside one entry
+   * of its own (`@` -> the design system's src, which the shadcn CLI writes into
+   * every component it installs). Identity cannot hold through a spread, so what
+   * is asserted is the property the identity check was standing in for: every
+   * workspace alias reaches the gallery, unaltered, and none is restated.
+   */
+  it('the gallery carries no alias list of its own', () => {
+    const alias = galleryConfig.resolve?.alias as Record<string, string>
+    for (const [specifier, target] of Object.entries(aliases)) {
+      expect(alias[specifier]).toBe(target)
+    }
   })
 
   it('no config restates an alias instead of importing the owner', () => {
     // `vitest.architecture.config.ts` was a third consumer until the test
     // partition was consolidated into `vitest.config.ts`'s projects. It is
     // named here so its absence reads as a deletion rather than an omission.
-    const consumers = ['vitest.config.ts', 'vite.harness.config.ts']
+    const consumers = ['vitest.config.ts', 'vite.gallery.config.ts']
     for (const file of consumers) {
       const source = readFileSync(join(ROOT, file), 'utf8')
       expect(source).toContain("from './workspace.aliases.ts'")

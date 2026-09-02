@@ -1,0 +1,311 @@
+/*
+ * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.
+ *
+ * Law 27: generated state is never hand-edited. Change the token file and
+ * run `pnpm generate`; editing this output makes the generate stage fail,
+ * which asserts it is byte-identical after regeneration.
+ *
+ * `inline` is load-bearing: it makes Tailwind emit the var() REFERENCE into
+ * each utility rather than copying the value, so [data-theme] and
+ * [data-density] keep rebinding what a utility renders. A plain @theme here
+ * would freeze every utility at whatever the base mode resolved to.
+ *
+ * Requires packages/design/generated/tokens.css to be loaded first -- it
+ * declares every property referenced below.
+ *
+ * Deliberately not projected:
+ *   semantic.color.shadow-ambient -- an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure
+ *   semantic.color.shadow-key -- an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure
+ *   semantic.layer.local -- z-index has no Tailwind theme namespace; reached through the `layer-local` @utility
+ *   semantic.layer.overlay -- z-index has no Tailwind theme namespace; reached through the `layer-overlay` @utility
+ *   semantic.motion.duration.base -- no --duration-* theme namespace; reached through the `duration-base` @utility
+ *   semantic.motion.duration.none -- consumed by the prefers-reduced-motion block in design.css, not by a utility
+ *   semantic.motion.duration.overlay -- no --duration-* theme namespace; reached through the `duration-overlay` @utility
+ *   semantic.motion.duration.press -- no --duration-* theme namespace; reached through the `duration-press` @utility
+ *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
+ *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
+ *
+ * 98 roles projected.
+ */
+:root {
+  --accent: var(--semantic-color-accent);
+  --accent-foreground: var(--semantic-color-accent-foreground);
+  --background: var(--semantic-color-background);
+  --border: var(--semantic-color-border);
+  --card: var(--semantic-color-card);
+  --card-foreground: var(--semantic-color-card-foreground);
+  --destructive: var(--semantic-color-destructive);
+  --destructive-foreground: var(--semantic-color-destructive-foreground);
+  --destructive-hover: var(--semantic-color-destructive-hover);
+  --disabled: var(--semantic-color-disabled);
+  --disabled-foreground: var(--semantic-color-disabled-foreground);
+  --error: var(--semantic-color-error);
+  --error-foreground: var(--semantic-color-error-foreground);
+  --field: var(--semantic-color-field);
+  --foreground: var(--semantic-color-foreground);
+  --info: var(--semantic-color-info);
+  --info-foreground: var(--semantic-color-info-foreground);
+  --input: var(--semantic-color-input);
+  --muted: var(--semantic-color-muted);
+  --muted-foreground: var(--semantic-color-muted-foreground);
+  --popover: var(--semantic-color-popover);
+  --popover-foreground: var(--semantic-color-popover-foreground);
+  --primary: var(--semantic-color-primary);
+  --primary-foreground: var(--semantic-color-primary-foreground);
+  --primary-hover: var(--semantic-color-primary-hover);
+  --primary-pressed: var(--semantic-color-primary-pressed);
+  --ring: var(--semantic-color-ring);
+  --scrim: var(--semantic-color-scrim);
+  --secondary: var(--semantic-color-secondary);
+  --secondary-foreground: var(--semantic-color-secondary-foreground);
+  --secondary-hover: var(--semantic-color-secondary-hover);
+  --secondary-pressed: var(--semantic-color-secondary-pressed);
+  --shadow-ambient: var(--semantic-color-shadow-ambient);
+  --shadow-key: var(--semantic-color-shadow-key);
+  --statutory: var(--semantic-color-statutory);
+  --statutory-foreground: var(--semantic-color-statutory-foreground);
+  --success: var(--semantic-color-success);
+  --success-foreground: var(--semantic-color-success-foreground);
+  --warning: var(--semantic-color-warning);
+  --warning-foreground: var(--semantic-color-warning-foreground);
+}
+
+@theme inline {
+  /*
+   * Tailwind ships a default palette -- red-50 through rose-950, some 250
+   * colours. Left in place, `bg-red-500` would be a working utility, and a
+   * screen or a pasted block could paint with a value the token file has
+   * never heard of: no role, no theme rebinding, no contrast measurement.
+   *
+   * THIS IS THE UTILITY-LAYER TWIN OF A GUARD THAT ALREADY EXISTS.
+   * `stylesheet-names-roles-not-primitives` refuses `var(--color-teal-600)`
+   * in packages/design CSS for exactly this reason -- a primitive carries a value
+   * and no role, so a mode has nothing to rebind. No guard reads class names,
+   * so the same rule cannot be enforced that way for utilities. Removing the
+   * namespace enforces it by construction instead: the utility does not exist.
+   *
+   * The cost is real and is accepted: a shadcn block written against the
+   * default palette renders unstyled where it used one, which is a visible
+   * failure at the point of paste rather than a silent divergence from the
+   * token system months later.
+   *
+   * SCOPED TO COLOUR ON PURPOSE. `--*: initial` would also remove breakpoints,
+   * which blocks need for responsive layout and which are not design values
+   * this repository owns.
+   */
+  --color-*: initial;
+
+  /*
+   * The weight scale, for the same reason one step down. `font-medium` was
+   * rendering on twelve elements while `semantic.weight.medium` did not exist
+   * -- it resolved to a Tailwind default, outside the token system entirely.
+   *
+   * Cleared, so `font-bold` and the rest do not silently exist either: a
+   * weight the design system never chose is a design value with no role.
+   */
+  --font-weight-*: initial;
+
+  /*
+   * AND THE TYPE SCALE, which is the one that had actually gone wrong. Forty-
+   * six occurrences of `text-sm`, `text-xs`, `text-base` and one `text-
+   * [0.8rem]` were live across fifteen vendored components: a SECOND type
+   * scale, complete and self-consistent, sitting beside the four roles this
+   * file defines. Every check passed. The h1 and the h2 rendered identically
+   * and the labels rendered smaller than the policy floor, and the only thing
+   * that could ever have reported it was a person looking at the screen.
+   *
+   * Closed, `text-sm` produces no font-size at all, and the compile test --
+   * which asserts every class in source resolves to a real rule -- turns each
+   * of those forty-six into a failure at authorship time.
+   */
+  --text-*: initial;
+
+  /*
+   * Leading, which travels with size. `leading-none` set a 14px label at a
+   * 1.0 ratio while the system's own floor for body text is 1.5 -- not a
+   * violation any check could see, because the class belonged to Tailwind.
+   */
+  --leading-*: initial;
+
+  /*
+   * Letterspacing, the last namespace left open. Two components were setting
+   * `tracking-widest` -- a Tailwind default of 0.1em, a value this token file
+   * had never heard of -- on keyboard-shortcut labels. The same escape as
+   * a bg-red-500, in the one place nobody had thought to look, found by asking
+   * which namespaces were closed rather than by anything going wrong.
+   */
+  --tracking-*: initial;
+
+  /*
+   * Depth, and the sixth namespace. Tailwind ships shadow-2xs through shadow-2xl,
+   * and four components were using shadow-md and shadow-lg -- reasonable values on
+   * the right kind of surface, with no provenance at all.
+   *
+   * Closed, the only shadows that exist are the five PLANES: flat, raised,
+   * floating, overlay, modal. A component names where a surface sits rather than
+   * how blurry its edge is -- and shadow-flat being a real class that sets none is
+   * deliberate, because a card DECLARING it has no shadow is a decision where a
+   * card with no shadow class is an omission.
+   */
+  --shadow-*: initial;
+
+  /*
+   * Shape, and the seventh namespace -- the one where two scales were live at once.
+   * This system owned sm, md and lg; Tailwind still supplied xs, xl, 2xl, 3xl and
+   * 4xl, and eleven classes used the foreign half.
+   *
+   * The pair that made it dangerous: `rounded-xl` is a Tailwind default of 12px and
+   * `radius.container` is also 12px. They agreed, nothing kept them agreeing, and a
+   * reader could not tell which of the two scales any class belonged to.
+   *
+   * Closed, the shape vocabulary is four roles plus two statics. `rounded-full` and
+   * `rounded-none` survive this -- they are computed utilities rather than theme
+   * keys -- and that asymmetry is wanted here, because both are semantic: one names
+   * an intrinsically round object, the other names structure.
+   */
+  --radius-*: initial;
+
+  /*
+   * The window classes, and the reason this one matters more than it looks.
+   * Tailwind ships 640 / 768 / 1024 / 1280 / 1536. Material 3 defines its window
+   * size classes at 600 / 840 / 1200 / 1600, and NOT ONE VALUE COINCIDES -- so
+   * every responsive variant in this system was firing at a number chosen by a
+   * framework default rather than by anyone here.
+   *
+   * Left open, minting `--breakpoint-expanded` would put two scales on one prefix,
+   * which is exactly the defect the radius closure had just finished removing.
+   */
+  --breakpoint-*: initial;
+
+  /*
+   * Max-widths. Tailwind ships a t-shirt scale here -- 3xs through 7xl plus
+   * `prose` at 65ch -- and this system needs four values with meanings: a tip, a
+   * dialog, a line of prose, a form.
+   *
+   * A WORKSPACE HAS NO ENTRY, and that is the rule rather than an omission. Tables,
+   * charts and editors are fluid; what is READ has a ceiling. Closing the namespace
+   * is what makes reaching for `max-w-4xl` fail instead of quietly stretching a
+   * paragraph to 1500px.
+   */
+  --container-*: initial;
+
+  --color-accent: var(--semantic-color-accent);
+  --color-accent-foreground: var(--semantic-color-accent-foreground);
+  --color-background: var(--semantic-color-background);
+  --color-border: var(--semantic-color-border);
+  --color-card: var(--semantic-color-card);
+  --color-card-foreground: var(--semantic-color-card-foreground);
+  --color-destructive: var(--semantic-color-destructive);
+  --color-destructive-foreground: var(--semantic-color-destructive-foreground);
+  --color-destructive-hover: var(--semantic-color-destructive-hover);
+  --color-disabled: var(--semantic-color-disabled);
+  --color-disabled-foreground: var(--semantic-color-disabled-foreground);
+  --color-error: var(--semantic-color-error);
+  --color-error-foreground: var(--semantic-color-error-foreground);
+  --color-field: var(--semantic-color-field);
+  --color-foreground: var(--semantic-color-foreground);
+  --color-info: var(--semantic-color-info);
+  --color-info-foreground: var(--semantic-color-info-foreground);
+  --color-input: var(--semantic-color-input);
+  --color-muted: var(--semantic-color-muted);
+  --color-muted-foreground: var(--semantic-color-muted-foreground);
+  --color-popover: var(--semantic-color-popover);
+  --color-popover-foreground: var(--semantic-color-popover-foreground);
+  --color-primary: var(--semantic-color-primary);
+  --color-primary-foreground: var(--semantic-color-primary-foreground);
+  --color-primary-hover: var(--semantic-color-primary-hover);
+  --color-primary-pressed: var(--semantic-color-primary-pressed);
+  --color-ring: var(--semantic-color-ring);
+  --color-scrim: var(--semantic-color-scrim);
+  --color-secondary: var(--semantic-color-secondary);
+  --color-secondary-foreground: var(--semantic-color-secondary-foreground);
+  --color-secondary-hover: var(--semantic-color-secondary-hover);
+  --color-secondary-pressed: var(--semantic-color-secondary-pressed);
+  --color-statutory: var(--semantic-color-statutory);
+  --color-statutory-foreground: var(--semantic-color-statutory-foreground);
+  --color-success: var(--semantic-color-success);
+  --color-success-foreground: var(--semantic-color-success-foreground);
+  --color-warning: var(--semantic-color-warning);
+  --color-warning-foreground: var(--semantic-color-warning-foreground);
+  --container-dialog: var(--semantic-content-dialog);
+  --container-form: var(--semantic-content-form);
+  --container-prose: var(--semantic-content-prose);
+  --container-tip: var(--semantic-content-tip);
+  --ease-entrance: var(--semantic-ease-entrance);
+  --ease-exit: var(--semantic-ease-exit);
+  --ease-standard: var(--semantic-ease-standard);
+  --font-mono: var(--semantic-font-mono);
+  --font-sans: var(--semantic-font-sans);
+  --font-weight-body: var(--semantic-weight-body);
+  --font-weight-body-compact: var(--semantic-weight-body-compact);
+  --font-weight-caption: var(--semantic-weight-caption);
+  --font-weight-emphasis: var(--semantic-weight-emphasis);
+  --font-weight-heading: var(--semantic-weight-heading);
+  --font-weight-label: var(--semantic-weight-label);
+  --font-weight-medium: var(--semantic-weight-medium);
+  --leading-body: var(--semantic-leading-body);
+  --leading-caption: var(--semantic-leading-caption);
+  --leading-compact: var(--semantic-leading-compact);
+  --leading-heading: var(--semantic-leading-heading);
+  --leading-label: var(--semantic-leading-label);
+  --leading-title: var(--semantic-leading-title);
+  --radius-container: var(--semantic-radius-container);
+  --radius-control: var(--semantic-radius-control);
+  --radius-overlay: var(--semantic-radius-overlay);
+  --radius-precise: var(--semantic-radius-precise);
+  --shadow-flat: var(--semantic-elevation-flat);
+  --shadow-floating: var(--semantic-elevation-floating);
+  --shadow-modal: var(--semantic-elevation-modal);
+  --shadow-overlay: var(--semantic-elevation-overlay);
+  --shadow-raised: var(--semantic-elevation-raised);
+  --spacing-container: var(--semantic-space-container);
+  --spacing-control-min-size: var(--semantic-control-min-size);
+  --spacing-control-x: var(--semantic-space-control-x);
+  --spacing-control-y: var(--semantic-space-control-y);
+  --spacing-icon-size: var(--semantic-icon-size);
+  --spacing-loose: var(--semantic-space-loose);
+  --spacing-normal: var(--semantic-space-normal);
+  --spacing-related: var(--semantic-space-related);
+  --spacing-ring: var(--semantic-size-ring);
+  --spacing-ring-offset: var(--semantic-size-ring-offset);
+  --spacing-row-x: var(--semantic-space-row-x);
+  --spacing-row-y: var(--semantic-space-row-y);
+  --spacing-section: var(--semantic-space-section);
+  --spacing-shell-header: var(--semantic-shell-header);
+  --spacing-shell-nav-collapsed: var(--semantic-shell-nav-collapsed);
+  --spacing-shell-nav-expanded: var(--semantic-shell-nav-expanded);
+  --spacing-snug: var(--semantic-space-snug);
+  --spacing-stroke: var(--semantic-size-stroke);
+  --spacing-target-minimum: var(--semantic-target-minimum);
+  --spacing-tight: var(--semantic-space-tight);
+  --text-body: var(--semantic-type-body);
+  --text-body-compact: var(--semantic-type-body-compact);
+  --text-caption: var(--semantic-type-caption);
+  --text-emphasis: var(--semantic-type-emphasis);
+  --text-heading: var(--semantic-type-heading);
+  --text-label: var(--semantic-type-label);
+  --text-title: var(--semantic-type-title);
+  --tracking-body: var(--semantic-tracking-body);
+  --tracking-shortcut: var(--semantic-tracking-shortcut);
+  --text-body--line-height: var(--semantic-leading-body);
+  --text-body-compact--line-height: var(--semantic-leading-compact);
+  --text-caption--line-height: var(--semantic-leading-caption);
+  --text-emphasis--line-height: var(--semantic-leading-body);
+  --text-heading--line-height: var(--semantic-leading-heading);
+  --text-label--line-height: var(--semantic-leading-label);
+  --text-title--line-height: var(--semantic-leading-title);
+}
+
+/*
+ * THE ONE BLOCK THAT IS NOT `inline`. A media query cannot read a custom
+ * property, so a breakpoint has to be a literal here or its variant
+ * compiles and matches nothing -- which is what silently removed the
+ * navigation rail. See the note above `tailwindTheme`.
+ */
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-expanded: 840px;
+  --breakpoint-extra-large: 1600px;
+  --breakpoint-large: 1200px;
+  --breakpoint-medium: 600px;
+}

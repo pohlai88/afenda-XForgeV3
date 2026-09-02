@@ -1,0 +1,29 @@
+{
+  "name": "@xforge/design",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./boundary": "./src/components/ui/resource-boundary.tsx",
+    "./contracts": "./src/contracts.ts",
+    "./design.css": "./src/design.css",
+    "./state": "./src/state.ts",
+    "./tailwind-theme.css": "./generated/tailwind-theme.css",
+    "./tokens.css": "./generated/tokens.css",
+    "./tokens.json": "./tokens.json"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "catalog:",
+    "cmdk": "catalog:",
+    "lucide-react": "^1.38.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwind-merge": "catalog:"
+  },
+  "devDependencies": {
+    "tailwindcss": "catalog:"
+  }
+}

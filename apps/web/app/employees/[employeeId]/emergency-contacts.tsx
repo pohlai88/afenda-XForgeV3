@@ -1,7 +1,23 @@
 'use client'
 
-import { Alert, Button, Card, Code, Heading, List, ListItem, Stack, Status, Text } from '@xforge/ui'
-import { assertNever, type ResourceState, readSucceeded, type WriteOutcome } from '@xforge/ui/state'
+import {
+  Alert,
+  Button,
+  Card,
+  Code,
+  Heading,
+  List,
+  ListItem,
+  Stack,
+  Status,
+  Text,
+} from '@xforge/design'
+import {
+  assertNever,
+  type ResourceState,
+  readSucceeded,
+  type WriteOutcome,
+} from '@xforge/design/state'
 /**
  * Emergency contacts -- the design system's representative screen.
  *
@@ -33,17 +49,27 @@ function WriteProblem({ outcome }: { outcome: WriteOutcome }) {
     // user has a decision to make, which is a different thing to tell somebody
     // than "this failed".
     return (
-      <Alert testId="conflict" tone="warning">
+      <Alert data-testid="conflict" tone="warning">
+        {/*
+          NOT `tone="muted"` ON A TINT. It was, and axe found the contrast
+          failure the moment the scan was wired back up: `muted-foreground` is
+          measured against the page and the card, never against `bg-warning`,
+          so the invariant that governs every colour role had nothing to say
+          about this pairing.
+
+          Inside a tinted surface the hierarchy comes from order, not from
+          fading the second line toward the background it is sitting on.
+        */}
         <Stack gap="tight">
           <Text>{outcome.conflict.title}</Text>
-          {outcome.conflict.detail ? <Text tone="muted">{outcome.conflict.detail}</Text> : null}
+          {outcome.conflict.detail ? <Text>{outcome.conflict.detail}</Text> : null}
         </Stack>
       </Alert>
     )
   }
   if (outcome.status === 'failed') {
     return (
-      <Alert testId="write-failed" tone="danger">
+      <Alert data-testid="write-failed" tone="danger">
         <Text>{outcome.issue.title}</Text>
       </Alert>
     )
@@ -53,7 +79,7 @@ function WriteProblem({ outcome }: { outcome: WriteOutcome }) {
 
 function Contacts({ contacts, onSave }: { contacts: Contact[]; onSave: (c: Contact) => void }) {
   return (
-    <List testId="contacts">
+    <List data-testid="contacts">
       {contacts.map((c) => (
         <ListItem key={c.id}>
           <Stack gap="tight">
@@ -88,11 +114,11 @@ function Resource({
 }) {
   switch (state.status) {
     case 'loading':
-      return <Status testId="loading">Loading emergency contacts…</Status>
+      return <Status data-testid="loading">Loading emergency contacts…</Status>
 
     case 'empty':
       return (
-        <Alert testId="empty" tone="info">
+        <Alert data-testid="empty" tone="info">
           <Text>No emergency contacts yet. Add one so we know who to call.</Text>
         </Alert>
       )
@@ -106,7 +132,7 @@ function Resource({
     case 'partial':
       return (
         <Stack gap="tight">
-          <Alert testId="partial" tone="info">
+          <Alert data-testid="partial" tone="info">
             <Stack gap="tight">
               {state.reasons.map((r) => (
                 <Text key={r.kind}>
@@ -123,7 +149,7 @@ function Resource({
       return (
         <Stack gap="tight">
           <Heading>{state.issue.title}</Heading>
-          <Alert testId="forbidden" tone="danger">
+          <Alert data-testid="forbidden" tone="danger">
             <Text>
               Viewing emergency contacts needs the <Code>hr.employee.read</Code> permission. Ask an
               administrator.
@@ -140,7 +166,7 @@ function Resource({
               `role="alert"` route announcer, so the role is ambiguous at page
               scope -- and `empty`, `partial` and `conflict` were already named
               this way while the two failure alerts were not. */}
-          <Alert testId="read-error" tone="danger">
+          <Alert data-testid="read-error" tone="danger">
             <Text>{state.issue.detail ?? 'Something went wrong.'}</Text>
           </Alert>
           {/* Only when the problem says so. Offering "Try again" for a refusal
@@ -174,7 +200,7 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
   }
 
   return (
-    <Card labelledBy="emergency-contacts-heading">
+    <Card aria-labelledby="emergency-contacts-heading">
       <Stack gap="loose">
         <Heading id="emergency-contacts-heading">Emergency contacts</Heading>
 
@@ -190,7 +216,7 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
           <Button
             disabled={!readSucceeded(contacts) || add.outcome.status === 'saving'}
             onClick={add.run}
-            variant="primary"
+            variant="default"
           >
             {add.outcome.status === 'saving' ? 'Adding…' : 'Add contact'}
           </Button>

@@ -23,7 +23,7 @@ import * as policy from '../../tooling/design-system/token-policy/index.mjs'
 import { flatten, generate } from '../../tooling/generators/tokens.mjs'
 
 const ROOT = join(import.meta.dirname, '../..')
-const source = JSON.parse(readFileSync(join(ROOT, 'packages/tokens/tokens.json'), 'utf8'))
+const source = JSON.parse(readFileSync(join(ROOT, 'packages/design/tokens.json'), 'utf8'))
 
 /**
  * A token document, typed loosely on purpose: each refusal test perturbs one
@@ -66,20 +66,31 @@ const base = (): TokenTree => ({
       $axis: 'dimension',
       compact: { semantic: { space: { stack: { $value: '0.25rem' } } } },
     },
-    theme: { $axis: 'color', dark: { semantic: { text: { default: { $value: '#ffffff' } } } } },
+    theme: {
+      $axis: 'color',
+      dark: {
+        semantic: {
+          color: { background: { $value: '#000000' }, foreground: { $value: '#ffffff' } },
+        },
+      },
+    },
   },
-  color: { $type: 'color', ink: { $value: '#000000' } },
+  color: { $type: 'color', ink: { $value: '#000000' }, paper: { $value: '#ffffff' } },
   component: {
     card: { $type: 'dimension', padding: { $value: '{semantic.space.stack}' } },
   },
   semantic: {
+    color: {
+      $type: 'color',
+      background: { $value: '{color.paper}' },
+      foreground: { $value: '{color.ink}' },
+    },
     // The ergonomic control size and the accessibility floor are two facts, and
     // the generator holds the first to the second in every mode -- so a source
     // is not well formed without both, exactly as it is not without `target`.
     control: { $type: 'dimension', 'min-size': { $value: '{size.control-min}' } },
     space: { $type: 'dimension', stack: { $value: '{space.2}' } },
     target: { $type: 'dimension', minimum: { $value: '{size.target-min}' } },
-    text: { $type: 'color', default: { $value: '{color.ink}' } },
   },
   size: {
     $type: 'dimension',
@@ -159,18 +170,19 @@ describe('the generated stylesheet', () => {
   /**
    * The change that makes a theme possible at all.
    *
-   * Resolving aliases to literals emitted `--semantic-surface-raised: #ffffff`
+   * Resolving aliases to literals emitted `--semantic-color-card: #ffffff`
    * and, for every token aliasing it, `#ffffff` again -- so rebinding the role
    * would change the role and nothing downstream of it.
    */
   it('preserves aliases as var() references rather than resolving them', () => {
-    expect(css).toContain('--component-card-padding: var(--semantic-container-padding);')
-    expect(css).toContain('--semantic-surface-raised: var(--color-neutral-0);')
+    expect(css).toContain('--semantic-color-card: var(--color-neutral-0);')
+    expect(css).toContain('--semantic-type-emphasis: var(--size-text-md);')
   })
 
   it('emits the base and one block per mode', () => {
     expect(parseBlocks(css).map((b) => b.selector)).toEqual([
       ':root',
+      ":root[data-density='comfortable']",
       ":root[data-density='compact']",
       ":root[data-theme='dark']",
     ])
@@ -206,8 +218,12 @@ describe('the two axes compose', () => {
    * either axis stopped rebinding anything, every comparison would pass by
    * comparing a value to itself.
    */
-  const colourIn = (modes = {}) => computed(css, modes).get('--semantic-surface-page')
-  const spaceIn = (modes = {}) => rem(computed(css, modes).get('--semantic-space-section'))
+  const colourIn = (modes = {}) => computed(css, modes).get('--semantic-color-background')
+  // NOT `space.section`, WHICH IS THE POINT OF THE CHANGE. Density packs
+  // information inside productive components; it does not reflow the page
+  // frame, so `section` and `container` are invariant and a probe reading one of
+  // them would now be asserting that the axis does nothing.
+  const spaceIn = (modes = {}) => rem(computed(css, modes).get('--semantic-space-normal'))
   const [lightPage, darkPage] = [colourIn(), colourIn({ theme: 'dark' })]
   const [comfortable, compact] = [spaceIn(), spaceIn({ density: 'compact' })]
 
@@ -361,7 +377,7 @@ describe('what the generator refuses', () => {
   it('a density mode reaching into colour', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.density.compact.semantic.text', { default: { $value: '#123456' } })
+        set(s, '$modes.density.compact.semantic.color', { foreground: { $value: '#123456' } })
       }),
     ).toThrow(/axis owns/)
   })
@@ -391,8 +407,8 @@ describe('what the generator refuses', () => {
   it('a mode override whose value is a structured DTCG colour', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.theme.dark.semantic.text', {
-          default: { $value: { colorSpace: 'srgb', components: [0, 0, 0] } },
+        set(s, '$modes.theme.dark.semantic.color', {
+          foreground: { $value: { colorSpace: 'srgb', components: [0, 0, 0] } },
         })
       }),
     ).toThrow(/not a 6- or 8-digit hex string/)
@@ -401,7 +417,7 @@ describe('what the generator refuses', () => {
   it('a mode override whose value is a malformed hex', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.theme.dark.semantic.text', { default: { $value: '#gggggg' } })
+        set(s, '$modes.theme.dark.semantic.color', { foreground: { $value: '#gggggg' } })
       }),
     ).toThrow(/not a 6- or 8-digit hex string/)
   })
@@ -409,8 +425,8 @@ describe('what the generator refuses', () => {
   it('a mode override declaring a type the role does not have', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.theme.dark.semantic.text', {
-          default: { $type: 'dimension', $value: '#000000' },
+        set(s, '$modes.theme.dark.semantic.color', {
+          foreground: { $type: 'dimension', $value: '#000000' },
         })
       }),
     ).toThrow(/rebinds a role's VALUE, never its type/)
@@ -463,7 +479,7 @@ describe('what the generator refuses', () => {
       withSource((s) => {
         set(s, '$modes.contrast', {
           $axis: 'color',
-          more: { semantic: { text: { default: { $value: '#111111' } } } },
+          more: { semantic: { color: { foreground: { $value: '#111111' } } } },
         })
       }),
     ).toThrow(/rebound by both/)
@@ -472,7 +488,9 @@ describe('what the generator refuses', () => {
 
 describe('the component tier', () => {
   it('holds only geometry, so a theme rebinds roles rather than components', () => {
-    const componentColour = Object.entries(source.component as Record<string, { $type?: string }>)
+    const componentColour = Object.entries(
+      (source.component ?? {}) as Record<string, { $type?: string }>,
+    )
       .filter(([name]) => !name.startsWith('$'))
       .filter(([, group]) => group.$type === 'color')
     expect(componentColour).toEqual([])
@@ -481,7 +499,14 @@ describe('the component tier', () => {
   it('stays under its ceiling, which is a tripwire and not a verdict', () => {
     const { componentTokens } = generate(source)
     expect(componentTokens.length).toBeLessThanOrEqual(12)
-    expect(componentTokens.length).toBeGreaterThan(0)
+    // Deliberately NOT `toBeGreaterThan(0)`. Eight component tokens existed in
+    // the system this replaces; here a component is styled with utilities that
+    // name semantic roles directly, and no second use case has justified
+    // minting one (law 31). Requiring a non-empty tier would force a token to
+    // be created to keep a test company, which is exactly backwards -- so the
+    // emptiness is asserted, and the refusal case below still proves the
+    // ceiling governs whatever enters it.
+    expect(componentTokens).toEqual([])
   })
 
   it('refuses to grow past the ceiling without someone raising it deliberately', () => {
@@ -518,7 +543,7 @@ describe('the disabled state is measured rather than composited', () => {
         // this test depend on that step continuing to exist, and it stopped
         // existing when the palette was rebuilt, so the case failed on a
         // dangling alias instead of on the contrast rule it exists to prove.
-        set(s, 'semantic.text.disabled', { $value: '#c3ccd5' })
+        set(s, 'semantic.color.disabled-foreground', { $value: '#c3ccd5' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -526,7 +551,7 @@ describe('the disabled state is measured rather than composited', () => {
   it('refuses alpha on a disabled role, which would composite the same way again', () => {
     expect(
       withReal((s) => {
-        set(s, 'semantic.text.disabled', { $value: '#64748b99' })
+        set(s, 'semantic.color.disabled-foreground', { $value: '#64748b99' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -539,7 +564,7 @@ describe('the disabled state is measured rather than composited', () => {
         // asserts would then be provable by any of them -- a test passing for a
         // reason it does not name.
         // A literal, for the reason given in the light case above.
-        set(s, '$modes.theme.dark.semantic.text.disabled', { $value: '#2f3b43' })
+        set(s, '$modes.theme.dark.semantic.color.disabled-foreground', { $value: '#2f3b43' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -613,7 +638,10 @@ describe('the policy kernel', () => {
   })
 
   it('refuses to serialize a type nothing can serialize, rather than String()-ing it', () => {
-    expect(() => policy.serializeValue('shadow', '0 1px 2px black')).toThrow(
+    // WAS `shadow`, WHICH IS NOW A REAL TYPE. A test naming a type as
+    // unsupported stops testing anything the day that type is added -- and it
+    // would have gone green while asserting the opposite of what it says.
+    expect(() => policy.serializeValue('gradient', 'linear-gradient(black, white)')).toThrow(
       /no supported value shape/,
     )
   })
@@ -652,8 +680,20 @@ describe('the policy kernel', () => {
   })
 
   // The families are closed, so the check is only worth as much as the list.
-  it('admits exactly the five property-first colour families', () => {
-    expect([...policy.COLOR_ROLE_GROUPS]).toEqual(['border', 'focus', 'overlay', 'surface', 'text'])
+  it('admits exactly the six colour families', () => {
+    // `color` joined the five property-first families when the flat shadcn
+    // role names arrived -- `card`, `primary`, `destructive` and the rest are
+    // one group named for the property they all set, because a pasted block
+    // spells them that way and splitting them across `surface`/`text` would
+    // have made the projection a translation table nobody could read.
+    expect([...policy.COLOR_ROLE_GROUPS]).toEqual([
+      'color',
+      'border',
+      'focus',
+      'overlay',
+      'surface',
+      'text',
+    ])
   })
 })
 
@@ -664,12 +704,17 @@ describe('the policy kernel', () => {
  * here until now. At 16 the margin is zero; below it, everything is under.
  */
 describe('the typography floors hold at a premise, not universally', () => {
+  // The LEADINGS here land on the 4px grid, and did not have to before the grid
+  // check existed: 14 x 1.5 was 21px and 16 x 1.2 was 19.2px, both arbitrary
+  // because this fixture is about the SIZE floors and never read them. They are
+  // 24px now so the fixture states one thing at a time -- a floor failure here
+  // should be a floor failure, not a floor failure wearing a grid failure.
   const sizes = new Map([
     ['semantic.type.body', '0.875rem'],
     ['semantic.type.heading', '1rem'],
     ['semantic.type.label', '0.875rem'],
-    ['semantic.leading.body', '1.5'],
-    ['semantic.leading.heading', '1.2'],
+    ['semantic.leading.body', '1.7143'], // 14 x 1.7143 = 24
+    ['semantic.leading.heading', '1.5'], // 16 x 1.5    = 24
     ['semantic.weight.body', '400'],
     ['semantic.weight.heading', '700'],
   ])
@@ -687,12 +732,84 @@ describe('the typography floors hold at a premise, not universally', () => {
 })
 
 /**
+ * The 4px grid was claimed by `tokens.json` and by POLICY.md 3a and checked by
+ * nothing, which is the shape of defect this repository is organised against: two
+ * prose sources agreeing with each other and never with the tokens.
+ *
+ * ONE ROLE PER CASE, so a failure is about the grid and not about a neighbour --
+ * the relational checks need two ranks to say anything, and with one they are
+ * silent.
+ */
+describe('the 4px grid the leading ratios were chosen for', () => {
+  const bodyOnly = (minimumLeading: number, minimumPx: number) => ({
+    body: {
+      leading: 'semantic.leading.body',
+      minimumLeading,
+      minimumPx,
+      rank: 2,
+      size: 'semantic.type.body',
+      weight: 'semantic.weight.body',
+    },
+  })
+  const at = (size: string, leading: number) =>
+    new Map([
+      [
+        'base',
+        new Map([
+          ['semantic.type.body', size],
+          ['semantic.leading.body', String(leading)],
+          ['semantic.weight.body', '400'],
+        ]),
+      ],
+    ])
+
+  it('accepts a line box that lands on the grid', () => {
+    // 16 x 1.5 = 24, which is the body role this system actually ships.
+    expect(policy.typographyFailures(at('1rem', 1.5), bodyOnly(1.5, 14))).toEqual([])
+  })
+
+  it('absorbs the rounding a stored ratio carries', () => {
+    // 12 x 1.3333 = 15.9996. A ratio is stored rounded, so an equality test here
+    // would fail every role in the file and the check would be deleted, correctly.
+    expect(policy.typographyFailures(at('0.75rem', 1.3333), bodyOnly(1.3, 12))).toEqual([])
+  })
+
+  it('refuses a line box that does not land on it', () => {
+    // 16 x 1.6 = 25.6px. Clears its leading floor, so only the grid can object.
+    const failures = policy.typographyFailures(at('1rem', 1.6), bodyOnly(1.5, 14))
+    expect(failures.join('\n')).toMatch(
+      /body leading resolves to 25\.60px, which is 1\.60px off the 4px grid/,
+    )
+  })
+
+  it('catches the size moving without its ratio, which is how this drifts', () => {
+    // 13px at the ratio chosen for 12px: 13 x 1.3333 = 17.33, off by 1.33.
+    const failures = policy.typographyFailures(at('0.8125rem', 1.3333), bodyOnly(1.3, 12))
+    expect(failures.join('\n')).toMatch(/17\.33px, which is 1\.33px off the 4px grid/)
+  })
+
+  it('scales the grid with the root, because the grid is 0.25rem and not 4px', () => {
+    // The same tokens at a 15px root: 13.125 x 1.7143 = 22.5px against a 3.75px
+    // grid, which is exactly six units. Tested against a literal 4 this would
+    // report as 1.5px off -- every role in the file would go red the moment a
+    // reader changed their root, which is the one thing rem sizing exists to
+    // survive.
+    expect(policy.typographyFailures(at('0.875rem', 1.7143), bodyOnly(1.5, 12), 15)).toEqual([])
+  })
+
+  it('states its grid and tolerance rather than hiding them in a literal', () => {
+    expect(policy.LEADING_GRID_PX).toBe(4)
+    expect(policy.LEADING_GRID_TOLERANCE_PX).toBe(0.05)
+  })
+})
+
+/**
  * The elevation table was right and could not be shown to be wrong. Every case
  * below except the last passed before this change.
  */
 describe('the elevation model', () => {
-  const ground = { rank: 0, reason: 'the page', separatedBy: [], surface: 'surface.page' }
-  const card = { rank: 1, reason: 'a card', separatedBy: ['surface'], surface: 'surface.raised' }
+  const ground = { rank: 0, reason: 'the page', separatedBy: [], surface: 'color.background' }
+  const card = { rank: 1, reason: 'a card', separatedBy: ['surface'], surface: 'color.card' }
 
   it('refuses to prove itself over zero layers', () => {
     expect(() => policy.assertElevationLayers({})).toThrow(/over zero layers/)
@@ -710,10 +827,10 @@ describe('the elevation model', () => {
   // that argument is gone, while the layer goes on claiming the separation.
   it('refuses a layer whose scrim is painted by a role that does not exist', () => {
     const withoutScrim = Object.fromEntries(
-      Object.entries(policy.COLOR_ROLE_POLICIES).filter(([role]) => role !== 'overlay.scrim'),
+      Object.entries(policy.COLOR_ROLE_POLICIES).filter(([role]) => role !== 'color.scrim'),
     )
     expect(() => policy.assertElevationLayers(undefined, withoutScrim)).toThrow(
-      /painted by the colour role 'overlay\.scrim' -- and that role does not exist/,
+      /painted by the colour role 'color\.scrim' -- and that role does not exist/,
     )
   })
 
@@ -733,24 +850,21 @@ describe('the elevation model', () => {
    * A second `z-index` fails this, which is the point at which the product has a
    * stacking SCALE and needs a token rather than a number.
    */
-  it('keeps the toast layer as the only thing decided by a number', () => {
-    const stylesheet = readFileSync(join(ROOT, 'packages/ui/src/ui.css'), 'utf8')
-    // DECLARATIONS, not mentions. Matching the bare word counted the two times
-    // the comment beside the rule explains itself, so the check went red at the
-    // moment it was documented -- the prose describing a rule being counted as
-    // an instance of it.
-    const stacked = stylesheet.match(/z-index\s*:/g) ?? []
-    expect(stacked, 'a second z-index means the product needs a scale').toHaveLength(1)
-    expect(
-      stylesheet.match(/\.xf-toast-viewport\s*\{[^}]*z-index/),
-      'the one z-index is not the toast layer any more',
-    ).not.toBeNull()
-
-    // Three positioned elements now: the dialog's backdrop and popup, and the
-    // toast viewport. If this count changes again the argument above needs
-    // re-checking before it is trusted.
-    expect(stylesheet.match(/position:\s*fixed/g)).toHaveLength(3)
-  })
+  /**
+   * THE STACKING PREMISE HAS NO SUBJECT IN THIS SYSTEM, recorded rather than
+   * deleted silently.
+   *
+   * The assertion was: exactly one `z-index` declaration exists in the design
+   * system's stylesheet, on the toast viewport, because stacking is decided by
+   * tree order everywhere else -- a toast portal mounts at the app root and so
+   * paints behind a dialog opened later, the one case tree order gets wrong.
+   *
+   * This system has no stylesheet of plain rules to count declarations in, and
+   * no toast component yet. The premise is still believed and is UNENFORCED,
+   * which is the part worth writing down: when a toast lands, the check comes
+   * back, against whatever surface then holds the rule.
+   */
+  it.todo('keeps the toast layer as the only thing decided by a number')
 
   // The rule the whole domain exists to state, which had no test.
   it('refuses a layer separated by a shadow alone, and permits one beside a boundary', () => {
@@ -889,13 +1003,20 @@ describe('the typography policy names tokens that exist', () => {
     )
   })
 
-  // `label` names no weight or leading, and that is recorded as deliberate.
-  // Absent is not mistyped, and must stay distinguishable from it.
+  /**
+   * A role may omit a part. Absent is not mistyped, and must stay
+   * distinguishable from it.
+   *
+   * ASSERTED AGAINST A SYNTHETIC ROLE. This opened with
+   * `expect(TYPE_ROLES.label.weight).toBeUndefined()`, which made a test of the
+   * MECHANISM depend on a fact about the VOCABULARY -- and when `label` gained
+   * its own weight and leading, the test failed while the behaviour it checks
+   * was untouched. A rule and an instance of it are different things to
+   * assert.
+   */
   it('permits a role that omits a part on purpose', () => {
-    expect(policy.TYPE_ROLES.label.weight).toBeUndefined()
-    expect(() =>
-      policy.assertTypographyTokens(tokens, { label: policy.TYPE_ROLES.label }),
-    ).not.toThrow()
+    const minimal = { minimal: { minimumPx: 12, rank: 0, size: 'semantic.type.label' } }
+    expect(() => policy.assertTypographyTokens(tokens, minimal)).not.toThrow()
   })
 })
 
@@ -1018,15 +1139,38 @@ describe('the motion policy', () => {
   })
 
   /**
-   * The dormancy, asserted so it cannot quietly stop being true. Today's only
-   * role loops, so motionFailures returns [] whatever the duration says -- a
-   * green from the motion stage means "nothing was measured".
+   * THE DORMANCY ENDED, and the test that recorded it is what said so.
+   *
+   * This block used to assert the opposite: that `motionFailures` measured
+   * NOTHING, because the registry held one looping role and a loop is skipped
+   * whatever its duration says. It was written "so it cannot quietly stop being
+   * true", and it went red the moment four non-looping roles arrived — which is
+   * the only reason a dormancy assertion is worth writing.
+   *
+   * Two things were wrong underneath it and neither was visible from a green
+   * run: the single role named a token that did not exist, and the duration
+   * reader still expected a CSS string after `duration` reached its DTCG
+   * object form. A dormant check and a BROKEN one look identical from outside.
    */
-  it('measures nothing at all against the registry that actually ships', () => {
-    const absurd = new Map([['base', new Map([['semantic.motion.duration.pulse', '9999s']])]])
+  it('measures the registry that actually ships', () => {
+    const roles = policy.MOTION_ROLES as Record<string, { loops?: boolean; maximumMs?: number }>
+    const oneShots = Object.entries(roles).filter(([, r]) => !r.loops)
+    expect(oneShots.length).toBeGreaterThan(0)
+
+    // Every non-looping role is measurable, and one past its ceiling is reported.
+    for (const [name, role] of oneShots) {
+      const past = new Map([
+        ['base', new Map([[name, { unit: 'ms', value: (role.maximumMs as number) + 1 }]])],
+      ])
+      expect(policy.motionFailures(past)).toHaveLength(1)
+    }
+
+    // And the loop is still skipped, because a faster loop is still a loop.
+    const loops = Object.entries(roles).filter(([, r]) => r.loops)
+    expect(loops.length).toBe(1)
+    const absurd = new Map([
+      ['base', new Map([[loops[0]?.[0] as string, { unit: 's', value: 9999 }]])],
+    ])
     expect(policy.motionFailures(absurd)).toEqual([])
-    expect(
-      Object.values(policy.MOTION_ROLES).every((role) => (role as { loops: boolean }).loops),
-    ).toBe(true)
   })
 })

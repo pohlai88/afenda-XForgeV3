@@ -416,7 +416,7 @@ export const configGuards = [
      * NARROW ON PURPOSE, and this is the interesting part. The general rule --
      * every production dependency must be imported by some production file --
      * was measured against this repository before being rejected: it flags
-     * react-dom, @xforge/tokens (consumed as CSS, never imported), and several
+     * react-dom, @xforge/design (consumed as CSS, never imported), and several
      * type-only imports. Seven legitimate declarations, which would have had to
      * be silenced with exemptions until the guard's name meant nothing. A guard
      * that must be muzzled to stay green is the depcruise failure with extra
@@ -575,7 +575,7 @@ export const configGuards = [
      * It had gone lossy exactly as predicted. At the commit this guard was
      * written against, 22 TS-resolvable specifiers were declared across the
      * manifests and `paths` carried 16. Missing: @xforge/db/schema,
-     * @xforge/ui/schema, @xforge/hr/contract, @xforge/hr/manifest,
+     * @xforge/design/schema, @xforge/hr/contract, @xforge/hr/manifest,
      * @xforge/fixtures/employee and @xforge/fixtures/hr. So sixteen specifiers
      * resolved by relative-path alias and six by package lookup, inside one
      * program, and nothing could report it.
@@ -590,8 +590,8 @@ export const configGuards = [
      * MEASURED BEFORE DELETING, because "the docs say so" is not evidence about
      * this repository: with `paths` removed, `tsc --noEmit` and `next build`
      * both exit 0, `--listFiles` reports a byte-identical program (1898 files,
-     * 98 outside node_modules), and `--traceResolution` shows '@xforge/ui'
-     * resolving to packages/ui/src/index.tsx -- source, not a built .d.ts. No
+     * 98 outside node_modules), and `--traceResolution` shows '@xforge/design'
+     * resolving to packages/design/src/index.tsx -- source, not a built .d.ts. No
      * workspace package has a dist/, so there is nothing for it to resolve to.
      *
      * DERIVED, NOT PREFIXED. The first draft rejected keys matching `@xforge/*`.

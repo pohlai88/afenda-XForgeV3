@@ -528,7 +528,7 @@ export const configFixtures = {
           source: "export default { transpilePackages: ['some-published-esm-pkg'] }",
         },
         manifest('apps/web/package.json', {
-          dependencies: { '@xforge/ui': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
+          dependencies: { '@xforge/design': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
           name: '@xforge/web',
         }),
       ],
@@ -537,10 +537,10 @@ export const configFixtures = {
       files: [
         {
           path: 'apps/web/next.config.mjs',
-          source: "export default { transpilePackages: ['@xforge/ui'] }",
+          source: "export default { transpilePackages: ['@xforge/design'] }",
         },
         manifest('apps/web/package.json', {
-          dependencies: { '@xforge/ui': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
+          dependencies: { '@xforge/design': 'workspace:*', 'some-published-esm-pkg': '^1.0.0' },
           name: '@xforge/web',
         }),
       ],

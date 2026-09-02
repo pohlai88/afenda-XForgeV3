@@ -534,6 +534,16 @@ rather than eliminated. They remain in scope for the first session that runs.
 > Input and Checkbox are mounted together, and `a11y-conformance.spec.ts` scans
 > every application state surface.
 >
+> > **Corrected again, 2 September 2026, see ADR-030.** Both specs named
+> > immediately above were deleted in the cutover to `packages/design`, one day
+> > after this correction was written. `e2e/axe.ts` survived with NO CALLER, so
+> > "It runs now" stopped being true and this register said it did — the same
+> > failure, in the same entry, at one day's remove. A11y-1 runs again as
+> > `a11y-conformance.spec.ts` and `design-system-conformance.spec.ts`, and what
+> > makes the claim checkable this time is not this sentence: it is
+> > `tests/unit/design-contracts.test.ts`, which fails when a contract is mounted
+> > nowhere a scan can reach it.
+>
 > The reduction's *reasoning* survives; only its evidence was retrospective, and
 > this is recorded rather than quietly repaired. A register that silently
 > acquires the proof it already claimed is worse than one that admits the gap —

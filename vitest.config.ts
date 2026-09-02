@@ -86,6 +86,17 @@ export default defineConfig({
           // to each other, mid-run. The failure is an assertion whose rows
           // another file has just deleted, and it appears only when both files
           // exist and only sometimes.
+          //
+          // THIS SETTING COVERS ONE RUN AND NOTHING ELSE, which took a month to
+          // show. A SECOND PROCESS -- another agent, another terminal, CI on the
+          // same host -- races the same fixtures and no serialisation here can
+          // reach it. Reproduced 2026-09-02: two concurrent suite runs corrupt
+          // each other with `duplicate key ... tenant_domain_hostname_key`, and
+          // a competing re-seeder took six files down while breaking T02, the
+          // one test whose own header says a failure means tenant isolation is
+          // broken. It was not; only the fixture rows moved.
+          //
+          // `tests/fixtures/fixture-lock.ts` closes the across-process half.
           fileParallelism: false,
           include: ['**/tests/**/*.integration.test.ts'],
           name: 'integration',

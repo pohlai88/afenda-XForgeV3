@@ -48,6 +48,25 @@ export const fixtures = {
 `,
     },
   },
+  'case-lives-in-the-copy': {
+    // The same label, written as it should read. An acronym is TYPED as one --
+    // where a translator and a screen reader can both see it -- which is the
+    // distinction the guard draws: not "never uppercase", but "not in CSS".
+    clean: {
+      path: 'packages/design/src/components/ui/statutory.tsx',
+      source: `export function Statutory() {
+  return <span className="font-label text-label">EPF employee contribution</span>
+}
+`,
+    },
+    violating: {
+      path: 'packages/design/src/components/ui/statutory.tsx',
+      source: `export function Statutory() {
+  return <span className="font-label text-label uppercase">EPF employee contribution</span>
+}
+`,
+    },
+  },
 
   'country-branching-in-core': {
     clean: {
@@ -175,10 +194,18 @@ export const tenant = pgTable('tenant', { id: uuid().primaryKey() })
     },
   },
 
+  // THE CLEAN CASE CARRIES `Date.now()` ON PURPOSE. The guard's pattern was a
+  // bare `now()` with nothing in front of it, so every JavaScript clock in a
+  // fixture was reported as a database one -- it fired twice on a lock loop
+  // measuring elapsed milliseconds. The clean fixture said nothing about that
+  // case, so the harness proved the guard rejected SQL and never asked what else
+  // it rejected. A mutation test that only exercises the violation is half a
+  // test: it cannot tell a guard that is right from one that is merely loud.
   'fixtures-declare-their-instants': {
     clean: {
       path: 'tests/fixtures/tenancy.ts',
       source: `const FIXTURE_VALID_FROM = new Date('2020-01-01T00:00:00.000Z')
+const deadline = Date.now() + 5000
 await owner\`insert into m (valid_from) values (\${FIXTURE_VALID_FROM})\`
 `,
     },
@@ -316,7 +343,7 @@ export const net = (g: bigint, d: bigint) => g - d
     // makes the design system unusable and gets removed.
     clean: {
       path: 'apps/web/app/employees/page.tsx',
-      source: `import { Stack } from '@xforge/ui'
+      source: `import { Stack } from '@xforge/design'
 export default function Page() {
   return <Stack gap="tight">fine</Stack>
 }
@@ -334,7 +361,7 @@ export default function Page() {
   'no-bespoke-styling-inline': {
     clean: {
       path: 'modules/hr/ui/contact-row.tsx',
-      source: `import { Text } from '@xforge/ui'
+      source: `import { Text } from '@xforge/design'
 export const Row = () => <Text tone="muted">fine</Text>
 `,
     },
@@ -458,6 +485,61 @@ export async function invalidateContacts() {
       source: `export async function listContacts(employeeId: string) {
   'use cache'
   return await repository.listByEmployee(employeeId)
+}
+`,
+    },
+  },
+  'no-raw-spacing-value': {
+    // The same row, naming the relationships. `p-0` is permitted: zero is the
+    // absence of a spacing decision rather than one written as a number.
+    clean: {
+      path: 'packages/design/src/components/ui/row.tsx',
+      source: `export function Row() {
+  return <div className="flex gap-tight px-row-x py-control-y p-0">cell</div>
+}
+`,
+    },
+    violating: {
+      path: 'packages/design/src/components/ui/row.tsx',
+      source: `export function Row() {
+  return <div className="flex gap-2 px-4 py-1.5">cell</div>
+}
+`,
+    },
+  },
+  'no-raw-stacking-value': {
+    // The same portalled surface, naming the layer it sits on. Must NOT be
+    // flagged, or the guard makes every overlay unwritable and gets removed.
+    clean: {
+      path: 'packages/design/src/components/ui/popover.tsx',
+      source: `export function Popover() {
+  return <div className="layer-overlay shadow-floating">content</div>
+}
+`,
+    },
+    violating: {
+      path: 'packages/design/src/components/ui/popover.tsx',
+      source: `export function Popover() {
+  return <div className="z-50 shadow-floating">content</div>
+}
+`,
+    },
+  },
+
+  'no-transition-all': {
+    // The curated set: colour, opacity, shadow, transform, filter. It animates
+    // what should animate and touches no layout property.
+    clean: {
+      path: 'packages/design/src/components/ui/chip.tsx',
+      source: `export function Chip() {
+  return <span className="h-control transition duration-150">chip</span>
+}
+`,
+    },
+    violating: {
+      path: 'packages/design/src/components/ui/chip.tsx',
+      source: `export function Chip() {
+  return <span className="h-control transition-all duration-150">chip</span>
 }
 `,
     },
@@ -604,13 +686,13 @@ export async function save(input: unknown) {
   },
   'stylesheet-names-roles-not-primitives': {
     clean: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `/* --space-5 is a primitive; this rule names the role instead */
 .xf-card { padding: var(--component-card-padding); gap: var(--semantic-space-stack); }
 `,
     },
     violating: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `.xf-card { padding: var(--space-5); }
 `,
     },
@@ -619,13 +701,13 @@ export async function save(input: unknown) {
   // so a primitive behind a fallback was not argued about -- it was unmatched.
   'stylesheet-names-roles-not-primitives-fallback': {
     clean: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `.xf-card { padding: var(--component-card-padding, 1rem); }
 `,
     },
     guardId: 'stylesheet-names-roles-not-primitives',
     violating: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `.xf-card { padding: var(--space-5, 1rem); }
 `,
     },
@@ -648,13 +730,13 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
 
   'tokens-are-the-authority': {
     clean: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `/* #2563eb lives in tokens.json, not here */
 .xf-button { background: var(--semantic-surface-accent); }
 `,
     },
     violating: {
-      path: 'packages/ui/src/ui.css',
+      path: 'packages/design/src/ui.css',
       source: `.xf-button { background: #2563eb; }
 `,
     },
@@ -665,13 +747,16 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
   // renaming one was not, and nothing said so.
   'tokens-referenced-are-tokens-that-exist': {
     clean: {
-      path: 'packages/ui/src/ui.css',
-      source: `.xf-card { padding: var(--component-card-padding); }
+      path: 'packages/design/src/design.css',
+      // A ROLE THIS SYSTEM ACTUALLY EMITS.
+      // The old fixture named a component-tier padding role that the previous
+      // token file had and this one does not -- so the clean case started proving the guard FAILS.
+      source: `.card { padding: var(--semantic-space-control-y); }
 `,
     },
     violating: {
-      path: 'packages/ui/src/ui.css',
-      source: `.xf-card { padding: var(--semantic-space-gone, 4px); }
+      path: 'packages/design/src/design.css',
+      source: `.card { padding: var(--semantic-space-gone, 4px); }
 `,
     },
   },
@@ -679,7 +764,7 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
   'transport-enters-apps-only-at-the-boundary': {
     clean: {
       path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
-      source: `import type { ResourceState } from '@xforge/ui/state'${String.fromCharCode(10)}`,
+      source: `import type { ResourceState } from '@xforge/design/state'${String.fromCharCode(10)}`,
     },
     violating: {
       path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
@@ -695,7 +780,7 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
   'transport-enters-apps-only-at-the-boundary-module': {
     clean: {
       path: 'apps/web/app/employees/[employeeId]/emergency-contacts.tsx',
-      source: `import type { ResourceState } from '@xforge/ui/state'${String.fromCharCode(10)}`,
+      source: `import type { ResourceState } from '@xforge/design/state'${String.fromCharCode(10)}`,
     },
     guardId: 'transport-enters-apps-only-at-the-boundary',
     violating: {
@@ -705,22 +790,22 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
   },
   'ui-holds-no-transport-vocabulary': {
     clean: {
-      path: 'packages/ui/src/state.ts',
+      path: 'packages/design/src/state.ts',
       source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
     },
     violating: {
-      path: 'packages/ui/src/state.ts',
+      path: 'packages/design/src/state.ts',
       source: `import type { Completeness } from '@xforge/api-client'${String.fromCharCode(10)}`,
     },
   },
   'ui-holds-no-transport-vocabulary-module': {
     clean: {
-      path: 'packages/ui/src/state.ts',
+      path: 'packages/design/src/state.ts',
       source: `import type { ReactNode } from 'react'${String.fromCharCode(10)}`,
     },
     guardId: 'ui-holds-no-transport-vocabulary',
     violating: {
-      path: 'packages/ui/src/state.ts',
+      path: 'packages/design/src/state.ts',
       source: `import type { EmergencyContact } from '@xforge/hr/repository'${String.fromCharCode(10)}`,
     },
   },

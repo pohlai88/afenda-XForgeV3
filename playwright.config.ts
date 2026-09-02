@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { TENANT_A } from '@xforge/fixtures/tenancy'
 import { appUrl } from './tests/fixtures/local-database'
-import { E2E_ORIGIN, E2E_PORT } from './tooling/e2e/config.ts'
+import { E2E_ORIGIN, E2E_PORT, GALLERY_ORIGIN } from './tooling/e2e/config.ts'
 
 /**
  * Flagship E2E for the spine phase.
@@ -24,45 +24,85 @@ export default defineConfig({
     baseURL: E2E_ORIGIN,
     trace: 'retain-on-failure',
   },
-  webServer: {
-    // The preflight names whoever holds the port. It runs only when Playwright's
-    // own URL probe does NOT pre-empt it -- see the note in that file; for the
-    // pre-empted case the same diagnosis is available as `pnpm e2e:port`.
-    command: `pnpm -s e2e:port && pnpm --filter @xforge/web exec next start -p ${E2E_PORT}`,
-    // The app has no credential fallback by design, so the harness supplies one
-    // explicitly rather than the application defaulting to a developer database.
-    // DEV_TENANT_ID joined it for the same reason: the composition root used to
-    // carry the fixture tenant as a literal default, which is the fixture
-    // becoming production configuration. The owner is TENANT_A and it is passed
-    // from here, so one fact has one definition.
-    // XFORGE_DEV_PRINCIPAL is enabled HERE and nowhere by default: `next start`
-    // runs with NODE_ENV=production, so the suite exercises the shipped artefact
-    // and needs the stub explicitly rather than by inference from the build mode.
-    env: {
-      APP_DATABASE_URL: appUrl(),
-      DEV_TENANT_ID: TENANT_A,
-      XFORGE_DEV_PRINCIPAL: 'enabled',
+  webServer: [
+    {
+      // The preflight names whoever holds the port. It runs only when Playwright's
+      // own URL probe does NOT pre-empt it -- see the note in that file; for the
+      // pre-empted case the same diagnosis is available as `pnpm e2e:port`.
+      command: `pnpm -s e2e:port && pnpm --filter @xforge/web exec next start -p ${E2E_PORT}`,
+      // The app has no credential fallback by design, so the harness supplies one
+      // explicitly rather than the application defaulting to a developer database.
+      // DEV_TENANT_ID joined it for the same reason: the composition root used to
+      // carry the fixture tenant as a literal default, which is the fixture
+      // becoming production configuration. The owner is TENANT_A and it is passed
+      // from here, so one fact has one definition.
+      // XFORGE_DEV_PRINCIPAL is enabled HERE and nowhere by default: `next start`
+      // runs with NODE_ENV=production, so the suite exercises the shipped artefact
+      // and needs the stub explicitly rather than by inference from the build mode.
+      env: {
+        APP_DATABASE_URL: appUrl(),
+        DEV_TENANT_ID: TENANT_A,
+        XFORGE_DEV_PRINCIPAL: 'enabled',
+      },
+      /**
+       * NEVER reuse a server, locally or in CI.
+       *
+       * This was `!process.env.CI`, and a `next start` left over from a manual
+       * measurement held port 3100 for two hours. Every Playwright run in that
+       * window reused it, so the E2E stage tested a build from BEFORE the two
+       * rebuilds that had happened since -- while reporting "5 flagship E2E specs
+       * passed" each time. They did pass, on a stale artefact, because not one of
+       * them depended on anything the rebuilds changed. The first spec that read a
+       * stylesheet found the server returning Internal Server Error for a chunk
+       * whose filename no longer existed.
+       *
+       * `pnpm verify` runs `build` and then `e2e`. Reusing a server started before
+       * the build means the gate's own artefact is not what was tested, which is
+       * the "a check that did not run is not a check that passed" failure wearing
+       * a different costume. A fresh start costs about a second.
+       */
+      reuseExistingServer: false,
+      timeout: 120_000,
+      url: `${E2E_ORIGIN}/employees/${EMPLOYEE}`,
     },
+
     /**
-     * NEVER reuse a server, locally or in CI.
+     * THE GALLERY, because the application does not render the vocabulary.
      *
-     * This was `!process.env.CI`, and a `next start` left over from a manual
-     * measurement held port 3100 for two hours. Every Playwright run in that
-     * window reused it, so the E2E stage tested a build from BEFORE the two
-     * rebuilds that had happened since -- while reporting "5 flagship E2E specs
-     * passed" each time. They did pass, on a stale artefact, because not one of
-     * them depended on anything the rebuilds changed. The first spec that read a
-     * stylesheet found the server returning Internal Server Error for a chunk
-     * whose filename no longer existed.
+     * Twenty-three of twenty-eight contracts are mounted on no route -- Dialog,
+     * Select and Tooltip among them, which carry the `modal`, `composite` and
+     * `disclosure` profiles. `a11y-conformance.spec.ts` scans what the PRODUCT
+     * shows; without this server there is no tree in which to scan the rest,
+     * and axe reported clean over six theme x density modes while thirty-six of
+     * its rules came back INAPPLICABLE for want of anything to apply to.
      *
-     * `pnpm verify` runs `build` and then `e2e`. Reusing a server started before
-     * the build means the gate's own artefact is not what was tested, which is
-     * the "a check that did not run is not a check that passed" failure wearing
-     * a different costume. A fresh start costs about a second.
+     * A DEV SERVER, and that is the honest limit of it: this scans source as
+     * Vite serves it, not the shipped artefact. The app's own suite covers the
+     * built output. For the questions asked here -- roles, names, labels,
+     * contrast -- the distinction does not change an answer, and standing up a
+     * production build of a gallery nobody ships would be machinery for none.
      */
-    reuseExistingServer: false,
-    timeout: 120_000,
-    url: `${E2E_ORIGIN}/employees/${EMPLOYEE}`,
-  },
+    {
+      command: 'pnpm -s gallery',
+      /**
+       * REUSED, and this is the one place that differs from the app above.
+       *
+       * That entry's `false` is load-bearing and carries a post-mortem: a
+       * leftover `next start` served a BUILD, and a build goes stale the moment
+       * source changes, so five specs passed against an artefact from before two
+       * rebuilds. Vite here is a DEV server with HMR — it compiles from the
+       * source on disk per request, so there is no artefact that can be stale.
+       *
+       * It also matters practically. The gallery is what a person keeps open
+       * while working on the design system, `strictPort` is set, and a second
+       * bind on 4300 fails rather than falling back — so copying `false` here
+       * made the suite unrunnable on exactly the machine most likely to run it.
+       * Found by running it.
+       */
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      url: GALLERY_ORIGIN,
+    },
+  ],
   workers: 1,
 })

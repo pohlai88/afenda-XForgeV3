@@ -43,8 +43,20 @@ async function computed(
   )
 }
 
-const COLOUR = '--semantic-surface-page'
-const GEOMETRY = '--semantic-space-section'
+/*
+ * REPOINTED AT THE SURVIVING VOCABULARY, 2 Sep 2026. These read
+ * `--semantic-surface-page` and `--semantic-space-section`, which are
+ * `packages/ui`'s names -- the package this spec outlived. Chromium returned
+ * "" for both and the failure said `expected "#f8fafc", received ""`, which
+ * reads as a wrong colour rather than as a property that does not exist.
+ *
+ * GEOMETRY ALSO HAD TO MOVE, and not only its name: `space.section` is not
+ * rebound by density in this system, so the density half of every assertion
+ * below would have compared a constant with itself and passed. `space.loose`
+ * is rebound by all three modes, which is what these tests are actually about.
+ */
+const COLOUR = '--semantic-color-background'
+const GEOMETRY = '--semantic-space-loose'
 
 /**
  * Dimensions are compared as NUMBERS of rem, not as text.
@@ -57,24 +69,35 @@ const GEOMETRY = '--semantic-space-section'
 const rem = (value: string | undefined) => Number.parseFloat(value ?? 'NaN')
 
 test.describe('theme and density compose in a real browser', () => {
-  test('the base is light and comfortable', async ({ page }) => {
+  // THE BASE IS `default`, NOT `comfortable`. The old system had two densities
+  // and the bare `:root` was the roomy one; this system has three and the bare
+  // `:root` is the middle. A title naming the wrong mode is how the next reader
+  // learns the wrong default.
+  test('the base is light and default density', async ({ page }) => {
     await page.goto(PAGE)
     const v = await computed(page, read({}, [COLOUR, GEOMETRY]))
-    expect(v[COLOUR]).toBe('#f8fafc')
+    expect(v[COLOUR]).toBe('#f2f5f9')
     expect(rem(v[GEOMETRY])).toBe(1.5)
+  })
+
+  test('comfortable rebinds geometry upward, and leaves colour alone', async ({ page }) => {
+    await page.goto(PAGE)
+    const v = await computed(page, read({ density: 'comfortable' }, [COLOUR, GEOMETRY]))
+    expect(v[COLOUR]).toBe('#f2f5f9')
+    expect(rem(v[GEOMETRY])).toBe(2)
   })
 
   test('dark rebinds colour and leaves geometry alone', async ({ page }) => {
     await page.goto(PAGE)
     const v = await computed(page, read({ theme: 'dark' }, [COLOUR, GEOMETRY]))
-    expect(v[COLOUR]).toBe('#020617')
+    expect(v[COLOUR]).toBe('#0a0a0c')
     expect(rem(v[GEOMETRY])).toBe(1.5)
   })
 
   test('compact rebinds geometry and leaves colour alone', async ({ page }) => {
     await page.goto(PAGE)
     const v = await computed(page, read({ density: 'compact' }, [COLOUR, GEOMETRY]))
-    expect(v[COLOUR]).toBe('#f8fafc')
+    expect(v[COLOUR]).toBe('#f2f5f9')
     expect(rem(v[GEOMETRY])).toBe(0.75)
   })
 
@@ -84,24 +107,35 @@ test.describe('theme and density compose in a real browser', () => {
   test('dark AND compact is the composition of both', async ({ page }) => {
     await page.goto(PAGE)
     const v = await computed(page, read({ density: 'compact', theme: 'dark' }, [COLOUR, GEOMETRY]))
-    expect(v[COLOUR]).toBe('#020617')
+    expect(v[COLOUR]).toBe('#0a0a0c')
     expect(rem(v[GEOMETRY])).toBe(0.75)
   })
 
   /**
-   * A theme rebinds ROLES, and the component tier follows without being
-   * restated -- the property that stops dark mode duplicating every component
-   * token. `--component-card-padding` is geometry and must not move under a
-   * theme; the card's background is a role and must.
+   * THE AXES STAY SEPARATE UNDER A THEME: a theme rebinds colour and must not
+   * touch geometry. That is the invariant the generator refuses to emit a
+   * violation of, checked here in the engine that actually resolves it.
+   *
+   * It used to read `--component-card-padding` against
+   * `--semantic-surface-raised`. THERE IS NO COMPONENT TIER in this system --
+   * the generator emits primitive and semantic only -- so that name resolved to
+   * "" and the geometry half compared "" with "" and passed. An assertion over
+   * two empty strings is the shape this repository distrusts everywhere else,
+   * and it was sitting inside the suite that exists BECAUSE a simulator agreeing
+   * with itself proves nothing.
    */
-  test('a theme rebinding reaches components through the roles they alias', async ({ page }) => {
+  test('a theme rebinds colour and leaves geometry untouched', async ({ page }) => {
     await page.goto(PAGE)
-    const names = ['--component-card-padding', '--semantic-surface-raised']
+    const names = [GEOMETRY, '--semantic-color-card']
     const light = await computed(page, read({}, names))
     const dark = await computed(page, read({ theme: 'dark' }, names))
 
-    expect(dark['--semantic-surface-raised']).not.toBe(light['--semantic-surface-raised'])
-    expect(dark['--component-card-padding']).toBe(light['--component-card-padding'])
+    // Both are read, so neither half can pass by being absent.
+    expect(light['--semantic-color-card']).not.toBe('')
+    expect(light[GEOMETRY]).not.toBe('')
+
+    expect(dark['--semantic-color-card']).not.toBe(light['--semantic-color-card'])
+    expect(dark[GEOMETRY]).toBe(light[GEOMETRY])
   })
 
   /**
@@ -118,11 +152,11 @@ test.describe('theme and density compose in a real browser', () => {
       const el = document.createElement('div')
       el.setAttribute('data-theme', 'dark')
       document.body.appendChild(el)
-      const value = getComputedStyle(el).getPropertyValue('--semantic-surface-page').trim()
+      const value = getComputedStyle(el).getPropertyValue('--semantic-color-background').trim()
       el.remove()
       return value
     })
-    expect(inner).toBe('#f8fafc')
+    expect(inner).toBe('#f2f5f9')
   })
 
   /**

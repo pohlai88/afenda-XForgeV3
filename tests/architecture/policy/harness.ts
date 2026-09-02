@@ -22,6 +22,7 @@ import { createPostgresDriver } from '@xforge/db/postgres'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
 import { resetEmergencyContacts } from '@xforge/fixtures/hr'
 import { HOST_A, seedTenancy, TENANT_A, TENANT_B } from '@xforge/fixtures/tenancy'
+import { acquireFixture, releaseFixture } from '../../fixtures/fixture-lock'
 
 export { EMPLOYEE } from '@xforge/fixtures/employee'
 
@@ -115,6 +116,11 @@ export async function request(
 }
 
 export async function seed(): Promise<void> {
+  // THE SAME FIXTURE, THEREFORE THE SAME LOCK. This harness clears and
+  // re-inserts `emergency_contact` exactly as the tenancy one does, so a
+  // tenancy run and a policy run in two processes corrupt each other. Locking
+  // only one of them would leave the race intact and look like it was fixed.
+  await acquireFixture()
   await seedTenancy(owner, [
     { principalId: 'p1', tenantId: TENANT_A },
     { principalId: 'p2', tenantId: TENANT_A },
@@ -133,4 +139,5 @@ export async function closeAll(): Promise<void> {
   }
   await owner.end({ timeout: 5 })
   await pg.close()
+  await releaseFixture()
 }

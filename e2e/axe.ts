@@ -5,8 +5,9 @@ import { expect, type Page } from '@playwright/test'
  * The mechanical half of A11y-1, with one owner.
  *
  * TWO SPECS SCAN, AND THEY SCAN DIFFERENT THINGS. `a11y-conformance.spec.ts`
- * covers the application's state surfaces; `conformance-harness.spec.ts` covers
- * the primitives, because the harness that mounts them lives in that file and a
+ * covers the application's state surfaces. PRIMITIVE COVERAGE IS OWED: the
+ * document-driven harness that mounted them was deleted with the design system
+ * it interpreted, and is rewritten against the new contracts at step 16. A
  * second copy of its boot sequence would be a second source for how the design
  * system starts. What must NOT be duplicated is the scan itself, which is why it
  * is here rather than in either of them.

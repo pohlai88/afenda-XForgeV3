@@ -81,13 +81,18 @@ comment said the day a contract declares one, this goes red -- "which is exactly
 when somebody needs telling that no conformance exists for it". It went red. So:
 
 ```
-  none            e2e/inert-contracts.spec.ts          DERIVED from profile
-  live-region     e2e/live-region-politeness.spec.ts   DERIVED from profile
-  native-control  e2e/native-control.spec.ts           DERIVED from profile
-  modal           e2e/conformance-harness.spec.ts      Dialog BY NAME
-  form-control    e2e/conformance-harness.spec.ts      Field, Input, Checkbox BY NAME
-  composite       --                                   OWED
-  composite-grid  --                                   OWED
+  STALE from the packages/design cutover until 2 Sep 2026: every spec named
+  below had been DELETED while this table read as live coverage. Rewritten
+  against what exists; see ADR-030 and POLICY.md 3g.
+
+  none            design-system-conformance.spec.ts    DERIVED from profile
+  live-region     A11y-3 GATED (ADR-030)               Alert, Status
+  native-control  design-system-conformance.spec.ts    DERIVED from profile
+  form-control    a11y-conformance.spec.ts             Input, Textarea
+  modal           A11y-3 GATED                         Dialog, Sheet
+  composite       A11y-3 GATED                         Command, DropdownMenu, Select
+  disclosure      A11y-3 GATED                         Tooltip
+  composite-grid  --                                   no contract declares it
 ```
 
 **That third column is the part worth having looked up.** The first draft of this

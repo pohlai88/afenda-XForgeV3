@@ -54,7 +54,12 @@ opinion**, and the architecture treats it as such.
 | [022](ADR-022-verified-tenant-context.md) | Verified tenant context: host selects, membership authorises | FROZEN | AQS-008 |
 | [023](ADR-023-membership-resolution-path.md) | How membership is read before a tenant context exists | FROZEN | T06, T07, T18 |
 | [024](ADR-024-structural-guards-stay-custom.md) | Structural guards stay custom until the tooling supports our compiler | Accepted | revisit trigger |
-| [025](ADR-025-assistive-technology-evidence-is-risk-based.md) | Assistive-technology evidence is required by interaction profile, not by control count | Accepted | A11y-3 gate |
+| [025](ADR-025-assistive-technology-evidence-is-risk-based.md) | Assistive-technology evidence is required by interaction profile, not by control count | Amended by 030 | A11y-3 gate |
+| [026](ADR-026-drizzle-does-not-own-the-migration-set.md) | Drizzle does not own the migration set | FROZEN | migration compatibility |
+| [027](ADR-027-cache-components-deferred.md) | Cache Components stays off until a route does server work | FROZEN | revisit trigger |
+| [028](ADR-028-tailwind-and-shadcn-base.md) | Tailwind v4 styles packages/ui; shadcn on Base UI is its component base | Amended by 029 | AQS-028 |
+| [029](ADR-029-one-ui-system.md) | One UI system; the token vocabulary is settled in one pass and proved by the compiler | Accepted | AQS-029 |
+| [030](ADR-030-at-evidence-is-a-record-not-an-integer.md) | Assistive-technology evidence is a record, not an integer | Accepted | A11y-1, A11y-3 gate |
 
 ADRs 001–013 record decisions reconciled from thirteen predecessor drafts.
 **ADRs 014–020 record defects found by adversarial review** that no draft had caught;

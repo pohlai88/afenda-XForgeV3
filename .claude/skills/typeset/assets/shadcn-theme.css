@@ -1,0 +1,308 @@
+/*
+ * shadcn/ui's colour variables, as two axes instead of four columns.
+ *
+ * COMPANION TO `shadcn-typography.css`. That file consumes --foreground,
+ * --muted-foreground, --muted, --border and --radius and defines none of them;
+ * this file is what makes it work. Import this one first.
+ *
+ * WHY THIS IS NOT A FOUR-COLUMN TABLE. The source spec lists every token four
+ * times -- Light/Slate, Light/Zinc, Dark/Slate, Dark/Zinc -- which is 4 x ~35
+ * values to keep in agreement by hand. They are not four independent themes:
+ * they are two axes, a NEUTRAL RAMP and a MODE, and they compose. Written that
+ * way it is ~22 ramp values plus one mapping per token, and the fourth column
+ * cannot drift from the third because it is not written down.
+ *
+ *   <html class="dark">                  dark, slate
+ *   <html class="theme-zinc">            light, zinc
+ *   <html class="dark theme-zinc">       dark, zinc
+ *
+ * BOTH CLASSES GO ON THE SAME ELEMENT, and this is load-bearing rather than
+ * stylistic. `--muted: var(--neutral-100)` is substituted at computed-value time
+ * on the element that declares it. If `.theme-zinc` sits on a descendant of the
+ * element carrying the semantic tokens, the ramp is rebound AFTER --muted has
+ * already resolved against slate, and the page renders half-swapped. Put both on
+ * <html>, as shadcn already does for `.dark`.
+ *
+ * ------------------------------------------------------------------ AUDIT --
+ *
+ * Every foreground/background pair in the spec was measured across all four
+ * combinations (WCAG 2.1 relative luminance). Ten of twelve pairs pass AA
+ * comfortably. Two fail, both in LIGHT mode only:
+ *
+ *   destructive-foreground on destructive   3.60:1 slate  3.61:1 zinc
+ *   muted-foreground on muted               4.34:1 slate  4.40:1 zinc
+ *
+ * The spec values are kept below, because that is what the spec says. The
+ * corrections are a third axis, `.theme-aa`, at the bottom of this file --
+ * opt-in, two tokens, measured. See the note there before deciding.
+ *
+ * Three further deviations are normalised here and flagged at each site:
+ * the sidebar's ramp, `sidebar-border`, and a typo in `bg-violet`.
+ */
+
+@layer base {
+  /* ============================================================== ramps == */
+
+  /*
+   * THE NEUTRAL RAMP. Slate by default; `.theme-zinc` swaps it. Every neutral
+   * token below references these, so the two neutral themes are one mapping.
+   *
+   * Tailwind v3-era hex. v4 restated the palette in oklch and its values differ
+   * very slightly; if the project is on v4 and exact parity matters, replace
+   * these twenty-two lines and nothing else.
+   */
+  :root {
+    --neutral-50: #f8fafc;
+    --neutral-100: #f1f5f9;
+    --neutral-200: #e2e8f0;
+    --neutral-400: #94a3b8;
+    --neutral-500: #64748b;
+    --neutral-600: #475569;
+    --neutral-700: #334155;
+    --neutral-800: #1e293b;
+    --neutral-900: #0f172a;
+    --neutral-950: #020617;
+  }
+
+  .theme-zinc {
+    --neutral-50: #fafafa;
+    --neutral-100: #f4f4f5;
+    --neutral-200: #e4e4e7;
+    --neutral-400: #a1a1aa;
+    --neutral-500: #71717a;
+    --neutral-600: #52525b;
+    --neutral-700: #3f3f46;
+    --neutral-800: #27272a;
+    --neutral-900: #18181b;
+    --neutral-950: #09090b;
+  }
+
+  /* Hued ramps, shared by both neutral themes. */
+  :root {
+    --white: #ffffff;
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --red-900: #7f1d1d;
+    --blue-50: #eff6ff;
+    --blue-500: #3b82f6;
+    --blue-700: #1d4ed8;
+    --blue-950: #172554;
+    --sky-100: #e0f2fe;
+    --sky-900: #0c4a6e;
+    --stone-100: #f5f5f4;
+    --stone-900: #1c1917;
+    --violet-100: #ede9fe;
+    --violet-900: #4c1d95;
+  }
+
+  /* ========================================================= light mode == */
+
+  :root {
+    /* The background/foreground convention: `X` is the surface, `X-foreground`
+       is what sits on it. The `-background` suffix is dropped on the base pair. */
+    --background: var(--white);
+    --foreground: var(--neutral-950);
+
+    --muted: var(--neutral-100);
+    --muted-foreground: var(
+      --neutral-500
+    ); /* 4.34:1 on --muted -- see .theme-aa */
+
+    --card: var(--white);
+    --card-foreground: var(--neutral-950);
+
+    --popover: var(--white);
+    --popover-foreground: var(--neutral-950);
+
+    --border: var(--neutral-200);
+    --input: var(--neutral-200);
+
+    --primary: var(--neutral-900);
+    --primary-foreground: var(--neutral-50);
+
+    --secondary: var(--neutral-100);
+    --secondary-foreground: var(--neutral-900);
+
+    --accent: var(--neutral-100);
+    --accent-foreground: var(--neutral-900);
+
+    --destructive: var(
+      --red-500
+    ); /* 3.60:1 with its foreground -- see .theme-aa */
+    --destructive-foreground: var(--neutral-50);
+
+    /* NOT IN THE SPEC, and the typography stylesheet needs it. shadcn's own
+       default; stated here rather than left to fall back to nothing, because a
+       var() naming an undefined property is dropped silently. */
+    --radius: 0.5rem;
+
+    /* Charts. Raw hex in the spec rather than ramp references, and kept that way
+       -- a categorical series is chosen as a set, not derived from a neutral.
+       READ THE NOTE at the bottom of this file before using them across modes. */
+    --chart-1: #e76e4f;
+    --chart-2: #299d8f;
+    --chart-3: #264753;
+    --chart-4: #e8c468;
+    --chart-5: #f4a361;
+
+    /* ------------------------------------------------------------ sidebar */
+
+    /*
+     * NORMALISED. The spec gives the sidebar ZINC values in the Light/Slate
+     * column as well as Light/Zinc -- so under the slate theme the sidebar was
+     * the only surface not following the neutral ramp, and the seam showed
+     * wherever it met the page. Referencing the ramp here makes it follow.
+     * To restore the spec exactly, hard-code the zinc hex on these six lines.
+     */
+    --sidebar-background: var(--neutral-50);
+    --sidebar-foreground: var(--neutral-700);
+    --sidebar-primary: var(--neutral-900);
+    --sidebar-primary-foreground: var(--neutral-50);
+    --sidebar-accent: var(--neutral-100);
+    --sidebar-accent-foreground: var(--neutral-900);
+
+    /* NORMALISED. The spec says `gray/200` for this one token and `zinc/200`
+       for every other light neutral -- a third ramp appearing exactly once,
+       for a 3-hex-digit difference (#e5e7eb vs #e4e4e7) nobody can see. Almost
+       certainly a slip; the border now follows the ramp like every other. */
+    --sidebar-border: var(--neutral-200);
+
+    --sidebar-ring: var(--blue-500);
+
+    /* ------------------------------------------------------------ website */
+
+    --bg-blue: var(--blue-50);
+    --accent-blue: var(--blue-700);
+    --bg-sky: var(--sky-100);
+    --bg-stone: var(--stone-100);
+    --bg-violet: var(--violet-100); /* spec reads `#violet/100` -- stray `#` */
+    --bg-blue-secondary: #d4daf7;
+    --bg-blue-tertiary: #cad1f4;
+    --bg-dark: var(--neutral-950);
+
+    /* ALPHA VIA color-mix RATHER THAN A BAKED HEX. The spec writes these as
+       `#f8fafc | 90%` -- a colour and an opacity as one value, which cannot
+       follow the ramp and has to be restated per column. Mixing keeps the
+       reference live, so the zinc theme and dark mode both get it for free.
+       Note the spec uses the 900 step here, not 950. */
+    --bg-nav: color-mix(in srgb, var(--neutral-50) 90%, transparent);
+    --fg-inactive: color-mix(in srgb, var(--neutral-500) 70%, transparent);
+  }
+
+  /* ========================================================== dark mode == */
+
+  .dark {
+    --background: var(--neutral-950);
+    --foreground: var(--neutral-50);
+
+    --muted: var(--neutral-800);
+    --muted-foreground: var(--neutral-400);
+
+    --card: var(--neutral-950);
+    --card-foreground: var(--neutral-50);
+
+    --popover: var(--neutral-950);
+    --popover-foreground: var(--neutral-50);
+
+    --border: var(--neutral-700);
+    --input: var(--neutral-700);
+
+    --primary: var(--neutral-50);
+    --primary-foreground: var(--neutral-900);
+
+    --secondary: var(--neutral-800);
+    --secondary-foreground: var(--neutral-50);
+
+    --accent: var(--neutral-800);
+    --accent-foreground: var(--neutral-50);
+
+    --destructive: var(--red-900);
+    --destructive-foreground: var(--neutral-50);
+
+    --chart-1: #2661d8;
+    --chart-2: #2db789;
+    --chart-3: #e88c30;
+    --chart-4: #af56db;
+    --chart-5: #e2366f;
+
+    --sidebar-background: var(--neutral-900);
+    --sidebar-foreground: var(--neutral-100);
+    --sidebar-primary: var(--blue-700);
+    --sidebar-primary-foreground: var(--white);
+    --sidebar-accent: var(--neutral-800);
+    --sidebar-accent-foreground: var(--neutral-100);
+    --sidebar-border: var(--neutral-800);
+    --sidebar-ring: var(--blue-500);
+
+    --bg-blue: var(--blue-950);
+    --accent-blue: var(--blue-500);
+    --bg-sky: var(--sky-900);
+    --bg-stone: var(--stone-900);
+    --bg-violet: var(--violet-900);
+    --bg-blue-secondary: #080e2b;
+    --bg-blue-tertiary: #182772;
+    --bg-dark: var(--neutral-50);
+
+    --bg-nav: color-mix(in srgb, var(--neutral-900) 90%, transparent);
+    --fg-inactive: color-mix(in srgb, var(--neutral-400) 70%, transparent);
+  }
+}
+
+/*
+ * ====================================================== AA corrections ====
+ *
+ * A third axis, applied alongside the other two: <html class="theme-aa">.
+ *
+ * Two tokens, both light-mode only, both measured. Kept separate rather than
+ * folded in above so the file above stays a faithful transcription of the spec
+ * and the deviation is a decision someone makes rather than one I made quietly.
+ *
+ *   --destructive        red/500 -> red/600
+ *     3.60:1 -> 4.62:1 against its own foreground. This is the pair worth
+ *     caring about most: a destructive button is the highest-stakes control in
+ *     the product and its label was the one that failed. 3.60 clears AA Large
+ *     (3:1), so a 18px+ bold label technically passes -- button labels are
+ *     usually 14px and do not.
+ *
+ *   --muted-foreground   neutral/500 -> neutral/600
+ *     4.34:1 -> 6.92:1 on --muted (slate; 4.40 -> 7.03 zinc).
+ *     Note it already passes on --background (4.76:1). The failure appears only
+ *     where muted-foreground sits on the MUTED surface -- which is exactly what
+ *     TabsList, Skeleton and section backgrounds do, so it is not a corner case.
+ *     Stepping to 600 also lifts it on the page, from 4.76 to 7.58.
+ *
+ * Dark mode needs neither: every dark pair measured 5.7:1 or better.
+ */
+
+@layer base {
+  .theme-aa:not(.dark) {
+    --destructive: var(--red-600);
+    --muted-foreground: var(--neutral-600);
+  }
+}
+
+/*
+ * ==================================================== chart series note ====
+ *
+ * NOT A DEFECT TO FIX HERE, but do not discover it in production.
+ *
+ * The chart colours are not a light/dark pair of the same hue. Four of the five
+ * change hue outright when the theme flips:
+ *
+ *   chart-1   #e76e4f  h 12   ->  #2661d8  h 220     152 deg   orange -> blue
+ *   chart-2   #299d8f  h 173  ->  #2db789  h 160      13 deg   teal   -> teal
+ *   chart-3   #264753  h 196  ->  #e88c30  h 30      166 deg   navy   -> orange
+ *   chart-4   #e8c468  h 43   ->  #af56db  h 280     123 deg   gold   -> violet
+ *   chart-5   #f4a361  h 27   ->  #e2366f  h 340      47 deg   peach  -> pink
+ *
+ * So a reader who has learned "orange is revenue" in light mode finds revenue
+ * blue in dark mode, and orange has become whatever chart-3 is. Series identity
+ * does not survive the toggle. That is a legitimate choice if charts are always
+ * read with a legend in view and never compared across a theme switch; it is a
+ * real problem if anyone screenshots one.
+ *
+ * If series identity should hold, pick five hues and give each a light and a
+ * dark VALUE of the same hue, rather than two unrelated sets. The `dataviz`
+ * skill covers choosing that set and checking it for contrast and for
+ * colour-vision deficiency.
+ */

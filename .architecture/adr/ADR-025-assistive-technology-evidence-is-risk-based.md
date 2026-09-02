@@ -1,6 +1,6 @@
 # ADR-025 — Assistive-technology evidence is required by interaction profile, not by control count
 
-**Status:** Accepted · 1 September 2026
+**Status:** Accepted · 1 September 2026 · **Amended by ADR-030, 2 September 2026**
 
 ## Context
 
@@ -86,6 +86,29 @@ browser.
 > section below named only checks that existed, while the Decision named one
 > that did not. The two sections disagreed, in one document, and nothing
 > compares them — no guard reads a sentence claiming that a check exists.
+
+> **Second correction, 2 September 2026. See ADR-030, which amends this.**
+> The condition written into Verification below — *"If that spec is deleted,
+> this ADR loses its basis"* — **fired**. `conformance-harness.spec.ts` and
+> `a11y-conformance.spec.ts` were both deleted in the cutover to
+> `packages/design`, leaving `e2e/axe.ts` with no caller at all. So the same
+> document failed the same way twice in two days, and the second time it had
+> already written down what to watch for.
+>
+> Three further statements below are now false and are left standing:
+>
+> - *"Gated profiles: `modal`, `composite`, `composite-grid`"* — `disclosure`
+>   had been added to the code with no ADR, and `live-region` joins at ADR-030.
+> - *"`live-region` … rest on native semantics"* — contradicted by the Decision's
+>   own criterion three lines above it, which gates anything that "ANNOUNCES
+>   STATE THE DOM DOES NOT ALREADY CARRY". That is what a live region is.
+> - *"The debt drops from four contracts to one: Dialog"* — the derivation
+>   returned six while this said one and two other documents said five. It is
+>   eight under ADR-030.
+>
+> The mechanical gate was also weaker than the artefact this ADR rejects: it
+> read one integer, so `{"interactionRevision": 1}` passed. ADR-030 makes the
+> shape of a session enforceable.
 
 The set is **derived from the profile a contract declares**, never from a list of
 component names. Combobox is `composite` and will be gated the day it lands,

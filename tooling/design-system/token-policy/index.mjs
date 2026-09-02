@@ -60,25 +60,25 @@
  *                           token name in TS rather than in CSS
  */
 
-export * from './accessibility.mjs'
-export * from './color.mjs'
-export * from './contract.mjs'
-export * from './elevation.mjs'
-export * from './freeze.mjs'
-export * from './identity.mjs'
-export * from './motion.mjs'
-export * from './tiers.mjs'
-export * from './typography.mjs'
-export * from './values.mjs'
+export * from './colour.mjs'
+export * from './form.mjs'
+export * from './tailwind.mjs'
+export * from './vocabulary.mjs'
 
-import { assertAccessibilityPolicy } from './accessibility.mjs'
-import { assertAlphaPermissions, assertColorPolicyKinds, assertPolicyRegistry } from './color.mjs'
-import { assertContractVersions, assertLifecycleRegistry } from './contract.mjs'
-import { assertElevationLayers } from './elevation.mjs'
-import { assertMotionRoles } from './motion.mjs'
-import { assertGroupNamesProjectUnambiguously } from './tiers.mjs'
-import { assertTypographyRoles } from './typography.mjs'
-import { assertValueShapeRegistry } from './values.mjs'
+import {
+  assertAccessibilityPolicy,
+  assertAlphaPermissions,
+  assertColorPolicyKinds,
+  assertPolicyRegistry,
+} from './colour.mjs'
+import { assertElevationLayers, assertMotionRoles, assertTypographyRoles } from './form.mjs'
+import { assertTailwindTables } from './tailwind.mjs'
+import {
+  assertContractVersions,
+  assertGroupNamesProjectUnambiguously,
+  assertLifecycleRegistry,
+  assertValueShapeRegistry,
+} from './vocabulary.mjs'
 
 // Every table above, checked on import. A kernel that checks tokens but not its
 // own configuration is still fail-open, and "someone calls it" is not a
@@ -106,3 +106,7 @@ assertPolicyRegistry()
 assertTypographyRoles()
 assertMotionRoles()
 assertElevationLayers()
+// The Tailwind bridge's own tables. Last, because it is the only projection that
+// leaves this repository's vocabulary for another system's, so a failure here
+// should be read after every rule about the vocabulary itself has passed.
+assertTailwindTables()

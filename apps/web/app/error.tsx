@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, Button, Stack, Text } from '@xforge/ui'
+import { Alert, Button, Stack, Text } from '@xforge/design'
 
 /**
  * The OUTER net, and deliberately not a replacement for `ResourceBoundary`.
@@ -28,7 +28,7 @@ import { Alert, Button, Stack, Text } from '@xforge/ui'
  *
  * A Client Component because Next requires it: an error boundary is React state
  * and cannot be a Server Component. It costs nothing measurable -- the
- * `@xforge/ui` barrel is already in this route's client graph via
+ * `@xforge/design` barrel is already in this route's client graph via
  * `emergency-contacts.tsx`.
  */
 export default function RouteError({
@@ -45,13 +45,13 @@ export default function RouteError({
   console.error('route segment failed to render', error, error.digest)
   return (
     <Stack>
-      <Alert testId="route-error" tone="danger">
+      <Alert data-testid="route-error" tone="danger">
         <Text>Something on this page failed to load.</Text>
         <Text tone="muted">
           The rest of the application is unaffected. Trying again re-renders this section.
         </Text>
       </Alert>
-      <Button onClick={reset} testId="route-error-retry">
+      <Button data-testid="route-error-retry" onClick={reset}>
         Try again
       </Button>
     </Stack>

@@ -1,0 +1,1112 @@
+/**
+ * COLOUR — what a role may be painted, and what it must contrast against.
+ *
+ * Implements POLICY.md §3's contrast and target-size rows. Two domains in one
+ * module because they are inseparable: a colour role's obligation IS its
+ * contrast floor, and the floor is a WCAG number rather than a taste.
+ *
+ * The reasoning lives in POLICY.md; this holds the tables and the refusals.
+ */
+
+import { assertLifecycle, assertTokenPath, deepFreeze, HEX, toPixels } from './vocabulary.mjs'
+
+/**
+ * ACCESSIBILITY FLOORS -- the numbers, where they come from, and the gap between
+ * the two.
+ *
+ * THE MODULE HELD ONE CONSTANT AND A SENTENCE ABOUT ITS NEIGHBOURS. That sentence
+ * read "the same kind of fact as the contrast minimums below" while nothing was
+ * below it: the contrast minimums lived in `color.mjs`, inline in
+ * `COLOR_POLICY_KINDS`, and had never been here. It is worth recording that the
+ * comment was written before the file it described, because the fix is not
+ * "delete the sentence" -- it is this file.
+ *
+ * A CITED FLOOR AND AN ADOPTED FLOOR ARE TWO FACTS, and until now there was only
+ * one. `text: 4.5` sitting alone cannot be validated: any check on it either
+ * restates 4.5 -- a second copy three lines from the first, which can only fail if
+ * someone edits its own subject -- or checks nothing. With the criterion recorded
+ * separately, the assertion compares two different things and means something: we
+ * may be STRICTER than the standard and never looser.
+ */
+
+/**
+ * What the success criteria actually require. Not ours to choose.
+ *
+ * `minimum` here is the published threshold; `criterion` is the clause a reader
+ * can go and check. Nothing in this table is a house judgement, which is the
+ * entire reason it is a separate table.
+ */
+const WCAG_MINIMUM = deepFreeze({
+  target: { criterion: '2.5.8', minimum: 24 },
+  text: { criterion: '1.4.3', minimum: 4.5 },
+  ui: { criterion: '1.4.11', minimum: 3 },
+})
+
+/**
+ * What this system adopts. Each entry either cites a criterion above -- and is
+ * then held to it -- or cites nothing and must say why it exists.
+ *
+ * THE THREE CONTRAST FLOORS DO NOT SHARE A PROVENANCE, which is the whole reason
+ * they are shaped this way rather than as three bare numbers. Two are published
+ * thresholds. The third is a decision this repository made, and a table that
+ * flattened them would lose the only distinction worth carrying.
+ */
+export const ACCESSIBILITY_POLICY = deepFreeze({
+  contrast: {
+    /**
+     * MEASURED, THOUGH WCAG WOULD LET IT OFF. 1.4.3 and 1.4.11 both exempt
+     * inactive components, so nothing external requires this and the kind sat
+     * `exempt: true` in `color.mjs` in anticipation of using that exemption.
+     *
+     * It is declined, on the evidence of the thing it replaces.
+     * `.xf-button:disabled` carried the comment "never below the contrast a
+     * disabled control still needs to be readable" directly above
+     * `opacity: 0.6`, which renders the primary label at 2.56:1 in light -- an
+     * assertion sitting on top of code that does not hold it, which is the
+     * defect CLAUDE.md keeps a list of. Taking the exemption would have made that
+     * comment permanently unfalsifiable.
+     *
+     * 3 rather than 4.5 is a repository decision and is recorded as one: it is
+     * the threshold already used for non-text boundaries, it is the strongest
+     * floor that still reads as de-emphasised, and it strictly beats the
+     * 2.31-2.56 that shipped. `cites: null` is not an omission -- no external
+     * standard is being cited for this number, and the field says so.
+     */
+    inactive: {
+      adopted: 3,
+      cites: null,
+      reason: 'WCAG exempts inactive components; the exemption is declined, see above',
+    },
+    /**
+     * 4.5 EVERYWHERE, including text WCAG would let off at 3:1 for being large:
+     * that exemption is a function of rendered font size, and `density.compact`
+     * rebinds `type.heading`. Honouring it would make the required contrast for
+     * one pair depend on BOTH the theme and density axes -- and a token claimed by
+     * both axes is precisely what the generator refuses. The strict rule keeps
+     * contrast a pure function of theme.
+     */
+    text: { adopted: 4.5, cites: 'text' },
+    ui: { adopted: 3, cites: 'ui' },
+  },
+  /**
+   * IN PIXELS, AND THE TOKEN MATCHES. `size.target-min` was `1.5rem`, described
+   * as "24px at a 16px root" -- an assumption about the document rather than a
+   * property of the token, and `PX_PER_UNIT` converted at that same assumed root.
+   * The check and the token agreed with each other by SHARING A PREMISE rather
+   * than by either being true, and a reader whose root was smaller got a target
+   * under the floor with everything green. The token is `24px` now, so policy,
+   * token, generated CSS and rendered proof all state one fact with no conversion
+   * between them. Typography still scales in rem; a floor is not typography.
+   */
+  targetMinimumPx: { adopted: 24, cites: 'target' },
+})
+
+/**
+ * The interactive target floor, in CSS pixels.
+ *
+ * Kept as a bare export because it reads better at the call site than reaching
+ * through the table, and because it was already the name the generator imported.
+ */
+export const TARGET_MINIMUM_PX = ACCESSIBILITY_POLICY.targetMinimumPx.adopted
+
+/** A contrast ratio lives in [1, 21]; a floor of 1 is one every colour clears. */
+const inContrastRange = (value) => typeof value === 'number' && value > 1 && value <= 21
+
+/**
+ * The floors' own rules.
+ *
+ * IT REFUSES AN EMPTY TABLE, and that clause is not decoration. The obvious way
+ * to write this assertion -- reading `policy.contrast.text` and comparing it to a
+ * literal -- passes an EMPTY contrast table, because `undefined < 4.5` is `false`
+ * and every hand-written comparison quietly declines to fire. That is the same
+ * `anything < undefined` trap `color.mjs` documents about missing minimums, and
+ * it would have shipped here in the module that owns the thresholds.
+ */
+export function assertAccessibilityPolicy(policy = ACCESSIBILITY_POLICY, cited = WCAG_MINIMUM) {
+  const floors = Object.entries(policy.contrast)
+  if (floors.length === 0) {
+    throw new Error(
+      'the accessibility policy declares no contrast floors -- every rule here is about a ' +
+        'floor, so an empty table satisfies all of them while measuring nothing',
+    )
+  }
+
+  for (const [name, floor] of [...floors, ['targetMinimumPx', policy.targetMinimumPx]]) {
+    // Ratios and pixels are different units and must not share a range check.
+    // `targetMinimumPx` is excluded from the [1, 21] test for that reason and is
+    // held only to its criterion.
+    if (name !== 'targetMinimumPx' && !inContrastRange(floor.adopted)) {
+      throw new Error(
+        `contrast floor '${name}' is ${JSON.stringify(floor.adopted)} -- a contrast ratio is a ` +
+          'number in (1, 21], and a missing one fails OPEN because every ratio compares false ' +
+          'against undefined',
+      )
+    }
+
+    if (floor.cites === null) {
+      if (typeof floor.reason !== 'string' || floor.reason.trim() === '') {
+        throw new Error(
+          `accessibility floor '${name}' cites no criterion and states no reason -- a number ` +
+            'with neither a standard behind it nor an argument for it is a preference wearing ' +
+            'the word accessibility',
+        )
+      }
+      continue
+    }
+
+    const standard = cited[floor.cites]
+    if (!standard) {
+      throw new Error(
+        `accessibility floor '${name}' cites '${floor.cites}', which is not a declared ` +
+          `criterion -- the criteria are ${Object.keys(cited).join(', ')}`,
+      )
+    }
+    // STRICTER, NEVER LOOSER. This is the comparison the old shape could not
+    // make: two different facts rather than a constant and a copy of itself.
+    if (floor.adopted < standard.minimum) {
+      throw new Error(
+        `accessibility floor '${name}' is ${floor.adopted}, below the ${standard.minimum} that ` +
+          `WCAG ${standard.criterion} requires -- this system may hold itself to more than a ` +
+          'success criterion and may not adopt less of one',
+      )
+    }
+  }
+}
+
+/**
+ * One target measurement against the floor.
+ *
+ * The comparison lives with the number it compares against. It was in the
+ * generator, which owned the reasoning while this module owned only the constant.
+ *
+ * A REM IS REFUSED RATHER THAN CONVERTED. `toPixels` is called with no root size
+ * on purpose: a floor measured through an assumed root is the premise this file
+ * describes removing, and re-supplying one here would reintroduce it at the exact
+ * site it was removed from.
+ */
+export function assertTargetMinimum(length, label = 'semantic.target.minimum') {
+  const px = toPixels(length)
+  if (px === null) {
+    throw new Error(
+      `${label} is '${length}', which is a rem -- a floor cannot be measured through an ` +
+        'assumed root size, so this token states pixels or nothing can compare it to the ' +
+        `${TARGET_MINIMUM_PX}px floor`,
+    )
+  }
+  if (!(px >= TARGET_MINIMUM_PX)) {
+    throw new Error(
+      `${label} is ${length} (${px}px), below the ${TARGET_MINIMUM_PX}px floor -- WCAG ` +
+        `${WCAG_MINIMUM.target.criterion} permits documented exceptions, but not a silent one`,
+    )
+  }
+  return px
+}
+
+/**
+ * The closed set of colour-policy kinds.
+ *
+ * WAS A BINARY -- measured or exempt -- with a `minimumFor` that returned 4.5 for
+ * `'text'` and 3 for everything else. That is total over a string, so `kind:
+ * 'txet'` silently downgraded a text role to the UI threshold and the generator
+ * reported green. The set of legal kinds existed only as an else-branch.
+ *
+ * THREE MODES, and the third is the one that was missing:
+ *
+ *   measures       asserts contrast about ITSELF against something
+ *   pairedAgainst  asserts nothing about itself; others measure against it
+ *   exempt         asserts nothing, and nothing measures against it
+ *
+ * `backdrop` used to sit in the exempt list, which erased that distinction and
+ * made a real hole invisible -- a surface nobody paired against was complete by
+ * letter while being measured by nothing.
+ */
+/**
+ * THE NUMBERS ARE NOT HERE ANY MORE. A measuring kind names the accessibility
+ * floor it is held to, and `accessibility.mjs` says what that floor is and which
+ * success criterion it answers to.
+ *
+ * They were inline -- `text: { measures: true, minimum: 4.5 }` -- and the twelve
+ * lines arguing why `inactive` is 3 sat in this file with them. That argument is
+ * an accessibility judgement, not a colour one: it is about declining a WCAG
+ * exemption, and it now lives beside the criterion it declines. What stays here
+ * is the question this table actually answers, which is what a role of each kind
+ * PROVES.
+ */
+export const COLOR_POLICY_KINDS = deepFreeze({
+  compositing: { exempt: true },
+  decorative: { exempt: true },
+  inactive: { measures: true, threshold: 'inactive' },
+  // ONE SURFACE KIND, not two. `intent-surface` existed because `kind` was also
+  // being asked where a role may be composed, so a status backdrop had to be a
+  // different KIND from a neutral one. Composition contexts answer that question
+  // instead, and the second kind dissolved: `danger.surface` and `surface.page`
+  // prove exactly the same thing about themselves -- nothing -- and differ only
+  // in the context they provide.
+  surface: { pairedAgainst: true },
+  text: { measures: true, threshold: 'text' },
+  ui: { measures: true, threshold: 'ui' },
+})
+
+const KIND_MODES = ['exempt', 'measures', 'pairedAgainst']
+
+/**
+ * The kinds table's own rules -- the table that decides every threshold, and the
+ * one thing here that nothing checked.
+ *
+ * A MEASURING KIND WITH NO MINIMUM FAILS OPEN, silently and completely. The
+ * generator compares `ratio < minimum`, and `anything < undefined` is `false`,
+ * so the role would be measured against every surface and pass every one of
+ * them. That is worse than an unmeasured role, because the run reports the pairs
+ * as checked.
+ *
+ * A minimum must also exceed 1: contrast ratios live in [1, 21], so a minimum of
+ * 1 is a threshold every colour on earth clears, including a colour against
+ * itself.
+ */
+export function assertColorPolicyKinds(kinds = COLOR_POLICY_KINDS) {
+  for (const [kind, policy] of Object.entries(kinds)) {
+    const modes = KIND_MODES.filter((mode) => policy[mode])
+    if (modes.length !== 1) {
+      throw new Error(
+        `colour-policy kind '${kind}' declares ${modes.length === 0 ? 'no mode' : `modes ${modes.join(' and ')}`} -- ` +
+          `exactly one of ${KIND_MODES.join(', ')} says what a role of this kind proves`,
+      )
+    }
+    if (policy.measures) {
+      // The RANGE check moved with the numbers: `assertAccessibilityPolicy` holds
+      // every floor to (1, 21] and to the criterion it cites. What is checked
+      // here is that the name resolves at all -- a kind pointing at a floor that
+      // does not exist would reach `minimumFor` as `undefined`, and every ratio
+      // compares false against undefined, so the role would be measured against
+      // every surface and pass all of them.
+      if (!(policy.threshold in ACCESSIBILITY_POLICY.contrast)) {
+        throw new Error(
+          `colour-policy kind '${kind}' measures contrast against threshold ` +
+            `${JSON.stringify(policy.threshold)}, which is not a declared accessibility floor ` +
+            `-- the floors are ${Object.keys(ACCESSIBILITY_POLICY.contrast).join(', ')}, and an ` +
+            'unresolved one fails OPEN rather than loudly',
+        )
+      }
+    } else if ('threshold' in policy) {
+      throw new Error(
+        `colour-policy kind '${kind}' measures nothing yet names threshold ` +
+          `'${policy.threshold}' -- a floor nothing applies reads as a guarantee`,
+      )
+    }
+  }
+}
+
+/**
+ * Kinds whose values may carry alpha.
+ *
+ * Alpha is legal exactly where the policy already says luminance does not
+ * measure the role. Stated as a fact about KINDS rather than checked at the
+ * point of measurement, so an 8-digit value on an unmeasured role is caught too,
+ * and so the rule is reviewable in one place.
+ */
+export const MAY_CARRY_ALPHA = deepFreeze(['compositing'])
+
+export function assertAlphaPermissions(permitted = MAY_CARRY_ALPHA, kinds = COLOR_POLICY_KINDS) {
+  for (const kind of permitted) {
+    if (!(kind in kinds)) {
+      throw new Error(
+        `'${kind}' may carry alpha but is not a colour-policy kind -- the permission names ` +
+          'nothing, so it grants nothing, and a role that needs it would be refused instead',
+      )
+    }
+    if (kinds[kind].measures) {
+      throw new Error(
+        `'${kind}' measures contrast and may not also carry alpha -- a translucent value has ` +
+          'no fixed luminance, so every ratio computed from it describes a colour that is not ' +
+          'what renders',
+      )
+    }
+  }
+}
+
+/**
+ * Whether a colour value carries an alpha channel.
+ *
+ * REFUSES WHAT IT CANNOT CLASSIFY, and this is the module's own FAIL CLOSED
+ * principle applied to the one predicate that used to break it. This was
+ * `value.length > 7`, which answers `false` for every non-string -- so a DTCG
+ * structured colour carrying `alpha: 0.5` reported no alpha, and the check that
+ * exists to catch translucency would have gone quiet at the exact moment the
+ * shape table widened to admit it. The migration that introduces those forms is
+ * now forced to come here first.
+ */
+export function carriesAlpha(value) {
+  if (typeof value === 'string' && HEX.test(value)) {
+    return value.length === 9
+  }
+  throw new Error(
+    `cannot decide whether ${JSON.stringify(value)} carries alpha -- only the hex colour ` +
+      'form is understood, so widening the colour shape must widen this in the same commit',
+  )
+}
+
+export function kindPolicy(kind) {
+  const policy = COLOR_POLICY_KINDS[kind]
+  if (!policy) {
+    throw new Error(
+      `unknown colour-policy kind '${kind}' -- the legal kinds are ` +
+        `${Object.keys(COLOR_POLICY_KINDS).join(', ')}`,
+    )
+  }
+  return policy
+}
+
+/**
+ * The ratio a kind must clear, resolved through the accessibility policy.
+ *
+ * Why text is 4.5 everywhere -- including text WCAG would let off at 3:1 for
+ * being large -- is recorded with the floor itself in `accessibility.mjs`, along
+ * with the criterion each floor cites. This function is the lookup, not the
+ * argument.
+ */
+export function minimumFor(kind) {
+  const policy = kindPolicy(kind)
+  if (!policy.measures) {
+    throw new Error(`colour-policy kind '${kind}' measures nothing, so it has no minimum`)
+  }
+  const floor = ACCESSIBILITY_POLICY.contrast[policy.threshold]
+  if (!floor) {
+    throw new Error(
+      `colour-policy kind '${kind}' names accessibility floor '${policy.threshold}', which does ` +
+        'not exist -- returning undefined here would be measured against every surface and ' +
+        'clear every one of them',
+    )
+  }
+  return floor.adopted
+}
+
+/**
+ * COMPOSITION CONTEXTS -- where a role may legitimately be composed.
+ *
+ * THE MODEL THIS REPLACED CONFLATED TWO QUESTIONS. A role's `kind` was asked to
+ * say both what it must PROVE -- text measures 4.5, ui measures 3 -- and where it
+ * may be COMPOSED: a surface is a backdrop, an `intent-surface` a status backdrop.
+ * One field, two jobs, and the strain showed as machinery: an `intent` field, a
+ * second surface kind, a hand-written `against` list, and an assertion apiece to
+ * keep the last two honest.
+ *
+ * THE TELL WAS `accent.default`. It is a fill that on-accent text sits on AND a
+ * boundary that must clear 3:1 against the page. A single-kind classification
+ * cannot say both, so `text.on-accent` needed an enumerated escape hatch -- the
+ * one hand-maintained list left in a module whose central argument is that
+ * hand-maintained lists go stale one entry at a time.
+ *
+ * Splitting the questions dissolves it. A role states its KIND (what it proves),
+ * the contexts it CONSUMES, and the contexts it PROVIDES. `accent.default`
+ * measures against `neutral` and provides `accent`, which is simply true of it.
+ *
+ * The set is CLOSED, and that is the second gain. A misspelled `intent` used to
+ * fail in the worst possible direction: the role kept its neutral surfaces, lost
+ * the single pair it existed for, and the error -- when one came at all -- named
+ * a different role. An unknown context is now refused where it is written.
+ */
+export const COMPOSITION_CONTEXTS = deepFreeze([
+  'accent',
+  'danger',
+  'disabled',
+  'info',
+  'neutral',
+  'success',
+  'warning',
+  // The superseding system's contexts. It names one per surface rather than one
+  // per intent, which is what lets a role and its `-foreground` state their own
+  // pair -- `card` provides `card`, and `card-foreground` is measured on it.
+  // `danger` and `neutral` above belong to the system being replaced and go with
+  // it; `destructive` and `page` are their counterparts here.
+  'card',
+  'destructive',
+  // THE STATUS TINT FOR FAILURE. `destructive` is the ACTION fill -- a button
+  // somebody presses -- and until this existed the tint family had success,
+  // warning, info and statutory and nothing for failure. Alert rendered `danger`
+  // with warning's classes because there was nothing else to reach for.
+  'error',
+  'field',
+  'muted',
+  'page',
+  'popover',
+  'primary',
+  'secondary',
+  'statutory',
+])
+
+/**
+ * Colour roles and what must be true of them.
+ *
+ * PAIRS ARE DERIVED, NEVER LISTED. Three consecutive review rounds found a
+ * hand-maintained pair list short by one surface -- the accent tint missing from
+ * the text roles, then `sunken` missing from `border.strong`, then `sunken`
+ * missing from the status text roles. Each was fixed by hand and the next round
+ * found the next one, which says the enumeration METHOD was the defect rather
+ * than any particular list. There is now no list left to be short: adding a
+ * fourth neutral surface extends every role consuming `neutral`, and adding an
+ * `accent.pressed` extends `text.on-accent`, with nobody editing either.
+ *
+ * CONTEXTS KEEP DERIVATION HONEST. Pairing every text role against every backdrop
+ * would manufacture `text.default` on `danger.surface` -- a composition nobody
+ * renders. Neutral text consumes `neutral` only; status text consumes `neutral`
+ * and its own status.
+ */
+/**
+ * THE PERCEPTUAL FLOOR. Below this two colours are one colour.
+ *
+ * CIEDE2000 rather than a contrast ratio, because the question is different.
+ * Contrast asks whether text on a surface can be READ; this asks whether two
+ * surfaces can be TOLD APART, which is a difference in hue and chroma as much
+ * as in luminance. A 1.3 CIEDE2000 gap between the statutory and warning tints
+ * in dark passed every contrast check in this file and rendered as one colour.
+ *
+ * 3.0 rather than the ~2.3 usually quoted as the just-noticeable difference:
+ * JND is the threshold for a trained observer comparing adjacent patches, and
+ * these are surfaces separated by content, seen once, by someone doing
+ * something else.
+ */
+export const DISTINCT_MINIMUM_DELTA_E = 3.0
+
+/**
+ * Pairs that must never render as the same colour, and WHY each one is here.
+ *
+ * THIS TABLE EXISTS BECAUSE NOTHING MEASURED SURFACE AGAINST SURFACE. Every
+ * check in this module takes a foreground and the surface it sits on;
+ * `pairsFor` returns [] for a `surface` role because its kind is
+ * `pairedAgainst`, so a surface is never the left operand of anything. Two
+ * roles resolving to the SAME colour therefore passed every existing check --
+ * and four of them did: card, popover, field and secondary were all #ffffff.
+ *
+ * WHAT IS DELIBERATELY NOT HERE, and this is the load-bearing half. A pair
+ * belongs in this table only when SURFACE is the means its separation actually
+ * rests on:
+ *
+ *   card / popover   NOT here. A popover is separated by its SHADOW, which
+ *                    ELEVATION_LAYERS declares and which works in both themes.
+ *                    In light they are both white and cannot differ -- white is
+ *                    the ceiling, and demanding a step above it would be a rule
+ *                    no palette could satisfy.
+ *   card / field     NOT here. A field is separated by its BOUNDARY --
+ *                    `color.input`, measured at 4.33:1, well past the 3:1 floor.
+ *
+ * Adding a pair here is a claim that nothing else separates them.
+ */
+export const DISTINCT_PAIRS = deepFreeze([
+  // A card is separated from the page by a boundary and a surface, and the
+  // boundary is `color.border` -- kind `decorative`, exempt, and measured by
+  // nothing. If the surface step is also invisible then the panel has no
+  // separation at all, which is what 1.8 CIEDE2000 meant.
+  [
+    'color.background',
+    'color.card',
+    'a panel on the page, whose only other means is an unmeasured border',
+  ],
+  // The recessed well -- code blocks, skeletons -- sits ON a card, not on the page.
+  ['color.card', 'color.muted', 'a recessed well inside a panel'],
+  // THE FIVE STATUS TINTS, MUTUALLY. These carry meaning by colour, and while
+  // colour is never their only indicator, two obligations that look identical
+  // make the vocabulary a lie. `statutory` and `warning` were 1.3 apart in dark:
+  // fixed by law and be careful, rendering as one colour.
+  ['color.success', 'color.warning', 'a good outcome and a caution'],
+  ['color.success', 'color.error', 'a good outcome and a failure'],
+  ['color.success', 'color.info', 'a good outcome and a note'],
+  ['color.success', 'color.statutory', 'a good outcome and a legal fact'],
+  ['color.warning', 'color.error', 'a caution and a failure'],
+  ['color.warning', 'color.info', 'a caution and a note'],
+  ['color.warning', 'color.statutory', 'be careful, and fixed by law'],
+  ['color.error', 'color.info', 'a failure and a note'],
+  ['color.error', 'color.statutory', 'a failure and a legal fact'],
+  ['color.info', 'color.statutory', 'a note and a legal fact'],
+])
+
+/**
+ * CIEDE2000. Not a contrast ratio, and not Euclidean Lab either.
+ *
+ * The naive distance in Lab overstates differences in saturated regions and
+ * understates them in near-neutrals -- which is exactly the region every
+ * surface in this system lives in. CIEDE2000 applies the lightness, chroma and
+ * hue weightings plus the blue-region rotation term, and it is the standard the
+ * just-noticeable-difference figure this file quotes is defined against.
+ */
+const srgbToLab = (hex) => {
+  const n = hex.replace('#', '')
+  const lin = (c) => (c <= 0.040_45 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+  const [r, g, b] = [0, 2, 4].map((i) => lin(Number.parseInt(n.slice(i, i + 2), 16) / 255))
+  const X = r * 0.4124 + g * 0.3576 + b * 0.1805
+  const Y = r * 0.2126 + g * 0.7152 + b * 0.0722
+  const Z = r * 0.0193 + g * 0.1192 + b * 0.9505
+  const f = (t) => (t > 0.008_856 ? Math.cbrt(t) : 7.787 * t + 16 / 116)
+  const [fx, fy, fz] = [f(X / 0.950_47), f(Y), f(Z / 1.088_83)]
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)]
+}
+
+export function deltaE(hexA, hexB) {
+  const [L1, a1, b1] = srgbToLab(hexA)
+  const [L2, a2, b2] = srgbToLab(hexB)
+  const C1 = Math.hypot(a1, b1)
+  const C2 = Math.hypot(a2, b2)
+  const Cbar = (C1 + C2) / 2
+  const G = 0.5 * (1 - Math.sqrt(Cbar ** 7 / (Cbar ** 7 + 25 ** 7)))
+  const ap1 = (1 + G) * a1
+  const ap2 = (1 + G) * a2
+  const Cp1 = Math.hypot(ap1, b1)
+  const Cp2 = Math.hypot(ap2, b2)
+  const hue = (b, a) => {
+    if (b === 0 && a === 0) {
+      return 0
+    }
+    const d = (Math.atan2(b, a) * 180) / Math.PI
+    return d < 0 ? d + 360 : d
+  }
+  const hp1 = hue(b1, ap1)
+  const hp2 = hue(b2, ap2)
+  let dhp = 0
+  if (Cp1 * Cp2 !== 0) {
+    dhp = hp2 - hp1
+    if (dhp > 180) {
+      dhp -= 360
+    } else if (dhp < -180) {
+      dhp += 360
+    }
+  }
+  const dLp = L2 - L1
+  const dCp = Cp2 - Cp1
+  const dHp = 2 * Math.sqrt(Cp1 * Cp2) * Math.sin((dhp * Math.PI) / 360)
+  const Lbp = (L1 + L2) / 2
+  const Cbp = (Cp1 + Cp2) / 2
+  let hbp = hp1 + hp2
+  if (Cp1 * Cp2 !== 0) {
+    if (Math.abs(hp1 - hp2) > 180) {
+      hbp += hbp < 360 ? 360 : -360
+    }
+    hbp /= 2
+  }
+  const T =
+    1 -
+    0.17 * Math.cos(((hbp - 30) * Math.PI) / 180) +
+    0.24 * Math.cos((2 * hbp * Math.PI) / 180) +
+    0.32 * Math.cos(((3 * hbp + 6) * Math.PI) / 180) -
+    0.2 * Math.cos(((4 * hbp - 63) * Math.PI) / 180)
+  const Sl = 1 + (0.015 * (Lbp - 50) ** 2) / Math.sqrt(20 + (Lbp - 50) ** 2)
+  const Sc = 1 + 0.045 * Cbp
+  const Sh = 1 + 0.015 * Cbp * T
+  const Rt =
+    -2 *
+    Math.sqrt(Cbp ** 7 / (Cbp ** 7 + 25 ** 7)) *
+    Math.sin((60 * Math.exp(-(((hbp - 275) / 25) ** 2)) * Math.PI) / 180)
+  return Math.sqrt(
+    (dLp / Sl) ** 2 + (dCp / Sc) ** 2 + (dHp / Sh) ** 2 + Rt * (dCp / Sc) * (dHp / Sh),
+  )
+}
+
+/**
+ * Every declared pair, in every mode. A role that is absent is SKIPPED -- the
+ * same rule the contrast and typography checks follow, so a synthetic source
+ * declaring three tokens is not asked about twelve pairs.
+ *
+ * Alpha is refused rather than composited. A colour with alpha has no single
+ * appearance until it is drawn on something, and answering "are these two
+ * distinguishable" about a colour that does not exist yet would be a fabricated
+ * number -- the same reason the contrast policy refuses alpha on a measured role.
+ */
+export function distinctnessFailures(
+  resolvedByMode,
+  pairs = DISTINCT_PAIRS,
+  floor = DISTINCT_MINIMUM_DELTA_E,
+) {
+  const failures = []
+  for (const [label, resolved] of resolvedByMode) {
+    for (const [a, b, why] of pairs) {
+      // PREFIXED, because the resolved map is keyed by FULL token path while
+      // this table -- like COLOR_ROLE_POLICIES -- names roles relative to
+      // `semantic.`. Without it every lookup returned undefined, every pair hit
+      // the skip below, and the check reported clean over twelve pairs it had
+      // not looked at. It was caught by planting a known collision and watching
+      // the generator succeed; nothing else would have said so.
+      const va = resolved.get(`semantic.${a}`)
+      const vb = resolved.get(`semantic.${b}`)
+      // A pair whose roles do not both exist is skipped, so a synthetic source
+      // declaring three tokens is not asked about twelve pairs. That leniency is
+      // what hid the bug above, so it is worth being exact about its scope: this
+      // skips a MISSING role, and the generator separately refuses a semantic
+      // colour role that has no policy -- so a real token cannot reach here
+      // unnoticed.
+      if (va === undefined || vb === undefined) {
+        continue
+      }
+      if (carriesAlpha(va) || carriesAlpha(vb)) {
+        continue
+      }
+      const d = deltaE(va, vb)
+      if (d < floor) {
+        failures.push(
+          `${label}: ${a} and ${b} are ${d.toFixed(1)} apart, below the ${floor} floor -- ` +
+            `they render as one colour, and this pair is ${why}`,
+        )
+      }
+    }
+  }
+  return failures
+}
+
+export const COLOR_ROLE_POLICIES = deepFreeze({
+  // THREE ROLES RATHER THAN ONE OPACITY, and the reason is that CSS `opacity`
+  // composites: it produces colours that exist only after render, so the pair the
+  // token graph can see stays green while the pixels do not. `text.default` on
+  // `surface.raised` reports 17.85:1 and rendered 4.74:1 through `opacity: 0.6`.
+  // As explicit roles it is an ordinary pair the contrast invariant already covers.
+  /* ---------------------------------------------------------------------
+   * `color.*` -- the superseding design system.
+   *
+   * FLAT AND PAIRED BY STEM. Every surface provides a context named after
+   * itself, and its `-foreground` is measured against exactly that context. The
+   * pairing is therefore visible in the names: nothing has to know that `card`
+   * and `card-foreground` belong together, because they say so.
+   * ------------------------------------------------------------------- */
+
+  'color.accent': {
+    kind: 'surface',
+    providesContexts: ['accent'],
+    reason: 'a subtle tint behind a hovered or selected row, proved through accent-foreground',
+  },
+  'color.accent-foreground': { againstContexts: ['accent'], kind: 'text' },
+  'color.background': {
+    kind: 'surface',
+    providesContexts: ['page'],
+    reason: 'the page itself, proved through foreground',
+  },
+  // A divider, never a sole control boundary -- the same exemption the system
+  // being replaced granted `border.default`, for the same reason. `color.input`
+  // below is the one that must be findable, and it measures.
+  'color.border': { kind: 'decorative', reason: 'a divider, never a sole control boundary' },
+  'color.card': {
+    kind: 'surface',
+    providesContexts: ['card'],
+    reason: 'a grouped surface, proved through card-foreground',
+  },
+  'color.card-foreground': { againstContexts: ['card'], kind: 'text' },
+  'color.destructive': {
+    kind: 'surface',
+    providesContexts: ['destructive'],
+    reason: 'a status backdrop, proved through destructive-foreground',
+  },
+  'color.destructive-foreground': { againstContexts: ['destructive'], kind: 'text' },
+  'color.destructive-hover': {
+    kind: 'surface',
+    providesContexts: ['destructive'],
+    reason: 'the hovered fill of a destructive control, proved through destructive-foreground',
+  },
+  'color.disabled': {
+    kind: 'surface',
+    providesContexts: ['disabled'],
+    reason: 'the fill of a control that cannot be operated, proved through disabled-foreground',
+  },
+  // Dimmed, never hidden. `inactive` carries a lower floor than `text` because a
+  // disabled control is not being read for content -- but it still has one,
+  // because a control whose label cannot be read is one whose absence cannot be
+  // understood.
+  'color.disabled-foreground': { againstContexts: ['disabled'], kind: 'inactive' },
+  'color.error': {
+    kind: 'surface',
+    providesContexts: ['error'],
+    reason: 'a status backdrop for failure, proved through error-foreground',
+  },
+  'color.error-foreground': { againstContexts: ['error'], kind: 'text' },
+  'color.field': {
+    kind: 'surface',
+    providesContexts: ['field'],
+    reason: 'the surface of a text control, proved through foreground',
+  },
+  'color.foreground': { againstContexts: ['field', 'page'], kind: 'text' },
+  'color.info': {
+    kind: 'surface',
+    providesContexts: ['info'],
+    reason: 'a status backdrop, proved through info-foreground',
+  },
+  'color.info-foreground': { againstContexts: ['info'], kind: 'text' },
+  // The boundary of a control a person must find and aim at, so it measures at
+  // the `ui` floor against every surface a field can sit on.
+  'color.input': { againstContexts: ['card', 'page'], kind: 'ui' },
+  'color.muted': {
+    kind: 'surface',
+    providesContexts: ['muted'],
+    reason: 'a recessed fill, proved through muted-foreground',
+  },
+  // Secondary text sits on the page and on cards as well as on `muted`, so it is
+  // measured against all three rather than against the one it is named for.
+  'color.muted-foreground': { againstContexts: ['card', 'muted', 'page'], kind: 'text' },
+  'color.popover': {
+    kind: 'surface',
+    providesContexts: ['popover'],
+    reason: 'a floating surface, proved through popover-foreground',
+  },
+  'color.popover-foreground': { againstContexts: ['popover'], kind: 'text' },
+  'color.primary': {
+    kind: 'surface',
+    providesContexts: ['primary'],
+    reason: 'a filled control, proved through primary-foreground',
+  },
+  'color.primary-foreground': { againstContexts: ['primary'], kind: 'text' },
+  'color.primary-hover': {
+    kind: 'surface',
+    providesContexts: ['primary'],
+    reason: 'the hovered fill of a filled control, proved through primary-foreground',
+  },
+  // A pressed fill is a third fill, not a hover at another opacity. Both provide
+  // `primary`, so `primary-foreground` is measured on them the day they land
+  // rather than the day somebody remembers.
+  'color.primary-pressed': {
+    kind: 'surface',
+    providesContexts: ['primary'],
+    reason: 'the pressed fill of a filled control, proved through primary-foreground',
+  },
+  'color.ring': { againstContexts: ['card', 'page'], kind: 'ui' },
+  'color.scrim': { kind: 'compositing', reason: 'an alpha layer, not a foreground pair' },
+  'color.secondary': {
+    kind: 'surface',
+    providesContexts: ['secondary'],
+    reason: 'an outlined control, proved through secondary-foreground',
+  },
+  'color.secondary-foreground': { againstContexts: ['secondary'], kind: 'text' },
+  'color.secondary-hover': {
+    kind: 'surface',
+    providesContexts: ['secondary'],
+    reason: 'the hovered fill of an outlined control, proved through secondary-foreground',
+  },
+  'color.secondary-pressed': {
+    kind: 'surface',
+    providesContexts: ['secondary'],
+    reason: 'the pressed fill of an outlined control, proved through secondary-foreground',
+  },
+  // THE INK A SHADOW IS DRAWN IN, and it is exempt for the same reason the
+  // scrim is: what it composites over is decided at render, so the pair the
+  // token graph can see is not the pair the eye gets. What DOES have to hold
+  // -- that a surface stays distinguishable from the one beneath it -- is a
+  // property of the surfaces, and those are measured.
+  'color.shadow-ambient': {
+    kind: 'compositing',
+    reason: 'the wide, faint layer of a shadow; composited, not a pair',
+  },
+  'color.shadow-key': {
+    kind: 'compositing',
+    reason: 'the tight, nearer layer of a shadow; composited, not a pair',
+  },
+  // STATUTORY. EPF, SOCSO, EIS and PCB rates are law, not advice and not a
+  // warning. It measures like any other text pair; what it does not do is borrow
+  // `info`, which would read as guidance a reader could choose to ignore.
+  'color.statutory': {
+    kind: 'surface',
+    providesContexts: ['statutory'],
+    reason: 'the backdrop of a regulatory fact, proved through statutory-foreground',
+  },
+  'color.statutory-foreground': { againstContexts: ['statutory'], kind: 'text' },
+  'color.success': {
+    kind: 'surface',
+    providesContexts: ['success'],
+    reason: 'a status backdrop, proved through success-foreground',
+  },
+  'color.success-foreground': { againstContexts: ['success'], kind: 'text' },
+  'color.warning': {
+    kind: 'surface',
+    providesContexts: ['warning'],
+    reason: 'a status backdrop, proved through warning-foreground',
+  },
+  'color.warning-foreground': { againstContexts: ['warning'], kind: 'text' },
+  // WAS `accent.default` AND `accent.hover`. They were the last intent-first
+  // names in the semantic colour tier -- danger and warning were normalised to
+  // property-first for v2 and these were not, which left one accent surface named
+  // for its property (`accent-subtle`, immediately below) and two named for their
+  // intent, in the same family. `kind: 'ui'` because a filled accent control is a
+  // boundary that must clear 3:1 against the page, and it provides the `accent`
+  // context that `text.on-accent` is measured against.
+  // A PRESSED FILL IS A THIRD FILL, not a hover with a different opacity, and it
+  // is here rather than in the stylesheet for the reason the comment above gives:
+  // it provides `accent`, so `text.on-accent` is measured on it the day it lands
+  // instead of the day somebody remembers. That is the whole return on contexts.
+  // SUCCESS AND INFO COMPLETE THE STATE SET, and they were missing rather than
+  // deferred. The document palette already enumerates the states this product
+  // ships -- draft, submitted, pending, partial, approved, paid, posted,
+  // rejected, overdue, cancelled -- across FIVE families, and only three of them
+  // had roles here. `approved`, `paid` and `posted` had nowhere to go.
+  //
+  // NEITHER EXISTING COLOUR COULD TAKE THEM. Neutral would make `approved`
+  // identical to `draft`, which are the two states an approver most needs to
+  // separate. Teal is worse: teal means AGENCY -- a thing you can press -- so
+  // reusing it for a status makes a state indistinguishable from a control.
+  //
+  // SUCCESS IS FOREST, NOT EMERALD, and that is the load-bearing part. At 144
+  // degrees it sits 34 from the teal's 178; an emerald would have been a
+  // neighbour of the action colour and the distinction would rest on chroma
+  // alone. Colour is still never the whole signal -- the document palette makes
+  // the glyph mandatory, because success and danger are exactly the pair that
+  // red/green deficiency collapses.
+  // A SEPARATE ROLE FROM `raised`, though it currently resolves to the same
+  // primitive in both themes. `ELEVATION_LAYERS` already distinguishes the two
+  // layers -- `raised` is a card, `overlay` is a dialog interrupting the page --
+  // and both named `surface.raised`, so the model said they were different and
+  // the tokens said they were the same. A card and a modal have different
+  // responsibilities and will diverge; sharing one token means the day they do,
+  // every card changes with them.
+  // THE POINTER STATES OF THE NEUTRAL CONTROL, and they were previously borrowed.
+  // A secondary button hovered to `surface.sunken` -- the recessed-container role
+  // -- so a hovered button and an inset well were one token, and neither could
+  // move without the other. It is the collision `surface.info` had with the accent
+  // tint, in the tier below where it is harder to see: nothing looked wrong,
+  // because on paper a hover and a well happen to want the same grey.
+  //
+  // They are `surface` rather than `ui`: content sits on a hovered button, so the
+  // measured obligation is the text on it, not an edge against the page. The
+  // control's own boundary is `border.strong` and is measured separately.
+  // A SEPARATE ROLE FROM `default`, and the reason is that it changes hue between
+  // themes rather than lightness. In light it is executive navy -- the colour
+  // that carries authority in a heading or a total, and the one the printed
+  // documents already use. On the dark ground that same navy measures 1.40:1, so
+  // there the role resolves to near-white and the authority is carried by weight.
+  // Binding a heading to `text.default` would have lost that distinction in both
+  // directions at once.
+  // Consumes `accent` and nothing else. Under the old model this was the single
+  // enumerated exception, because deriving it against every backdrop demanded
+  // white text clear 4.5 on a white page. A context says the same thing without
+  // naming a partner, so a new accent fill is covered the day it lands.
+})
+
+/** What a measuring role is checked against, derived from the contexts it consumes. */
+export function pairsFor(role, registry = COLOR_ROLE_POLICIES) {
+  const policy = registry[role]
+  if (!policy) {
+    throw new Error(
+      `no colour policy for role '${role}' -- every role states one, so an unknown name is a ` +
+        'typo rather than a role that happens to assert nothing',
+    )
+  }
+  if (!kindPolicy(policy.kind).measures) {
+    return []
+  }
+  const consumed = new Set(policy.againstContexts)
+  return Object.entries(registry)
+    .filter(
+      ([name, other]) =>
+        name !== role && (other.providesContexts ?? []).some((context) => consumed.has(context)),
+    )
+    .map(([name]) => name)
+    .sort((a, b) => a.localeCompare(b))
+}
+
+/**
+ * Contexts are a closed vocabulary, and both directions of every one must exist.
+ *
+ * A context nobody provides is a measuring role quietly reduced to its remaining
+ * pairs -- the silent-typo failure the `intent` field used to have. A context
+ * nobody consumes is a surface measured by nothing, which is the hole that made
+ * the old single `backdrop` kind worth splitting up in the first place. Both are
+ * refused here, where the message names the CONTEXT rather than some role that
+ * merely suffered the consequence.
+ */
+function assertContextsResolve(registry) {
+  const provided = new Set()
+  const consumed = new Set()
+
+  for (const [role, policy] of Object.entries(registry)) {
+    for (const [field, sink] of [
+      ['againstContexts', consumed],
+      ['providesContexts', provided],
+    ]) {
+      for (const context of policy[field] ?? []) {
+        if (!COMPOSITION_CONTEXTS.includes(context)) {
+          throw new Error(
+            `'${role}' names composition context '${context}', which is not one of ` +
+              `${COMPOSITION_CONTEXTS.join(', ')} -- the set is closed, so a typo is refused ` +
+              'here rather than silently costing the role a pair',
+          )
+        }
+        sink.add(context)
+      }
+    }
+  }
+
+  for (const context of consumed) {
+    if (!provided.has(context)) {
+      throw new Error(
+        `composition context '${context}' is consumed but nothing provides it -- every role ` +
+          'measuring against it keeps its other pairs and silently loses this one',
+      )
+    }
+  }
+  for (const context of provided) {
+    if (!consumed.has(context)) {
+      throw new Error(
+        `composition context '${context}' is provided but nothing consumes it -- those ` +
+          'surfaces exist to be measured against, and nothing measures against them',
+      )
+    }
+  }
+}
+
+/**
+ * The registry governs itself. Every hole below was reachable before this ran.
+ *
+ * Completeness is by POLICY, not by pairing: a role either measures against
+ * declared contexts, provides one, or states an exemption naming a reason.
+ * Demanding a pair from a scrim would only produce a fabricated one marked exempt.
+ */
+/**
+ * A role record's SHAPE, refused by field name.
+ *
+ * Every other check here validates what a field MEANS. This one catches the
+ * failure that never reaches meaning at all: `againstContext` without the s,
+ * `provideContexts`, `lifecyle`, `replacment`. A misspelled key is not an error
+ * in JavaScript -- it is a new property, silently ignored, and the role quietly
+ * behaves as though the line had not been written. That is the same silent-typo
+ * class as `kind: 'txet'`, one level up, and it is the only one a closed value
+ * vocabulary cannot catch, because the value is never read.
+ *
+ * This is also the honest answer to "should a schema library do this". It would
+ * be four lines of zod. It is nine lines here, needs no dependency in tooling
+ * that currently has none, and keeps the refusal text -- which is the part that
+ * teaches anyone anything.
+ */
+/**
+ * The families a semantic colour role may belong to -- PROPERTY FIRST: what is
+ * styled, then the role or state it carries.
+ *
+ * CLOSED, AND NOTHING CLOSED IT UNTIL NOW. Every other rule in this file asks
+ * something of a role's fields, kind, contexts or pairs; none asked whether its
+ * NAME belonged to a family this system admits, so any group at all was accepted.
+ * That is the hole `ALLOWED_EDGES` had in `tiers.mjs`: a set closed by convention
+ * and by nothing else.
+ *
+ * It is asserted rather than merely listed because the vocabulary had in fact
+ * drifted. `accent.default` and `accent.hover` survived the v2 property-first
+ * rename that moved `danger.*` and `warning.*`, and sat beside
+ * `surface.accent-subtle` -- the same family, named both ways at once. They are
+ * `surface.accent` and `surface.accent-hover` now, and this check is what would
+ * have said so.
+ *
+ * `focus` and `overlay` are admitted deliberately. Neither is a CSS property, and
+ * both name the thing being styled rather than an intent it carries, which is the
+ * distinction the model is actually making.
+ */
+export const COLOR_ROLE_GROUPS = deepFreeze([
+  // The superseding system's family. Its roles are FLAT and paired by stem --
+  // `card` and `card-foreground` -- so each contrast pair is stated by the names
+  // rather than inferred from a property family. The five families beneath it
+  // belong to the system being replaced and go when it does.
+  'color',
+  'border',
+  'focus',
+  'overlay',
+  'surface',
+  'text',
+])
+
+const COLOR_ROLE_FIELDS = deepFreeze([
+  'againstContexts',
+  'kind',
+  'lifecycle',
+  'providesContexts',
+  'reason',
+  'replacement',
+])
+
+function assertRoleRecordShape(role, policy) {
+  // The role name is a token path with `semantic.` in front of it, so it answers
+  // to the naming grammar `identity.mjs` owns rather than to a second one here.
+  // A role that could not survive the CSS projection is refused where it is
+  // declared instead of where it is emitted.
+  assertTokenPath(`semantic.${role}`)
+  const [group] = role.split('.')
+  if (!COLOR_ROLE_GROUPS.includes(group)) {
+    throw new Error(
+      `colour role '${role}' is in family '${group}', which is not one of ` +
+        `${COLOR_ROLE_GROUPS.join(', ')} -- a role named for its intent rather than for what ` +
+        'it styles leaves the family it belongs to holding two vocabularies at once',
+    )
+  }
+  for (const key of Object.keys(policy)) {
+    if (!COLOR_ROLE_FIELDS.includes(key)) {
+      throw new Error(
+        `'${role}' declares '${key}', which no rule reads -- the legal fields are ` +
+          `${COLOR_ROLE_FIELDS.join(', ')}, and a misspelled one is not an error in ` +
+          'JavaScript but a new property that is silently ignored',
+      )
+    }
+  }
+  for (const field of ['againstContexts', 'providesContexts']) {
+    const declared = policy[field]
+    if (declared === undefined) {
+      continue
+    }
+    if (!Array.isArray(declared)) {
+      throw new Error(`'${role}' declares ${field}, which must be an array of contexts`)
+    }
+    if (declared.some((context) => typeof context !== 'string' || context.trim() === '')) {
+      throw new Error(`'${role}' declares an empty or non-string entry in ${field}`)
+    }
+    if (new Set(declared).size !== declared.length) {
+      throw new Error(
+        `'${role}' repeats a context in ${field} -- a duplicate adds no relationship and ` +
+          'would be collapsed silently, so it is more likely a mistake than an intention',
+      )
+    }
+  }
+}
+
+export function assertPolicyRegistry(registry = COLOR_ROLE_POLICIES) {
+  for (const [role, policy] of Object.entries(registry)) {
+    assertRoleRecordShape(role, policy)
+    const kind = kindPolicy(policy.kind)
+    assertLifecycle(role, policy, registry)
+
+    if (kind.exempt) {
+      for (const field of ['againstContexts', 'providesContexts']) {
+        if (policy[field]) {
+          throw new Error(
+            `'${role}' is ${policy.kind}, which asserts nothing and is measured by nothing, ` +
+              `yet declares ${field} -- the old completeness rule was an OR, so a role could ` +
+              'claim a relationship and still be exempt from ever proving it',
+          )
+        }
+      }
+    }
+
+    if (
+      (kind.exempt || kind.pairedAgainst) &&
+      (typeof policy.reason !== 'string' || policy.reason.trim() === '')
+    ) {
+      throw new Error(`'${role}' is ${policy.kind} and must state a reason`)
+    }
+
+    if (kind.pairedAgainst && (policy.providesContexts ?? []).length === 0) {
+      throw new Error(
+        `'${role}' is ${policy.kind} -- it exists to be composed against, so it must name at ` +
+          'least one context, or nothing can ever be measured on it',
+      )
+    }
+
+    if (kind.measures) {
+      if ((policy.againstContexts ?? []).length === 0) {
+        throw new Error(
+          `'${role}' measures contrast but names no composition context -- a measuring role ` +
+            'with nothing to measure against passes by having no work to do',
+        )
+      }
+      const pairs = pairsFor(role, registry)
+      if (pairs.length === 0) {
+        throw new Error(`'${role}' measures contrast but derives no relationships`)
+      }
+      if (new Set(pairs).size !== pairs.length) {
+        throw new Error(`'${role}' derives a duplicate relationship`)
+      }
+      for (const other of pairs) {
+        if (kindPolicy(registry[other].kind).exempt) {
+          throw new Error(
+            `'${role}' measures against '${other}', which is exempt -- either the target ` +
+              'is not really exempt, or the pair is not a composition this system supports',
+          )
+        }
+      }
+    }
+  }
+
+  assertContextsResolve(registry)
+}

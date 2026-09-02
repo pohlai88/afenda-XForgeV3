@@ -55,10 +55,20 @@
         "CLAUDE.md describes as a rule followed past the reason for it.",
         "Minification removes them from what ships anyway.",
         "",
-        "Both files sit near half the default, which is the headroom a TRIPWIRE",
         "wants: it should fire on alarming growth, not on ordinary work. It is",
         "not yet a hard budget, because normal movement is not yet known -- one",
-        "more wave of real numbers is what promotes it."
+        "more wave of real numbers is what promotes it.",
+        "THE PROMOTION THIS NOTE ASKED FOR HAS HAPPENED. It used to end \"normal",
+        "movement is not yet known -- one more wave of real numbers is what promotes",
+        "it\". Six foundations have since landed -- typography, elevation, spacing and",
+        "density, shape, motion and state, layout -- and the movement is now known:",
+        "roughly 10.7 gzipped bytes per role, growing only when a role is minted.",
+        "",
+        "So the rule is no longer \"sit near half the default\". It is: A BUDGET CLEARS",
+        "THE PROJECTED CEILING BY ABOUT 30%. The projection is the roles already",
+        "decided and not yet built, which this repository writes down rather than",
+        "leaves implied -- so the number is derivable rather than a matter of taste,",
+        "and the next raise has to show its arithmetic the same way."
       ]
     },
     "largestContentfulPaintMs": {
@@ -77,24 +87,92 @@
     "largestContentfulPaintMs": 2500,
     "cssDeclarationsGzipBytes": 2400
   },
-
   "assets": {
-    "packages/tokens/generated/tokens.css": {
+    "packages/design/generated/tailwind-theme.css": {
       "status": "inherited",
       "cssDeclarationsGzipBytes": 2400,
       "$comment": [
-        "1352 B at the close of the P2 token wave. Generated, so it grows",
-        "whenever vocabulary is added -- which is precisely the growth worth",
-        "seeing, since adding a token costs nothing at the point of writing it."
+        "591 B when the superseding system's vocabulary landed: 63 roles, one",
+        "@theme inline declaration each. Generated from the same token file as",
+        "tokens.css beside it, so it grows in lockstep with the vocabulary and",
+        "never on its own."
       ]
     },
-    "packages/ui/src/ui.css": {
-      "status": "inherited",
-      "cssDeclarationsGzipBytes": 2400,
+    "packages/design/generated/tokens.css": {
+      "status": "explicit",
+      "reason": "The one file whose size is a direct function of the vocabulary: 224 roles at 10.7 gzipped bytes each, emitted across a base block and three modes. It clears the projected ceiling of ~2784 B -- the component tier, the recorded adaptive pane roles and the first list/detail screens -- by about 30%, which is the rule the metric note now states. Higher than the 2400 default because four other assets share that default and none of them grows with the token file.",
+      "cssDeclarationsGzipBytes": 3600,
       "$comment": [
-        "1570 B at the close of the P2 token wave, up from a stylesheet whose",
-        "growth nothing had ever measured. This is the file the design system is",
-        "written in, so it is the one where an unnoticed doubling would matter."
+        "RAISED 2400 -> 3600 at 2389 B, with the count and the arithmetic, which is",
+        "what a tripwire is for.",
+        "",
+        "MEASURED: 2389 B for 283 declarations across base and three mode blocks --",
+        "224 distinct roles at 10.7 B each. The file was at 100% of its budget with",
+        "11 B spare, which is not headroom, it is a wall.",
+        "",
+        "PROJECTED CEILING ~2784 B. What is known to be still coming:",
+        "",
+        "  component tier        12 roles   the ceiling another guard already holds",
+        "  adaptive pane roles  ~15 roles   recorded in POLICY, deliberately not built",
+        "  list/detail screens  ~10 roles   estimate",
+        "",
+        "3600 clears that by 816 B -- about 76 roles beyond anything planned -- so it",
+        "fires on a vocabulary growing half again, and not on ordinary work.",
+        "",
+        "WHY NOT A MARKET NUMBER. The 2025 Web Almanac puts median CSS transfer size",
+        "at 82 KB across 17.2M sites. That figure is about SHIPPED CSS and this metric",
+        "measures authored declarations with comments stripped -- importing it would",
+        "set a threshold 20x above anything this file could reach, which is the shape",
+        "ADR-024 calls installed, configured, green and blind. The shipped budget is a",
+        "different instrument and does not exist yet; see the metric note."
+      ]
+    },
+    "packages/design/src/design.css": {
+      "status": "explicit",
+      "cssDeclarationsGzipBytes": 900,
+      "reason": "An entry point and two custom utilities, not a stylesheet. Tighter than the 2400 B default because every design value is supposed to arrive through the generated bridge, and a budget it cannot grow into is what keeps that true.",
+      "$comment": [
+        "238 B when it landed: four at-rules and the two width utilities Tailwind",
+        "has no namespace for. Unlike globals.css this file IS read by the CSS",
+        "guards -- it sits under packages/**, so a literal or a primitive",
+        "reference is refused. The budget is the second line of defence, against",
+        "growth the guards permit but nobody intended.",
+        "",
+        "RAISED 500 -> 700 at 540 B, deliberately and with the count, which is what",
+        "a tripwire is for. What crossed it:",
+        "",
+        "  two stacking utilities        z-index has no Tailwind namespace",
+        "  h-control, size-icon          the density axis had nothing to move",
+        "  four duration utilities       duration-<n> is computed, not a theme key",
+        "  animate-shimmer + keyframes   replaces Tailwind animate-pulse so the loop",
+        "                                duration is a token the policy governs",
+        "  prefers-reduced-motion        RESTORED. The system this replaces had it and",
+        "                                the cutover dropped it; the only trace left was",
+        "                                a compiled artefact under .next.",
+        "",
+        "Every one of those is a value Tailwind gives no namespace to, which is the",
+        "category this file exists for. It is not styling that leaked in -- the CSS",
+        "guards still refuse a literal here, and they fired twice during this change.",
+        "",
+        "RAISED 700 -> 900 at 539 B (77%), by the same rule as tokens.css: clear the",
+        "projected ceiling by about 30%. Since the last raise this file gained the",
+        "reduced-motion block, four duration utilities and the shimmer keyframes, and",
+        "the remaining known work is small -- a couple of utilities for properties",
+        "Tailwind has no namespace for."
+      ]
+    },
+    "apps/web/app/globals.css": {
+      "status": "explicit",
+      "cssDeclarationsGzipBytes": 400,
+      "reason": "Tighter than the 2400 B default on purpose: this is an entry point, not a stylesheet, and it is the one stylesheet no CSS guard reads.",
+      "$comment": [
+        "146 B when the Tailwind pipeline landed, and it should stay near that.",
+        "Four at-rules and no declarations of its own by design -- every design",
+        "value reaches Tailwind through the generated bridge instead.",
+        "tokens-are-the-authority and stylesheet-names-roles-not-primitives are",
+        "both scoped to packages/design/**.css, so a literal written here would be",
+        "caught by nothing. A budget it cannot grow into is the only thing",
+        "standing between this file and becoming a second home for design values."
       ]
     }
   },

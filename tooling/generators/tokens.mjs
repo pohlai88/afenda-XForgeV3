@@ -2,7 +2,7 @@
 /**
  * Design tokens -> CSS custom properties.
  *
- * `packages/tokens/tokens.json` is the authority; the CSS is DERIVED. Writing
+ * `packages/design/tokens.json` is the authority; the CSS is DERIVED. Writing
  * both by hand would give one design value two homes, which is the defect this
  * repository keeps having -- and the cheapest place to prevent it is where the
  * second home does not exist yet.
@@ -71,14 +71,20 @@ import { pathToFileURL } from 'node:url'
 import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
+  assertExclusionsAreCurrent,
+  assertNoUtilityShadowing,
   assertPolicyRegistry,
+  assertTailwindProjection,
   assertTargetMinimum,
+  assertTypographyTokens,
   assertUniqueCssNames,
   COLOR_ROLE_POLICIES,
   COMPONENT_TOKEN_CEILING,
   carriesAlpha,
   cssNameOf,
   DTCG_VERSION,
+  deepFreeze,
+  distinctnessFailures,
   ELEVATION_LAYERS,
   kindPolicy,
   MAY_CARRY_ALPHA,
@@ -90,15 +96,209 @@ import {
   serializeValue,
   TOKEN_CONTRACT_VERSION,
   TYPE_ROLES,
+  tailwindNameOf,
   tierOf,
+  typeRolesFor,
   typographyFailures,
+  UNPROJECTED,
 } from '../design-system/token-policy/index.mjs'
 
 const ROOT = join(import.meta.dirname, '../..')
-const INPUT = join(ROOT, 'packages/tokens/tokens.json')
-const OUTPUT = join(ROOT, 'packages/tokens/generated/tokens.css')
-const MANIFEST = join(ROOT, 'packages/tokens/generated/token-names.json')
-const FOUNDATIONS = join(ROOT, 'packages/tokens/generated/FOUNDATIONS.md')
+
+/**
+ * The token packages this generator emits, in order.
+ *
+ * TWO, DELIBERATELY AND TEMPORARILY. `packages/design` is the superseding design
+ * system and `packages/design` is the one it replaces. They are generated side by
+ * side and never merged: a shared token file is exactly the seam where two design
+ * systems would begin styling one screen. THE CUTOVER IS DONE: `packages/ui`
+ * and `packages/tokens` are deleted and this is one entry again.
+ *
+ * It stays a TABLE rather than collapsing back into a constant, because what the
+ * second entry taught was not about that package. It was that "which type roles
+ * exist" and "which namespaces are closed" are a PACKAGE's facts and not the
+ * policy's -- folding them back into globals is exactly how the next system
+ * would inherit them.
+ *
+ * The generator is a BUILD TOOL, like Tailwind: it reads whichever token file it
+ * is pointed at and knows nothing about which system owns it.
+ */
+/**
+ * WHAT EACH PACKAGE DECLARES, and why it is declared per package rather than
+ * shared. `packages/design` grew a fourth type step and a closed weight
+ * namespace; both changes reached `packages/design` through a table the two
+ * systems had in common, and the frozen system had to grow tokens it will never
+ * render in order to stay green. That is the isolation rule failing on the
+ * POLICY plane -- the plane nobody was watching, because the rule had been
+ * written about `src/`.
+ *
+ * The policy still owns what a role IS: its floors, its rank, the types its
+ * fields must resolve to. A package owns only WHICH roles it has. So a step
+ * added here cannot appear over there, and `packages/design` keeps the
+ * three-step scale it shipped with until it is deleted.
+ */
+const TOKEN_PACKAGES = deepFreeze([
+  {
+    // Colour, weight, size and leading: the four namespaces a role competes in.
+    // Every one of them was reachable past the vocabulary until this line --
+    // fifteen vendored components were sizing themselves from Tailwind's scale
+    // while the token file believed it owned type.
+    closes: [
+      'color',
+      'font-weight',
+      'text',
+      'leading',
+      'tracking',
+      'shadow',
+      'radius',
+      'breakpoint',
+      'container',
+    ],
+    // `cn()` needs to be told which of its classes are sizes and which are
+    // colours; see `twMergeGroups`.
+    mergeGroups: true,
+    pkg: 'packages/design',
+    typeRoles: ['caption', 'body-compact', 'label', 'body', 'emphasis', 'heading', 'title'],
+  },
+])
+
+/**
+ * Why each namespace is closed, in the emitted file. Held as data so a fifth
+ * namespace arrives with its reason attached rather than as a bare line.
+ */
+const CLOSURE_REASON = deepFreeze({
+  animate: [
+    'The keyframe namespace. Tailwind ships spin, ping, pulse and bounce, and',
+    'this system used pulse for the loading skeleton -- a two-second LOOP whose',
+    'duration no token owned and whose reduced-motion answer nobody had given.',
+    '',
+    'Closed, the one animation that exists is `animate-shimmer`, whose duration',
+    'is a role MOTION_ROLES governs and therefore one that had to declare',
+    'reducedMotion: removed. The enter/exit choreography from tw-animate-css is',
+    'plain classes rather than theme keys and survives this untouched.',
+  ],
+  breakpoint: [
+    'The window classes, and the reason this one matters more than it looks.',
+    'Tailwind ships 640 / 768 / 1024 / 1280 / 1536. Material 3 defines its window',
+    'size classes at 600 / 840 / 1200 / 1600, and NOT ONE VALUE COINCIDES -- so',
+    'every responsive variant in this system was firing at a number chosen by a',
+    'framework default rather than by anyone here.',
+    '',
+    'Left open, minting `--breakpoint-expanded` would put two scales on one prefix,',
+    'which is exactly the defect the radius closure had just finished removing.',
+  ],
+  color: [
+    'Tailwind ships a default palette -- red-50 through rose-950, some 250',
+    'colours. Left in place, `bg-red-500` would be a working utility, and a',
+    'screen or a pasted block could paint with a value the token file has',
+    'never heard of: no role, no theme rebinding, no contrast measurement.',
+    '',
+    'THIS IS THE UTILITY-LAYER TWIN OF A GUARD THAT ALREADY EXISTS.',
+    '`stylesheet-names-roles-not-primitives` refuses `var(--color-teal-600)`',
+    'in packages/design CSS for exactly this reason -- a primitive carries a value',
+    'and no role, so a mode has nothing to rebind. No guard reads class names,',
+    'so the same rule cannot be enforced that way for utilities. Removing the',
+    'namespace enforces it by construction instead: the utility does not exist.',
+    '',
+    'The cost is real and is accepted: a shadcn block written against the',
+    'default palette renders unstyled where it used one, which is a visible',
+    'failure at the point of paste rather than a silent divergence from the',
+    'token system months later.',
+    '',
+    'SCOPED TO COLOUR ON PURPOSE. `--*: initial` would also remove breakpoints,',
+    'which blocks need for responsive layout and which are not design values',
+    'this repository owns.',
+  ],
+  container: [
+    'Max-widths. Tailwind ships a t-shirt scale here -- 3xs through 7xl plus',
+    '`prose` at 65ch -- and this system needs four values with meanings: a tip, a',
+    'dialog, a line of prose, a form.',
+    '',
+    'A WORKSPACE HAS NO ENTRY, and that is the rule rather than an omission. Tables,',
+    'charts and editors are fluid; what is READ has a ceiling. Closing the namespace',
+    'is what makes reaching for `max-w-4xl` fail instead of quietly stretching a',
+    'paragraph to 1500px.',
+  ],
+  ease: [
+    'Curves. Tailwind ships ease-in, ease-out and ease-in-out, and this system',
+    'was using ease-in-out -- which is also, exactly, what our single easing',
+    'token contained: cubic-bezier(0.42, 0, 0.58, 1). A token reproducing a',
+    'keyword names nothing, and having both meant two ways to say the same',
+    'unchosen thing.',
+    '',
+    'Closed, the curves are three roles from Carbon productive: standard for a',
+    'change that begins and ends on screen, entrance for something arriving,',
+    'exit for something leaving. Asymmetric, because an element should',
+    'decelerate into place and accelerate away.',
+  ],
+  'font-weight': [
+    'The weight scale, for the same reason one step down. `font-medium` was',
+    'rendering on twelve elements while `semantic.weight.medium` did not exist',
+    '-- it resolved to a Tailwind default, outside the token system entirely.',
+    '',
+    'Cleared, so `font-bold` and the rest do not silently exist either: a',
+    'weight the design system never chose is a design value with no role.',
+  ],
+  leading: [
+    'Leading, which travels with size. `leading-none` set a 14px label at a',
+    "1.0 ratio while the system's own floor for body text is 1.5 -- not a",
+    'violation any check could see, because the class belonged to Tailwind.',
+  ],
+  radius: [
+    'Shape, and the seventh namespace -- the one where two scales were live at once.',
+    'This system owned sm, md and lg; Tailwind still supplied xs, xl, 2xl, 3xl and',
+    '4xl, and eleven classes used the foreign half.',
+    '',
+    'The pair that made it dangerous: `rounded-xl` is a Tailwind default of 12px and',
+    '`radius.container` is also 12px. They agreed, nothing kept them agreeing, and a',
+    'reader could not tell which of the two scales any class belonged to.',
+    '',
+    'Closed, the shape vocabulary is four roles plus two statics. `rounded-full` and',
+    '`rounded-none` survive this -- they are computed utilities rather than theme',
+    'keys -- and that asymmetry is wanted here, because both are semantic: one names',
+    'an intrinsically round object, the other names structure.',
+  ],
+  shadow: [
+    'Depth, and the sixth namespace. Tailwind ships shadow-2xs through shadow-2xl,',
+    'and four components were using shadow-md and shadow-lg -- reasonable values on',
+    'the right kind of surface, with no provenance at all.',
+    '',
+    'Closed, the only shadows that exist are the five PLANES: flat, raised,',
+    'floating, overlay, modal. A component names where a surface sits rather than',
+    'how blurry its edge is -- and shadow-flat being a real class that sets none is',
+    'deliberate, because a card DECLARING it has no shadow is a decision where a',
+    'card with no shadow class is an omission.',
+  ],
+  text: [
+    'AND THE TYPE SCALE, which is the one that had actually gone wrong. Forty-',
+    'six occurrences of `text-sm`, `text-xs`, `text-base` and one `text-',
+    '[0.8rem]` were live across fifteen vendored components: a SECOND type',
+    'scale, complete and self-consistent, sitting beside the four roles this',
+    'file defines. Every check passed. The h1 and the h2 rendered identically',
+    'and the labels rendered smaller than the policy floor, and the only thing',
+    'that could ever have reported it was a person looking at the screen.',
+    '',
+    'Closed, `text-sm` produces no font-size at all, and the compile test --',
+    'which asserts every class in source resolves to a real rule -- turns each',
+    'of those forty-six into a failure at authorship time.',
+  ],
+  tracking: [
+    'Letterspacing, the last namespace left open. Two components were setting',
+    '`tracking-widest` -- a Tailwind default of 0.1em, a value this token file',
+    'had never heard of -- on keyboard-shortcut labels. The same escape as',
+    'a bg-red-500, in the one place nobody had thought to look, found by asking',
+    'which namespaces were closed rather than by anything going wrong.',
+  ],
+})
+
+const outputsFor = (pkg) => ({
+  foundations: join(ROOT, pkg, 'generated/FOUNDATIONS.md'),
+  input: join(ROOT, pkg, 'tokens.json'),
+  manifest: join(ROOT, pkg, 'generated/token-names.json'),
+  merge: join(ROOT, pkg, 'generated/twmerge.ts'),
+  output: join(ROOT, pkg, 'generated/tokens.css'),
+  tailwind: join(ROOT, pkg, 'generated/tailwind-theme.css'),
+})
 
 const isAlias = (value) => typeof value === 'string' && value.startsWith('{') && value.endsWith('}')
 
@@ -474,12 +674,27 @@ function declarations(entries) {
  * synthetic sources. A generator only ever run on the single input it was written
  * for is not known to reject anything -- ADR-024's rule, applied to the tool that
  * owns every design value in the product.
+ *
+ * `typeRoles` DEFAULTS TO NONE, and the default is a decision rather than a
+ * convenience. A build tool cannot guess which type roles a design system has,
+ * and the previous default -- the whole catalogue -- is precisely how a step
+ * added to one package became a required token in the other. Declaring nothing
+ * checks nothing; both real packages declare theirs in `TOKEN_PACKAGES`, and a
+ * synthetic fixture that wants the typography rules says so.
  */
-export function generate(source) {
+export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
   const tokens = flatten(source)
   assertSupportedValueShape(tokens)
   assertUniqueCssNames(tokens.keys())
   assertRampsDescend(tokens)
+  // Before any mode work, because this asks only whether every role can be
+  // reached from a utility class -- a question about the token set itself, and
+  // one whose answer should not depend on a mode having resolved.
+  assertTailwindProjection(tokens.keys())
+  // One level up from injectivity: two variables in different namespaces can
+  // still bid for one class name, and Tailwind awards it to whichever namespace
+  // it searches first.
+  assertNoUtilityShadowing(tokens.keys())
   const base = resolve(tokens)
 
   const componentTokens = [...tokens.keys()].filter((n) => tierOf(n) === 'component')
@@ -544,9 +759,24 @@ export function generate(source) {
   // target floor is: compact is exactly where a distinction gets shaved. The
   // heading/body collapse this catches was a density rebind that every
   // individual token survived -- valid size, valid weight, no hierarchy.
-  const typography = typographyFailures(byMode)
+  // BEFORE the value checks, and this is the fail-closed half. `typographyFailures`
+  // skips a role whose tokens are absent, so a package that names a role it does
+  // not have goes quietly green with that role's floors switched off. Asserting
+  // the declaration first is what makes the per-package vocabulary a claim rather
+  // than a wish.
+  assertTypographyTokens(tokens, typeRoles)
+  const typography = typographyFailures(byMode, typeRoles)
   if (typography.length > 0) {
     throw new Error(`typography policy violated:\n${typography.join('\n')}`)
+  }
+  // TWO SURFACES THAT RENDER AS ONE COLOUR PASSED EVERY CHECK ABOVE, because
+  // every one of them measures a foreground against a surface and a surface is
+  // never the left operand of a pair. Four roles were #ffffff in light and the
+  // statutory and warning tints were 1.3 CIEDE2000 apart in dark -- fixed by law
+  // and be careful, rendering identically.
+  const indistinct = distinctnessFailures(byMode)
+  if (indistinct.length > 0) {
+    throw new Error(`distinctness policy violated:\n${indistinct.join('\n')}`)
   }
   const motion = motionFailures(byMode)
   if (motion.length > 0) {
@@ -560,7 +790,7 @@ export function generate(source) {
 
   const lines = [
     '/*',
-    ' * GENERATED FROM packages/tokens/tokens.json -- DO NOT EDIT.',
+    ' * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.',
     ' *',
     ' * Law 27: generated state is never hand-edited. Change the token file and',
     ' * run `pnpm generate`; editing this output makes the generate stage fail,',
@@ -588,8 +818,269 @@ export function generate(source) {
     componentTokens,
     css: lines.join('\n'),
     foundations: foundations(tokens, blocks),
+    mergeGroups: twMergeGroups(projectedRows(tokens)),
+    tailwindTheme: tailwindTheme(tokens, closes, typeRoles, base),
     tokens,
   }
+}
+
+/**
+ * The flat colour aliases, DERIVED.
+ *
+ * WHY A SECOND NAME FOR THE SAME ROLE EXISTS AT ALL, since law 7 is the rule
+ * this repository is built on: `@theme inline` deliberately does NOT emit its
+ * variables to `:root` -- that is what `inline` means, and it is why a utility
+ * carries the reference rather than a copy. So `--color-card` is not a custom
+ * property any stylesheet can read; it only exists inside Tailwind's resolver.
+ *
+ * shadcn components reach for the flat name DIRECTLY, inside arbitrary values
+ * Tailwind cannot rewrite -- `color-mix(in oklch, var(--secondary), ...)` is a
+ * literal string to the compiler. Without `--secondary` defined, that resolves
+ * to nothing: no error, no fallback, a colour that silently does not paint.
+ *
+ * The alias is therefore not a second SOURCE, it is a second PROJECTION of one
+ * source, emitted from the same token map three lines below the first. Neither
+ * can drift from the other, because a rename edits the token file and both move.
+ *
+ * COLOUR ONLY. Spacing and radius reach components through utilities, which
+ * Tailwind does rewrite; adding aliases for them would be a name nothing reads.
+ */
+function flatColourAliases(tokens) {
+  const roles = [...tokens.keys()]
+    .filter((path) => path.startsWith('semantic.color.'))
+    .sort((a, b) => a.localeCompare(b))
+  if (roles.length === 0) {
+    return []
+  }
+  return [
+    ':root {',
+    ...roles.map((path) => {
+      const flat = path.slice('semantic.color.'.length)
+      return `  --${flat}: var(${cssName(path)});`
+    }),
+    '}',
+    '',
+  ]
+}
+
+/**
+ * The Tailwind theme bridge, DERIVED.
+ *
+ * Every semantic and component role, projected into the Tailwind namespace that
+ * turns it into a utility class. Generated for the same reason the foundations
+ * document is: a hand-written `@theme` block would be a second home for every
+ * role in the system, and it would go stale the first time anyone renamed one --
+ * silently, because Tailwind drops an unresolvable reference exactly as CSS does.
+ *
+ * THE VALUES ARE REFERENCES, NEVER RESOLVED, and `inline` is what makes that
+ * work. A plain `@theme` copies the value, so `bg-surface-page` would bake in
+ * whatever light mode happened to resolve to and stop responding to
+ * `:root[data-theme='dark']`. With `inline`, Tailwind emits
+ * `background-color: var(--semantic-surface-page)` and both mode axes keep
+ * working through utilities exactly as they do through `ui.css`.
+ *
+ * ORDERED BY TAILWIND NAME rather than by token path, because this file is read
+ * as a list of available utilities rather than as a walk of the token tree.
+ */
+/**
+ * The class groups `tailwind-merge` cannot infer, DERIVED from the projection.
+ *
+ * THE DEFECT THIS EXISTS FOR WAS INVISIBLE TO EVERY OTHER CHECK. `cn()` runs
+ * `twMerge`, which resolves conflicting utilities by last-one-wins -- and to do
+ * that it must decide which group a class belongs to. `text-` is ambiguous in
+ * Tailwind itself: `text-sm` is a size and `text-white` is a colour, and twMerge
+ * tells them apart by recognising the built-in names. It recognises none of
+ * ours. So `text-label` was filed as a COLOUR, `text-accent-foreground` was
+ * filed as the same group, the later one won, and the size class was deleted
+ * from the string before it ever reached the DOM.
+ *
+ * The nav rail is where it was found: items rendered at 16px under a 14px group
+ * heading, an inverted hierarchy, with `text-label` present in the source and
+ * absent from `className`. Typecheck passed. Lint passed. The compile test
+ * passed -- the class compiles to a real rule; it just never arrives. Only
+ * reading the rendered element showed it.
+ *
+ * DERIVED RATHER THAN LISTED, because a hand-written list is a second home for
+ * "which roles are sizes", and the day it disagrees with the token file is the
+ * day one role silently stops applying again. The mapping is mechanical: a role
+ * in Tailwind's `--text-*` namespace is a font size, one in `--font-weight-*` is
+ * a weight, any other `--font-*` is a family.
+ */
+const MERGE_GROUP_OF = deepFreeze({
+  font: { group: 'font-family', part: 'font' },
+  // Longest first at the match site: `--font-weight-body` is a weight, not a
+  // family named `weight-body`.
+  'font-weight': { group: 'font-weight', part: 'font' },
+  leading: { group: 'leading', part: 'leading' },
+  text: { group: 'font-size', part: 'text' },
+  tracking: { group: 'tracking', part: 'tracking' },
+})
+
+function twMergeGroups(rows) {
+  const groups = new Map()
+
+  for (const { name } of rows) {
+    const namespace = Object.keys(MERGE_GROUP_OF)
+      .sort((a, b) => b.length - a.length)
+      .find((ns) => name.startsWith(`--${ns}-`))
+    if (namespace === undefined) {
+      continue
+    }
+    const { group, part } = MERGE_GROUP_OF[namespace]
+    const suffix = name.slice(`--${namespace}-`.length)
+    if (!groups.has(group)) {
+      groups.set(group, { members: [], part })
+    }
+    groups.get(group).members.push(suffix)
+  }
+
+  const entries = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
+
+  return [
+    '/*',
+    ' * GENERATED -- DO NOT EDIT. Run `pnpm generate`.',
+    ' *',
+    ' * The class groups tailwind-merge cannot infer for this design system. See',
+    ' * `twMergeGroups` in tooling/generators/tokens.mjs for why an unconfigured',
+    ' * merge silently deletes a size role when a colour role follows it.',
+    ' *',
+    ' * OVERRIDE, NOT EXTEND, at the call site: these namespaces are CLOSED in the',
+    ' * Tailwind bridge, so this is not part of the vocabulary -- it is all of it.',
+    ' */',
+    'export const TWMERGE_CLASS_GROUPS = {',
+    ...entries.map(
+      ([group, { members, part }]) =>
+        `  '${group}': [{ ${part}: [${[...members]
+          .sort((a, b) => a.localeCompare(b))
+          .map((m) => `'${m}'`)
+          .join(', ')}] }],`,
+    ),
+    '} as const',
+    '',
+  ].join('\n')
+}
+
+const projectedRows = (tokens) =>
+  [...tokens.keys()]
+    .filter((path) => tierOf(path) !== 'primitive')
+    .map((path) => ({ name: tailwindNameOf(path), path }))
+    .filter((row) => row.name !== null)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+/**
+ * A TYPE ROLE CARRIES ITS OWN LINE HEIGHT, and this is what makes it one class.
+ *
+ * Tailwind's `--text-*` namespace accepts a `--text-<name>--line-height`
+ * companion, and setting it means `text-body-compact` emits BOTH the size and
+ * the leading the policy pairs with it. Three consequences, and the third is the
+ * one that was actually costing something:
+ *
+ *   ONE CLASS PER ROLE     a component names the role and cannot get half of it.
+ *                          Three sites had `text-body-compact` without
+ *                          `leading-compact` and inherited body's 1.5, rendering
+ *                          14px text on a 21px line -- off the 4px grid, in a
+ *                          system whose whole leading table exists to be on it.
+ *
+ *   twMerge BECOMES RIGHT  tailwind-merge declares `font-size` conflicting with
+ *                          `leading`, because in Tailwind a size utility resets
+ *                          line-height. That was FALSE of this bridge and it was
+ *                          silently deleting `leading-label` from every button.
+ *                          Rather than teach the merge an exception, the bridge
+ *                          is made to behave the way it already assumes.
+ *
+ *   THE PAIRING HAS ONE HOME  which `leading` a `type` role takes is TYPE_ROLES,
+ *                          and this reads it rather than restating it. A leading
+ *                          changed in the policy moves the utility with it.
+ *
+ * The standalone `--leading-*` roles stay: a deliberate override is still
+ * legitimate, and it now has to be written AFTER the size class to survive,
+ * which is exactly what a reader expects of an override.
+ */
+function typeScaleLineHeights(typeRoles) {
+  const lines = []
+  for (const policy of Object.values(typeRoles ?? {})) {
+    if (policy.leading === undefined) {
+      continue
+    }
+    const name = tailwindNameOf(policy.size)
+    if (name === null) {
+      continue
+    }
+    lines.push(`  ${name}--line-height: var(${cssName(policy.leading)});`)
+  }
+  return lines.sort((a, b) => a.localeCompare(b))
+}
+
+function tailwindTheme(tokens, closes, typeRoles, resolved) {
+  // A BREAKPOINT CANNOT BE A REFERENCE, and it is the one place `inline` is
+  // wrong. `@theme inline` emits `var(--semantic-breakpoint-medium)` -- which is
+  // exactly what makes colour and spacing rebindable by mode -- and Tailwind
+  // puts that straight into `@media (width >= ...)`, where no browser can
+  // evaluate a custom property. The variants compiled, matched nothing, and the
+  // navigation rail stopped appearing at every width.
+  //
+  // Nothing is lost by resolving them. A media query is evaluated at match
+  // time rather than through the cascade, so a breakpoint could never have been
+  // rebound by a theme or a density anyway: `inline` bought nothing here and
+  // cost the entire responsive layer.
+  const all = projectedRows(tokens)
+  const isBreakpoint = (row) => row.name.startsWith('--breakpoint-')
+  const rows = all.filter((row) => !isBreakpoint(row))
+  const breakpoints = all.filter(isBreakpoint)
+
+  const excluded = Object.entries(UNPROJECTED).map(([path, reason]) => ` *   ${path} -- ${reason}`)
+
+  return [
+    '/*',
+    ' * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.',
+    ' *',
+    ' * Law 27: generated state is never hand-edited. Change the token file and',
+    ' * run `pnpm generate`; editing this output makes the generate stage fail,',
+    ' * which asserts it is byte-identical after regeneration.',
+    ' *',
+    ' * `inline` is load-bearing: it makes Tailwind emit the var() REFERENCE into',
+    ' * each utility rather than copying the value, so [data-theme] and',
+    ' * [data-density] keep rebinding what a utility renders. A plain @theme here',
+    ' * would freeze every utility at whatever the base mode resolved to.',
+    ' *',
+    ' * Requires packages/design/generated/tokens.css to be loaded first -- it',
+    ' * declares every property referenced below.',
+    ' *',
+    ...(excluded.length > 0 ? [' * Deliberately not projected:', ...excluded, ' *'] : []),
+    ` * ${rows.length} roles projected.`,
+    ' */',
+    ...flatColourAliases(tokens),
+    '@theme inline {',
+    ...closes.flatMap((ns) => [
+      '  /*',
+      ...(CLOSURE_REASON[ns] ?? []).map((line) => (line === '' ? '   *' : `   * ${line}`)),
+      '   */',
+      `  --${ns}-*: initial;`,
+      '',
+    ]),
+    ...rows.map((row) => `  ${row.name}: var(${cssName(row.path)});`),
+    ...typeScaleLineHeights(typeRoles),
+    '}',
+    '',
+    ...(breakpoints.length === 0
+      ? []
+      : [
+          '/*',
+          ' * THE ONE BLOCK THAT IS NOT `inline`. A media query cannot read a custom',
+          ' * property, so a breakpoint has to be a literal here or its variant',
+          ' * compiles and matches nothing -- which is what silently removed the',
+          ' * navigation rail. See the note above `tailwindTheme`.',
+          ' */',
+          '@theme {',
+          '  --breakpoint-*: initial;',
+          ...breakpoints.map(
+            (row) =>
+              `  ${row.name}: ${serializeValue(tokens.get(row.path).type, resolved.get(row.path))};`,
+          ),
+          '}',
+          '',
+        ]),
+  ].join('\n')
 }
 
 /**
@@ -639,7 +1130,7 @@ function foundations(tokens, blocks) {
   const lines = [
     '# Design token foundations',
     '',
-    '**GENERATED FROM `packages/tokens/tokens.json` -- DO NOT EDIT.**',
+    '**GENERATED FROM `packages/design/tokens.json` -- DO NOT EDIT.**',
     '',
     'Law 27: generated state is never hand-edited. Change the token file and run',
     '`pnpm generate`; the `generate` stage regenerates this document and asserts it is',
@@ -745,13 +1236,37 @@ function obligationOf(row) {
   return '--'
 }
 
-function main() {
+/** Emit one token package, and return the token paths it declared. */
+function emit({ closes, mergeGroups: wantsMergeGroups = false, pkg, typeRoles }) {
+  const {
+    foundations: FOUNDATIONS,
+    input: INPUT,
+    manifest: MANIFEST,
+    merge: MERGE,
+    output: OUTPUT,
+    tailwind: TAILWIND,
+  } = outputsFor(pkg)
   const source = JSON.parse(readFileSync(INPUT, 'utf8'))
-  const { blocks, componentTokens, css, foundations: doc, tokens } = generate(source)
+  const {
+    blocks,
+    componentTokens,
+    css,
+    foundations: doc,
+    mergeGroups,
+    tailwindTheme: theme,
+    tokens,
+  } = generate(source, { closes, typeRoles: typeRolesFor(typeRoles) })
 
   mkdirSync(dirname(OUTPUT), { recursive: true })
   writeFileSync(OUTPUT, css, 'utf8')
   writeFileSync(FOUNDATIONS, doc, 'utf8')
+  writeFileSync(TAILWIND, theme, 'utf8')
+  // Only for a package that composes classes at runtime. Writing it into the
+  // frozen package would be an unused generated file appearing in a system this
+  // work is not allowed to touch.
+  if (wantsMergeGroups) {
+    writeFileSync(MERGE, mergeGroups, 'utf8')
+  }
   // The authority a stylesheet's var() references are checked against. Emitted
   // rather than inferred, because a guard deriving the name set by re-parsing
   // the CSS would be a second implementation of what this file already knows.
@@ -768,9 +1283,20 @@ function main() {
 
   const modes = blocks.map((b) => b.label).join(', ')
   process.stdout.write(
-    `tokens: ${tokens.size} custom properties, ${componentTokens.length}/${COMPONENT_TOKEN_CEILING} ` +
+    `${pkg}: ${tokens.size} custom properties, ${componentTokens.length}/${COMPONENT_TOKEN_CEILING} ` +
       `component tier, modes: ${modes}\n`,
   )
+  return [...tokens.keys()]
+}
+
+function main() {
+  // Over the UNION, never per package. The exclusion table belongs to the shared
+  // PROJECTION policy, so an entry is stale only when NO token package declares
+  // it -- checking each package alone would report the other's tokens as missing.
+  //
+  // Only here, never inside generate(), which is deliberately testable against
+  // synthetic sources that declare almost nothing.
+  assertExclusionsAreCurrent(TOKEN_PACKAGES.flatMap(emit))
 }
 
 /* The CLI runs only when invoked directly: the tests import `generate`. */

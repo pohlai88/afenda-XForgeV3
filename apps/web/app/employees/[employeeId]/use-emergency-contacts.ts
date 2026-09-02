@@ -23,7 +23,7 @@ import {
   useListEmergencyContacts,
   useUpdateEmergencyContact,
 } from '@xforge/api-client'
-import { assertNever, type ResourceState, type WriteOutcome } from '@xforge/ui/state'
+import { assertNever, type ResourceState, type WriteOutcome } from '@xforge/design/state'
 import {
   type MutationOutcome,
   type ReadOutcome,

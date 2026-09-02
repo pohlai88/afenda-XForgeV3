@@ -130,7 +130,7 @@ const isBusinessModule = (spec) =>
  * Transport vocabulary: the names an interpreting layer may not know.
  *
  * ONE definition, consumed by both law-5 guards. It was two character-identical
- * regex literals -- `ui-holds-no-transport-vocabulary` for packages/ui and
+ * regex literals -- `ui-holds-no-transport-vocabulary` for packages/design and
  * `transport-enters-apps-only-at-the-boundary` for apps/ -- and the second was
  * copied from the first in this branch. The mutation test cannot see that class
  * of drift: each fixture exercises its own copy, so both stay PROVEN while the
@@ -144,7 +144,50 @@ const isBusinessModule = (spec) =>
  * silently. Neither fixture exercised that branch, so nothing would have said so.
  */
 const TRANSPORT_SURFACE = /^@xforge[/]api-client|^@xforge[/]api($|[/])|[/]generated[/]/
-const isTransportVocabulary = (spec) => TRANSPORT_SURFACE.test(spec) || isBusinessModule(spec)
+/**
+ * A package's OWN generated output is not transport.
+ *
+ * `[/]generated[/]` in the pattern above is a proxy for "the API client", and a
+ * proxy catches things the fact does not. `packages/design/src/lib/cn.ts`
+ * imports `../../generated/twmerge` -- the token projection this very package
+ * emits -- and was reported as importing transport vocabulary.
+ *
+ * Resolving the specifier is what makes the rule mean what it says. A RELATIVE
+ * import is transport only if it lands in a DIFFERENT package; a bare specifier
+ * is judged by the pattern as before, because a package name cannot be
+ * anybody's own directory.
+ *
+ * Deliberately not solved by exempting the file: the next generated artefact
+ * would need another exemption, and a guard maintained by exemption is a guard
+ * whose rule nobody can state.
+ */
+const packageOfPath = (f) => f.split('/').slice(0, 2).join('/')
+
+const resolveSpec = (from, spec) => {
+  const parts = from.split('/').slice(0, -1)
+  for (const seg of spec.split('/')) {
+    if (seg === '.') {
+    } else if (seg === '..') {
+      parts.pop()
+    } else {
+      parts.push(seg)
+    }
+  }
+  return parts.join('/')
+}
+
+const isTransportVocabulary = (spec, from) => {
+  if (spec.startsWith('.')) {
+    if (from === undefined) {
+      return TRANSPORT_SURFACE.test(spec)
+    }
+    const target = resolveSpec(from, spec)
+    return packageOfPath(target) === packageOfPath(from)
+      ? false
+      : TRANSPORT_SURFACE.test(target) || isBusinessModule(target)
+  }
+  return TRANSPORT_SURFACE.test(spec) || isBusinessModule(spec)
+}
 
 /**
  * Test files, decided by the ONE classification authority rather than by each
@@ -344,7 +387,7 @@ const withCommentsBlanked = (src) =>
 let tokenNamesCache
 const tokenManifest = () => {
   if (tokenNamesCache === undefined) {
-    const path = join(REPO_ROOT, 'packages/tokens/generated/token-names.json')
+    const path = join(REPO_ROOT, 'packages/design/generated/token-names.json')
     if (!existsSync(path)) {
       throw new Error(
         `no token manifest at ${path} -- run \`pnpm gen:tokens\`. An unreadable manifest ` +
@@ -993,17 +1036,243 @@ export const guards = [
   },
 
   {
+    /**
+     * `transition-all` BREAKS THE DENSITY AXIS, and this is a measured defect
+     * rather than a style preference.
+     *
+     * SYMPTOM. Switching density resized table cells, icons and nav rows and
+     * left every button at its default height. Eleven of eleven frozen.
+     *
+     * ROOT CAUSE, isolated with a control group on one page: strip
+     * `transition-all` from half the buttons and toggle density -- 4 of 6
+     * stripped buttons move, 0 of 5 that keep it do. `transition-property: all`
+     * on an element whose `min-block-size` resolves from an INHERITED custom
+     * property stops Chrome applying the new value when that property is
+     * rebound on an ancestor: the transition latches the before-value and never
+     * commits, because the change arrives through inheritance rather than
+     * through a declaration on the element.
+     *
+     * Confirmed independently: detaching and re-attaching the identical node
+     * into the identical position changes 40px to 32px.
+     *
+     * WHY THE RULE IS "NEVER ALL" AND NOT "NOT ON CONTROLS". Any token this
+     * system rebinds by density or theme reaches a component through
+     * inheritance -- that is what the two axes ARE. So the hazard is not
+     * specific to height; it is specific to `all`, which opts every animatable
+     * property into the same trap. `transition` (Tailwind's curated set:
+     * colour, opacity, shadow, transform, filter) animates what should animate
+     * and touches no layout property.
+     */
+    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    check(f, src) {
+      const out = []
+      const clean = withCommentsBlanked(src)
+      for (const re of [/(?<![\w-])transition-all(?![\w-])/g, /transition-property\s*:\s*all/g]) {
+        let m
+        while ((m = re.exec(clean)) !== null) {
+          out.push({
+            file: f,
+            line: line(clean, m.index),
+            message:
+              'transition-property: all -- it latches lengths that resolve from an ' +
+              'inherited token, so the density axis stops moving this element. Use ' +
+              '`transition` (colour, opacity, shadow, transform) or name the property',
+          })
+        }
+      }
+      return out
+    },
+    id: 'no-transition-all',
+    law: 29,
+    precision: 'text',
+    title: 'Nothing transitions every property',
+  },
+  {
+    /**
+     * SPACING NAMES A RELATIONSHIP, NOT A NUMBER.
+     *
+     * How far apart two things sit is what tells a reader whether they belong
+     * together. `gap-2` states a distance; `gap-tight` states that these are
+     * strongly related and lets the density axis decide how far that is today.
+     *
+     * WHAT THIS REPLACED, AND WHY IT IS THE POINT. 129 padding and gap values
+     * came from Tailwind numbers, against nine semantic roles. Density rebinds
+     * the roles -- so with the numbers in place, toggling compact moved FIVE of
+     * forty-two elements on screen. A mode the generator proves in every check,
+     * which the product very nearly did not have.
+     *
+     * WHY A GUARD AND NOT A CLOSED NAMESPACE, which is a correction to my own
+     * plan. Tailwind v4 derives its whole numeric scale from a single
+     * `--spacing`, so `--spacing: initial` removes it in one line -- and takes
+     * `inset-0`, `m-0`, `top-0` and `left-2` with it, because a zero and an
+     * arrow offset are computed from the same variable. Those are positioning
+     * mechanics, not design values. Closing the namespace would have been
+     * enforcement by demolition.
+     *
+     * SO THE SCOPE IS STATED RATHER THAN INHERITED: padding and gap, which this
+     * system owns as SPACING. Widths, sizes and offsets are examined and
+     * deliberately not governed -- there is no dimension vocabulary yet, and
+     * inventing one to give this guard more to do would be the wrong order.
+     */
+    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    check(f, src) {
+      const out = []
+      const clean = withCommentsBlanked(src)
+      // A leading `-` is a negative margin, which is not a gap or a padding.
+      const re = /(?<![\w-])(p|px|py|pt|pr|pb|pl|gap|gap-x|gap-y)-(\d+(?:\.\d+)?)(?![\w.-])/g
+      let m
+      while ((m = re.exec(clean)) !== null) {
+        // Zero is not a spacing decision, it is the absence of one.
+        if (m[2] === '0') {
+          continue
+        }
+        out.push({
+          file: f,
+          line: line(clean, m.index),
+          message:
+            'spacing written as a number: ' +
+            m[0] +
+            ' -- name the relationship instead (related, tight, snug, normal, ' +
+            'loose, section). A number does not move with density, and this ' +
+            'system has three densities',
+        })
+      }
+      return out
+    },
+    id: 'no-raw-spacing-value',
+    law: 29,
+    precision: 'text',
+    title: 'Spacing names a relationship, never a number',
+  },
+  {
+    /**
+     * STACKING ORDER IS A ROLE, NOT A NUMBER.
+     *
+     * Elevation and stacking are different systems: one is visual depth, the
+     * other is rendering order. Conflating them is how a product arrives at
+     * `z-index: 99999`, where the number means "above whatever last broke".
+     *
+     * WHY A GUARD AND NOT A CLOSED NAMESPACE. Five other namespaces are
+     * cleared in the Tailwind bridge, which makes an off-vocabulary utility
+     * stop existing. That cannot work here: `z-50` is computed from a number
+     * rather than read from a `--z-*` variable, so there is nothing to clear.
+     * Same shape as `leading-none` surviving when `--leading-*` was closed,
+     * and the same answer: what construction cannot refuse, a guard names.
+     *
+     * WHAT THIS REPLACED. Sixteen bare `z-50` and `z-10` values across five
+     * independently-mounted portals -- Dialog, DropdownMenu, Select, Sheet,
+     * Tooltip -- every one the same number, so the order among them was mount
+     * order, which nobody chose. The elevation policy had named that exact
+     * condition as the point at which an explicit order earns itself.
+     */
+    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    check(f, src) {
+      const out = []
+      const clean = withCommentsBlanked(src)
+      for (const re of [
+        // The utility, in any variant position: `z-50`, `focus:z-50`, `**:z-50`.
+        /(?<![\w-])-?z-(\d+|\[[^\]]*\])(?![\w-])/g,
+        // And the declaration, for anything authored in CSS.
+        /z-index\s*:\s*([^;]+)/g,
+      ]) {
+        let m
+        while ((m = re.exec(clean)) !== null) {
+          // A declaration reading a token is the intended shape, not a violation.
+          if (m[1]?.trim().startsWith('var(')) {
+            continue
+          }
+          out.push({
+            file: f,
+            line: line(clean, m.index),
+            message:
+              'stacking order written as a number: ' +
+              m[0].trim() +
+              ' -- name the layer instead (`layer-local`, `layer-overlay`). A number ' +
+              'is an order nobody chose, and the next one is always larger',
+          })
+        }
+      }
+      return out
+    },
+    id: 'no-raw-stacking-value',
+    law: 29,
+    precision: 'text',
+    title: 'Stacking order names a layer, never a number',
+  },
+  {
+    /**
+     * SENTENCE CASE IS THE DEFAULT, AND CASE IS A PROPERTY OF THE COPY.
+     *
+     * "Create employee", not "CREATE EMPLOYEE" and not "Create Employee".
+     * Uppercase adds visual noise to dense software and costs scanability, and
+     * Title Case in a product interface reads as a heading where a sentence was
+     * meant.
+     *
+     * WHAT MAKES THIS A GUARD RATHER THAN A STYLE NOTE is that a case transform
+     * in CSS is a decision the WRITER cannot see. The string in the source says
+     * "Create employee" and the screen says "CREATE EMPLOYEE"; nobody editing
+     * the copy is told, and nothing downstream -- a screenshot in a ticket, a
+     * translator's string table, a screen reader's pronunciation of an
+     * initialism -- agrees with the source.
+     *
+     * AND IT IS SHARPER HERE THAN IN AN ENGLISH-ONLY PRODUCT. This is a
+     * Malaysian HRMS: `text-transform: uppercase` does nothing at all to Chinese
+     * text, so a label that reads as emphasised in English is unstyled beside
+     * it, and `capitalize` on Malay produces forms the language does not use.
+     * A transform that is correct in one script and inert or wrong in the next
+     * is not a design decision, it is a monolingual assumption.
+     *
+     * The rule is not "never" -- it is "not in CSS". A genuine acronym is typed
+     * as one: EPF, SOCSO, EIS are written that way in the string, where a
+     * translator and a screen reader can both see them.
+     *
+     * COMMENTS ARE BLANKED FIRST, which is not incidental. This guard's own
+     * reasoning contains every word it looks for, and a check that reports the
+     * prose explaining it is the exact failure the toast-layer test recorded --
+     * "the prose describing a rule being counted as an instance of it".
+     */
+    applies: (f) => /^packages[/]design[/]src[/]/.test(f) && /[.](tsx?|css)$/.test(f),
+    check(f, src) {
+      const out = []
+      const clean = withCommentsBlanked(src)
+      for (const re of [
+        // The Tailwind utilities, as whole class names.
+        /(?<![w-])(uppercase|lowercase|capitalize)(?![w-])/g,
+        // And the declaration, for anything authored in CSS.
+        /text-transforms*:s*(uppercase|lowercase|capitalize)/g,
+      ]) {
+        let m
+        while ((m = re.exec(clean)) !== null) {
+          out.push({
+            file: f,
+            line: line(clean, m.index),
+            message:
+              `case is transformed in CSS: ${m[1]} -- write the string as it should ` +
+              'read. A transform is invisible to whoever edits the copy, and does ' +
+              'nothing to non-Latin scripts',
+          })
+        }
+      }
+      return out
+    },
+    id: 'case-lives-in-the-copy',
+    law: 7,
+    precision: 'text',
+    title: 'Text case is written, never transformed in CSS',
+  },
+
+  {
     // Phase 2's exit criterion is a screen built entirely from system
     // primitives with NO BESPOKE CSS. That is a habit until something checks
     // it, and habits are what the first urgent screen abandons -- one
     // `style={{ marginTop: 8 }}` at a time, each individually reasonable.
     //
-    // packages/ui is where styling lives, so it is exempt. Everywhere else, a
+    // packages/design is where styling lives, so it is exempt. Everywhere else, a
     // className or a style attribute means a screen has an opinion the design
     // system was supposed to own.
     applies: (f) =>
       notATest(f) &&
-      !/^packages[/]ui[/]/.test(f) &&
+      !/^packages[/]design[/]/.test(f) &&
       ((/^apps[/]web[/]app[/]/.test(f) && !/^apps[/]web[/]app[/]api[/]/.test(f)) ||
         /^modules[/][^/]+[/]ui[/]/.test(f)),
     check(f, src) {
@@ -1015,7 +1284,7 @@ export const guards = [
             file: f,
             line: line(src, m.index),
             message:
-              'business screens do not style: compose primitives from @xforge/ui, ' +
+              'business screens do not style: compose primitives from @xforge/design, ' +
               'and add a variant there if none fits',
           })
         }
@@ -1056,7 +1325,14 @@ export const guards = [
     // they want a wave of their own, with a spacing and sizing vocabulary to land
     // in. Claiming them now would mean either tokenizing hairlines nobody has
     // designed, or an exemption list long enough to be its own authority.
-    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    // AUTHORED stylesheets, never generated ones. The two used to live in
+    // different packages -- hand-written CSS in packages/ui, the declaration
+    // file in packages/tokens/generated -- so `packages/ui/**.css` separated
+    // them for free. One package holds both now, and without `src/` this guard
+    // reads the generated tokens.css and reports every primitive it DECLARES as
+    // a primitive it USES. Law 27 covers that file: it is diffed after
+    // regeneration, not linted.
+    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
       const declarations = withCommentsBlanked(src)
@@ -1130,7 +1406,7 @@ export const guards = [
             line: line(src, m.index),
             message:
               `literal design value in '${m[1]}' -- every value comes from a semantic ` +
-              'token, or packages/tokens has stopped being the authority',
+              'token, or packages/design has stopped being the authority',
           })
         }
       }
@@ -1146,7 +1422,7 @@ export const guards = [
           line: line(src, m.index),
           message:
             `literal design value '${m[1]}' -- every value comes from a semantic ` +
-            'token, or packages/tokens has stopped being the authority',
+            'token, or packages/design has stopped being the authority',
         })
       }
       return out
@@ -1240,23 +1516,23 @@ export const guards = [
      * Law 5: the API and its transport influence application composition and
      * are never dependencies of the UI.
      *
-     * `@xforge/ui` sits at the bottom of the dependency direction. If a
+     * `@xforge/design` sits at the bottom of the dependency direction. If a
      * component could import the generated client, the completeness envelope or
      * an HTTP problem shape, then every component would know how its data
      * arrived -- and a new wire code would oblige a UI change, which is the
      * coupling the experience mapper exists to prevent.
      *
      * The permitted path is: generated client -> experience mapper ->
-     * ResourceState -> @xforge/ui. The mapper is a real boundary, not a helper
+     * ResourceState -> @xforge/design. The mapper is a real boundary, not a helper
      * somebody may bypass when a field is convenient.
      *
      * Stated as a property because a comment is a discipline that lasts until
      * the second person needs a field.
      */
-    applies: (f) => /^packages[/]ui[/]/.test(f),
+    applies: (f) => /^packages[/]design[/]/.test(f),
     check(f, src) {
       return imports(src)
-        .filter((i) => isTransportVocabulary(i.spec))
+        .filter((i) => isTransportVocabulary(i.spec, f))
         .map((i) => ({
           file: f,
           line: line(src, i.at),
@@ -1351,11 +1627,28 @@ export const guards = [
      * once and threaded through both sides of an assertion, is exactly how T18
      * revokes at an instant and then asks about that same instant. The hazard is
      * a SECOND clock, not a current time.
+     *
+     * `Date.now()` IS THE SAME CATEGORY AND WAS BEING FLAGGED ANYWAY. The rule
+     * above names `new Date()` and stops, but the pattern below was a bare
+     * `now\s*\(\s*\)` with nothing in front of it -- so every `Date.now()` in a
+     * fixture matched and was reported as "takes a time value from the
+     * database". It fired twice on an advisory-lock wait loop measuring elapsed
+     * milliseconds, which touches no database clock at all.
+     *
+     * The message made the mismatch legible -- it quotes the match as if it were
+     * SQL -- and it still cost a red gate to notice. A guard that fires on the
+     * wrong thing is not a lesser fault than one that cannot fire: both teach
+     * people that the guard is noise, and this repository has spent five
+     * sessions on the second kind.
+     *
+     * So the lookbehind, and the reach is deliberately minimal: only a `now()`
+     * NOT preceded by `Date.` is a database clock. `interval '...'` is untouched
+     * because it has no JavaScript homograph.
      */
     applies: (f) => /^tests[/]fixtures[/].*[.]ts$/.test(f) || /[.]integration[.]test[.]ts$/.test(f),
     check(f, src) {
       const out = []
-      const re = /(now\s*\(\s*\)|interval\s+'[^']*')/g
+      const re = /((?<!Date\s*\.\s*)\bnow\s*\(\s*\)|interval\s+'[^']*')/g
       let m
       while ((m = re.exec(src)) !== null) {
         if (isNonCallContext(src, m.index)) {
@@ -1393,7 +1686,14 @@ export const guards = [
     //
     // Checked on DECLARATIONS only, so the comment above may name `--space-5`
     // while explaining why it is not used.
-    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    // AUTHORED stylesheets, never generated ones. The two used to live in
+    // different packages -- hand-written CSS in packages/ui, the declaration
+    // file in packages/tokens/generated -- so `packages/ui/**.css` separated
+    // them for free. One package holds both now, and without `src/` this guard
+    // reads the generated tokens.css and reports every primitive it DECLARES as
+    // a primitive it USES. Law 27 covers that file: it is diffed after
+    // regeneration, not linted.
+    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
     check(f, src) {
       const out = []
       for (const { index, name } of tokenReferences(src)) {
@@ -1428,7 +1728,7 @@ export const guards = [
      * plausible. No build error, no lint error, no failing test -- the exact
      * shape of failure this repository's tooling exists to refuse.
      *
-     * THE MANIFEST WAS ORPHANED. `packages/tokens/generated/token-names.json`
+     * THE MANIFEST WAS ORPHANED. `packages/design/generated/token-names.json`
      * has been emitted by the generator and read by NOTHING, alongside an
      * `isGovernedName` in the token policy documented as the authority for this
      * check and called by nobody. Two artefacts built for a guard that was never
@@ -1444,7 +1744,14 @@ export const guards = [
      * primitive groups are ordinary English words -- claiming them would fire on
      * `--color-picker-bg`, which is nobody's token.
      */
-    applies: (f) => /^packages[/]ui[/].*[.]css$/.test(f),
+    // AUTHORED stylesheets, never generated ones. The two used to live in
+    // different packages -- hand-written CSS in packages/ui, the declaration
+    // file in packages/tokens/generated -- so `packages/ui/**.css` separated
+    // them for free. One package holds both now, and without `src/` this guard
+    // reads the generated tokens.css and reports every primitive it DECLARES as
+    // a primitive it USES. Law 27 covers that file: it is diffed after
+    // regeneration, not linted.
+    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
     check(f, src) {
       const manifest = tokenManifest()
       const out = []
@@ -1457,7 +1764,7 @@ export const guards = [
           line: line(src, index),
           message:
             `'${name}' is not a token -- no such custom property is generated from ` +
-            'packages/tokens, so this declaration is silently dropped at render',
+            'packages/design, so this declaration is silently dropped at render',
         })
       }
       return out

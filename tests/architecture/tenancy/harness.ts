@@ -33,6 +33,7 @@ import {
   type VerifiedTenantContext,
 } from '@xforge/tenancy'
 import postgres from 'postgres'
+import { acquireFixture, releaseFixture } from '../../fixtures/fixture-lock'
 import { appUrl, ownerUrl } from '../../fixtures/local-database'
 
 export const A_ROW = '55555555-5555-4555-8555-555555555555'
@@ -183,6 +184,12 @@ export async function assertBoundaryIntact(): Promise<void> {
 
 /** Two tenants, their hostnames, their memberships, one HR row each. */
 export async function seed(): Promise<void> {
+  // FIRST, and before the boundary check. Everything below writes at fixed
+  // primary keys, so a second process running these fixtures corrupts this run
+  // -- measured as a duplicate-key error that fails a whole file, or a row
+  // count that fails the tenancy assertions and reads as an isolation breach.
+  // Held until `closeAll`, so it spans the assertions and not merely the seed.
+  await acquireFixture()
   await assertBoundaryIntact()
 
   await seedTenancy(owner, [
@@ -209,4 +216,7 @@ export async function closeAll(): Promise<void> {
   }
   await owner.end({ timeout: 5 })
   await driver.close()
+  // LAST. A waiting runner must not be handed the fixture until this one has
+  // finished reading it.
+  await releaseFixture()
 }

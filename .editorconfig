@@ -1,0 +1,29 @@
+# Editor defaults. NOT a formatter configuration.
+#
+# Biome does not read this file: `formatter.useEditorconfig` defaults to false
+# (Biome 2.5.11's own configuration schema says so, and adds that biome.jsonc
+# would override it anyway). So nothing here competes with biome.jsonc, and
+# nothing here should try to.
+#
+# WHICH IS WHY INDENTATION AND LINE WIDTH ARE ABSENT. biome.jsonc owns
+# indentStyle, indentWidth and lineWidth, and the ultracite preset owns
+# lineEnding. Restating any of them here would give a formatting fact two homes
+# that agree until someone edits one -- the defect this repository is organised
+# against. `pnpm run fix` is the authority on how a file is formatted.
+#
+# What is left is the class of defect an editor can cause before Biome ever
+# runs, and that git normalisation alone does not prevent mid-session: a file
+# written with the platform's newline, or without a trailing newline, or in an
+# encoding nothing declared.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown gives trailing whitespace a meaning -- two spaces is a hard line
+# break -- so trimming it silently rewrites the document.
+[*.md]
+trim_trailing_whitespace = false

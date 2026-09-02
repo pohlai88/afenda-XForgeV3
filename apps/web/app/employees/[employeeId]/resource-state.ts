@@ -1,7 +1,7 @@
 /**
  * The experience boundary: transport vocabulary in, experience vocabulary out.
  *
- * This is the only place that knows both. Above it, `@xforge/ui` sees
+ * This is the only place that knows both. Above it, `@xforge/design` sees
  * `ResourceState` and has never heard of a completeness envelope, an HTTP
  * status or an RFC 9457 problem -- a guard enforces that. Below it, the API
  * says what it KNOWS; here is where that becomes what a person can be TOLD.
@@ -40,7 +40,7 @@ import {
   type UiPartialReason,
   type UiProblem,
   type WriteOutcome,
-} from '@xforge/ui/state'
+} from '@xforge/design/state'
 
 /**
  * What a read can report, stated as a closed union.

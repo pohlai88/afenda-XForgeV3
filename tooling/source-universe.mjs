@@ -36,7 +36,7 @@
  * Directories that are never source, in any tool, ever.
  *
  * CAUTION: these match at ANY depth, so `build` and `dist` also swallow a
- * hand-written `packages/ui/src/build/`. That is a deliberate trade -- an
+ * hand-written `packages/design/src/build/`. That is a deliberate trade -- an
  * unignored `dist/` breaks the gate loudly, while a shadowed source dir fails
  * silently -- but it is the one entry in this module that can quietly delete
  * real source from all four tools. Do not add a common English word here
@@ -77,8 +77,11 @@ export const GENERATED_DIRS = Object.freeze(['generated'])
 export const GENERATED_PATHS = Object.freeze([
   'contracts/',
   'packages/api-client/src/generated/',
-  'packages/tokens/generated/',
-  'packages/ui/generated/',
+  // The superseding design system's tokens. Listed the moment the package exists
+  // rather than when someone notices: an unlisted generated directory is one the
+  // `generate` stage does not diff and `no-hand-edit` does not defend, so law 27
+  // would hold over it by nobody's decision.
+  'packages/design/generated/',
 ])
 
 /**
@@ -165,7 +168,7 @@ const CONFIG_EXT_RE = /\.config\.[cm]?[jt]s$/
  * FIRST MATCH WINS -- the order of the branches below is the specification,
  * not an implementation detail. `tests/README.md` is 'test', not
  * 'documentation'; `dist/generated/x.ts` is 'output', not 'generated'; and
- * `packages/ui/generated/next-env.d.ts` is 'output', because OUTPUT_FILES says
+ * `packages/design/generated/next-env.d.ts` is 'output', because OUTPUT_FILES says
  * "never tracked" without qualification, and a rule that held only outside
  * `generated/` would be a different rule.
  *

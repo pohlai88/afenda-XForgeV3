@@ -88,6 +88,18 @@
       "!!**/next-env.d.ts",
       "!!pnpm-lock.yaml",
 
+      // VENDORED AGENT SKILLS. `.agents/skills/**` is installed content pinned
+      // by skills-lock.json -- shadcn's published reference examples, not this
+      // repository's source. Its three .tsx files import packages we do not
+      // declare and follow upstream's house style, so linting them reports 55
+      // errors about someone else's code, and the next skill update reverts
+      // every fix made to satisfy us.
+      //
+      // THE LINE IS AUTHORED VS VENDORED, NOT DOTFILE VS NOT. `.claude/` stays
+      // linted and is clean across 12 files, because that content -- the
+      // typeset skill's scripts among it -- was written here and we own it.
+      "!!.agents",
+
       // Biome's own config, excluded from Biome. `**/*.json` above would
       // otherwise have it lint itself as strict JSON, where the comments
       // explaining each disabled rule are a parse error. The alternative was

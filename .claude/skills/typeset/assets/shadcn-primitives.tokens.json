@@ -1,0 +1,518 @@
+{
+  "$description": "shadcn/ui PRIMITIVES. A primitive is a value with no meaning: one scale per dimension of variation, never one per CSS property. Derived from a Figma DTCG export with every com.figma.* extension removed, $type restored, and the corrections listed in the companion README applied.",
+  "space": {
+    "0": {
+      "$value": "0px",
+      "$description": "0px"
+    },
+    "1": {
+      "$value": "0.25rem",
+      "$description": "4px"
+    },
+    "2": {
+      "$value": "0.5rem",
+      "$description": "8px"
+    },
+    "3": {
+      "$value": "0.75rem",
+      "$description": "12px"
+    },
+    "4": {
+      "$value": "1rem",
+      "$description": "16px"
+    },
+    "5": {
+      "$value": "1.25rem",
+      "$description": "20px"
+    },
+    "6": {
+      "$value": "1.5rem",
+      "$description": "24px"
+    },
+    "7": {
+      "$value": "1.75rem",
+      "$description": "28px"
+    },
+    "8": {
+      "$value": "2rem",
+      "$description": "32px"
+    },
+    "9": {
+      "$value": "2.25rem",
+      "$description": "36px"
+    },
+    "10": {
+      "$value": "2.5rem",
+      "$description": "40px"
+    },
+    "11": {
+      "$value": "2.75rem",
+      "$description": "44px"
+    },
+    "12": {
+      "$value": "3rem",
+      "$description": "48px"
+    },
+    "14": {
+      "$value": "3.5rem",
+      "$description": "56px"
+    },
+    "16": {
+      "$value": "4rem",
+      "$description": "64px"
+    },
+    "18": {
+      "$value": "4.5rem",
+      "$description": "72px"
+    },
+    "20": {
+      "$value": "5rem",
+      "$description": "80px"
+    },
+    "24": {
+      "$value": "6rem",
+      "$description": "96px"
+    },
+    "28": {
+      "$value": "7rem",
+      "$description": "112px"
+    },
+    "32": {
+      "$value": "8rem",
+      "$description": "128px"
+    },
+    "36": {
+      "$value": "9rem",
+      "$description": "144px"
+    },
+    "40": {
+      "$value": "10rem",
+      "$description": "160px"
+    },
+    "44": {
+      "$value": "11rem",
+      "$description": "176px"
+    },
+    "48": {
+      "$value": "12rem",
+      "$description": "192px"
+    },
+    "52": {
+      "$value": "13rem",
+      "$description": "208px"
+    },
+    "56": {
+      "$value": "14rem",
+      "$description": "224px"
+    },
+    "60": {
+      "$value": "15rem",
+      "$description": "240px"
+    },
+    "64": {
+      "$value": "16rem",
+      "$description": "256px"
+    },
+    "72": {
+      "$value": "18rem",
+      "$description": "288px"
+    },
+    "80": {
+      "$value": "20rem",
+      "$description": "320px"
+    },
+    "96": {
+      "$value": "24rem",
+      "$description": "384px"
+    },
+    "$type": "dimension",
+    "$description": "ONE scale. The export shipped this same ladder nine times over -- gap, px, py, mx, my, space-x, space-y, width, height: 289 tokens carrying 36 distinct values. Which property consumes a length is a utility concern, not a token one. Steps are Tailwind names, with `.5` written `-5` so the name survives a dot-delimited token path.",
+    "px": {
+      "$value": "1px",
+      "$description": "1px"
+    },
+    "0-5": {
+      "$value": "0.125rem",
+      "$description": "2px"
+    },
+    "1-5": {
+      "$value": "0.375rem",
+      "$description": "6px"
+    },
+    "2-5": {
+      "$value": "0.625rem",
+      "$description": "10px"
+    },
+    "3-5": {
+      "$value": "0.875rem",
+      "$description": "14px"
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "$description": "Corner radius. The export also carried four per-corner sets (rounded-tl-*, -tr-*, -bl-*, -br-*) that were pure aliases of these. A corner is a property, so they are not primitives and are dropped -- three of the four were missing their `sm` step anyway.",
+    "none": {
+      "$value": "0px",
+      "$description": "0px"
+    },
+    "sm": {
+      "$value": "0.125rem",
+      "$description": "2px"
+    },
+    "DEFAULT": {
+      "$value": "0.25rem",
+      "$description": "4px"
+    },
+    "md": {
+      "$value": "0.375rem",
+      "$description": "6px"
+    },
+    "lg": {
+      "$value": "0.5rem",
+      "$description": "8px"
+    },
+    "xl": {
+      "$value": "0.75rem",
+      "$description": "12px"
+    },
+    "2xl": {
+      "$value": "1rem",
+      "$description": "16px"
+    },
+    "3xl": {
+      "$value": "1.5rem",
+      "$description": "24px"
+    }
+  },
+  "radius-full": {
+    "$type": "dimension",
+    "$value": "9999px",
+    "$description": "A SENTINEL, not a measurement -- \"round as far as it goes\". Held outside the radius ramp so nothing interpolates toward it or reads it as the top of a scale."
+  },
+  "border-width": {
+    "0": {
+      "$value": "0px"
+    },
+    "2": {
+      "$value": "2px"
+    },
+    "4": {
+      "$value": "4px"
+    },
+    "8": {
+      "$value": "8px"
+    },
+    "$type": "dimension",
+    "$description": "PX rather than rem, deliberately. A hairline is a device-pixel rule; scaling it with the reader text size turns a 1px border into a bar.",
+    "DEFAULT": {
+      "$value": "1px"
+    }
+  },
+  "font-size": {
+    "$type": "dimension",
+    "$description": "Type scale.",
+    "xs": {
+      "$value": "0.75rem",
+      "$description": "12px"
+    },
+    "sm": {
+      "$value": "0.875rem",
+      "$description": "14px"
+    },
+    "base": {
+      "$value": "1rem",
+      "$description": "16px"
+    },
+    "lg": {
+      "$value": "1.125rem",
+      "$description": "18px"
+    },
+    "xl": {
+      "$value": "1.25rem",
+      "$description": "20px"
+    },
+    "2xl": {
+      "$value": "1.5rem",
+      "$description": "24px"
+    },
+    "3xl": {
+      "$value": "1.875rem",
+      "$description": "30px"
+    },
+    "4xl": {
+      "$value": "2.25rem",
+      "$description": "36px"
+    },
+    "5xl": {
+      "$value": "3rem",
+      "$description": "48px"
+    },
+    "6xl": {
+      "$value": "3.75rem",
+      "$description": "60px"
+    },
+    "7xl": {
+      "$value": "4.5rem",
+      "$description": "72px"
+    },
+    "8xl": {
+      "$value": "6rem",
+      "$description": "96px"
+    },
+    "9xl": {
+      "$value": "8rem",
+      "$description": "128px"
+    }
+  },
+  "line-height": {
+    "3": {
+      "$value": "0.75rem",
+      "$description": "12px"
+    },
+    "4": {
+      "$value": "1rem",
+      "$description": "16px"
+    },
+    "5": {
+      "$value": "1.25rem",
+      "$description": "20px"
+    },
+    "6": {
+      "$value": "1.5rem",
+      "$description": "24px"
+    },
+    "7": {
+      "$value": "1.75rem",
+      "$description": "28px"
+    },
+    "8": {
+      "$value": "2rem",
+      "$description": "32px"
+    },
+    "9": {
+      "$value": "2.25rem",
+      "$description": "36px"
+    },
+    "10": {
+      "$value": "2.5rem",
+      "$description": "40px"
+    },
+    "$type": "dimension",
+    "$description": "The fixed leading steps (Tailwind leading-3 .. leading-10). ABSOLUTE lengths, so they do not scale with the size they are applied to. Pair them deliberately, or use a unitless ratio instead."
+  },
+  "tracking": {
+    "$type": "dimension",
+    "$description": "EM, so tracking stays a fraction of the glyph size it separates -- correct at every size, where a px value is correct at exactly one. The export stored these as em x 100 typed as plain numbers, so -2.5 meant -0.025em.",
+    "tighter": {
+      "$value": "-0.05em"
+    },
+    "tight": {
+      "$value": "-0.025em"
+    },
+    "normal": {
+      "$value": "0em"
+    },
+    "wide": {
+      "$value": "0.025em"
+    },
+    "wider": {
+      "$value": "0.05em"
+    },
+    "widest": {
+      "$value": "0.1em"
+    }
+  },
+  "font-weight": {
+    "$type": "fontWeight",
+    "$description": "Typed fontWeight rather than number, so a tool can tell 700-the-weight from 700-the-pixels.",
+    "thin": {
+      "$value": 100
+    },
+    "extralight": {
+      "$value": 200
+    },
+    "light": {
+      "$value": 300
+    },
+    "normal": {
+      "$value": 400
+    },
+    "medium": {
+      "$value": 500
+    },
+    "semibold": {
+      "$value": 600
+    },
+    "bold": {
+      "$value": 700
+    },
+    "extrabold": {
+      "$value": 800
+    },
+    "black": {
+      "$value": 900
+    }
+  },
+  "opacity": {
+    "0": {
+      "$value": 0
+    },
+    "5": {
+      "$value": 0.05
+    },
+    "10": {
+      "$value": 0.1
+    },
+    "15": {
+      "$value": 0.15
+    },
+    "20": {
+      "$value": 0.2
+    },
+    "25": {
+      "$value": 0.25
+    },
+    "30": {
+      "$value": 0.3
+    },
+    "35": {
+      "$value": 0.35
+    },
+    "40": {
+      "$value": 0.4
+    },
+    "45": {
+      "$value": 0.45
+    },
+    "50": {
+      "$value": 0.5
+    },
+    "55": {
+      "$value": 0.55
+    },
+    "60": {
+      "$value": 0.6
+    },
+    "65": {
+      "$value": 0.65
+    },
+    "70": {
+      "$value": 0.7
+    },
+    "75": {
+      "$value": 0.75
+    },
+    "80": {
+      "$value": 0.8
+    },
+    "85": {
+      "$value": 0.85
+    },
+    "90": {
+      "$value": 0.9
+    },
+    "95": {
+      "$value": 0.95
+    },
+    "100": {
+      "$value": 1
+    },
+    "$type": "number",
+    "$description": "CSS opacity is 0-1. The export stored 0-100 typed as plain numbers, so opacity-5 held the value 5 -- fully opaque five times over if any tool read it literally."
+  },
+  "blur": {
+    "$type": "dimension",
+    "$description": "Backdrop blur radii. PX, because a blur radius is a rendering effect with no relationship to text size.",
+    "none": {
+      "$value": "0px"
+    },
+    "sm": {
+      "$value": "4px"
+    },
+    "DEFAULT": {
+      "$value": "8px"
+    },
+    "md": {
+      "$value": "12px"
+    },
+    "lg": {
+      "$value": "16px"
+    },
+    "xl": {
+      "$value": "24px"
+    },
+    "2xl": {
+      "$value": "40px"
+    },
+    "3xl": {
+      "$value": "64px"
+    }
+  },
+  "container": {
+    "$type": "dimension",
+    "$description": "Named max-widths. The export aliased xs to a 320px space step and sm to a 384px one; the collision is real but coincidental, so these stand on their own values.",
+    "xs": {
+      "$value": "20rem",
+      "$description": "320px"
+    },
+    "sm": {
+      "$value": "24rem",
+      "$description": "384px"
+    },
+    "md": {
+      "$value": "28rem",
+      "$description": "448px"
+    },
+    "lg": {
+      "$value": "32rem",
+      "$description": "512px"
+    },
+    "xl": {
+      "$value": "36rem",
+      "$description": "576px"
+    },
+    "2xl": {
+      "$value": "42rem",
+      "$description": "672px"
+    },
+    "3xl": {
+      "$value": "48rem",
+      "$description": "768px"
+    },
+    "4xl": {
+      "$value": "56rem",
+      "$description": "896px"
+    },
+    "5xl": {
+      "$value": "64rem",
+      "$description": "1024px"
+    },
+    "6xl": {
+      "$value": "72rem",
+      "$description": "1152px"
+    },
+    "7xl": {
+      "$value": "80rem",
+      "$description": "1280px"
+    }
+  },
+  "screen": {
+    "$type": "dimension",
+    "$description": "Breakpoints. Separate from container because a breakpoint is a viewport question and a container is a content one. They coincide at 768 and 1280 and are still not the same fact.",
+    "sm": {
+      "$value": "640px"
+    },
+    "md": {
+      "$value": "768px"
+    },
+    "lg": {
+      "$value": "1024px"
+    },
+    "xl": {
+      "$value": "1280px"
+    },
+    "2xl": {
+      "$value": "1536px"
+    }
+  }
+}

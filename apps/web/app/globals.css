@@ -1,0 +1,23 @@
+/*
+ * The application's stylesheet. It holds NO design values, and it holds almost
+ * nothing else either.
+ *
+ * ONE IMPORT, AND THAT IS THE DESIGN. `@xforge/design/design.css` is itself the
+ * Tailwind entry: it pulls in `tailwindcss`, then the generated token bridge,
+ * then declares the dark variant and the two `@utility` blocks, and points
+ * `@source` at its own `src`. Repeating any of that here would not add anything
+ * -- it would create a second place where the order of those imports is decided,
+ * and the order is what puts the density axis in charge of spacing.
+ *
+ * This file previously imported Tailwind, a token bridge and a component
+ * stylesheet in a particular sequence, with a long note explaining why unlayered
+ * CSS beats layered CSS and which half-migrated component that could break. None
+ * of it applies now: the design system has no stylesheet of plain rules to win
+ * against a utility. There is nothing left to sequence.
+ *
+ * BUSINESS SCREENS ARE DELIBERATELY NOT SCANNED. They carry no `className` --
+ * `no-bespoke-styling` fails them if they do -- so there is nothing there for
+ * Tailwind to find, and adding the path would quietly make it possible.
+ */
+
+@import "@xforge/design/design.css";

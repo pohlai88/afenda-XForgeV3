@@ -1,0 +1,197 @@
+/*
+ * shadcn/ui's layout grid.
+ *
+ * Third file in the set with `shadcn-theme.css` (colour) and
+ * `shadcn-typography.css` (type). Independent of both — import in any order.
+ *
+ * THE SPEC, and its arithmetic verified:
+ *
+ *   viewport   content   margin   gutter   columns   column width
+ *   384px      352px     16px     16px     3         106.67px   fractional
+ *   768px      704px     32px     32px     6          90.67px   fractional
+ *   1280px    1216px     32px     32px     12         72.00px   exact
+ *
+ * Only the desktop tier divides cleanly. That is not a defect — it is what
+ * "(auto)" in the spec means: the columns are `1fr`, the browser resolves the
+ * subpixels, and nothing needs to know the number. It does mean a column width
+ * is NOT a value to write into a token or a handoff note. At tablet it is
+ * 90.666…px, and any document stating "90px" or "91px" is wrong.
+ *
+ * BREAKPOINTS ARE 768 AND 1280, which are Tailwind's `md` and `xl` exactly. So
+ * `md:col-span-4` and `xl:col-span-3` line up with these tiers for free, and
+ * this file deliberately ships NO span utilities — Tailwind's already work.
+ *
+ * The spec's three tiers leave a gap: nothing is defined between 768 and 1280,
+ * a 512px span in which the 6-column tablet grid simply stretches. That is a
+ * real hole rather than an oversight to paper over here; see the note at the
+ * bottom before using this on a product with a lot of laptop traffic.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------ container -- */
+
+  /*
+   * The three controls, mobile-first. Everything below derives from them, so a
+   * one-off layout overrides a variable rather than restating a rule.
+   */
+  .layout {
+    --layout-columns: 3;
+    --layout-gutter: 16px;
+    --layout-margin: 16px;
+    --layout-content: 1216px; /* the widest the content may get */
+  }
+
+  @media (width >= 768px) {
+    .layout {
+      --layout-columns: 6;
+      --layout-gutter: 32px;
+      --layout-margin: 32px;
+    }
+  }
+
+  @media (width >= 1280px) {
+    .layout {
+      --layout-columns: 12;
+    }
+  }
+
+  /*
+   * The container. `max-width` is content PLUS both margins, so the content
+   * settles at exactly 1216px once the viewport passes 1280 and the margins stop
+   * growing — which is what the spec's 1280/1216 pair describes.
+   */
+  .layout-container {
+    width: 100%;
+    max-width: calc(var(--layout-content) + 2 * var(--layout-margin));
+    padding-inline: var(--layout-margin);
+    margin-inline: auto;
+  }
+
+  /* ----------------------------------------------------------------- grid -- */
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--layout-columns), minmax(0, 1fr));
+    gap: var(--layout-gutter);
+  }
+
+  /*
+   * `minmax(0, 1fr)` RATHER THAN `1fr`, and this is the one line most worth
+   * keeping. `1fr` is shorthand for `minmax(auto, 1fr)`, and `auto` floors the
+   * track at its content's min-content width. One long unbroken string, one wide
+   * table, one `<pre>` that does not wrap, and that column refuses to shrink —
+   * so the grid overflows its container and the page scrolls sideways.
+   *
+   * It is the most common CSS Grid bug there is, it only appears once real
+   * content arrives, and `minmax(0, 1fr)` is the whole fix.
+   */
+
+  /* --------------------------------------------------------- column count -- */
+
+  /*
+   * The spec lists five counts — 12, 6, 5, 3, 2 — against three viewports. Three
+   * of them are the page grid above; all five are here as explicit overrides,
+   * because a card row does not have to follow the page grid and 5 divides
+   * neither 12 nor 6, so it can only ever be a deliberate content grid.
+   *
+   * Applied to the same element as `.layout`, since that is where the variable
+   * is read.
+   */
+  .layout-cols-2 {
+    --layout-columns: 2;
+  }
+  .layout-cols-3 {
+    --layout-columns: 3;
+  }
+  .layout-cols-5 {
+    --layout-columns: 5;
+  }
+  .layout-cols-6 {
+    --layout-columns: 6;
+  }
+  .layout-cols-12 {
+    --layout-columns: 12;
+  }
+
+  /*
+   * A fixed count does not reflow, so anything using one needs its own answer
+   * for narrow viewports. `.layout-cols-auto` is that answer for card grids:
+   * as many tracks as fit at the stated minimum, no breakpoints involved.
+   *
+   * `--layout-min` IS DELIBERATELY UNDECLARED, and the fallback is the default
+   * rather than a patch over a missing token. It is a per-instance knob — one
+   * card grid wants 16rem tracks, another 24rem — set inline where it differs:
+   * `style="--layout-min: 24rem"`. That is the opposite case from a theme token
+   * given a fallback to hide that it does not exist, which stays a defect.
+   */
+  .layout-cols-auto {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(var(--layout-min, 16rem), 1fr)
+      );
+    gap: var(--layout-gutter);
+  }
+
+  /* ------------------------------------------------------------ full bleed -- */
+
+  /*
+   * An element that escapes the container's margins — a hero, a full-width
+   * band — without leaving the grid or needing a wrapper outside it.
+   */
+  .layout-bleed {
+    margin-inline: calc(var(--layout-margin) * -1);
+  }
+}
+
+/*
+ * ================================================================ usage ====
+ *
+ *   <div class="layout layout-container layout-grid">
+ *     <main class="col-span-3 md:col-span-4 xl:col-span-8">…</main>
+ *     <aside class="col-span-3 md:col-span-2 xl:col-span-4">…</aside>
+ *   </div>
+ *
+ * `.layout` sets the variables, `.layout-container` centres and pads,
+ * `.layout-grid` lays out. They are separate so a nested grid can reuse the
+ * variables without a second container: put `.layout-grid` alone on a child and
+ * it inherits the gutter and column count from the ancestor `.layout`.
+ *
+ * Spans are Tailwind's, because 768 and 1280 are Tailwind's `md` and `xl`.
+ *
+ * ====================================================== the 768–1280 gap ====
+ *
+ * The spec defines three tiers and nothing between the second and third. From
+ * 768px to 1279px the 6-column grid stretches: at 1279px each column is 187px
+ * wide against 90px at 768px, a factor of two with no layout change. That covers
+ * most laptops.
+ *
+ * Not filled in here, because inventing a fourth tier would mean inventing its
+ * column count and gutter too, and this file is a transcription. If the product
+ * has meaningful laptop traffic, add one tier — 1024px at 8 columns is the
+ * conventional choice and nests with neither 6 nor 12, or 1024px at 12 columns
+ * moves the desktop grid down and leaves the gap at the gutter instead.
+ *
+ * Decide it against real analytics rather than against this comment.
+ *
+ * ================================================== if you are in Xforge ====
+ *
+ * DO NOT PORT THE BREAKPOINTS. 768 and 1280 are two of Tailwind's defaults, and
+ * `packages/design/tokens.json` rejected exactly those numbers on the record:
+ *
+ *   "Material 3 window size classes, which describe the AVAILABLE WINDOW rather
+ *    than a device. Tailwind ships 640/768/1024/1280/1536 and not one of them
+ *    coincides with these -- so every `md:` in this system was firing at a
+ *    number nobody chose."
+ *
+ * The repository's tiers are 600 / 840 / 1200 / 1600. Importing this file's
+ * media queries would reintroduce the defect that comment documents fixing, and
+ * would do it silently — both systems would appear to work, disagreeing only in
+ * the 72px between 768 and 840 and the 80px between 1200 and 1280.
+ *
+ * The spec's three viewports do map onto the repository's classes — 384 is
+ * compact, 768 is medium, 1280 is large — so the grid transfers; only the
+ * numbers do not. And the repository's `expanded` (840) is precisely the tier
+ * that fills the gap described above, which is an argument for the Material 3
+ * scale rather than against it.
+ */

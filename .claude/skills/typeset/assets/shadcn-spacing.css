@@ -1,0 +1,211 @@
+/*
+ * shadcn/ui's spacing, radius and container scales.
+ *
+ * Fourth file in the set with `shadcn-theme.css`, `shadcn-typography.css` and
+ * `shadcn-grid.css`. Independent of all three — import in any order.
+ *
+ * ------------------------------------------------------------- ONE ERROR --
+ *
+ * Every rem/px pair in the source tables was checked. All 26 agree except one:
+ *
+ *   container-max-width-phone   stated 23.438rem = 384px
+ *                               23.438 x 16 = 375.01px
+ *
+ * 23.438rem is 375px — the iPhone SE/8 width. 384px is 24rem exactly, and 384 is
+ * also what the companion GRID spec uses for its phone tier (384 viewport, 352
+ * content, 16px margins). Two independent tables agree on 384, so the REM value
+ * is the typo and it is corrected to 24rem below. If 375 was actually intended,
+ * the grid file needs changing too — they cannot both be right.
+ *
+ * ------------------------------------------------------- ONE COLLISION ----
+ *
+ * The radius table here is NOT the radius scale shadcn's CLI writes into
+ * `globals.css`. That one derives everything from a single `--radius` with calc
+ * offsets (`--radius-sm: calc(var(--radius) - 4px)` and so on) and ships no
+ * `2xl`/`3xl`. The names overlap, the values do not. Adopting both gives one
+ * fact two sources. Check what your `globals.css` already declares before
+ * importing this section, and keep exactly one.
+ *
+ * ONE NAME IS ALREADY RESOLVED: this file's unsuffixed step is `--radius-base`,
+ * not `--radius`, because `--radius` belongs to the theme layer and
+ * `shadcn-typography.css` reads it for code blocks. Declaring it here too made
+ * that radius depend on import order. `scripts/check-assets.mjs` now refuses the
+ * whole class -- run it after editing anything here.
+ */
+
+@layer base {
+  :root {
+    /* ========================================================== spacing == */
+
+    /*
+     * ONE VARIABLE, NOT THIRTY-FOUR. The source lists gap-0 through gap-96 as
+     * separate tokens; in Tailwind v4 they are not stored, they are computed —
+     * `gap-6` resolves to `calc(var(--spacing) * 6)` at build time. Declaring
+     * all thirty-four would create a second copy of a scale Tailwind already
+     * derives, and the copies could disagree.
+     *
+     * So the whole numeric scale is this line. Change it and every gap, padding
+     * and margin utility moves with it.
+     */
+    --spacing: 0.25rem;
+
+    /*
+     * THE T-SHIRT SCALE, as multiples of the same unit rather than as literals.
+     *
+     * Every value in the source table lands exactly on a numeric step — 2px is
+     * 0.5 units, 12px is 3, 40px is 10 — so the semantic layer is a pure alias
+     * of the primitive one and is written that way. A literal here would be a
+     * value that stops moving when `--spacing` changes, which is the one thing
+     * a derived scale must not have.
+     */
+    --spacing-none: 0;
+    --spacing-xxs: calc(var(--spacing) * 0.5); /*  2px */
+    --spacing-xs: calc(var(--spacing) * 1); /*  4px */
+    --spacing-sm: calc(var(--spacing) * 1.5); /*  6px */
+    --spacing-md: calc(var(--spacing) * 2); /*  8px */
+    --spacing-lg: calc(var(--spacing) * 3); /* 12px */
+    --spacing-xl: calc(var(--spacing) * 4); /* 16px */
+    --spacing-2xl: calc(var(--spacing) * 5); /* 20px */
+    --spacing-3xl: calc(var(--spacing) * 6); /* 24px */
+    --spacing-4xl: calc(var(--spacing) * 8); /* 32px */
+    --spacing-5xl: calc(var(--spacing) * 10); /* 40px */
+    --spacing-6xl: calc(var(--spacing) * 12); /* 48px */
+    --spacing-7xl: calc(var(--spacing) * 16); /* 64px */
+
+    /* =========================================================== radius == */
+
+    /*
+     * Absolute rather than derived, because the source states absolute values
+     * and deriving them would invent a base nobody chose. See the collision
+     * note at the top of this file before using these alongside a shadcn CLI
+     * install.
+     *
+     * THE UNSUFFIXED STEP IS `--radius-base`, NOT `--radius`, and that rename is
+     * the one deliberate departure from the source table.
+     *
+     * `--radius` is the THEME variable: `shadcn-theme.css` declares it, the CLI
+     * writes it into `globals.css`, and `shadcn-typography.css` reads it for code
+     * blocks. The source spec also uses `--radius` as the name of this scale's
+     * 4px step. Two different facts, one name — so importing this file beside
+     * either of those made the code-block radius depend on import order, which is
+     * source order masquerading as a decision.
+     *
+     * The scale keeps every value; only the name of its unsuffixed step moves.
+     */
+    --radius-none: 0;
+    --radius-sm: 0.125rem; /*  2px */
+    --radius-base: 0.25rem; /*  4px — the spec calls this `radius` */
+    --radius-md: 0.375rem; /*  6px */
+    --radius-lg: 0.5rem; /*  8px */
+    --radius-xl: 0.75rem; /* 12px */
+    --radius-2xl: 1rem; /* 16px */
+    --radius-3xl: 1.5rem; /* 24px */
+    --radius-full: 9999px;
+
+    /* ======================================================== container == */
+
+    /*
+     * Container padding and max-width are kept apart from the general spacing
+     * and width scales on purpose: they are the two values you want to change
+     * for the whole product at once, and burying them in a 34-step scale means
+     * finding every use site instead.
+     */
+    --container-padding-mobile: 1rem; /*  16px */
+    --container-padding-desktop: 2rem; /*  32px */
+
+    --container-max-width-phone: 24rem; /* 384px — corrected from 23.438rem */
+    --container-max-width-tablet: 48rem; /* 768px */
+    --container-max-width-desktop: 80rem; /* 1280px */
+  }
+}
+
+@layer components {
+  /*
+   * The container these variables exist for. Padding steps up at the tablet
+   * breakpoint, so `mobile` covers phone only and `desktop` covers tablet
+   * upward — which is what the source's two-value padding scale implies and
+   * what the grid spec's 16/32/32 margins confirm.
+   */
+  .container {
+    width: 100%;
+    max-width: var(--container-max-width-desktop);
+    padding-inline: var(--container-padding-mobile);
+    margin-inline: auto;
+  }
+
+  @media (width >= 48rem) {
+    .container {
+      padding-inline: var(--container-padding-desktop);
+    }
+  }
+
+  /*
+   * `--container-max-width-phone` and `-tablet` are NOT breakpoints and are not
+   * used above. They are ceilings for a container deliberately held narrow —
+   * a centred form, a reading column, a modal body — applied per element:
+   *
+   *   <div class="container" style="max-width: var(--container-max-width-tablet)">
+   *
+   * Using them as media-query values would be a second definition of the
+   * breakpoints the grid file already owns.
+   */
+}
+
+/*
+ * ============================================== choosing between the two ====
+ *
+ * This file gives you two ways to say the same distance, and the source
+ * presents both without saying when to reach for which. The distinction that
+ * holds up in practice:
+ *
+ *   NUMERIC   gap-4, p-6      geometry internal to one component. The value is
+ *                             a measurement and nothing more.
+ *   T-SHIRT   --spacing-lg    a distance repeated across components, where the
+ *                             point is that the two places MATCH.
+ *
+ * The failure mode of the numeric scale is that `gap-6` records how far apart
+ * two things sit and never why, so nothing tells you whether a later `gap-8`
+ * somewhere else was a decision or a slip. The failure mode of the t-shirt
+ * scale is that `lg` is also just a magnitude — it reads as "bigger than md"
+ * and carries no more intent than `6` does.
+ *
+ * If you are choosing a semantic layer from scratch and not transcribing this
+ * one, consider naming the RELATIONSHIP instead of the size: `related`,
+ * `tight`, `normal`, `loose`, `section`. Those say how strongly two things
+ * belong together, which is the question a person actually has at the call
+ * site, and they are the reason the Xforge scale below looks the way it does.
+ *
+ * ================================================== if you are in Xforge ====
+ *
+ * DO NOT IMPORT THIS FILE. It is here as a transcription; the repository has
+ * all three scales already, and they are deliberately different.
+ *
+ * SPACING. Nine primitive steps (4, 8, 12, 16, 24, 32, 40, 48, 64) against this
+ * file's thirty-four. Every one is a multiple of 4. The half-steps here — 2px,
+ * 6px, 10px, 14px — are not, and `tokens.json` records the 4px grid as the
+ * thing the leading ratios were chosen to land on. Importing the half-steps
+ * would put values in the system that the grid it claims to keep cannot hold.
+ *
+ * SEMANTICS. The repository names relationships, not magnitudes:
+ *
+ *   related  4px   parts of one thing — a label and its helper
+ *   tight    8px   strongly related — an icon and its label
+ *   snug    12px   inside a compact component
+ *   normal  16px   between components
+ *   loose   24px   between groups
+ *   section 32px   between sections
+ *
+ * That is the same idea as `--spacing-xs` through `--spacing-4xl` with the same
+ * values, named for the question rather than the answer. POLICY.md 3c has the
+ * argument in full.
+ *
+ * DENSITY. The repository's spacing is an AXIS: compact, default and comfortable
+ * rebind these roles, while `space.section` and `space.container` stay put so
+ * the page frame holds still as components compress. A flat scale has nothing
+ * to rebind — which is why the semantic layer exists at all, and why a component
+ * bound to `gap-4` rather than a role would simply not respond to density.
+ *
+ * RADIUS. Four roles — `precise` 4px, `control` 8px, `container` 12px,
+ * `overlay` 16px — named for what they wrap rather than how round they are.
+ * There is no `full`, and no `2xl`/`3xl`.
+ */

@@ -43,15 +43,23 @@ catalogMode: strict
 
 catalog:
   '@axe-core/playwright': ^4.13.0
+  '@base-ui/react': 1.7.0
   '@hono/zod-openapi': ^1.6.1
   '@tanstack/react-query': ^5.60.0
+  clsx: ^2.1.1
   hono: ^4.9.0
   msw: ^2.15.0
   postgres: ^3.4.9
+  radix-ui: ^1.6.7
   react: ^19.0.0
   react-dom: ^19.0.0
+  tailwindcss: ^4.3.3
+  tailwind-merge: ^3.4.1
   vitest: ^4.1.11
   zod: ^4.0.0
+  cmdk: ^1.1.1
+  '@vitejs/plugin-react': ^6.1.1
+  '@tailwindcss/vite': ^4.3.3
 
 # ONE FIELD decides whether a dependency may run its install scripts.
 #
@@ -61,6 +69,10 @@ catalog:
 # and the other is its predecessor, so the predecessor goes. The values preserve
 # what was already permitted rather than revisiting it.
 allowBuilds:
+  # Tailwind v4 compiles its scanner and CSS engine in Rust and ships it as a
+  # platform-specific native binary. Denied, it installs and then fails at build
+  # time rather than at install time, which is the harder failure to read.
+  '@tailwindcss/oxide': true
   esbuild: true
   msw: true
 

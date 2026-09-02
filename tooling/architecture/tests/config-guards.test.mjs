@@ -261,7 +261,7 @@ describe('shared-dependency-uses-catalog', () => {
    */
   const THE_SIX = [
     ['hono', ['apps/web', 'modules/hr', 'packages/api'], '^4.9.0'],
-    ['react', ['apps/web', 'packages/ui', '.'], '^19.0.0'],
+    ['react', ['apps/web', 'packages/design', '.'], '^19.0.0'],
     ['react-dom', ['apps/web', '.'], '^19.0.0'],
     ['zod', ['modules/hr', 'packages/api'], '^4.0.0'],
     ['@tanstack/react-query', ['apps/web', 'packages/api-client'], '^5.60.0'],
@@ -319,11 +319,11 @@ describe('shared-dependency-uses-catalog', () => {
     // outside the rule by construction rather than by exemption.
     const files = [
       manifest('apps/web/package.json', {
-        dependencies: { '@xforge/ui': 'workspace:*' },
+        dependencies: { '@xforge/design': 'workspace:*' },
         name: 'w',
       }),
       manifest('modules/hr/package.json', {
-        dependencies: { '@xforge/ui': 'workspace:*' },
+        dependencies: { '@xforge/design': 'workspace:*' },
         name: 'h',
       }),
     ]
@@ -342,7 +342,7 @@ describe('shared-dependency-uses-catalog', () => {
 
   it('REJECTS a peerDependencies declaration, because the rule for peers is undecided', () => {
     const files = [
-      manifest('packages/ui/package.json', {
+      manifest('packages/design/package.json', {
         name: 'ui',
         peerDependencies: { react: '^18 || ^19' },
       }),

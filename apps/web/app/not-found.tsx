@@ -1,4 +1,4 @@
-import { EmptyState } from '@xforge/ui'
+import { EmptyState } from '@xforge/design'
 
 /**
  * An unrouted URL, and ONLY that.
@@ -21,8 +21,8 @@ import { EmptyState } from '@xforge/ui'
 export default function NotFound() {
   return (
     <EmptyState
+      data-testid="route-not-found"
       description="The address may be mistyped, or the page may have moved."
-      testId="route-not-found"
       title="This page does not exist"
     />
   )

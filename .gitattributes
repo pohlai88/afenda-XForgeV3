@@ -1,0 +1,20 @@
+# Line endings are decided HERE, not by each machine's core.autocrlf.
+#
+# The index is already 100% LF (293 of 293 tracked files at the time this landed),
+# so this normalises nothing and changes no history. What it does is remove a
+# per-machine setting from the decision: `core.autocrlf` is configured on the
+# workstation rather than in the repository, so two developers could disagree
+# about what a checkout looks like and neither would be wrong. That is an
+# environment deciding a repository fact.
+#
+# `text=auto` lets git detect binary content itself rather than restating the
+# extension list that tooling/verify/lib/util.mjs already owns as DECLARED_BINARY.
+# One list, one home.
+#
+# WHAT THIS DOES NOT CATCH, said plainly so it is not mistaken for a full fix:
+# git normalises at checkout and at commit, not while a tool is writing. A
+# generator or script that emits CRLF into the working tree still produces a
+# stylesheet Biome rejects, and the failure surfaces at `format / lint` rather
+# than here. That is exactly how it surfaced: a Python rewrite of a generator
+# used the platform default newline and turned 856 lines CRLF.
+* text=auto eol=lf

@@ -864,6 +864,15 @@ export const stages = [
         }
       }
 
+      // MALFORMED EVIDENCE FAILS, and it is checked before absence for the same
+      // reason orphans are: a session that is not a session reads as coverage.
+      // Absence is honest and becomes PENDING or BLOCKED below; a recorded
+      // `interactionRevision` with nothing behind it is a claim, and this stage
+      // could not previously tell the two apart at all.
+      if (owing.malformed.length > 0) {
+        return { detail: owing.malformed.join('\n'), status: FAIL }
+      }
+
       // A gate over nothing is not a gate. EMPTY says so rather than passing.
       if (owing.gated.length === 0) {
         return { detail: 'no contract requires assistive-technology evidence', status: EMPTY }
