@@ -22,6 +22,9 @@
           "$ref": "#/$defs/Code"
         },
         {
+          "$ref": "#/$defs/Combobox"
+        },
+        {
           "$ref": "#/$defs/CommandPalette"
         },
         {
@@ -49,6 +52,9 @@
           "$ref": "#/$defs/Field"
         },
         {
+          "$ref": "#/$defs/FieldGroup"
+        },
+        {
           "$ref": "#/$defs/Heading"
         },
         {
@@ -62,6 +68,9 @@
         },
         {
           "$ref": "#/$defs/Page"
+        },
+        {
+          "$ref": "#/$defs/Section"
         },
         {
           "$ref": "#/$defs/Skeleton"
@@ -86,6 +95,15 @@
         },
         {
           "$ref": "#/$defs/Text"
+        },
+        {
+          "$ref": "#/$defs/Toolbar"
+        },
+        {
+          "$ref": "#/$defs/ToolbarButton"
+        },
+        {
+          "$ref": "#/$defs/ToolbarSeparator"
         }
       ],
       "type": "object"
@@ -272,6 +290,9 @@
                     "$ref": "#/$defs/Page"
                   },
                   {
+                    "$ref": "#/$defs/Section"
+                  },
+                  {
                     "$ref": "#/$defs/Skeleton"
                   },
                   {
@@ -294,6 +315,12 @@
                   },
                   {
                     "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
                   }
                 ],
                 "type": "object"
@@ -371,6 +398,48 @@
         "slots"
       ],
       "title": "Code",
+      "type": "object"
+    },
+    "Combobox": {
+      "additionalProperties": false,
+      "description": "field / composite (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Combobox"
+        },
+        "props": {
+          "properties": {
+            "disabled": {
+              "type": "boolean"
+            },
+            "emptyMessage": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "placeholder": {
+              "type": "string"
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "emptyMessage"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props"
+      ],
+      "title": "Combobox",
       "type": "object"
     },
     "CommandPalette": {
@@ -691,6 +760,9 @@
                     "$ref": "#/$defs/Page"
                   },
                   {
+                    "$ref": "#/$defs/Section"
+                  },
+                  {
                     "$ref": "#/$defs/Skeleton"
                   },
                   {
@@ -713,6 +785,12 @@
                   },
                   {
                     "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
                   }
                 ],
                 "type": "object"
@@ -827,6 +905,9 @@
                     "$ref": "#/$defs/Checkbox"
                   },
                   {
+                    "$ref": "#/$defs/Combobox"
+                  },
+                  {
                     "$ref": "#/$defs/Input"
                   }
                 ],
@@ -860,6 +941,62 @@
         "slots"
       ],
       "title": "Field",
+      "type": "object"
+    },
+    "FieldGroup": {
+      "additionalProperties": false,
+      "description": "field / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "FieldGroup"
+        },
+        "props": {
+          "properties": {
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Field"
+                  },
+                  {
+                    "$ref": "#/$defs/FieldGroup"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            },
+            "legend": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "children",
+            "legend"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "FieldGroup",
       "type": "object"
     },
     "Heading": {
@@ -1033,6 +1170,9 @@
                     "$ref": "#/$defs/Page"
                   },
                   {
+                    "$ref": "#/$defs/Section"
+                  },
+                  {
                     "$ref": "#/$defs/Skeleton"
                   },
                   {
@@ -1043,6 +1183,15 @@
                   },
                   {
                     "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarButton"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
                   }
                 ],
                 "type": "object"
@@ -1126,6 +1275,9 @@
                     "$ref": "#/$defs/Page"
                   },
                   {
+                    "$ref": "#/$defs/Section"
+                  },
+                  {
                     "$ref": "#/$defs/Skeleton"
                   },
                   {
@@ -1148,6 +1300,12 @@
                   },
                   {
                     "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
                   }
                 ],
                 "type": "object"
@@ -1168,6 +1326,143 @@
         "slots"
       ],
       "title": "Page",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "description": "layout / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "Section"
+        },
+        "props": {
+          "properties": {
+            "level": {
+              "enum": [
+                1,
+                2,
+                3
+              ]
+            },
+            "testId": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Alert"
+                  },
+                  {
+                    "$ref": "#/$defs/Card"
+                  },
+                  {
+                    "$ref": "#/$defs/Code"
+                  },
+                  {
+                    "$ref": "#/$defs/CommandPalette"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGrid"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridEditableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/DataGridRow"
+                  },
+                  {
+                    "$ref": "#/$defs/Dialog"
+                  },
+                  {
+                    "$ref": "#/$defs/EmptyState"
+                  },
+                  {
+                    "$ref": "#/$defs/Heading"
+                  },
+                  {
+                    "$ref": "#/$defs/List"
+                  },
+                  {
+                    "$ref": "#/$defs/ListItem"
+                  },
+                  {
+                    "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Section"
+                  },
+                  {
+                    "$ref": "#/$defs/Skeleton"
+                  },
+                  {
+                    "$ref": "#/$defs/Stack"
+                  },
+                  {
+                    "$ref": "#/$defs/Status"
+                  },
+                  {
+                    "$ref": "#/$defs/Table"
+                  },
+                  {
+                    "$ref": "#/$defs/TableCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableHeaderCell"
+                  },
+                  {
+                    "$ref": "#/$defs/TableRow"
+                  },
+                  {
+                    "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props",
+        "slots"
+      ],
+      "title": "Section",
       "type": "object"
     },
     "Skeleton": {
@@ -1273,6 +1568,9 @@
                     "$ref": "#/$defs/Field"
                   },
                   {
+                    "$ref": "#/$defs/FieldGroup"
+                  },
+                  {
                     "$ref": "#/$defs/Heading"
                   },
                   {
@@ -1283,6 +1581,9 @@
                   },
                   {
                     "$ref": "#/$defs/Page"
+                  },
+                  {
+                    "$ref": "#/$defs/Section"
                   },
                   {
                     "$ref": "#/$defs/Skeleton"
@@ -1307,6 +1608,15 @@
                   },
                   {
                     "$ref": "#/$defs/Text"
+                  },
+                  {
+                    "$ref": "#/$defs/Toolbar"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarButton"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
                   }
                 ],
                 "type": "object"
@@ -1561,6 +1871,130 @@
         "slots"
       ],
       "title": "Text",
+      "type": "object"
+    },
+    "Toolbar": {
+      "additionalProperties": false,
+      "description": "layout / composite (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "Toolbar"
+        },
+        "props": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "orientation": {
+              "enum": [
+                "horizontal",
+                "vertical"
+              ]
+            },
+            "testId": {
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "items": {
+                "discriminator": {
+                  "propertyName": "component"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/ToolbarButton"
+                  },
+                  {
+                    "$ref": "#/$defs/ToolbarSeparator"
+                  }
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "props",
+        "slots"
+      ],
+      "title": "Toolbar",
+      "type": "object"
+    },
+    "ToolbarButton": {
+      "additionalProperties": false,
+      "description": "action / native-control (contract v1, interaction r1)",
+      "properties": {
+        "component": {
+          "const": "ToolbarButton"
+        },
+        "props": {
+          "properties": {
+            "disabled": {
+              "type": "boolean"
+            },
+            "testId": {
+              "type": "string"
+            },
+            "variant": {
+              "enum": [
+                "primary",
+                "secondary"
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false
+        },
+        "slots": {
+          "properties": {
+            "children": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "type": "object",
+          "required": [
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "component",
+        "slots"
+      ],
+      "title": "ToolbarButton",
+      "type": "object"
+    },
+    "ToolbarSeparator": {
+      "additionalProperties": false,
+      "description": "layout / none (contract v1, interaction r0)",
+      "properties": {
+        "component": {
+          "const": "ToolbarSeparator"
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "title": "ToolbarSeparator",
       "type": "object"
     }
   },

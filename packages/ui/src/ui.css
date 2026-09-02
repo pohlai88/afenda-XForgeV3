@@ -687,3 +687,151 @@
   inline-size: 100%;
   min-block-size: 0;
 }
+
+/*
+ * A section is structure, not a surface. It gets rhythm and nothing else --
+ * no fill, no border, no radius. Every one of those would make it a Card, and
+ * the whole reason it exists is to group content without claiming a plane.
+ */
+.xf-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack);
+}
+
+/*
+ * The browser's default fieldset carries a border and inline padding that no
+ * other control in this system has, so it is reset rather than themed: the
+ * grouping is a SEMANTIC one, and drawing a box around it says the fields are
+ * on a separate surface when they are not.
+ */
+.xf-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack);
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.xf-field-group-legend {
+  padding: 0;
+  font-size: var(--semantic-type-label);
+  font-weight: var(--semantic-weight-heading);
+  color: var(--semantic-text-heading);
+}
+
+.xf-toolbar {
+  display: flex;
+  gap: var(--semantic-space-inline-tight);
+  align-items: center;
+}
+.xf-toolbar[data-orientation="vertical"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/*
+ * `aria-hidden` is Base UI's; the rule only has to make it visible. It takes
+ * the target minimum as its cross-axis length so a vertical toolbar's rule
+ * spans the control beside it rather than a hairline of arbitrary height.
+ */
+.xf-toolbar-separator {
+  flex: none;
+  inline-size: var(--semantic-stroke-width);
+  block-size: var(--semantic-target-minimum);
+  background: var(--semantic-border-default);
+}
+.xf-toolbar[data-orientation="vertical"] .xf-toolbar-separator {
+  inline-size: auto;
+  block-size: var(--semantic-stroke-width);
+}
+
+/*
+ * The combobox popup borrows the palette's list and item rules, which is the
+ * point of them being separate classes: the two components are the same Base UI
+ * machinery answering different questions, and a highlighted option should not
+ * look like one thing in a palette and another in a form.
+ */
+.xf-combobox-popup {
+  max-height: var(--semantic-container-measure);
+  padding: var(--semantic-space-inline-tight);
+  overflow-y: auto;
+  background: var(--semantic-surface-overlay);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-default);
+  border-radius: var(--semantic-radius-container);
+}
+
+/*
+ * Toasts stack from the bottom, and the viewport is `fixed` so they do not
+ * scroll away from the thing that produced them. `pointer-events: none` on the
+ * column with `auto` back on each toast keeps a stack of transient messages from
+ * swallowing clicks on the page beneath it -- which is the bug that makes a
+ * dismissed toast feel like it is still there.
+ */
+.xf-toast-viewport {
+  position: fixed;
+  inset-block-end: var(--semantic-space-section);
+  inset-inline-end: var(--semantic-space-section);
+
+  /*
+   * THE ONLY z-index IN THE PRODUCT, and it is here because the stacking
+   * premise this stylesheet rested on stopped being true the moment a second
+   * portal existed.
+   *
+   * That premise was "painting order is decided by the tree" -- one portal, two
+   * siblings, the dialog popup after the backdrop. Toast adds a portal of its
+   * own, mounted at the app root and therefore EARLIER in the body than a dialog
+   * that opens later. Later siblings paint on top, so without this a toast fired
+   * while a modal is open renders behind it: the message a background save
+   * failed, invisible, at precisely the moment somebody is typing into the
+   * thing that failed.
+   *
+   * A bare 1 rather than a token, for `--semantic-target-minimum`'s opposite
+   * reason: it is not a design value with a role, it is "above the one other
+   * layer that exists". A SECOND z-index would make it a scale and it should
+   * become a token then -- which is what the test asserting this is the only one
+   * is for.
+   */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--semantic-space-stack-tight);
+  width: var(--semantic-container-measure);
+  max-width: calc(100vw - var(--semantic-space-section) * 2);
+  pointer-events: none;
+}
+
+.xf-toast {
+  display: flex;
+  gap: var(--semantic-space-inline);
+  align-items: flex-start;
+  padding: var(--component-alert-padding-block)
+    var(--component-alert-padding-inline);
+  pointer-events: auto;
+  background: var(--semantic-surface-overlay);
+  border: var(--semantic-stroke-width) solid var(--semantic-border-default);
+  border-radius: var(--semantic-radius-container);
+}
+
+.xf-toast-title {
+  flex: 1;
+  font-size: var(--semantic-type-body);
+  font-weight: var(--semantic-weight-heading);
+}
+
+.xf-toast-description {
+  flex: 1;
+  font-size: var(--semantic-type-label);
+  color: var(--semantic-text-muted);
+}
+
+.xf-toast-close {
+  flex: none;
+  min-inline-size: var(--semantic-target-minimum);
+  min-block-size: var(--semantic-target-minimum);
+  color: var(--semantic-text-muted);
+  cursor: pointer;
+  background: none;
+  border: 0;
+}

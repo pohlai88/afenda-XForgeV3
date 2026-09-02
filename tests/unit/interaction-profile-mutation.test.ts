@@ -133,6 +133,7 @@ const EXPECTED: Record<string, Expectation> = {
   // `contractsOwingAtEvidence`, which is the one escape ADR-025's derivation has
   // to make expensive -- a component quietly declaring itself inert is exactly
   // how a screen-reader obligation disappears without anyone deciding to drop it.
+  Combobox: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
   CommandPalette: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
   DataGrid: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
   Dialog: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
@@ -142,6 +143,12 @@ const EXPECTED: Record<string, Expectation> = {
   },
   Input: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root accepts focus' },
   Status: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root carries aria-live' },
+  Toolbar: { because: 'assistive-technology gate moved', detectedBy: 'at-evidence-gate' },
+  // NOT the gate, and the asymmetry with Toolbar beside it is the point: the
+  // BUTTON is `native-control`, which ADR-025 does not gate, so flipping it to
+  // `none` moves no obligation. What catches it is that its root still accepts
+  // focus, exactly as Button's does.
+  ToolbarButton: { provenElsewhere: 'e2e/inert-contracts.spec.ts', why: 'its root accepts focus' },
 }
 
 /**

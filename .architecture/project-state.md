@@ -506,13 +506,20 @@ deliberately rather than discovering it.
 ## Deferred, and why
 
 ```
-  Stage 3 remainder        Combobox · Section · FieldGroup · Toolbar · Toast.
-                           Deferred at the point where AT-evidence debt and the
-                           grammar-expressiveness question were both
-                           accumulating; the harness answered the second.
-                           Table came off this list at stage 6.
+  Stage 3 remainder        DONE. Combobox, Section, FieldGroup, Toolbar and
+                           Toast all landed; Table came off this list at stage 6.
+                           The two questions that deferred them are both settled
+                           -- the harness answered grammar expressiveness, and
+                           the AT-evidence debt is now mechanical rather than
+                           remembered, so incurring it is a decision somebody
+                           makes rather than a surprise at certification.
 
-  A11y-3 for Dialog        One sitting with a screen reader, unscheduled --
+                           IT COST TWO MORE SESSIONS: Combobox and Toolbar are
+                           `composite`, so the owed set went three to five. Toast
+                           cost none, because it has no contract -- see below.
+
+  A11y-3, five contracts   Combobox, CommandPalette, DataGrid, Dialog, Toolbar.
+                           Five sittings with a screen reader, unscheduled --
                            and now MECHANICALLY OWED rather than remembered. The
                            `a11y-evidence` stage reads
                            `.architecture/a11y-evidence.json`, derives who is
@@ -564,6 +571,28 @@ deliberately rather than discovering it.
                            about one function, none of them true. Deleted with
                            walk() and IGNORED_DIRS.
 ```
+
+### Toast has no contract, and that is the decision rather than an omission
+
+A toast is not PLACED in a document, it is PUSHED -- at a moment the document
+knows nothing about, by code reacting to something that just happened. The
+contract vocabulary deliberately cannot carry actions, and a toast is the reply
+to one.
+
+Giving `ToastViewport` a contract was the tempting half-measure, since a viewport
+IS placed. It was rejected because the contract would then have to declare an
+interaction profile and neither answer is true: `live-region` claims an
+`aria-live` the viewport does not carry (Base UI puts the live semantics on each
+Toast.Root), and `none` routes it into an inertness suite asserting that a
+component which announces nothing announces nothing -- false of the thing as a
+whole. `boundary.tsx` is the precedent: `ErrorBoundary` has no contract either,
+because no document can say "and catch render errors here".
+
+The consequence is worth stating plainly: Toast is reachable from code and NOT
+from a metadata document, and it adds no assistive-technology obligation because
+it declares no gated profile. The second half of that sentence is a real gap in
+coverage, not a saving -- what a screen reader does with a toast queue is exactly
+the sort of thing A11y-3 exists for, and nothing here will ever ask for it.
 
 ## What a resuming session needs, that the code does not say
 

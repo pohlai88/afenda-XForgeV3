@@ -116,7 +116,10 @@ describe('capabilities', () => {
    */
   it('lets Field accept every control that can be a field control', () => {
     const controls = contractIds.filter((id) => capabilitiesOf(id).includes('field-control'))
-    expect([...controls].sort()).toEqual(['Checkbox', 'Input'])
+    // COMBOBOX IS THE CASE THIS RULE WAS WRITTEN FOR. The comment beside the
+    // capability says a whitelist of `['Input']` would have refused Combobox and
+    // Select; Combobox has now landed and needed no edit to `Field` at all.
+    expect([...controls].sort()).toEqual(['Checkbox', 'Combobox', 'Input'])
   })
 
   /**
@@ -129,7 +132,9 @@ describe('capabilities', () => {
    */
   it('keeps a raw control distinct from a labelled field', () => {
     const labelled = contractIds.filter((id) => capabilitiesOf(id).includes('form-field'))
-    expect(labelled).toEqual(['Field'])
+    // FieldGroup both provides and accepts it: a group of fields sits wherever
+    // one labelled field can, and can hold another group.
+    expect(labelled).toEqual(['Field', 'FieldGroup'])
     expect(capabilitiesOf('Checkbox')).not.toContain('form-field')
     expect(capabilitiesOf('Input')).not.toContain('form-field')
   })
@@ -338,8 +343,22 @@ describe('the runtime registry', () => {
     expect(typeof component).toBe('function')
   })
 
+  /**
+   * THE FIXTURE NAMED A COMPONENT THAT WAS COMING. This read
+   * `resolve('Toolbar')`, chosen as an id nothing implements -- and Toolbar was
+   * on the deferred list the whole time, so the test was scheduled to start
+   * failing on the day the vocabulary grew the thing it had borrowed the name
+   * of. It reported a resolver refusing unknown ids and would eventually have
+   * reported a resolver refusing a known one.
+   *
+   * The replacement cannot be adopted the same way, because it asserts its own
+   * absence from the registry first. A name that quietly becomes real fails
+   * here, loudly, instead of silently changing what the next line proves.
+   */
   it('refuses an unknown id rather than returning undefined', async () => {
-    await expect(resolve('Toolbar')).rejects.toThrow(/no runtime implementation/)
+    const absent = 'NotAComponent'
+    expect(contractIds, `${absent} is real now -- pick a name that is not`).not.toContain(absent)
+    await expect(resolve(absent)).rejects.toThrow(/no runtime implementation/)
   })
 
   it('holds loaders, not components, so a bundler can split them', () => {
@@ -384,7 +403,13 @@ describe('accessibility obligations', () => {
    */
   it('derives the obligation from profile, never from kind', () => {
     const owing = contractsOwingAtEvidence()
-    expect([...owing].sort()).toEqual(['CommandPalette', 'DataGrid', 'Dialog'])
+    expect([...owing].sort()).toEqual([
+      'Combobox',
+      'CommandPalette',
+      'DataGrid',
+      'Dialog',
+      'Toolbar',
+    ])
 
     // The pair that makes the point. Dialog is `layout` and owes evidence
     // because it traps focus; Alert is `feedback` and owes none because it only
@@ -404,7 +429,7 @@ describe('accessibility obligations', () => {
    */
   it('names every contract that owes assistive-technology evidence', () => {
     const owing = contractsOwingAtEvidence()
-    // ONE BECAME THREE, exactly as predicted and without anybody editing a list.
+    // ONE BECAME FIVE, exactly as predicted and without anybody editing a list.
     // The sentence here used to read "Combobox, CommandPalette and DataGrid will
     // join by declaring a composite profile -- nobody has to remember to add
     // them", and two of the three now have. They joined by declaring what they
@@ -414,7 +439,7 @@ describe('accessibility obligations', () => {
     // stage 6, and ADR-025's point was never that the number stays at one -- it
     // was that the number is known when the obligation is incurred rather than
     // discovered in a batch at certification. Dialog has owed its since 4C.
-    expect(owing).toEqual(['CommandPalette', 'DataGrid', 'Dialog'])
+    expect(owing).toEqual(['Combobox', 'CommandPalette', 'DataGrid', 'Dialog', 'Toolbar'])
     // The revision assertion that stood here is gone rather than moved: the
     // protocol-version rule above covers EVERY contract with a behavioural
     // profile, so restating it for the owing subset was a second assertion of

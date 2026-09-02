@@ -337,6 +337,36 @@ export const contracts = {
    * populate one. Recorded rather than worked around with a prop shape
    * pretending to be configuration.
    */
+  /**
+   * A text control that filters a list of permitted values.
+   *
+   * `composite` because the popup is a listbox traversed with the arrow keys
+   * while focus stays on the input, and `field-control` because it takes its
+   * accessible name from the Field that wraps it. `Field.children` accepts by
+   * CAPABILITY precisely so this could land without widening a whitelist -- the
+   * comment there names Combobox as the case a whitelist would have refused, and
+   * this is that case arriving.
+   *
+   * `options` is absent for `CommandPalette.commands`' reason: the values are
+   * data supplied by a tier that does not exist yet.
+   */
+  Combobox: {
+    capabilities: ['field-control'],
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'composite', revision: 1 },
+    kind: 'field',
+    props: {
+      disabled: { type: 'boolean' },
+      emptyMessage: { required: true, type: 'string' },
+      name: { type: 'string' },
+      placeholder: { type: 'string' },
+      required: { type: 'boolean' },
+      testId: { type: 'string' },
+    },
+  },
+
   CommandPalette: {
     composition: 'container',
     contractVersion: 1,
@@ -505,6 +535,29 @@ export const contracts = {
     },
   },
 
+  /**
+   * Several fields answering one question together.
+   *
+   * PROVIDES `form-field` AND ACCEPTS IT. Providing it lets a group sit wherever
+   * one labelled field can; accepting it lets a group hold groups, which an
+   * earnings breakdown inside a pay component needs and which costs nothing to
+   * permit. `legend` is a required text slot -- a `<fieldset>` without one is a
+   * box that groups nothing a screen reader can report.
+   */
+  FieldGroup: {
+    capabilities: ['form-field'],
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'field',
+    props: { testId: { type: 'string' } },
+    slots: {
+      children: { acceptsCapability: 'form-field', max: null, min: 1 },
+      legend: { text: true },
+    },
+  },
+
   Heading: {
     composition: 'container',
     contractVersion: 1,
@@ -642,6 +695,35 @@ export const contracts = {
    * language; a structural skeleton is composed from several of these through
    * the layout primitives that already exist.
    */
+  /**
+   * A named region of a page, without a Card's raised surface.
+   *
+   * `title` is a PROP rather than a text slot, and that is forced rather than
+   * chosen: the component uses it as the region's `aria-label`, which needs a
+   * string, and `index.tsx` cannot call `useId` to wire an `aria-labelledby`
+   * because server components import it. Recorded so the asymmetry with
+   * `Dialog.title` is not read as an oversight.
+   */
+  Section: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'layout',
+    props: {
+      level: { type: 'enum', values: [1, 2, 3] },
+      testId: { type: 'string' },
+      title: { required: true, type: 'string' },
+    },
+    slots: {
+      children: {
+        acceptsKinds: ['layout', 'content', 'collection', 'feedback'],
+        max: null,
+        min: 1,
+      },
+    },
+  },
+
   Skeleton: {
     composition: 'leaf',
     contractVersion: 1,
@@ -763,6 +845,62 @@ export const contracts = {
     kind: 'content',
     props: { tone: { type: 'enum', values: ['default', 'muted'] } },
     slots: { children: { text: true } },
+  },
+
+  /**
+   * A row of related controls with ONE tab stop.
+   *
+   * `composite`: the APG toolbar pattern replaces a run of tab stops with a
+   * single one and arrow-key traversal inside. That is the whole reason this is
+   * not a `Stack` of Buttons, and it is why the children are `ToolbarButton`
+   * rather than `Button` -- see that contract.
+   */
+  Toolbar: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'composite', revision: 1 },
+    kind: 'layout',
+    props: {
+      label: { required: true, type: 'string' },
+      orientation: { type: 'enum', values: ['horizontal', 'vertical'] },
+      testId: { type: 'string' },
+    },
+    slots: {
+      children: { accepts: ['ToolbarButton', 'ToolbarSeparator'], max: null, min: 1 },
+    },
+  },
+
+  /**
+   * A button inside a toolbar, and a SEPARATE contract from `Button`.
+   *
+   * A plain `Button` here would render correctly, look correct, and never be
+   * reached by an arrow key, because `Toolbar.Button` is what registers a
+   * control with the roving-focus manager. `TableHeaderCell`'s reasoning
+   * exactly: two contracts make the illegal arrangement unsayable rather than
+   * discouraged.
+   */
+  ToolbarButton: {
+    composition: 'container',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'native-control', revision: 1 },
+    kind: 'action',
+    props: {
+      disabled: { type: 'boolean' },
+      testId: { type: 'string' },
+      variant: { type: 'enum', values: ['primary', 'secondary'] },
+    },
+    slots: { children: { text: true } },
+  },
+
+  /** A visual break between groups of toolbar controls. */
+  ToolbarSeparator: {
+    composition: 'leaf',
+    contractVersion: 1,
+    exposure: 'metadata',
+    interaction: { profile: 'none', revision: 0 },
+    kind: 'layout',
   },
 } as const satisfies Readonly<Record<string, Contract>>
 

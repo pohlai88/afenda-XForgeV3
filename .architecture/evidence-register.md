@@ -1652,3 +1652,57 @@ permitted rather than revisiting it.
 proves only that they are the versions already installed, so adopting the catalog
 changed nothing — which is a claim about the migration being safe, not about the
 choices being correct.
+
+
+## E24 — shadcn/ui as prior art for stage 6 and the stage 3 remainder
+
+**Retrieved 2 September 2026.** Consulted because `architecture-final.md` already
+cites shadcn's Base UI registry, and because law 34 asks for the search before
+the design rather than a justification after it.
+
+| Source | Retrieved | Supports |
+|---|---|---|
+| [shadcn/ui, Combobox (Base UI registry)](https://ui.shadcn.com/docs/components/base/combobox) | 2026-09-02 | The composition a Base UI combobox needs: Input, then Empty as a SIBLING of List rather than inside it, then List holding Items |
+| `~/.claude/skills/shadcn-ui` | 2026-09-02 | The general shadcn model: Radix primitives, Tailwind utilities, `cva` variants, components copied into the consuming repository |
+
+### ADAPT — the composition, not the code
+
+The Combobox page confirmed the part order this repository had already written,
+including the one that is easy to get wrong: `Empty` is a sibling of `List`, not
+a child of it. That is the whole of what was adopted, and it was adopted as
+CONFIRMATION of a composition already derived from Base UI's own reference.
+
+### REJECT — the stack, and the reason is enforcement rather than taste
+
+shadcn is Radix + Tailwind + `cva` + `clsx`. Three of this repository's own rules
+refuse each half:
+
+```
+  Radix beside Base UI    a second primitive library for one component set, which
+                          law 30 refuses without a named, measured pain
+  Tailwind utilities      `09-xforge.md` states the styling systems the general
+                          skill lists -- Tailwind, CSS Modules, styled-components,
+                          StyleX -- and says none applies here
+  className variants      `no-bespoke-styling` fails a business screen carrying
+                          `className`; variants here are `data-*` attributes so a
+                          screen cannot compose one that does not exist
+```
+
+`npx shadcn@latest add` would have installed the first of those silently.
+
+### What this prior art does NOT prove
+
+**It does not establish that our components are correct.** One page confirmed one
+ordering. Nothing here was read for Toolbar or Toast: `/docs/components/base/toolbar`
+returns 404 and the Base UI registry has no index page, so **the Base UI registry
+does not cover Toolbar at all** and no prior art was found for it. Recorded as
+`no-direct-match` rather than dressed up with a Radix Toolbar page that describes
+a different library.
+
+**It does not transfer accessibility assurance.** shadcn's own page defers to Base
+UI's documentation for ARIA and keyboard behaviour and documents none of its own,
+so reading it establishes nothing about announcement order or focus that A11y-2
+and A11y-3 do not still owe here.
+
+**It says nothing about the DataGrid**, which is the component in this wave with
+no upstream backing of any kind.

@@ -16,9 +16,12 @@
  * purpose and everybody writes eventually.
  */
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Field as BaseField } from '@base-ui/react/field'
+import { Fieldset as BaseFieldset } from '@base-ui/react/fieldset'
 import { Input as BaseInput } from '@base-ui/react/input'
+import { Toolbar as BaseToolbar } from '@base-ui/react/toolbar'
 import type { ReactElement, ReactNode } from 'react'
 import { ANNOUNCEMENT, TONE_ANNOUNCEMENT } from './live-region'
 import { TONE_MARK } from './tone-mark'
@@ -489,5 +492,234 @@ export function EmptyState({
       ) : null}
       {action ? <div className="xf-empty-state-action">{action}</div> : null}
     </div>
+  )
+}
+
+/**
+ * A named region of a page.
+ *
+ * DISTINCT FROM `Card`, and the difference is not decoration. A Card is a raised
+ * SURFACE -- it has a fill, a border and a radius, and it says "this content sits
+ * on its own plane". A Section is a structural grouping that leaves the page
+ * where it is. A screen needing three headed groups gets three Sections; making
+ * them Cards would claim the page has three floating planes, which is a
+ * statement about depth nobody meant to make.
+ *
+ * IT OWNS ITS OWN NAME, which is the repair. `Card` takes `labelledBy` -- an id
+ * the caller must also put on a Heading they render separately -- so the region
+ * and its name are two facts wired by hand, and a typo produces an unnamed
+ * landmark that looks completely normal.
+ *
+ * THE NAME IS SAID TWICE, once as `aria-label` and once as visible text, and
+ * that is the honest cost of having no id to point at: `index.tsx` is imported
+ * by server components, so it cannot call `useId`. A reader navigating by
+ * landmark hears the region's name; a reader reading through hears the heading.
+ * The alternative -- an unnamed `<section>` -- is not exposed as a landmark at
+ * all, which loses the navigation this component exists to provide.
+ */
+export function Section({
+  title,
+  level = 2,
+  children,
+  testId,
+}: {
+  title: string
+  level?: 1 | 2 | 3
+  children: ReactNode
+  testId?: string
+}) {
+  const Tag = `h${level}` as 'h1' | 'h2' | 'h3'
+  return (
+    <section aria-label={title} className="xf-section" data-testid={testId}>
+      <Tag className="xf-heading">{title}</Tag>
+      {children}
+    </section>
+  )
+}
+
+/**
+ * Several fields that answer one question together -- an address, a date range,
+ * a pay component.
+ *
+ * A NATIVE `<fieldset>` AND `<legend>`, via Base UI, because the grouping is a
+ * platform semantic rather than a visual one: a screen reader announces the
+ * legend when focus enters any control inside, so a user who tabs into the third
+ * line of an address still knows which address it is. A `<div>` with a heading
+ * above it looks identical and tells them nothing.
+ *
+ * It PROVIDES `form-field` as well as accepting it, so a group sits wherever a
+ * single labelled field can and can nest -- a pay component inside an earnings
+ * group is the same shape one level down.
+ */
+export function FieldGroup({
+  legend,
+  children,
+  testId,
+}: {
+  legend: ReactNode
+  children: ReactNode
+  testId?: string
+}) {
+  return (
+    <BaseFieldset.Root className="xf-field-group" data-testid={testId}>
+      <BaseFieldset.Legend className="xf-field-group-legend">{legend}</BaseFieldset.Legend>
+      {children}
+    </BaseFieldset.Root>
+  )
+}
+
+/**
+ * A row of related controls with ONE tab stop.
+ *
+ * `composite`, and that profile is the entire reason this exists rather than a
+ * `Stack` of Buttons. A toolbar of nine buttons in a Stack is nine tab stops
+ * between a keyboard user and the content after it; the APG toolbar pattern
+ * makes it one, with arrow keys moving inside. Base UI owns the roving focus,
+ * the orientation those arrows follow, and the skipping of disabled items.
+ *
+ * `label` is required: an unnamed toolbar announces as "toolbar", with no
+ * indication of which one.
+ */
+export function Toolbar({
+  label,
+  orientation = 'horizontal',
+  children,
+  testId,
+}: {
+  label: string
+  orientation?: 'horizontal' | 'vertical'
+  children: ReactNode
+  testId?: string
+}) {
+  return (
+    <BaseToolbar.Root
+      aria-label={label}
+      className="xf-toolbar"
+      data-testid={testId}
+      orientation={orientation}
+    >
+      {children}
+    </BaseToolbar.Root>
+  )
+}
+
+/**
+ * A button INSIDE a toolbar, and a separate contract from `Button` on purpose.
+ *
+ * `Toolbar.Button` is what registers a control with the roving-focus manager, so
+ * a plain `Button` dropped into a Toolbar would render correctly, look correct,
+ * and be unreachable by the arrow keys -- a failure that looks like nothing at
+ * all until somebody uses the keyboard. Two contracts make the working
+ * arrangement the only sayable one, exactly as `TableHeaderCell` does.
+ *
+ * The alternative was for `Toolbar` to wrap each child, which means reading the
+ * children's props to decide how -- a grammar rule enforced at run time instead
+ * of in the registry.
+ */
+export function ToolbarButton({
+  children,
+  onClick,
+  variant = 'secondary',
+  disabled,
+  testId,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  variant?: 'primary' | 'secondary'
+  disabled?: boolean
+  testId?: string
+}) {
+  return (
+    <BaseToolbar.Button
+      className="xf-button xf-focusable"
+      data-testid={testId}
+      data-variant={variant}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </BaseToolbar.Button>
+  )
+}
+
+/** A visual break between groups of toolbar controls. */
+export function ToolbarSeparator() {
+  return <BaseToolbar.Separator className="xf-toolbar-separator" />
+}
+
+/**
+ * A text control that filters a list of permitted values.
+ *
+ * `composite` AND `field-control`, which is the combination the capability was
+ * written for -- `Field.children` accepts anything that can BE a field control,
+ * and the comment there says in as many words that a whitelist would have
+ * refused this one. It takes its accessible name from the Field that wraps it,
+ * as Input and Checkbox do.
+ *
+ * DISTINCT FROM `CommandPalette`, which is the same Base UI machinery answering
+ * a different question. A palette finds an ACTION and runs it; a Combobox
+ * chooses a VALUE and holds it. That is why one is `layout` and modal while this
+ * is `field` and lives in a form -- and why this one has a `name`, since its
+ * answer is submitted.
+ *
+ * `options` is not contract vocabulary, for the palette's reason: the values are
+ * data, and the tier that supplies them does not exist yet.
+ */
+export function Combobox({
+  name,
+  placeholder,
+  emptyMessage,
+  disabled,
+  required,
+  options = [],
+  value,
+  onValueChange,
+  testId,
+}: {
+  name?: string
+  placeholder?: string
+  /**
+   * Shown when the query matches nothing. Required for `CommandPalette`'s
+   * reason: an empty popup has said nothing, and is indistinguishable from a
+   * filter that has broken.
+   */
+  emptyMessage: string
+  disabled?: boolean
+  required?: boolean
+  /** `label` is read and matched; `value` is what gets submitted. */
+  options?: readonly { label: string; value: string }[]
+  value?: { label: string; value: string } | null
+  onValueChange?: (value: { label: string; value: string } | null) => void
+  testId?: string
+}) {
+  return (
+    <BaseCombobox.Root
+      disabled={disabled}
+      items={options}
+      name={name}
+      onValueChange={onValueChange as never}
+      required={required}
+      value={value as never}
+    >
+      <BaseCombobox.Input
+        className="xf-input xf-focusable"
+        data-testid={testId}
+        placeholder={placeholder}
+      />
+      <BaseCombobox.Portal>
+        <BaseCombobox.Positioner className="xf-combobox-positioner" sideOffset={4}>
+          <BaseCombobox.Popup className="xf-combobox-popup">
+            <BaseCombobox.Empty className="xf-command-empty">{emptyMessage}</BaseCombobox.Empty>
+            <BaseCombobox.List className="xf-command-list">
+              {(option: { label: string; value: string }) => (
+                <BaseCombobox.Item className="xf-command-item" key={option.value} value={option}>
+                  {option.label}
+                </BaseCombobox.Item>
+              )}
+            </BaseCombobox.List>
+          </BaseCombobox.Popup>
+        </BaseCombobox.Positioner>
+      </BaseCombobox.Portal>
+    </BaseCombobox.Root>
   )
 }

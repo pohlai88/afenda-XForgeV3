@@ -48,6 +48,7 @@ export const runtime: { [Id in MetadataContractId]: Loader<Id> } = {
   Card: () => import('./index').then((m) => m.Card),
   Checkbox: () => import('./index').then((m) => m.Checkbox),
   Code: () => import('./index').then((m) => m.Code),
+  Combobox: () => import('./index').then((m) => m.Combobox),
   CommandPalette: () => import('./command-palette').then((m) => m.CommandPalette),
   DataGrid: () => import('./data-grid').then((m) => m.DataGrid),
   DataGridCell: () => import('./data-grid').then((m) => m.DataGridCell),
@@ -57,11 +58,13 @@ export const runtime: { [Id in MetadataContractId]: Loader<Id> } = {
   Dialog: () => import('./index').then((m) => m.Dialog),
   EmptyState: () => import('./index').then((m) => m.EmptyState),
   Field: () => import('./index').then((m) => m.Field),
+  FieldGroup: () => import('./index').then((m) => m.FieldGroup),
   Heading: () => import('./index').then((m) => m.Heading),
   Input: () => import('./index').then((m) => m.Input),
   List: () => import('./index').then((m) => m.List),
   ListItem: () => import('./index').then((m) => m.ListItem),
   Page: () => import('./index').then((m) => m.Page),
+  Section: () => import('./index').then((m) => m.Section),
   Skeleton: () => import('./index').then((m) => m.Skeleton),
   Stack: () => import('./index').then((m) => m.Stack),
   Status: () => import('./index').then((m) => m.Status),
@@ -70,6 +73,9 @@ export const runtime: { [Id in MetadataContractId]: Loader<Id> } = {
   TableHeaderCell: () => import('./index').then((m) => m.TableHeaderCell),
   TableRow: () => import('./index').then((m) => m.TableRow),
   Text: () => import('./index').then((m) => m.Text),
+  Toolbar: () => import('./index').then((m) => m.Toolbar),
+  ToolbarButton: () => import('./index').then((m) => m.ToolbarButton),
+  ToolbarSeparator: () => import('./index').then((m) => m.ToolbarSeparator),
 }
 
 /** Every id this registry can resolve. */

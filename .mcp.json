@@ -1,9 +1,117 @@
 {
-  "$comment": "Project-scoped MCP servers. The Next.js dev server exposes one at /_next/mcp while `next dev` is running -- it surfaces runtime errors, route and build state from the live server rather than from a log scrape. It is a DEVELOPMENT aid and nothing in `pnpm verify` depends on it: a gate that needed a dev server running would be a gate that cannot run in CI.",
+  "$comment": [
+    "NO $schema KEY, and its absence is deliberate rather than an omission. The",
+    "edit that brought this file's server list in also carried",
+    "`https://json.schemastore.org/mcp.json`, which redirects to a 404 -- the IDE",
+    "said so as soon as it was saved, and SchemaStore's catalogue has no entry for",
+    "Claude Code's .mcp.json at all. A $schema pointing at nothing is a claim that",
+    "this file is validated when nothing validates it, which is the shape this",
+    "repository calls a named control that is not a control. Removed rather than",
+    "swapped for a URL that merely resolves.",
+    "",
+    "Project-scoped MCP servers. THIS FILE IS COMMITTED, so every entry runs on",
+    "every teammate's machine the first time they open the project -- and each one",
+    "is `npx -y`, which installs and executes a package from the registry without",
+    "asking. That is the reason the list is short and every entry earns its place.",
+    "",
+    "NOTHING IN `pnpm verify` DEPENDS ON ANY OF THEM. A gate that needed an MCP",
+    "server running would be a gate that cannot run in CI. These are authoring",
+    "aids; the gate reads the repository.",
+    "",
+    "  context7        library documentation, fetched at the version in use rather",
+    "                  than recalled. Earned its place already: base-ui's own page",
+    "                  is what caught an <Autocomplete.Status /> with no children",
+    "                  sitting under a comment claiming it announced a result count.",
+    "  nextjs          next-devtools-mcp -- runtime errors, route and build state",
+    "                  from the dev server. REPLACES the http entry that used to be",
+    "                  here pointing at localhost:3000/_next/mcp; that one only",
+    "                  existed while `next dev` was running and answered nothing",
+    "                  otherwise.",
+    "  shadcn          the official shadcn CLI's MCP mode, for its component",
+    "                  registry. PRIOR ART ONLY, and the distinction is enforced",
+    "                  rather than trusted: shadcn is Radix + Tailwind + className",
+    "                  variants, and three rules here refuse that stack -- law 30",
+    "                  on a second primitive library beside Base UI,",
+    "                  `09-xforge.md` on Tailwind, and the `no-bespoke-styling`",
+    "                  guard on className. Read it for anatomy and API shape; never",
+    "                  run `shadcn add` in this repository. Recorded as E24 in the",
+    "                  evidence register.",
+    "  shadcn-studio   third-party, and the only entry here that is not published",
+    "                  by the tool it serves. It needs SHADCN_STUDIO_API_KEY and",
+    "                  SHADCN_STUDIO_EMAIL in the environment; both are personal",
+    "                  credentials and neither belongs in .env.example, which is",
+    "                  the APPLICATION's configuration.",
+    "",
+    "WHY THERE IS NO POSTGRES ENTRY, and it is not an oversight -- see $disabled",
+    "below, which keeps the exact configuration so re-enabling is a copy rather",
+    "than a rewrite."
+  ],
   "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": {}
+    },
     "nextjs": {
-      "type": "http",
-      "url": "http://localhost:3000/_next/mcp"
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"],
+      "env": {}
+    },
+    "shadcn": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"],
+      "env": {}
+    },
+    "shadcn-studio": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "shadcn-studio-mcp",
+        "API_KEY=${SHADCN_STUDIO_API_KEY}",
+        "EMAIL=${SHADCN_STUDIO_EMAIL}"
+      ],
+      "env": {}
+    }
+  },
+  "$disabled": {
+    "$comment": [
+      "NOT ENABLED, for two independent reasons, either of which is enough:",
+      "",
+      "  the package is DEPRECATED   `npm view @modelcontextprotocol/server-postgres",
+      "                              deprecated` returns 'Package no longer",
+      "                              supported.' It is one of the reference servers",
+      "                              the MCP organisation retired.",
+      "  the credentials do not      AFENDA_DB_READONLY_PASSWORD, AFENDA_DB_HOST,",
+      "  exist                       AFENDA_DB_PORT and AFENDA_DB_NAME are all",
+      "                              unset here, and none is declared anywhere in",
+      "                              the repository -- not in .env.example, not in",
+      "                              compose.yaml. The connection string would",
+      "                              interpolate to literal '${...}' text.",
+      "",
+      "Enabled, it would fail to connect on every session start and print a banner",
+      "saying so -- which is exactly what the Neon server already does in this",
+      "workspace. A server that cannot start is not a capability; it is a warning",
+      "people learn to scroll past, and this repository has a whole section on what",
+      "that costs.",
+      "",
+      "TO ENABLE: move this entry into `mcpServers`, set the four variables, and",
+      "replace the deprecated package -- the local fixture is already reachable",
+      "through `tests/fixtures/local-database`, so check whether an MCP server is",
+      "the thing that was actually wanted before adding a dependency for it."
+    ],
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://afenda_readonly:${AFENDA_DB_READONLY_PASSWORD}@${AFENDA_DB_HOST}:${AFENDA_DB_PORT}/${AFENDA_DB_NAME}"
+      ],
+      "env": {}
     }
   }
 }

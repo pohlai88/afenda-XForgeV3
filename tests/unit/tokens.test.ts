@@ -718,21 +718,38 @@ describe('the elevation model', () => {
   })
 
   /**
-   * The premise the overlay layer's note rests on.
+   * THE STACKING NEED ARRIVED, and this test is what made it arrive loudly.
    *
-   * That note says the popup paints above the backdrop because of where it sits
-   * in the portal, and that nothing in the product z-indexes. Stated as prose it
-   * would go wrong QUIETLY -- the first `z-index` anyone adds makes the sentence
-   * false and changes nothing visible about the file. This is not a guard and
-   * forbids nothing: when a real stacking need arrives it fails, and the note is
-   * updated in the same commit rather than left describing a product that moved.
+   * It used to assert no `z-index` anywhere, on the premise that painting order
+   * was decided by the tree: one portal, two siblings, the dialog popup after
+   * its backdrop. Its own comment said that when a real stacking need appeared
+   * it would fail, and the note would be updated in the same commit rather than
+   * left describing a product that had moved. Toast is that need -- a second
+   * portal, mounted at the app root and therefore EARLIER in the body than a
+   * dialog opened later, so a toast fired over a modal painted behind it.
+   *
+   * So the premise narrowed instead of being deleted: stacking is still decided
+   * by the tree EVERYWHERE EXCEPT one layer, and that exception is pinned here.
+   * A second `z-index` fails this, which is the point at which the product has a
+   * stacking SCALE and needs a token rather than a number.
    */
-  it('holds the premise that stacking is decided by the tree, not by a number', () => {
+  it('keeps the toast layer as the only thing decided by a number', () => {
     const stylesheet = readFileSync(join(ROOT, 'packages/ui/src/ui.css'), 'utf8')
-    expect(stylesheet).not.toMatch(/z-index/)
-    // The two positioned elements the note describes. If this count changes, the
-    // "one portal, two siblings" argument needs re-checking before it is trusted.
-    expect(stylesheet.match(/position:\s*fixed/g)).toHaveLength(2)
+    // DECLARATIONS, not mentions. Matching the bare word counted the two times
+    // the comment beside the rule explains itself, so the check went red at the
+    // moment it was documented -- the prose describing a rule being counted as
+    // an instance of it.
+    const stacked = stylesheet.match(/z-index\s*:/g) ?? []
+    expect(stacked, 'a second z-index means the product needs a scale').toHaveLength(1)
+    expect(
+      stylesheet.match(/\.xf-toast-viewport\s*\{[^}]*z-index/),
+      'the one z-index is not the toast layer any more',
+    ).not.toBeNull()
+
+    // Three positioned elements now: the dialog's backdrop and popup, and the
+    // toast viewport. If this count changes again the argument above needs
+    // re-checking before it is trusted.
+    expect(stylesheet.match(/position:\s*fixed/g)).toHaveLength(3)
   })
 
   // The rule the whole domain exists to state, which had no test.
