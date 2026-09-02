@@ -17,6 +17,11 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+// @ts-expect-error -- untyped .mjs policy module, deliberately outside the app
+// graph. The reason is NOT the one above it: that suppression says "tooling is
+// untyped", and this module is in packages/. Same shape, different cause, so it
+// gets its own sentence rather than inheriting a wrong one.
+import * as foundations from '../../packages/design/policy/foundations/index.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
 import * as policy from '../../tooling/design-system/token-policy/index.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
@@ -1108,7 +1113,7 @@ describe('the motion policy', () => {
    */
   it('refuses a looping role that answers anything but removed', () => {
     expect(() =>
-      policy.assertMotionRoles({
+      foundations.assertMotionRoles({
         'semantic.motion.duration.pulse': {
           loops: true,
           reason: 'a shimmer',
@@ -1120,20 +1125,20 @@ describe('the motion policy', () => {
 
   it('refuses a one-shot with no ceiling, and one that exempts itself from the house maximum', () => {
     const { maximumMs, ...noCeiling } = oneShot['semantic.motion.duration.x']
-    expect(() => policy.assertMotionRoles({ 'semantic.motion.duration.x': noCeiling })).toThrow(
-      /must state its ceiling/,
-    )
     expect(() =>
-      policy.assertMotionRoles({
+      foundations.assertMotionRoles({ 'semantic.motion.duration.x': noCeiling }),
+    ).toThrow(/must state its ceiling/)
+    expect(() =>
+      foundations.assertMotionRoles({
         'semantic.motion.duration.x': { ...oneShot['semantic.motion.duration.x'], maximumMs: 2000 },
       }),
     ).toThrow(/may not exempt itself from it by naming a larger number/)
-    expect(policy.MAXIMUM_TRANSITION_MS).toBe(500)
+    expect(foundations.MAXIMUM_TRANSITION_MS).toBe(500)
   })
 
   it('reports a one-shot past its ceiling', () => {
     const modes = new Map([['base', new Map([['semantic.motion.duration.x', '300ms']])]])
-    expect(policy.motionFailures(modes, oneShot)).toEqual([
+    expect(foundations.motionFailures(modes, oneShot)).toEqual([
       "base: 'semantic.motion.duration.x' is 300ms, past its 200ms ceiling",
     ])
   })
@@ -1153,7 +1158,10 @@ describe('the motion policy', () => {
    * object form. A dormant check and a BROKEN one look identical from outside.
    */
   it('measures the registry that actually ships', () => {
-    const roles = policy.MOTION_ROLES as Record<string, { loops?: boolean; maximumMs?: number }>
+    const roles = foundations.MOTION_ROLES as Record<
+      string,
+      { loops?: boolean; maximumMs?: number }
+    >
     const oneShots = Object.entries(roles).filter(([, r]) => !r.loops)
     expect(oneShots.length).toBeGreaterThan(0)
 
@@ -1162,7 +1170,7 @@ describe('the motion policy', () => {
       const past = new Map([
         ['base', new Map([[name, { unit: 'ms', value: (role.maximumMs as number) + 1 }]])],
       ])
-      expect(policy.motionFailures(past)).toHaveLength(1)
+      expect(foundations.motionFailures(past)).toHaveLength(1)
     }
 
     // And the loop is still skipped, because a faster loop is still a loop.
@@ -1171,6 +1179,6 @@ describe('the motion policy', () => {
     const absurd = new Map([
       ['base', new Map([[loops[0]?.[0] as string, { unit: 's', value: 9999 }]])],
     ])
-    expect(policy.motionFailures(absurd)).toEqual([])
+    expect(foundations.motionFailures(absurd)).toEqual([])
   })
 })

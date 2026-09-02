@@ -30,7 +30,14 @@
  *   sizing      how big a thing is, and which things may sit off the grid
  *   radius      four roles as a nesting order
  *   stacking    rendering order, which is not elevation
- *   motion      the reduced-motion answer every role owes
+ *   motion      the reduced-motion answer every role owes -- THE ONE DOMAIN
+ *               THIS TREE ACTUALLY GOVERNS. `tooling/generators/tokens.mjs`
+ *               imports `MOTION_ROLES` and `motionFailures` from this barrel,
+ *               and the kernel's copy was deleted in the same commit rather
+ *               than left forwarding. It moved first because it could be proven
+ *               identical: same exports, four tables byte-for-byte, and matching
+ *               failures over inputs that discriminate. Every other domain here
+ *               is still checked only on import and by the unit suite
  *   layout      window classes, reading ceilings, the application shell
  *
  * ── PRESENT ON DISK, DELIBERATELY NOT EXPORTED ─────────────────────────────

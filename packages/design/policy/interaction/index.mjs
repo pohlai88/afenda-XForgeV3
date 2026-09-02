@@ -48,11 +48,16 @@
  *
  * The other four are checked on import and by the unit suite, and nothing in the
  * GENERATOR reads them yet -- the token pipeline still runs through
- * `tooling/design-system/token-policy/`. `stateFailures` and `focusFailures` are
- * written to be called by it and are not called by it, which is stated here
- * rather than left to be discovered, because a policy tree nobody imports is the
- * exact shape ADR-024 is about. `foundations/` is in the same position and its
- * own header says as much.
+ * `tooling/design-system/token-policy/` for every domain but one.
+ * `stateFailures` and `focusFailures` are written to be called by it and are not
+ * called by it, which is stated here rather than left to be discovered, because
+ * a policy tree nobody imports is the exact shape ADR-024 is about.
+ *
+ * `foundations/` IS NO LONGER IN THAT POSITION, and this paragraph used to say it
+ * was. Motion moved there whole and the generator imports it, so that tree now
+ * governs something and this one still does not. The asymmetry is the honest
+ * report: being a sibling in structure is not the same as being a sibling in
+ * consequence.
  */
 
 export * from './accessibility.mjs'

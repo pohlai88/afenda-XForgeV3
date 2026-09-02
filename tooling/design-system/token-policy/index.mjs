@@ -40,13 +40,20 @@
  *   accessibility the interactive target floor
  *   colour        roles, composition contexts, derived pairs, alpha
  *   typography    rank, size and leading floors, hierarchy under density
- *   motion        the reduced-motion answer every role owes
  *   elevation     layers, and what may separate one from another
  *
  * Colour remains the most developed, because colour is where the defects were.
  * The rest are governed in proportion to what they actually render: typography
- * and motion have consumers and now have rules; a fourth elevation layer does
- * not exist and is not invented here.
+ * has consumers and now has rules; a fourth elevation layer does not exist and
+ * is not invented here.
+ *
+ * MOTION HAS LEFT THIS KERNEL. It is
+ * `packages/design/policy/foundations/motion.mjs`, which every consumer now
+ * imports, and the copy that stood here was deleted in the commit that
+ * repointed them -- not left re-exporting, because a forwarding alias is the
+ * second home this file's first principle exists to refuse. It was the first
+ * domain to move because it could be PROVEN identical: same exports, same four
+ * tables byte-for-byte, and the same failures over inputs that discriminate.
  *
  * ── WHAT IT STILL DOES NOT GOVERN ──────────────────────────────────────────
  *
@@ -71,7 +78,7 @@ import {
   assertColorPolicyKinds,
   assertPolicyRegistry,
 } from './colour.mjs'
-import { assertElevationLayers, assertMotionRoles, assertTypographyRoles } from './form.mjs'
+import { assertElevationLayers, assertTypographyRoles } from './form.mjs'
 import { assertTailwindTables } from './tailwind.mjs'
 import {
   assertContractVersions,
@@ -104,7 +111,6 @@ assertColorPolicyKinds()
 assertAlphaPermissions()
 assertPolicyRegistry()
 assertTypographyRoles()
-assertMotionRoles()
 assertElevationLayers()
 // The Tailwind bridge's own tables. Last, because it is the only projection that
 // leaves this repository's vocabulary for another system's, so a failure here

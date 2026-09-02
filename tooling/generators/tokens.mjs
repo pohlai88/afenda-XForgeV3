@@ -68,6 +68,12 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+// MOTION IS THE FIRST DOMAIN GOVERNED FROM packages/. It moved out of the token
+// kernel whole -- same tables, same failures -- and this import is what makes
+// that tree load-bearing rather than a directory nobody reads. Through the
+// foundations barrel, not the file, because that index is the authority and its
+// import-time assertions are the point of naming it.
+import { MOTION_ROLES, motionFailures } from '../../packages/design/policy/foundations/index.mjs'
 import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
@@ -88,9 +94,7 @@ import {
   ELEVATION_LAYERS,
   kindPolicy,
   MAY_CARRY_ALPHA,
-  MOTION_ROLES,
   minimumFor,
-  motionFailures,
   pairsFor,
   SUPPORTED_VALUE_SHAPES,
   serializeValue,
