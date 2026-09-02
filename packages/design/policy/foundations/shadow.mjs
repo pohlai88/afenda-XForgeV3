@@ -6,8 +6,8 @@
  * stays in tokens.json; this module governs when semantic shadow roles may exist.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const SHADOW_ROLES = deepFreeze({
   dragged: { elevation: 'dragged', token: 'semantic.shadow.dragged' },

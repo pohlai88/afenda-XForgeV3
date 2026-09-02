@@ -68,27 +68,26 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-// MOTION IS THE FIRST DOMAIN GOVERNED FROM packages/. It moved out of the token
-// kernel whole -- same tables, same failures -- and this import is what makes
-// that tree load-bearing rather than a directory nobody reads. Through the
-// foundations barrel, not the file, because that index is the authority and its
-// import-time assertions are the point of naming it.
-import {
-  ASSUMED_ROOT_PX,
-  assertTypographyTokens,
-  MOTION_ROLES,
-  motionFailures,
-  TYPE_ROLES,
-  typeRolesFor,
-  typographyFailures,
-} from '../../packages/design/policy/foundations/index.mjs'
+// ONE POLICY IMPORT, FROM ONE BARREL, WHICH IS THE POINT OF THE MERGE.
+//
+// This was two: motion and typography from `packages/design/policy/foundations`,
+// and everything else from a token kernel in `tooling/design-system/`. Two
+// authorities, five overlapping domains, and every overlap agreeing -- which is
+// the state a duplicated fact is in right up until it stops.
+//
+// The kernel is deleted and its domains live beside the tree that was extracted
+// from it. `../index.mjs` is the only entry point, so a name this generator
+// imports is a name one module owns; there is no longer a second file that could
+// answer the same question differently.
 import {
   ALLOWED_EDGES,
+  ASSUMED_ROOT_PX,
+  assertColorRoleRegistry,
   assertExclusionsAreCurrent,
   assertNoUtilityShadowing,
-  assertPolicyRegistry,
   assertTailwindProjection,
   assertTargetMinimum,
+  assertTypographyTokens,
   assertUniqueCssNames,
   COLOR_ROLE_POLICIES,
   COMPONENT_TOKEN_CEILING,
@@ -100,17 +99,22 @@ import {
   ELEVATION_LAYERS,
   kindPolicy,
   MAY_CARRY_ALPHA,
+  MOTION_ROLES,
   minimumFor,
+  motionFailures,
   pairsFor,
   SUPPORTED_VALUE_SHAPES,
   serializeValue,
   TOKEN_CONTRACT_VERSION,
+  TYPE_ROLES,
   tailwindNameOf,
   tierOf,
+  typeRolesFor,
+  typographyFailures,
   UNPROJECTED,
-} from '../design-system/token-policy/index.mjs'
+} from '../index.mjs'
 
-const ROOT = join(import.meta.dirname, '../..')
+const ROOT = join(import.meta.dirname, '../../../..')
 
 /**
  * The token packages this generator emits, in order.
@@ -606,7 +610,7 @@ function assertColorPolicies(tokens, byColourMode) {
     .map(([name]) => name.slice('semantic.'.length))
     .sort((a, b) => a.localeCompare(b))
 
-  assertPolicyRegistry()
+  assertColorRoleRegistry()
 
   for (const role of roles) {
     if (!COLOR_ROLE_POLICIES[role]) {
@@ -948,7 +952,7 @@ function twMergeGroups(rows) {
     ' * GENERATED -- DO NOT EDIT. Run `pnpm generate`.',
     ' *',
     ' * The class groups tailwind-merge cannot infer for this design system. See',
-    ' * `twMergeGroups` in tooling/generators/tokens.mjs for why an unconfigured',
+    ' * `twMergeGroups` in packages/design/policy/generators/tokens.mjs for why an unconfigured',
     ' * merge silently deletes a size role when a colour role follows it.',
     ' *',
     ' * OVERRIDE, NOT EXTEND, at the call site: these namespaces are CLOSED in the',

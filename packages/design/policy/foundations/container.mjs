@@ -6,8 +6,8 @@
  * max-width values in tokens.json.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const CONTAINER_ROLES = deepFreeze({
   content: {

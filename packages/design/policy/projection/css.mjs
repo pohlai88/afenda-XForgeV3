@@ -12,8 +12,7 @@
  */
 
 import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze } from '../foundations/shared.mjs'
-import { assertUniqueCssNames, cssNameOf, cssReferenceOf } from './identity.mjs'
+import { assertUniqueCssNames, cssNameOf, cssReferenceOf, deepFreeze } from '../vocabulary.mjs'
 
 export const CSS_MODE_AXES = deepFreeze({
   density: {

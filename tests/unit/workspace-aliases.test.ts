@@ -21,7 +21,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import galleryConfig from '../../vite.gallery.config.ts'
 import { aliases } from '../../workspace.aliases.ts'
 
 const ROOT = join(import.meta.dirname, '../..')
@@ -88,30 +87,31 @@ describe('workspace module resolution has one owner', () => {
     }
   })
 
-  /**
-   * The gallery is the surviving consumer of the table, and it is asserted by
-   * CONTAINMENT rather than by identity.
+  /*
+   * THE TABLE HAS ONE CONSUMER NOW, AND THE CHECK ABOVE IT IS WHAT IS LEFT.
    *
-   * This used to read `expect(harnessConfig.resolve?.alias).toBe(aliases)` --
-   * the same object, no copy possible. The harness was deleted with the design
-   * system it interpreted, and the gallery spreads the table alongside one entry
-   * of its own (`@` -> the design system's src, which the shadcn CLI writes into
-   * every component it installs). Identity cannot hold through a spread, so what
-   * is asserted is the property the identity check was standing in for: every
-   * workspace alias reaches the gallery, unaltered, and none is restated.
+   * A suite stood here -- `the gallery carries no alias list of its own` -- and
+   * asserted by CONTAINMENT that every workspace alias reached
+   * `vite.gallery.config.ts` unaltered and that none was restated there. It
+   * replaced an earlier identity check (`toBe(aliases)`) when the design-system
+   * harness was deleted, and it is now deleted for the same reason one step on:
+   * the gallery went, and `vite.gallery.config.ts` with it.
+   *
+   * `vitest.config.ts` is the only consumer that remains, and the suite below
+   * still holds it to both halves of the rule. What is LOST is the second
+   * witness: with one consumer, "no config restates an alias" is a claim about
+   * one file, and the property this pair was written to protect -- that a table
+   * with several readers stays a table rather than becoming several copies --
+   * has nothing left to demonstrate it. It comes back with the second consumer,
+   * whatever that turns out to be.
    */
-  it('the gallery carries no alias list of its own', () => {
-    const alias = galleryConfig.resolve?.alias as Record<string, string>
-    for (const [specifier, target] of Object.entries(aliases)) {
-      expect(alias[specifier]).toBe(target)
-    }
-  })
 
   it('no config restates an alias instead of importing the owner', () => {
     // `vitest.architecture.config.ts` was a third consumer until the test
-    // partition was consolidated into `vitest.config.ts`'s projects. It is
-    // named here so its absence reads as a deletion rather than an omission.
-    const consumers = ['vitest.config.ts', 'vite.gallery.config.ts']
+    // partition was consolidated into `vitest.config.ts`'s projects, and
+    // `vite.gallery.config.ts` a second until the gallery was deleted. Both are
+    // named here so their absence reads as a deletion rather than an omission.
+    const consumers = ['vitest.config.ts']
     for (const file of consumers) {
       const source = readFileSync(join(ROOT, file), 'utf8')
       expect(source).toContain("from './workspace.aliases.ts'")

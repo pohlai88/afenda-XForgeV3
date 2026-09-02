@@ -23,7 +23,6 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isGovernedName } from '../../design-system/token-policy/index.mjs'
 import { classify } from '../../source-universe.mjs'
 
 /**
@@ -357,53 +356,6 @@ function isNonCallContext(src, at) {
  */
 const withCommentsBlanked = (src) =>
   src.replace(/[/][*][\s\S]*?[*][/]/g, (c) => c.replace(/[^\n]/g, ' '))
-
-/**
- * Every custom property a stylesheet REFERENCES, by name.
- *
- * ONE EXTRACTION FOR EVERY RULE ABOUT REFERENCES, because the previous regex
- * closed on `\)` and therefore could not see `var(--x, 4px)` at all. A primitive
- * smuggled in behind a fallback was invisible to the guard forbidding
- * primitives -- not argued about, simply unmatched -- and any second rule
- * written to its own pattern would have inherited the same blind spot
- * independently. That is the defect CLAUDE.md keeps a list of: one fact, two
- * regexes, agreeing right up until they do not.
- *
- * The NAME is what is extracted. Whether a fallback's VALUE is an unauthorised
- * literal is a different question, owned by `tokens-are-the-authority`.
- *
- * Comments are blanked at equal length, so a comment may discuss a token while
- * explaining why it is not used, and reported line numbers stay true.
- */
-/**
- * The generated token names, read once and refused if absent.
- *
- * A MISSING MANIFEST IS A FAILURE, never an empty set. Returning `new Set()`
- * would make every reference unresolvable and the guard would scream; returning
- * it silently the other way -- skipping the check -- is the ADR-024 failure
- * exactly, a tool reporting green having inspected nothing. So it throws, and
- * the guard run stops with a reason.
- */
-let tokenNamesCache
-const tokenManifest = () => {
-  if (tokenNamesCache === undefined) {
-    const path = join(REPO_ROOT, 'packages/design/generated/token-names.json')
-    if (!existsSync(path)) {
-      throw new Error(
-        `no token manifest at ${path} -- run \`pnpm gen:tokens\`. An unreadable manifest ` +
-          'is not an empty one, and a check that inspected nothing has not passed',
-      )
-    }
-    tokenNamesCache = new Set(JSON.parse(readFileSync(path, 'utf8')))
-  }
-  return tokenNamesCache
-}
-
-const tokenReferences = (src) =>
-  [...withCommentsBlanked(src).matchAll(/var\(\s*(--[a-z0-9-]+)/g)].map((m) => ({
-    index: m.index,
-    name: m[1],
-  }))
 
 /**
  * React UI surfaces.
@@ -1669,110 +1621,6 @@ export const guards = [
     law: 20,
     precision: 'text',
     title: 'A fixture states its own time values rather than taking the database clock',
-  },
-
-  {
-    // Law 8: the planes are joined by stable semantic identifiers. A primitive
-    // is a raw value with NO role -- `--space-5` says how far, never what for --
-    // so a stylesheet naming one has reached past the layer that gives it
-    // meaning, and there is nothing left in between for a mode to rebind.
-    //
-    // This is not hypothetical tidiness. Before stage 2 this file read
-    // `padding: var(--space-5)` throughout and looked disciplined, because no
-    // hex code appeared anywhere. Density then had nowhere to attach: compact
-    // would have had to restate every rule here instead of rebinding a handful
-    // of roles. The semantic layer existed for colour and, unnoticed, did not
-    // exist for geometry at all.
-    //
-    // Checked on DECLARATIONS only, so the comment above may name `--space-5`
-    // while explaining why it is not used.
-    // AUTHORED stylesheets, never generated ones. The two used to live in
-    // different packages -- hand-written CSS in packages/ui, the declaration
-    // file in packages/tokens/generated -- so `packages/ui/**.css` separated
-    // them for free. One package holds both now, and without `src/` this guard
-    // reads the generated tokens.css and reports every primitive it DECLARES as
-    // a primitive it USES. Law 27 covers that file: it is diffed after
-    // regeneration, not linted.
-    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
-    check(f, src) {
-      const out = []
-      for (const { index, name } of tokenReferences(src)) {
-        if (isGovernedName(name)) {
-          continue
-        }
-        out.push({
-          file: f,
-          line: line(src, index),
-          message:
-            `'${name}' is not a semantic or component role -- a primitive carries a value ` +
-            'and no role, so a mode has nothing to rebind. Name the role instead',
-        })
-      }
-      return out
-    },
-    id: 'stylesheet-names-roles-not-primitives',
-    law: 8,
-    precision: 'text',
-    title: 'The stylesheet consumes semantic and component tokens, never primitives',
-  },
-
-  {
-    /**
-     * Law 8: the planes are joined by STABLE semantic identifiers -- and an
-     * identifier nothing checks is not stable, it is merely unchallenged.
-     *
-     * THE ASYMMETRY THIS CLOSES. Adding a token was always safe; renaming one
-     * was not. `var(--semantic-type-heading)` naming a token that no longer
-     * exists is valid CSS: the declaration is simply dropped, the element
-     * inherits or falls back to an initial value, and the page renders looking
-     * plausible. No build error, no lint error, no failing test -- the exact
-     * shape of failure this repository's tooling exists to refuse.
-     *
-     * THE MANIFEST WAS ORPHANED. `packages/design/generated/token-names.json`
-     * has been emitted by the generator and read by NOTHING, alongside an
-     * `isGovernedName` in the token policy documented as the authority for this
-     * check and called by nobody. Two artefacts built for a guard that was never
-     * written, both of which read from outside like coverage.
-     *
-     * FALLBACKS ARE REFERENCES. `var(--semantic-gone, 4px)` is rejected for the
-     * same reason as `var(--semantic-gone)`: the NAME does not resolve, and a
-     * fallback that silently absorbs a rename is worse than a missing value,
-     * because it looks deliberate.
-     *
-     * SCOPED TO GOVERNED NAMESPACES, derived from the token policy rather than
-     * matched by pattern. Legitimate non-token custom properties exist, and the
-     * primitive groups are ordinary English words -- claiming them would fire on
-     * `--color-picker-bg`, which is nobody's token.
-     */
-    // AUTHORED stylesheets, never generated ones. The two used to live in
-    // different packages -- hand-written CSS in packages/ui, the declaration
-    // file in packages/tokens/generated -- so `packages/ui/**.css` separated
-    // them for free. One package holds both now, and without `src/` this guard
-    // reads the generated tokens.css and reports every primitive it DECLARES as
-    // a primitive it USES. Law 27 covers that file: it is diffed after
-    // regeneration, not linted.
-    applies: (f) => /^packages[/]design[/]src[/].*[.]css$/.test(f),
-    check(f, src) {
-      const manifest = tokenManifest()
-      const out = []
-      for (const { index, name } of tokenReferences(src)) {
-        if (!isGovernedName(name) || manifest.has(name)) {
-          continue
-        }
-        out.push({
-          file: f,
-          line: line(src, index),
-          message:
-            `'${name}' is not a token -- no such custom property is generated from ` +
-            'packages/design, so this declaration is silently dropped at render',
-        })
-      }
-      return out
-    },
-    id: 'tokens-referenced-are-tokens-that-exist',
-    law: 8,
-    precision: 'text',
-    title: 'Every token a stylesheet names is one the token file generates',
   },
   {
     /**

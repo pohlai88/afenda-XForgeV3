@@ -6,8 +6,8 @@
  * ERP controls can remain compact without pretending a mouse and a finger are equal.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const TARGET_FLOORS = deepFreeze({
   pointer: 24,

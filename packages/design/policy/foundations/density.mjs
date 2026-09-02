@@ -52,8 +52,8 @@
  * whether the axis moved them in the direction it claims to.
  */
 
+import { deepFreeze, toPixels } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze, toPixels } from './shared.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 

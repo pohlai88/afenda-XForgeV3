@@ -5,8 +5,8 @@
  * Shape owns canonical corner geometry and semantic shape use.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const SHAPE_CORNERS = deepFreeze({
   'extra-extra-large': 48,

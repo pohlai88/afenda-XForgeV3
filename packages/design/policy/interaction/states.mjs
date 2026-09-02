@@ -31,7 +31,7 @@
  */
 
 import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze } from '../foundations/shared.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /* ----------------------------------------------------------------- axes -- */
 

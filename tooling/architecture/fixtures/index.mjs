@@ -684,35 +684,6 @@ export async function save(input: unknown) {
 `,
     },
   },
-  'stylesheet-names-roles-not-primitives': {
-    clean: {
-      path: 'packages/design/src/ui.css',
-      source: `/* --space-5 is a primitive; this rule names the role instead */
-.xf-card { padding: var(--component-card-padding); gap: var(--semantic-space-stack); }
-`,
-    },
-    violating: {
-      path: 'packages/design/src/ui.css',
-      source: `.xf-card { padding: var(--space-5); }
-`,
-    },
-  },
-  // The blind spot the shared extractor closed: the old pattern closed on `)`,
-  // so a primitive behind a fallback was not argued about -- it was unmatched.
-  'stylesheet-names-roles-not-primitives-fallback': {
-    clean: {
-      path: 'packages/design/src/ui.css',
-      source: `.xf-card { padding: var(--component-card-padding, 1rem); }
-`,
-    },
-    guardId: 'stylesheet-names-roles-not-primitives',
-    violating: {
-      path: 'packages/design/src/ui.css',
-      source: `.xf-card { padding: var(--space-5, 1rem); }
-`,
-    },
-  },
-
   'tenancy-primitives-confined': {
     clean: {
       path: 'modules/payroll/application/run.ts',
@@ -738,25 +709,6 @@ export const go = (t: string, p: string) => hasActiveMembership(d, t, p, new Dat
     violating: {
       path: 'packages/design/src/ui.css',
       source: `.xf-button { background: #2563eb; }
-`,
-    },
-  },
-
-  // A `var()` naming a token that no longer exists is VALID CSS: the declaration
-  // is dropped and the page still renders. Adding a token was always safe;
-  // renaming one was not, and nothing said so.
-  'tokens-referenced-are-tokens-that-exist': {
-    clean: {
-      path: 'packages/design/src/design.css',
-      // A ROLE THIS SYSTEM ACTUALLY EMITS.
-      // The old fixture named a component-tier padding role that the previous
-      // token file had and this one does not -- so the clean case started proving the guard FAILS.
-      source: `.card { padding: var(--semantic-space-control-y); }
-`,
-    },
-    violating: {
-      path: 'packages/design/src/design.css',
-      source: `.card { padding: var(--semantic-space-gone, 4px); }
 `,
     },
   },

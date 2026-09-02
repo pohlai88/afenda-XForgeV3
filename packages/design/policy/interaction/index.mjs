@@ -40,24 +40,36 @@
  * nothing would stop being true -- `keyboard.mjs` genuinely depends on the
  * contract registry in a way no foundation depends on anything.
  *
- * ── AND WHAT THIS TREE DOES NOT YET GOVERN ─────────────────────────────────
+ * ── WHAT THIS TREE GOVERNS, AND WHAT IT STILL DOES NOT ─────────────────────
  *
- * ONE OF THE FIVE IS WIRED INTO A GATE TODAY, and it is worth saying which:
- * `assistive-technology.mjs` IS the A11y-3 stage, invoked by
- * `tooling/verify/stages.mjs` and covered by `tests/unit/at-session.test.ts`.
+ * ACCESSIBILITY IS NOW LOAD-BEARING, and it became so by SUBTRACTION rather than
+ * by gaining a caller. `foundations/color.mjs` -- the token kernel's colour
+ * module, moved -- declared its own copy of the three contrast ratios and the
+ * 24px target floor. Both copies agreed, which is what a duplicated fact does
+ * right up until it stops. The copy is deleted; `color.mjs` imports
+ * `ACCESSIBILITY_POLICY` from here, `minimumFor` resolves every colour role's
+ * ratio through this table, and the generator reaches `assertTargetMinimum`
+ * through the policy barrel. A wrong number here now fails the build.
  *
- * The other four are checked on import and by the unit suite, and nothing in the
- * GENERATOR reads them yet -- the token pipeline still runs through
- * `tooling/design-system/token-policy/` for every domain but one.
- * `stateFailures` and `focusFailures` are written to be called by it and are not
- * called by it, which is stated here rather than left to be discovered, because
- * a policy tree nobody imports is the exact shape ADR-024 is about.
+ * `assertAccessibilityPolicy()` therefore runs at the bottom of this file and
+ * runs FIRST across the whole policy tree: `color.mjs` importing the floors is
+ * what puts this module earlier in the graph, so a broken floor is reported as a
+ * broken floor rather than as a colour role pointing at nothing.
  *
- * `foundations/` IS NO LONGER IN THAT POSITION, and this paragraph used to say it
- * was. Motion moved there whole and the generator imports it, so that tree now
- * governs something and this one still does not. The asymmetry is the honest
- * report: being a sibling in structure is not the same as being a sibling in
- * consequence.
+ * THE OTHER FOUR ARE STILL CHECKED ON IMPORT AND NOWHERE ELSE. `stateFailures`
+ * and `focusFailures` are written to be called by the generator and are not
+ * called by it.
+ *
+ * AND ONE CLAIM HERE WAS FALSE, which is worth more than quietly deleting it.
+ * This section read: "`assistive-technology.mjs` IS the A11y-3 stage, invoked by
+ * `tooling/verify/stages.mjs`". It is not. That stage runs
+ * `tooling/verify/lib/at-session.mjs`, which is a SECOND implementation of what a
+ * recorded session must contain -- so this tree's version has no caller either,
+ * and the header advertising it as wired was the only thing standing between a
+ * reader and that discovery. Two files, one obligation, agreeing; the defect
+ * CLAUDE.md keeps a list of, appearing inside the paragraph that claimed
+ * coverage. Which of the two survives is open. That neither is reached from
+ * here is not.
  */
 
 export * from './accessibility.mjs'
@@ -67,7 +79,11 @@ export * from './keyboard.mjs'
 export * from './states.mjs'
 
 import { assertPolicyRegistry } from '../foundations/contract.mjs'
-import { accessibilityPolicy, assertA11yLevels } from './accessibility.mjs'
+import {
+  accessibilityPolicy,
+  assertA11yLevels,
+  assertAccessibilityPolicy,
+} from './accessibility.mjs'
 import { assertAtPairings, assistiveTechnologyPolicy } from './assistive-technology.mjs'
 import { assertFocusIndicator, focusPolicy } from './focus.mjs'
 import { assertKeyboardCoverage, keyboardPolicy } from './keyboard.mjs'
@@ -123,6 +139,7 @@ export const INTERACTION_POLICIES = assertPolicyRegistry([
  * validator nothing calls is the same as a deleted one, minus the honesty; the
  * file is owed, and until it lands this is what is true.
  */
+assertAccessibilityPolicy()
 assertA11yLevels()
 assertAtPairings()
 assertStateAxes()

@@ -6,8 +6,8 @@
  * product does not need them to govern Lucide SVG icons.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const ICON_SIZES = deepFreeze({
   compact: 16,

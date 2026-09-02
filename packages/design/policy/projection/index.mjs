@@ -24,36 +24,57 @@
  *
  * ── WHAT IS GOVERNED ───────────────────────────────────────────────────────
  *
- *   identity    the naming grammar, and that a path projects to exactly one name
  *   css         the serialized value, and the axes a mode may vary on
  *   tailwind    the namespace map, and the utilities it may not shadow
+ *
+ * IDENTITY IS NOT A THIRD FILE ANY MORE, and its absence is the point. This
+ * index listed `identity.mjs` -- the naming grammar, and that a path projects to
+ * exactly one name -- while `../vocabulary.mjs` held the SAME grammar and was the
+ * copy the generator actually ran. Two implementations of "what does this token
+ * path become", differing in two ways nobody had compared: the local one required
+ * at least two path segments and did not resolve the tier.
+ *
+ * The vocabulary's copy won, because it was the one under test and under load.
+ * `identity.mjs` is deleted rather than left forwarding, and `css.mjs` reaches
+ * `cssNameOf`, `cssReferenceOf` and `assertUniqueCssNames` through the vocabulary
+ * directly. Naming is not a projection TARGET; it is the grammar every target
+ * shares, which is why it sits above this tree rather than inside it.
  *
  * ── WHY THIS IS A THIRD TREE AND NOT PART OF EITHER ────────────────────────
  *
  * A foundation answers "what may a value BE" and is checked against
  * `tokens.json`. An interaction policy answers "what must a component DO" and is
  * checked against `contracts.ts`. These answer "what does a name BECOME", and
- * their subject is neither -- it is the output of `tooling/generators/tokens.mjs`.
- * `tailwind.mjs` is the only file in the whole policy tree whose vocabulary
- * belongs to another system, which is why its assertions run last.
+ * their subject is neither -- it is the output of
+ * `packages/design/policy/generators/tokens.mjs`. `tailwind.mjs` is the only file
+ * in the whole policy tree whose vocabulary belongs to another system, which is
+ * why its assertions run last.
  *
- * ── AND WHAT THIS TREE DOES NOT YET GOVERN ─────────────────────────────────
+ * ── WHAT THIS TREE GOVERNS TODAY ───────────────────────────────────────────
  *
- * NOTHING IMPORTS THIS TREE TODAY. The generator still projects names through
- * `tooling/design-system/token-policy/tailwind.mjs`, and the three policies here
- * are checked on import and nowhere else. That is stated rather than left to be
- * discovered, because a policy tree nobody imports is the exact shape ADR-024 is
- * about -- and both sibling indexes say the same of themselves.
+ * TAILWIND IS WIRED AND CSS IS NOT, and the asymmetry is stated rather than left
+ * to be discovered. This header used to read "NOTHING IMPORTS THIS TREE TODAY",
+ * which was true of the scaffold that stood here. `tailwind.mjs` IS the token
+ * kernel's Tailwind bridge, moved -- the generator imports `tailwindNameOf`,
+ * `UNPROJECTED`, `assertTailwindProjection`, `assertNoUtilityShadowing` and
+ * `assertExclusionsAreCurrent` through the policy barrel, and every namespace in
+ * `generated/tailwind-theme.css` is projected by it.
+ *
+ * `css.mjs` is still checked on import and by nothing else. Its emitters --
+ * `emitCssBlock`, `emitRootTokens`, `emitModeTokens` -- are written to be called
+ * by the generator and are not called by it: the generator has its own
+ * `declarations()` and block assembly, which predates this file. That is one fact
+ * with two implementations, and it is named here rather than left for the next
+ * reader to find. Whichever survives, the other is deleted; a projection nobody
+ * imports is the exact shape ADR-024 is about.
  */
 
 export * from './css.mjs'
-export * from './identity.mjs'
 export * from './tailwind.mjs'
 
 import { assertPolicyRegistry } from '../foundations/contract.mjs'
 import { assertCssModes, cssPolicy } from './css.mjs'
-import { assertIdentityConfiguration, identityPolicy } from './identity.mjs'
-import { assertTailwindPolicy, tailwindPolicy } from './tailwind.mjs'
+import { assertTailwindTables, tailwindPolicy } from './tailwind.mjs'
 
 /**
  * Every projection policy, in one registry.
@@ -63,32 +84,31 @@ import { assertTailwindPolicy, tailwindPolicy } from './tailwind.mjs'
  * so an ordering here would imply a dependency that does not exist and would
  * then have to be maintained.
  */
-export const PROJECTION_POLICIES = assertPolicyRegistry([cssPolicy, identityPolicy, tailwindPolicy])
+export const PROJECTION_POLICIES = assertPolicyRegistry([cssPolicy, tailwindPolicy])
 
 /*
  * EVERY TABLE, CHECKED ON IMPORT. A kernel that checks its subject but not its
  * own configuration is still fail-open, and "someone calls it" is not a
  * guarantee.
  *
- * FOUR ARE ABSENT, and they are named rather than quietly skipped -- the same
- * treatment both siblings give their own omissions. All four take TOKEN PATHS as
+ * FIVE ARE ABSENT, and they are named rather than quietly skipped -- the same
+ * treatment both siblings give their own omissions. All five take TOKEN PATHS as
  * their subject, and there are no token paths at import time:
  *
- *   assertTokenPath           one path, from the caller walking `tokens.json`
- *   assertUniqueCssNames      every path at once; injectivity is a property of
- *                             the whole set, so a partial set cannot show it
- *   assertTailwindProjection  every path, against the namespace map
- *   assertNoUtilityShadowing  every path, against the contested families
+ *   assertTokenPath             one path, from the caller walking `tokens.json`
+ *   assertUniqueCssNames        every path at once; injectivity is a property of
+ *                               the whole set, so a partial set cannot show it
+ *   assertTailwindProjection    every path, against the namespace map
+ *   assertNoUtilityShadowing    every path, against the contested prefixes
+ *   assertExclusionsAreCurrent  every path, against the exclusion list
  *
- * They are the generator's to run, over a real token file. Passing them a
- * synthetic set here would make them checks on this file's agreement with
- * itself, which is principle 3 inverted.
+ * They are the generator's to run, over a real token file -- and it does run all
+ * five. Passing them a synthetic set here would make them checks on this file's
+ * agreement with itself, which is principle 3 inverted.
  *
  * TAILWIND RUNS LAST, because it is the only projection that leaves this
  * repository's vocabulary for another system's -- so a failure there should be
- * read after every rule about the vocabulary itself has passed. That is the
- * ordering `token-policy/index.mjs` already records for the same reason.
+ * read after every rule about the vocabulary itself has passed.
  */
-assertIdentityConfiguration()
 assertCssModes()
-assertTailwindPolicy()
+assertTailwindTables()

@@ -5,8 +5,8 @@
  * minimal stroke-width grammar needed by shadcn/Tailwind components.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const BORDER_WIDTHS = deepFreeze({
   none: 0,

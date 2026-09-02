@@ -9,8 +9,8 @@
  * defaults rather than coexisting with an unrelated breakpoint system.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const WINDOW_WIDTH_CLASSES = deepFreeze({
   compact: { css: '0rem', materialDp: 0 },

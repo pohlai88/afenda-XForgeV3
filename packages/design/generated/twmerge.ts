@@ -2,7 +2,7 @@
  * GENERATED -- DO NOT EDIT. Run `pnpm generate`.
  *
  * The class groups tailwind-merge cannot infer for this design system. See
- * `twMergeGroups` in tooling/generators/tokens.mjs for why an unconfigured
+ * `twMergeGroups` in packages/design/policy/generators/tokens.mjs for why an unconfigured
  * merge silently deletes a size role when a colour role follows it.
  *
  * OVERRIDE, NOT EXTEND, at the call site: these namespaces are CLOSED in the

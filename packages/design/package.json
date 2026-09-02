@@ -27,6 +27,7 @@
     "tailwind-merge": "catalog:"
   },
   "devDependencies": {
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "vitest": "catalog:"
   }
 }

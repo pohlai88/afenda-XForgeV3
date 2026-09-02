@@ -48,8 +48,8 @@
  * table and the refusals.
  */
 
+import { deepFreeze, toPixels } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze, toPixels } from './shared.mjs'
 import { ASSUMED_ROOT_PX, GRID_PX } from './spacing.mjs'
 
 /* ------------------------------------------------------------------ roles -- */

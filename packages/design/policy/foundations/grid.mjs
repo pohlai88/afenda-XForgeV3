@@ -6,8 +6,8 @@
  * desktop widths for dense ERP workspaces.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const BASELINE_GRID_PX = 4
 

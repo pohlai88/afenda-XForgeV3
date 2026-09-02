@@ -6,8 +6,8 @@
  * applicable; pane/content widths remain separate policies.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const SHELL_DIMENSIONS = deepFreeze({
   appBar: 64,

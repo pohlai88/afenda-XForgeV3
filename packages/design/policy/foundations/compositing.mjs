@@ -5,8 +5,8 @@
  * ordinary token graph cannot measure. M3 scrims are the canonical allowed case.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const COMPOSITING_ROLES = deepFreeze({
   scrim: {

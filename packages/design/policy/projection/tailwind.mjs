@@ -1,21 +1,43 @@
+import { definePolicy } from '../foundations/contract.mjs'
+import { deepFreeze, tierOf } from '../vocabulary.mjs'
+
 /**
- * PROJECTION — Tailwind v4.
+ * TAILWIND PROJECTION -- how a semantic role becomes a utility class.
  *
- * Maps governed semantic/component tokens into Tailwind theme namespaces.
+ * Tailwind v4 reads its theme from CSS custom properties grouped into
+ * NAMESPACES, and each namespace drives a family of utilities: `--color-*` makes
+ * `bg-*`/`text-*`/`border-*`, `--spacing-*` makes `p-*`/`gap-*`, `--radius-*`
+ * makes `rounded-*`. So projecting this repository's semantic tier into those
+ * namespaces is what turns `semantic.surface.page` into `bg-surface-page`.
  *
- * Rules:
- *   - primitive tokens never become utilities
- *   - semantic/component tokens are projected or explicitly excluded
- *   - runtime-safe namespaces use @theme inline + var(canonical-token)
- *   - breakpoint/container namespaces use generated LITERAL values because CSS
- *     variables cannot be used in @media/@container query conditions
- *   - default Tailwind namespaces we govern are reset before our vocabulary lands
+ * WHY THIS IS POLICY AND NOT THE GENERATOR'S BUSINESS. The projection decides,
+ * per token, which utility family it joins -- and getting it wrong is silent: a
+ * token projected into no namespace simply produces no utility, and the class
+ * that would have used it falls back to Tailwind's default scale without saying
+ * so. That is the same failure shape as a dangling `var()`, one level up, so it
+ * is declared as a table and PROVED exhaustive rather than derived by a default.
+ *
+ * `@theme inline` IS LOAD-BEARING, and the reason is the whole point of the
+ * bridge. A plain `@theme` block copies the VALUE, so `bg-surface-page` would
+ * bake in whatever light mode resolved to and stop responding to
+ * `:root[data-theme='dark']`. `inline` emits the reference instead --
+ * `background-color: var(--semantic-surface-page)` -- so the two mode axes keep
+ * working through Tailwind exactly as they do through `ui.css`. Tailwind's own
+ * documentation gives this exact shape for theme values defined elsewhere.
+ *
+ * EXCLUSION IS A DECISION, NOT AN OMISSION. A token that joins no namespace has
+ * to say so in `UNPROJECTED` with its reason. There is no default branch: a
+ * token that is neither mapped nor excluded makes the generator throw, so
+ * minting a token forces a choice about whether screens can reach it.
  */
 
-import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze, tierOf } from '../foundations/shared.mjs'
-import { cssReferenceOf } from './identity.mjs'
-
+/**
+ * The Tailwind namespaces this bridge emits into.
+ *
+ * A closed set, checked against, so a typo in the table below is a refusal
+ * rather than a namespace Tailwind has never heard of -- which would emit a
+ * custom property that looks right and drives no utility at all.
+ */
 export const TAILWIND_NAMESPACES = deepFreeze([
   'breakpoint',
   'color',
@@ -32,399 +54,411 @@ export const TAILWIND_NAMESPACES = deepFreeze([
 ])
 
 /**
- * These namespaces participate in build-time query generation and therefore
- * cannot point at runtime CSS variables.
- */
-export const LITERAL_NAMESPACES = deepFreeze(['breakpoint', 'container'])
-
-/**
- * Reset only namespaces this design system intentionally owns.
- * `--spacing` itself is NOT reset here because Tailwind v4's numeric spacing
- * engine may still be used during migration; raw spacing usage is a guard concern.
- */
-export const RESET_NAMESPACES = deepFreeze([
-  'breakpoint',
-  'color',
-  'container',
-  'ease',
-  'font',
-  'font-weight',
-  'leading',
-  'radius',
-  'shadow',
-  'text',
-  'tracking',
-])
-
-/**
- * Normal semantic group → Tailwind namespace.
+ * Group -> namespace, and whether the group's own name survives into the
+ * variable.
  *
- * keepGroup=false:
- *   semantic.color.primary → --color-primary
- *
- * keepGroup=true:
- *   semantic.icon.standard → --spacing-icon-standard
- *
- * suffix is used where two namespaces would otherwise generate the same class:
- *   semantic.font.body → --font-body-face → font-body-face
+ * `keepGroup` exists because the group segment is sometimes the distinguishing
+ * word and sometimes noise. `semantic.surface.page` and `semantic.text.default`
+ * are both colours, so dropping `surface`/`text` would collide them -- while
+ * `semantic.space.stack` inside the `spacing` namespace would read
+ * `--spacing-space-stack`, saying "space" twice. Injectivity is asserted below
+ * rather than assumed, so a wrong choice here is caught rather than shipped.
  */
-export const GROUP_PROJECTION = deepFreeze({
+const GROUP_PROJECTION = deepFreeze({
+  border: { keepGroup: true, namespace: 'color' },
+  // The window classes. `semantic.breakpoint.expanded` -> `--breakpoint-expanded`,
+  // which is what gives Tailwind the `expanded:` variant.
   breakpoint: { keepGroup: false, namespace: 'breakpoint' },
+  // The superseding system's flat colour family: `semantic.color.card` reads
+  // `--color-card`, so `bg-card` is the utility and a shadcn component written
+  // against that name works unmodified.
   color: { keepGroup: false, namespace: 'color' },
-  container: { keepGroup: false, namespace: 'container' },
+  container: { keepGroup: true, namespace: 'spacing' },
+  // How wide a thing may get. `--container-*` drives `max-w-*`, which is the
+  // utility every one of these exists to produce.
+  content: { keepGroup: false, namespace: 'container' },
   control: { keepGroup: true, namespace: 'spacing' },
+  // Its curve family. `semantic.ease.standard` -> `--ease-standard`.
   ease: { keepGroup: false, namespace: 'ease' },
-  font: { keepGroup: false, namespace: 'font', suffix: 'face' },
+  // The five planes. `semantic.elevation.floating` -> `--shadow-floating`, so a
+  // component names the PLANE rather than a blur radius.
+  elevation: { keepGroup: false, namespace: 'shadow' },
+  focus: { keepGroup: true, namespace: 'color' },
+  font: { keepGroup: false, namespace: 'font' },
+  // An icon size is a length with no namespace of its own -- Tailwind has no
+  // icon scale -- so it lands in `spacing` and reaches components through the
+  // `size-icon` @utility, the same route `stroke` and `size` take.
   icon: { keepGroup: true, namespace: 'spacing' },
   leading: { keepGroup: false, namespace: 'leading' },
+  overlay: { keepGroup: true, namespace: 'color' },
   radius: { keepGroup: false, namespace: 'radius' },
   row: { keepGroup: true, namespace: 'spacing' },
-  shadow: { keepGroup: false, namespace: 'shadow' },
+  // Lengths that are not spacing but have no namespace of their own -- a control
+  // floor, a stroke width, a focus ring. Tailwind has no border-width or
+  // outline-width namespace, so these reach components through `@utility` blocks
+  // that read the custom property directly rather than through a utility.
+  // The persistent frame. Lengths with no namespace of their own, reached
+  // through @utility blocks like the control floor and the icon size.
   shell: { keepGroup: true, namespace: 'spacing' },
   size: { keepGroup: false, namespace: 'spacing' },
   space: { keepGroup: false, namespace: 'spacing' },
   stroke: { keepGroup: true, namespace: 'spacing' },
+  surface: { keepGroup: true, namespace: 'color' },
   target: { keepGroup: true, namespace: 'spacing' },
+  text: { keepGroup: true, namespace: 'color' },
+  // Letterspacing. Two roles, because there are two call sites -- a full
+  // per-size tracking table is optical refinement for a variable optical font,
+  // and IBM Plex is not one.
   tracking: { keepGroup: false, namespace: 'tracking' },
   type: { keepGroup: false, namespace: 'text' },
   weight: { keepGroup: false, namespace: 'font-weight' },
 })
 
 /**
- * Nested semantic families that cannot be decided by the second path segment.
+ * The utility PREFIX each namespace competes for.
+ *
+ * Namespaces are not disjoint at the point of use. Tailwind resolves `font-x` by
+ * looking in `--font-*` first and `--font-weight-*` second, so two namespaces
+ * bid for one class name -- and the loser is not an error, it is a variable that
+ * exists and drives nothing.
+ *
+ * Only the OVERLAPPING prefixes are listed. `--color-*` also drives `bg-`,
+ * `border-` and `ring-`, and none of those is contested; `text-` is, because
+ * `--text-*` is the font-size namespace. Listing the uncontested ones would
+ * invite the table to be read as a map of what each namespace generates, which
+ * it deliberately is not.
  */
-export const PREFIX_PROJECTION = deepFreeze({
-  'semantic.motion.easing.': { namespace: 'ease', strip: 'semantic.motion.easing.' },
+const CONTESTED_PREFIX = deepFreeze({
+  color: 'text-',
+  font: 'font-',
+  'font-weight': 'font-',
+  text: 'text-',
 })
 
 /**
- * Exact tokens deliberately hidden from the utility surface.
+ * Tokens whose group rule does not decide them, keyed by full path.
+ *
+ * Two groups hold tokens that belong in different namespaces from each other,
+ * so the group is not enough to decide them and a per-path answer is the honest
+ * shape. `semantic.container.padding` is spacing while `semantic.container.measure`
+ * is a max-width; `semantic.motion.easing.default` is an easing curve while the
+ * duration beside it has no Tailwind namespace at all.
+ */
+const PATH_PROJECTION = deepFreeze({
+  'semantic.container.measure': '--container-measure',
+  // FAMILIES CARRY A SUFFIX SO THEY CANNOT SHADOW THE WEIGHTS. Both namespaces
+  // generate `font-*`, and `semantic.font.body` and `semantic.weight.body` both
+  // wanted `font-body` -- which Tailwind awards to the family, leaving the weight
+  // role with a variable and no utility. The families lose the plain name rather
+  // than the weights because a weight is applied on every text component and a
+  // family on two, and `-face` is the typographic term for the thing rather than
+  // an invented disambiguator. `assertNoUtilityShadowing` refuses the collision
+  // if either is renamed back.
+  'semantic.font.body': '--font-body-face',
+  'semantic.font.code': '--font-code-face',
+  'semantic.motion.easing.default': '--ease-default',
+})
+
+/**
+ * Tokens deliberately absent from the bridge, and why.
+ *
+ * Recorded rather than skipped, because "no utility exists for this" and "nobody
+ * thought about this" are indistinguishable from the output.
+ */
+/**
+ * EMPTY, AND THAT IS A STATE THIS TABLE IS ALLOWED TO BE IN.
+ *
+ * It held one entry: `semantic.motion.duration.pulse`, excluded because Tailwind
+ * v4 has no theme namespace for a bare duration -- `--animate-*` takes a whole
+ * animation shorthand, not a time. Its only consumer was a stylesheet rule in
+ * the design system this one replaces, and it went with that system.
+ *
+ * `assertExclusionsAreCurrent` is what made the deletion visible: it refuses an
+ * exclusion naming a token that no longer exists, so the entry could not quietly
+ * outlive its subject and go on reading as a considered omission. It did exactly
+ * that here, which is the only reason this comment exists rather than a stale
+ * line.
+ *
+ * The rule the table enforces is unchanged and still binding: a semantic or
+ * component token that is neither projected nor recorded here makes the
+ * generator throw. There is no default branch.
  */
 export const UNPROJECTED = deepFreeze({
+  /*
+   * NEITHER STACKING NOR DURATION HAS A TAILWIND NAMESPACE. `z-50` and
+   * `duration-150` are both computed from the number rather than read from a
+   * theme variable, so there is nothing to project into and nothing a namespace
+   * closure could remove -- the same shape as `leading-none` surviving when
+   * `--leading-*` was cleared.
+   *
+   * Both reach components through `@utility` blocks in `design.css`, and what
+   * keeps a bare number out is a GUARD rather than construction. The EASING
+   * roles do project -- `--ease-*` is a real namespace -- so those are closed
+   * the ordinary way and only duration needs the guard.
+   */
+  /*
+   * THE TWO SHADOW INKS ARE NOT UTILITIES. They are read by
+   * `semantic.elevation.*` through `var()` and by nothing else. Projected into
+   * `--color-*` they became compilable classes -- `bg-shadow-key`,
+   * `text-shadow-ambient` -- that paint an alpha colour the contrast invariant
+   * cannot measure, without anyone typing the `/NN` syntax the rule forbids.
+   *
+   * `color.scrim` stays projected even though it is also alpha: `bg-scrim` is how
+   * the dialog backdrop is drawn, and that is the correct use of a scrim. A
+   * namespace is projected or not as a whole, so `text-scrim` comes with it.
+   */
   'semantic.color.shadow-ambient':
-    'alpha shadow ink is consumed by semantic shadow tokens, not by color utilities',
+    'an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure',
   'semantic.color.shadow-key':
-    'alpha shadow ink is consumed by semantic shadow tokens, not by color utilities',
+    'an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure',
+  'semantic.layer.local':
+    'z-index has no Tailwind theme namespace; reached through the `layer-local` @utility',
+  'semantic.layer.overlay':
+    'z-index has no Tailwind theme namespace; reached through the `layer-overlay` @utility',
+  'semantic.motion.duration.base':
+    'no --duration-* theme namespace; reached through the `duration-base` @utility',
+  'semantic.motion.duration.none':
+    'consumed by the prefers-reduced-motion block in design.css, not by a utility',
+  'semantic.motion.duration.overlay':
+    'no --duration-* theme namespace; reached through the `duration-overlay` @utility',
+  'semantic.motion.duration.press':
+    'no --duration-* theme namespace; reached through the `duration-press` @utility',
+  'semantic.motion.duration.pulse':
+    'a looping animation duration, consumed by the shimmer keyframes rather than by a utility',
+  'semantic.motion.duration.state':
+    'no --duration-* theme namespace; reached through the `duration-state` @utility',
 })
 
 /**
- * Whole semantic families that intentionally have no Tailwind theme namespace.
- * They may be exposed later through explicit @utility definitions.
+ * The tables' own rules, checked on import beside every other kernel table.
+ *
+ * A projection that validates tokens but not its own configuration is still
+ * fail-open: a namespace typed `colour` here would send every surface role to a
+ * property Tailwind ignores, and the token check below would happily prove that
+ * set injective.
  */
-export const UNPROJECTED_PREFIXES = deepFreeze({
-  'semantic.border.': 'border-width policy has no dedicated Tailwind v4 theme namespace',
-  'semantic.compositing.': 'compositing is implementation policy, not a general utility vocabulary',
-  'semantic.elevation.':
-    'elevation is semantic depth and must not be confused with box-shadow utilities',
-  'semantic.grid.': 'grid structure is layout policy, not a theme-variable utility family',
-  'semantic.layer.':
-    'z-index has no governed Tailwind theme namespace; use semantic layer utilities',
-  'semantic.motion.duration.':
-    'bare durations have no Tailwind theme namespace; use governed duration utilities',
-})
-
-const withoutTier = (path) => path.split('.').slice(1).join('-')
-
-const excludedReason = (path) => {
-  if (Object.hasOwn(UNPROJECTED, path)) {
-    return UNPROJECTED[path]
-  }
-
-  for (const [prefix, reason] of Object.entries(UNPROJECTED_PREFIXES)) {
-    if (path.startsWith(prefix)) {
-      return reason
-    }
-  }
-
-  return null
-}
-
-const prefixRuleFor = (path) => {
-  for (const [prefix, rule] of Object.entries(PREFIX_PROJECTION)) {
-    if (path.startsWith(prefix)) {
-      return { prefix, rule }
-    }
-  }
-  return null
-}
-
-export function tailwindNameOf(path) {
-  if (excludedReason(path) !== null) {
-    return null
-  }
-
-  const nested = prefixRuleFor(path)
-  if (nested) {
-    const local = path.slice(nested.rule.strip.length).replaceAll('.', '-')
-    if (!local) {
-      throw new Error(`Tailwind prefix projection '${nested.prefix}' produced no local name`)
-    }
-    return `--${nested.rule.namespace}-${local}`
-  }
-
-  const tier = tierOf(path)
-
-  if (tier === 'primitive') {
-    throw new Error(
-      `'${path}' is primitive tier -- exposing it as a Tailwind utility bypasses semantic policy`,
-    )
-  }
-
-  if (tier === 'component') {
-    return `--spacing-${withoutTier(path)}`
-  }
-
-  if (tier !== 'semantic') {
-    throw new Error(`token '${path}' resolves to unsupported tier '${tier}'`)
-  }
-
-  const [, group] = path.split('.')
-  const rule = GROUP_PROJECTION[group]
-
-  if (!rule) {
-    throw new Error(
-      `no Tailwind projection for semantic group '${group}' ('${path}') -- ` +
-        'map it or explicitly exclude it; omission is not a policy',
-    )
-  }
-
-  const local = rule.keepGroup ? withoutTier(path) : path.split('.').slice(2).join('-')
-
-  if (!local) {
-    throw new Error(`Tailwind projection for '${path}' produced an empty local name`)
-  }
-
-  const suffix = rule.suffix ? `-${rule.suffix}` : ''
-  return `--${rule.namespace}-${local}${suffix}`
-}
-
-export function namespaceOfTailwindName(name, namespaces = TAILWIND_NAMESPACES) {
-  return [...namespaces]
-    .sort((a, b) => b.length - a.length)
-    .find((namespace) => name.startsWith(`--${namespace}-`))
-}
-
 export function assertTailwindTables(
   groups = GROUP_PROJECTION,
-  prefixes = PREFIX_PROJECTION,
+  paths = PATH_PROJECTION,
   namespaces = TAILWIND_NAMESPACES,
 ) {
   for (const [group, rule] of Object.entries(groups)) {
     if (!namespaces.includes(rule.namespace)) {
-      throw new Error(`Tailwind group '${group}' projects to unknown namespace '${rule.namespace}'`)
+      throw new Error(
+        `the '${group}' group projects into '${rule.namespace}', which is not a Tailwind ` +
+          `namespace (${namespaces.join(', ')}) -- Tailwind accepts the custom property and ` +
+          'generates no utility, so every role in this group would silently have none',
+      )
     }
-
     if (typeof rule.keepGroup !== 'boolean') {
-      throw new Error(`Tailwind group '${group}' does not state keepGroup`)
-    }
-
-    if (rule.suffix !== undefined && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(rule.suffix)) {
-      throw new Error(`Tailwind group '${group}' has invalid suffix '${rule.suffix}'`)
-    }
-  }
-
-  for (const [prefix, rule] of Object.entries(prefixes)) {
-    if (!prefix.endsWith('.')) {
-      throw new Error(`Tailwind prefix projection '${prefix}' must end with '.'`)
-    }
-    if (!namespaces.includes(rule.namespace)) {
       throw new Error(
-        `Tailwind prefix '${prefix}' projects to unknown namespace '${rule.namespace}'`,
-      )
-    }
-    if (rule.strip !== prefix) {
-      throw new Error(
-        `Tailwind prefix '${prefix}' strip '${rule.strip}' must equal the matched prefix`,
+        `the '${group}' group does not say whether its own name survives into the variable -- ` +
+          'an undefined keepGroup reads as false and collapses roles that differ only by group',
       )
     }
   }
 
-  for (const namespace of LITERAL_NAMESPACES) {
-    if (!namespaces.includes(namespace)) {
-      throw new Error(`literal Tailwind namespace '${namespace}' is not declared`)
+  for (const [path, name] of Object.entries(paths)) {
+    if (!namespaces.some((ns) => name.startsWith(`--${ns}-`))) {
+      throw new Error(
+        `'${path}' is named '${name}', which is in no Tailwind namespace ` +
+          `(${namespaces.join(', ')})`,
+      )
     }
   }
-
-  return groups
 }
 
-export function assertTailwindProjection(paths) {
-  const governed = [...paths].filter((path) => tierOf(path) !== 'primitive')
+/** The path with its tier segment removed, hyphenated. */
+const withoutTier = (path) => path.split('.').slice(1).join('-')
 
-  if (governed.length === 0) {
-    throw new Error('Tailwind projection was checked over zero semantic/component tokens')
+/**
+ * The Tailwind custom property one token projects to, or `null` if excluded.
+ *
+ * Throws on a token the tables do not decide. That refusal is the mechanism: a
+ * new semantic role cannot reach screens by accident, and cannot fail to reach
+ * them silently either.
+ */
+export function tailwindNameOf(path) {
+  if (Object.hasOwn(UNPROJECTED, path)) {
+    return null
+  }
+  if (Object.hasOwn(PATH_PROJECTION, path)) {
+    return PATH_PROJECTION[path]
   }
 
-  const owners = new Map()
+  const tier = tierOf(path)
+  if (tier === 'component') {
+    // The component tier is geometry only, and it is spacing in every case. The
+    // tier segment goes and the component's own name stays, so
+    // `component.button.padding-block` reads `--spacing-button-padding-block`.
+    return `--spacing-${withoutTier(path)}`
+  }
+  if (tier !== 'semantic') {
+    throw new Error(
+      `'${path}' is ${tier} tier and has no Tailwind projection -- a primitive carries a ` +
+        'value and no role, so exposing one as a utility would let a screen reach past the ' +
+        'semantic layer that modes rebind',
+    )
+  }
 
-  for (const path of governed) {
+  const [, group] = path.split('.')
+  const rule = GROUP_PROJECTION[group]
+  if (rule === undefined) {
+    throw new Error(
+      `no Tailwind projection for the '${group}' group ('${path}') -- decide its namespace ` +
+        'in GROUP_PROJECTION, name the token in PATH_PROJECTION, or record it in UNPROJECTED ' +
+        'with the reason. A token that is silently unmapped drives no utility, and the class ' +
+        "that wanted it falls back to Tailwind's default scale without saying so",
+    )
+  }
+
+  const local = rule.keepGroup ? withoutTier(path) : path.split('.').slice(2).join('-')
+  return `--${rule.namespace}-${local}`
+}
+
+/**
+ * The projection's own rules, over the whole token set.
+ *
+ * Injectivity is the one that matters: two tokens landing on one Tailwind
+ * variable means the later declaration wins and one role becomes unreachable,
+ * which is invisible in the output and looks exactly like a role nobody used.
+ */
+export function assertTailwindProjection(tokens) {
+  const paths = [...tokens].filter((p) => tierOf(p) !== 'primitive')
+  if (paths.length === 0) {
+    throw new Error(
+      'the Tailwind projection was proven over zero tokens -- every rule here is about a ' +
+        'token, so an empty set satisfies all of them and reports a bridge that does not exist',
+    )
+  }
+
+  const seen = new Map()
+  for (const path of paths) {
     const name = tailwindNameOf(path)
     if (name === null) {
       continue
     }
 
-    const namespace = namespaceOfTailwindName(name)
-    if (!namespace) {
-      throw new Error(`'${path}' projects to '${name}', which is in no known Tailwind namespace`)
-    }
-
-    const previous = owners.get(name)
-    if (previous) {
+    const namespace = TAILWIND_NAMESPACES.find(
+      (ns) => name.startsWith(`--${ns}-`) && !name.slice(2 + ns.length + 1).includes('--'),
+    )
+    if (namespace === undefined) {
       throw new Error(
-        `'${previous}' and '${path}' both project to '${name}' -- one utility token has two owners`,
+        `'${path}' projects to '${name}', which is in no known Tailwind namespace ` +
+          `(${TAILWIND_NAMESPACES.join(', ')}) -- Tailwind would accept the custom property ` +
+          'and generate no utility from it',
       )
     }
 
-    owners.set(name, path)
+    const other = seen.get(name)
+    if (other !== undefined) {
+      throw new Error(
+        `'${path}' and '${other}' both project to '${name}' -- the second declaration wins, ` +
+          'so one of these roles is unreachable from any utility class and nothing renders ' +
+          'differently to say so',
+      )
+    }
+    seen.set(name, path)
   }
 
-  return owners
+  for (const [path, reason] of Object.entries(UNPROJECTED)) {
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new Error(
+        `'${path}' is excluded from the bridge with no reason -- an unexplained exclusion is ` +
+          'indistinguishable from an oversight',
+      )
+    }
+  }
 }
 
 /**
- * Different Tailwind namespaces can still bid for the same CLASS name.
+ * Every deliberate exclusion still names a token that exists.
  *
- * font/body-face vs font-weight/body are separated by the `-face` suffix.
- * color/foo vs text/foo both generate `text-foo`.
- * container/foo vs spacing/foo can both generate `max-w-foo`.
+ * SEPARATE FROM `assertTailwindProjection`, and the split is the point. That
+ * function asks "can this token set be projected", which must stay answerable
+ * for the synthetic sources `generate()` is deliberately testable against. This
+ * one asks "is our exclusion list current", which is a question about the REAL
+ * vocabulary and has no meaning over a three-token fixture.
+ *
+ * Merging them made fifteen generator tests fail for a reason that had nothing
+ * to do with what they were testing: a minimal synthetic source does not contain
+ * the one token the table excludes, so every one of them looked like a stale
+ * exclusion. One function, one question.
  */
-export const CONTESTED_UTILITY_FAMILIES = deepFreeze([
-  { namespaces: ['font', 'font-weight'], prefix: 'font-' },
-  { namespaces: ['color', 'text'], prefix: 'text-' },
-  { namespaces: ['container', 'spacing'], prefix: 'max-w-' },
-])
+export function assertExclusionsAreCurrent(tokens, excluded = UNPROJECTED) {
+  const paths = new Set(tokens)
+  for (const path of Object.keys(excluded)) {
+    if (!paths.has(path)) {
+      throw new Error(
+        `'${path}' is recorded as deliberately unprojected but is not a token -- a stale ` +
+          'exclusion describes a decision about something that no longer exists, and reads ' +
+          'as a considered omission rather than as a leftover',
+      )
+    }
+  }
+}
 
-export function assertNoUtilityShadowing(paths, families = CONTESTED_UTILITY_FAMILIES) {
-  const claims = new Map()
+/**
+ * No role is shadowed out of existence by another namespace.
+ *
+ * FOUND BY USING THE BRIDGE, NOT BY READING IT. `semantic.font.body` projects to
+ * `--font-body` and `semantic.weight.body` to `--font-weight-body`. Both are
+ * valid, both are injective as VARIABLES -- and both bid for the class `font-body`,
+ * which Tailwind awards to the family because it searches `--font-*` first. The
+ * weight role had a variable, a token, a contrast-checked value, and no utility
+ * anywhere that could apply it.
+ *
+ * `assertTailwindProjection` could not see it: it compares variable names, and
+ * these differ. The collision is one level up, in the class names the variables
+ * generate, which is the level nothing was looking at.
+ *
+ * The failure is silent in the worst way. `font-weight: var(--semantic-weight-body)`
+ * is the browser default for body text, so the component renders correctly by
+ * coincidence and stops the day the token changes.
+ */
+export function assertNoUtilityShadowing(tokens, prefixes = CONTESTED_PREFIX) {
+  const claimed = new Map()
 
-  for (const path of [...paths].filter((token) => tierOf(token) !== 'primitive')) {
+  for (const path of [...tokens].filter((p) => tierOf(p) !== 'primitive')) {
     const name = tailwindNameOf(path)
     if (name === null) {
       continue
     }
 
-    const namespace = namespaceOfTailwindName(name)
-    if (!namespace) {
+    // Longest namespace first: `--font-weight-body` is in `font-weight`, not in
+    // `font` with a name of `weight-body`. Matching short-first would file it
+    // under the wrong namespace and compare the wrong class name.
+    const namespace = Object.keys(prefixes)
+      .sort((a, b) => b.length - a.length)
+      .find((ns) => name.startsWith(`--${ns}-`))
+    if (namespace === undefined) {
       continue
     }
 
-    for (const family of families) {
-      if (!family.namespaces.includes(namespace)) {
-        continue
-      }
-
-      const local = name.slice(`--${namespace}-`.length)
-      const utility = `${family.prefix}${local}`
-      const previous = claims.get(utility)
-
-      if (previous) {
-        throw new Error(
-          `'${previous.path}' and '${path}' both generate '${utility}' from ` +
-            `'${previous.name}' and '${name}' -- one role becomes unreachable`,
-        )
-      }
-
-      claims.set(utility, { name, path })
+    const utility = prefixes[namespace] + name.slice(`--${namespace}-`.length)
+    const other = claimed.get(utility)
+    if (other !== undefined) {
+      throw new Error(
+        `'${path}' and '${other.path}' both generate the class '${utility}' -- ` +
+          `'${name}' and '${other.name}' are different variables in different namespaces, ` +
+          'so nothing above notices, but Tailwind awards the class to one of them and the ' +
+          'other role becomes unreachable from any utility. Rename one projection',
+      )
     }
+    claimed.set(utility, { name, path })
   }
-
-  return claims
 }
 
 /**
- * Emit namespace resets separately from the bridge.
- */
-export function emitTailwindResetBlock(namespaces = RESET_NAMESPACES) {
-  const lines = namespaces.map((namespace) => `  --${namespace}-*: initial;`).join('\n')
-
-  return `@theme {\n${lines}\n}`
-}
-
-/**
- * entries: iterable of [tokenPath, serializedLiteralValue]
+ * The Tailwind bridge as a registered policy.
  *
- * Runtime-safe namespaces are emitted as references in @theme inline.
- * Breakpoint/container values are emitted literally in @theme so Tailwind can
- * compile media/container conditions.
- *
- * Both outputs are GENERATED from the same token source, so literal duplication
- * here is projection, not a second authority.
+ * `assert` is `assertTailwindTables` rather than a new validator written to fill
+ * the slot. The three checks this projection can make without token paths in
+ * scope are already in that function; inventing a second entry point would put
+ * one obligation in two places on the day the trees merged.
  */
-export function emitTailwindBridge(entries) {
-  const literal = []
-  const inline = []
-
-  for (const [path, serializedValue] of [...entries].sort(([a], [b]) => a.localeCompare(b))) {
-    if (tierOf(path) === 'primitive') {
-      continue
-    }
-
-    const name = tailwindNameOf(path)
-    if (name === null) {
-      continue
-    }
-
-    const namespace = namespaceOfTailwindName(name)
-    if (!namespace) {
-      throw new Error(`cannot emit '${path}': '${name}' is in no Tailwind namespace`)
-    }
-
-    if (LITERAL_NAMESPACES.includes(namespace)) {
-      if (
-        typeof serializedValue !== 'string' ||
-        serializedValue.trim() === '' ||
-        /[;{}\r\n]/.test(serializedValue)
-      ) {
-        throw new Error(
-          `Tailwind ${namespace} token '${path}' needs one safe serialized literal value`,
-        )
-      }
-      literal.push(`  ${name}: ${serializedValue};`)
-    } else {
-      inline.push(`  ${name}: ${cssReferenceOf(path)};`)
-    }
-  }
-
-  if (literal.length === 0 && inline.length === 0) {
-    throw new Error('Tailwind bridge emitted zero tokens')
-  }
-
-  const blocks = []
-
-  if (literal.length > 0) {
-    blocks.push(`@theme {\n${literal.join('\n')}\n}`)
-  }
-
-  if (inline.length > 0) {
-    blocks.push(`@theme inline {\n${inline.join('\n')}\n}`)
-  }
-
-  return blocks.join('\n\n')
-}
-
-export function assertTailwindPolicy() {
-  assertTailwindTables()
-
-  const standard = tailwindNameOf('semantic.color.primary')
-  if (standard !== '--color-primary') {
-    throw new Error(`semantic.color.primary projected to '${standard}'`)
-  }
-
-  const font = tailwindNameOf('semantic.font.body')
-  if (font !== '--font-body-face') {
-    throw new Error(`semantic.font.body projected to '${font}'`)
-  }
-
-  const motion = tailwindNameOf('semantic.motion.easing.standard')
-  if (motion !== '--ease-standard') {
-    throw new Error(`semantic.motion.easing.standard projected to '${motion}'`)
-  }
-
-  return GROUP_PROJECTION
-}
-
 export const tailwindPolicy = definePolicy({
-  assert: assertTailwindPolicy,
+  assert: assertTailwindTables,
   id: 'projection.tailwind',
   kind: 'projection',
 })

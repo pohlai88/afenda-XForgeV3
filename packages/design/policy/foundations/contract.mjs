@@ -1,4 +1,4 @@
-import { deepFreeze } from './shared.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 export const POLICY_KINDS = deepFreeze(['foundation', 'component', 'interaction', 'projection'])
 
@@ -73,5 +73,12 @@ export function assertPolicyRegistry(policies) {
     ids.add(policy.id)
   }
 
-  return policies
+  // FROZEN, BECAUSE AN EXPORTED REGISTRY IS A TABLE LIKE ANY OTHER. It was
+  // returned raw, and nothing noticed for as long as no barrel put the three
+  // registries where the freeze walk could reach them. The merge did, and
+  // `tokens.test.ts` went red on all four at once -- which is the check working:
+  // `FOUNDATION_POLICIES.push(...)` was a supported operation on a canonical
+  // table, and `definePolicy` freezing each ENTRY had made the collection look
+  // protected from the outside.
+  return deepFreeze(policies)
 }

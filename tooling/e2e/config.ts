@@ -20,21 +20,3 @@ export const E2E_PORT = 3100
 const E2E_HOST = '127.0.0.1'
 
 export const E2E_ORIGIN = `http://${E2E_HOST}:${E2E_PORT}`
-
-/**
- * The gallery, which is now a scanned surface and not only a human one.
- *
- * It lands HERE rather than as a literal in `playwright.config.ts` for the
- * reason the paragraph above records: `vite.gallery.config.ts` already binds
- * this port, and a second copy beside a note about six copies of the last one
- * would be the same mistake with a fresh number.
- *
- * WHY PLAYWRIGHT NEEDS IT AT ALL. Twenty-three of the twenty-eight contracts are
- * mounted nowhere the application routes to -- Dialog, Select and Tooltip among
- * them, which are the three heaviest accessibility obligations in the registry.
- * The gallery is the only tree that renders the vocabulary, so it is the only
- * place the vocabulary can be scanned.
- */
-export const GALLERY_PORT = 4300
-
-export const GALLERY_ORIGIN = `http://${E2E_HOST}:${GALLERY_PORT}`

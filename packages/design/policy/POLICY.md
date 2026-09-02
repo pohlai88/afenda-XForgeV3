@@ -1,6 +1,6 @@
 # The design system policy
 
-**This document governs. `token-policy/` implements it.**
+**This document governs. `packages/design/policy/` implements it.**
 
 Where a rule here and the code disagree, one of them is a defect — and the code
 is the one that runs, so the disagreement is found by a failing check rather than
@@ -35,15 +35,15 @@ report, not a habit to build.
 ## 2. The three planes
 
 ```
-  VALUES     packages/design/tokens.json         what a colour IS
-      |                                          DTCG 2025.10, three tiers
-      |  tooling/generators/tokens.mjs
+  VALUES     packages/design/tokens.json      what a colour IS
+      |                                       DTCG 2025.10, three tiers
+      |  packages/design/policy/generators/tokens.mjs
       v
-  RULES      tooling/design-system/token-policy/  what a value MAY be
-      |                                          refuses at generation time
+  RULES      packages/design/policy/          what a value MAY be
+      |                                       refuses at generation time
       v
-  USE        packages/design/src/                     where a value is APPLIED
-                                                  utilities, contracts, components
+  USE        packages/design/src/             where a value is APPLIED
+                                              utilities, contracts, components
 ```
 
 Values are data. Rules are code that reads the data and throws. Use is
@@ -58,7 +58,7 @@ never knows a component.
   component   a role scoped to one thing   button.padding-block
 ```
 
-`ALLOWED_EDGES` in `tiers.mjs`: semantic may reference semantic or primitive;
+`ALLOWED_EDGES` in `vocabulary.mjs`: semantic may reference semantic or primitive;
 component may reference component or semantic; primitive references nothing.
 **Component may never reach a primitive.** A primitive carries a value and no
 role, so a mode has nothing to rebind — a component bound to one is a component
@@ -88,18 +88,18 @@ This is the governance surface. Every row is a rule that runs.
 
 | Rule | Module |
 | --- | --- |
-| Alias resolves; no dangling reference, no cycle | `tokens.mjs` |
-| Tier edge is legal | `tiers.mjs` |
-| Value matches its DTCG `$type` | `values.mjs` |
-| Token path is well-formed; CSS projection is injective | `identity.mjs` |
-| Contrast meets its role's floor **in every mode** | `color.mjs`, `accessibility.mjs` |
-| Target size meets the WCAG 2.5.8 floor in every mode | `accessibility.mjs` |
-| Type scale keeps hierarchy at every density, and at every shared rank | `form.mjs` |
-| Motion has a reduced-motion answer | `motion.mjs` |
-| Every elevation layer is separated by something robust | `elevation.mjs` |
-| Every role projects to exactly one Tailwind utility | `tailwind.mjs` |
-| No role is shadowed out of existence by another namespace | `tailwind.mjs` |
-| Component-token ceiling | `tiers.mjs` |
+| Alias resolves; no dangling reference, no cycle | `generators/tokens.mjs` |
+| Tier edge is legal | `vocabulary.mjs` |
+| Value matches its DTCG `$type` | `vocabulary.mjs` |
+| Token path is well-formed; CSS projection is injective | `vocabulary.mjs` |
+| Contrast meets its role's floor **in every mode** | `foundations/color.mjs`, `interaction/accessibility.mjs` |
+| Target size meets the WCAG 2.5.8 floor in every mode | `interaction/accessibility.mjs` |
+| Type scale keeps hierarchy at every density, and at every shared rank | `foundations/typography.mjs` |
+| Motion has a reduced-motion answer | `foundations/motion.mjs` |
+| Every elevation layer is separated by something robust | `foundations/elevation.mjs` |
+| Every role projects to exactly one Tailwind utility | `projection/tailwind.mjs` |
+| No role is shadowed out of existence by another namespace | `projection/tailwind.mjs` |
+| Component-token ceiling | `vocabulary.mjs` |
 
 Each policy table is also validated **on import** (`index.mjs`), because a kernel
 that checks tokens but not its own configuration is still fail-open.
@@ -796,9 +796,9 @@ against.
 | Fact | Its one home |
 | --- | --- |
 | What a colour is | `packages/design/tokens.json` |
-| What a role may be | `token-policy/*.mjs` |
-| The CSS custom-property name | `identity.mjs` — `cssNameOf` |
-| The Tailwind utility name | `tailwind.mjs` — `tailwindNameOf` |
+| What a role may be | `packages/design/policy/**/*.mjs` |
+| The CSS custom-property name | `vocabulary.mjs` — `cssNameOf` |
+| The Tailwind utility name | `projection/tailwind.mjs` — `tailwindNameOf` |
 | Which properties exist | `generated/token-names.json` |
 | The vocabulary, for humans | `generated/FOUNDATIONS.md` |
 | A component's grammar | `contracts.ts` |

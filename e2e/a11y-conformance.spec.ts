@@ -33,9 +33,16 @@ import { scan } from './axe.ts'
  * -- and the states are merely how a surface is reached. What must NOT be
  * duplicated is the scan itself, which is why it lives in `axe.ts`.
  *
- * PAIRED WITH `design-system-conformance.spec.ts`, which scans the primitives.
- * This file covers what the PRODUCT renders; that one covers the component
- * vocabulary, most of which no route mounts.
+ * IT WAS PAIRED, AND IT IS NOW ALONE. `design-system-conformance.spec.ts` scanned
+ * the component vocabulary -- the 17 of 28 contracts that no route mounts -- by
+ * driving the gallery. The gallery was deleted, so that spec was deleted with it,
+ * and this file is the only axe scan left in the repository.
+ *
+ * WHAT THAT MEANS FOR A GREEN RUN HERE, stated because a scan is the easiest
+ * green in a repository to over-read: this covers what the PRODUCT renders and
+ * nothing else. Dialog, Select and Tooltip carry the `modal`, `composite` and
+ * `disclosure` profiles, appear on no route, and are now scanned by nothing. A
+ * clean run of this file is not a clean run over the design system.
  */
 
 const PAGE = `/employees/${EMPLOYEE}`

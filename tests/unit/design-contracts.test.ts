@@ -17,7 +17,7 @@
  * recurring defect in its most literal form.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 // Relative, because the registry is deliberately absent from the package's
@@ -102,133 +102,43 @@ describe('the design system registry', () => {
 })
 
 /**
- * Every render site in the repository: the product, the gallery, the screens.
+ * THE MOUNT AND CATALOGUE CHECKS ARE GONE, AND THEIR SUBJECT IS WHY.
  *
- * Deliberately NOT the component directory itself -- a component importing
- * another component is composition, not a mount, and counting it would let a
- * closed cluster of primitives that nothing outside ever renders report itself
- * as covered.
+ * Two suites stood here and both read `packages/design/gallery`:
+ *
+ *   every contract is rendered somewhere   RENDER_ROOTS spanned the product, the
+ *                                          gallery and the screens, and refused a
+ *                                          contract no tree opened as a tag
+ *   the component workbench                read `catalogue.tsx` as text and
+ *                                          refused a contract with no entry, or
+ *                                          an entry with no named story
+ *
+ * The gallery was deleted. Neither check can be repointed, because the gallery
+ * was not one render root among three -- it was the ONLY tree that rendered the
+ * vocabulary. Measured at deletion: 17 of 28 contracts are opened as a tag
+ * nowhere else in this repository.
+ *
+ *   Alert, Avatar, Badge, Dialog, EmptyState, Input, InputGroup, Label, List,
+ *   ListItem, ResourceBoundary, Select, Separator, Skeleton, Status, Textarea,
+ *   Tooltip
+ *
+ * SO THE COVERAGE IS NOT REDUCED, IT IS REMOVED, and this paragraph is what
+ * stands in its place. Those seventeen have a contract, an obligation, and in
+ * several cases a recorded screen-reader debt -- against a component that no
+ * tree in this repository renders. `e2e/design-system-conformance.spec.ts` went
+ * with them: it was the only axe scan of the vocabulary, and it scanned the
+ * gallery.
+ *
+ * The hole is the one the deleted suite was written to close, restated by its
+ * own header: *a contract with no MOUNT is an obligation nothing can ever be
+ * observed against -- scanning green because there was nothing on the page to
+ * scan.* Nothing checks that now, and no stage reports it missing.
+ *
+ * RESTORING THE CHECKS IS RESTORING THEIR SUBJECT. `git checkout <rev> --
+ * packages/design/gallery` brings back four files and both suites work again
+ * unchanged. That is written down so the next reader knows they were not found
+ * wrong -- they were left with nothing to read.
  */
-const RENDER_ROOTS = ['apps/web', 'packages/design/gallery', 'packages/design/src/screens']
-
-const tsxUnder = (dir: string, acc: string[] = []): string[] => {
-  let entries: string[]
-  try {
-    entries = readdirSync(dir)
-  } catch {
-    return acc
-  }
-  for (const entry of entries) {
-    if (entry === 'node_modules' || entry === '.next' || entry === 'dist') {
-      continue
-    }
-    const full = join(dir, entry)
-    if (statSync(full).isDirectory()) {
-      tsxUnder(full, acc)
-    } else if (full.endsWith('.tsx')) {
-      acc.push(full)
-    }
-  }
-  return acc
-}
-
-const renderedSources = RENDER_ROOTS.flatMap((r) => tsxUnder(join(ROOT, r))).map((f) =>
-  readFileSync(f, 'utf8'),
-)
-
-describe('every contract is rendered somewhere', () => {
-  /**
-   * THE HOLE THIS CLOSES, measured before it was written. axe reported zero WCAG
-   * violations across six theme x density modes, and thirty-six of its rules came
-   * back INAPPLICABLE -- because five contracts appeared in no tree in the
-   * repository at all: Dialog, InputGroup, Select, Textarea, Tooltip.
-   *
-   * Three of those five owe screen-reader evidence. `modal`, `composite` and
-   * `disclosure` are the heaviest obligations the registry can carry, and they
-   * were carried by components nobody could look at, in a system whose gallery
-   * exists so that every block is seen before it reaches a page.
-   *
-   * A CONTRACT WITH NO MOUNT IS THE THIRD DRIFT, beside the two this file
-   * already refuses. A component with no contract is claimed by no suite; a
-   * contract with no component is an obligation against nothing; and a contract
-   * with no MOUNT is an obligation nothing can ever be observed against --
-   * scanning green because there was nothing on the page to scan.
-   */
-  it.each(contractIds)('%s appears in a tree somewhere', (id) => {
-    // Word-boundary on the tag open, so `<List` does not satisfy `<ListItem`
-    // and vice versa -- the pair that makes a naive substring search useless.
-    const opensTag = new RegExp(`<${id}[\\s/>]`)
-    expect(
-      renderedSources.some((src) => opensTag.test(src)),
-      `${id} is declared in the registry and rendered nowhere -- a scan cannot see it, ` +
-        'and neither can a person',
-    ).toBe(true)
-  })
-
-  it('has render sites to search, so a passing suite cannot mean it read nothing', () => {
-    expect(renderedSources.length).toBeGreaterThan(10)
-  })
-
-  /**
-   * THE SEARCH CAN SAY NO, shown rather than assumed.
-   *
-   * Every case above passes, which is the shape this repository distrusts: a
-   * search that matches everything and a system that renders everything print
-   * the same green. So the same predicate is handed a name nothing mounts.
-   *
-   * The second pair is the one that actually bites. `<ListItem` contains the
-   * literal `<List`, so a substring search would report `List` covered by its
-   * own child and never notice a list that had lost its container -- which is
-   * why the predicate anchors on the character after the tag name.
-   */
-  it('refuses a component nothing mounts, and does not confuse a prefix for a mount', () => {
-    const mounts = (id: string) =>
-      renderedSources.some((src) => new RegExp(`<${id}[\\s/>]`).test(src))
-
-    expect(mounts('NotAComponent')).toBe(false)
-    expect(mounts('Tooltip')).toBe(true)
-    expect(mounts('TooltipNeverWritten')).toBe(false)
-  })
-})
-
-/**
- * The workbench catalogues every contract, checked as a SET.
- *
- * A gallery is only a Storybook replacement while it is COMPLETE. The previous
- * one showed eleven compositions and, measured, covered seventeen of
- * twenty-eight contracts with eleven appearing nowhere at all -- and nothing
- * said so, because a catalogue that is missing an entry looks exactly like a
- * catalogue.
- *
- * Read as TEXT rather than imported, deliberately: importing the catalogue would
- * pull every component and its primitives into a node-environment unit suite to
- * answer a question about a list of names.
- */
-describe('the component workbench', () => {
-  const catalogue = readFileSync(join(ROOT, 'packages/design/gallery/catalogue.tsx'), 'utf8')
-  const catalogued = [...catalogue.matchAll(/contract: '([A-Za-z]+)'/g)]
-    .map((m) => m[1] ?? '')
-    .sort((a, b) => a.localeCompare(b))
-
-  it('has an entry for every contract, and an entry for nothing else', () => {
-    expect(catalogued).toEqual([...contractIds].sort((a, b) => a.localeCompare(b)))
-  })
-
-  /**
-   * A contract present with an empty `stories` array is catalogued and shows
-   * NOTHING — the same accounted-for-but-invisible state this file exists to
-   * refuse, one level down. The set check above cannot see it.
-   */
-  it.each(contractIds)('%s has at least one named story', (id) => {
-    const start = catalogue.indexOf(`contract: '${id}'`)
-    expect(start, `${id} is not in the catalogue at all`).toBeGreaterThan(-1)
-
-    // The entry runs to the next contract, or to the end for the last one.
-    const next = catalogue.indexOf("contract: '", start + 1)
-    const entry = catalogue.slice(start, next === -1 ? undefined : next)
-    expect(entry.includes("name: '"), `${id} is catalogued with no story to show`).toBe(true)
-  })
-})
 
 describe('the assistive-technology debt', () => {
   /**

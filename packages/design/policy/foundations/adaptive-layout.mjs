@@ -6,8 +6,8 @@
  * panes side by side. Resizing changes presentation, not business/navigation state.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 export const ADAPTIVE_LAYOUTS = deepFreeze({
   feed: {

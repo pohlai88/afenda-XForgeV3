@@ -214,6 +214,20 @@ export function cssNameOf(tokenPath) {
 }
 
 /**
+ * The same name, as the reference a stylesheet writes.
+ *
+ * ONE ALGORITHM, NOT TWO. `projection/css.mjs` needs `var(--x)` and used to get
+ * it from a second identity module that reimplemented the grammar -- a copy that
+ * differed from this one in two ways nobody had compared: it required at least
+ * two path segments, and it did not resolve the tier. That module is deleted and
+ * this is the single seam, so a caller that needs a reference cannot reproduce
+ * the naming rule by accident.
+ */
+export function cssReferenceOf(tokenPath) {
+  return `var(${cssNameOf(tokenPath)})`
+}
+
+/**
  * The CSS projection is one-to-one. `semantic.radius-control` and
  * `semantic.radius.control` both project to `--semantic-radius-control`, and the
  * generator emitted that property twice at exit 0 with the later declaration
@@ -745,3 +759,28 @@ export function assertLifecycle(subject, entry, registry) {
     )
   }
 }
+
+/*
+ * EVERY TABLE, CHECKED ON IMPORT — and checked HERE rather than in a barrel
+ * above, which is a decision about ORDER and not about tidiness.
+ *
+ * These four ran in the deleted token kernel's `index.mjs`, first in a sequence
+ * that ended with colour and Tailwind. That sequence cannot be reproduced from a
+ * barrel: ES modules evaluate every import before the importing module's own
+ * body, so four calls written in `index.mjs` would run AFTER the colour and
+ * elevation assertions they are meant to precede. Their order would read correct
+ * in the source and be wrong at runtime — the exact shape of defect this
+ * repository keeps a list of, with the added insult of being invisible.
+ *
+ * Stated as a rule: an assertion belongs in the module that owns its table.
+ * Everything in this tree depends on this file, so these run first by
+ * construction rather than by anyone maintaining a list.
+ *
+ * ORDER WITHIN THE FOUR IS THE KERNEL'S, unchanged. The version pair depends on
+ * nothing and runs first: a malformed contract version is the one failure here a
+ * reader should not have to reach a colour role to hear about.
+ */
+assertContractVersions()
+assertGroupNamesProjectUnambiguously()
+assertLifecycleRegistry()
+assertValueShapeRegistry()

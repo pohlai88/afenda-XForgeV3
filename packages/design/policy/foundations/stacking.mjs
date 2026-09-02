@@ -32,8 +32,8 @@
  * That is the difference between a tripwire and a rule.
  */
 
+import { deepFreeze } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
-import { deepFreeze } from './shared.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 

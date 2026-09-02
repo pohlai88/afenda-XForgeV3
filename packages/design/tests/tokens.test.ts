@@ -21,13 +21,13 @@ import { describe, expect, it } from 'vitest'
 // graph. The reason is NOT the one above it: that suppression says "tooling is
 // untyped", and this module is in packages/. Same shape, different cause, so it
 // gets its own sentence rather than inheriting a wrong one.
-import * as foundations from '../../packages/design/policy/foundations/index.mjs'
+import * as foundations from '../policy/foundations/index.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-import * as policy from '../../tooling/design-system/token-policy/index.mjs'
+import { flatten, generate } from '../policy/generators/tokens.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-import { flatten, generate } from '../../tooling/generators/tokens.mjs'
+import * as policy from '../policy/index.mjs'
 
-const ROOT = join(import.meta.dirname, '../..')
+const ROOT = join(import.meta.dirname, '../../..')
 const source = JSON.parse(readFileSync(join(ROOT, 'packages/design/tokens.json'), 'utf8'))
 
 /**
@@ -666,7 +666,7 @@ describe('the policy kernel', () => {
    */
   it('refuses a colour role named for its intent rather than for what it styles', () => {
     expect(() =>
-      policy.assertPolicyRegistry({
+      policy.assertColorRoleRegistry({
         'accent.default': {
           againstContexts: ['neutral'],
           kind: 'ui',
@@ -678,7 +678,7 @@ describe('the policy kernel', () => {
 
   it('and refuses a role whose name could not survive the CSS projection', () => {
     expect(() =>
-      policy.assertPolicyRegistry({
+      policy.assertColorRoleRegistry({
         'surface.Accent': { againstContexts: ['neutral'], kind: 'ui' },
       }),
     ).toThrow(/outside the naming grammar/)

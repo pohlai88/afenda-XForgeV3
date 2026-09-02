@@ -49,7 +49,7 @@
  */
 
 import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze } from '../foundations/shared.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /* -------------------------------------------------------------- profiles -- */
 
@@ -192,7 +192,7 @@ export const PROFILE_COVERAGE = deepFreeze({
     // than profile-derived. The distinction matters: it covers a new control
     // without being told, and it would also pass a page where nothing focusable
     // rendered at all -- which is why it asserts it found more than five stops.
-    subjects: ['every tab stop in the gallery'],
+    subjects: ['every tab stop the product routes to'],
   },
   none: {
     derived: true,

@@ -62,7 +62,7 @@
 
 import { pathToFileURL } from 'node:url'
 import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze } from '../foundations/shared.mjs'
+import { deepFreeze } from '../vocabulary.mjs'
 
 /**
  * The screen readers a result may be recorded against, and the reason the list

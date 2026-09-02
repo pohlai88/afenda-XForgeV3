@@ -47,7 +47,7 @@
  */
 
 import { definePolicy } from '../foundations/contract.mjs'
-import { deepFreeze, toPixels } from '../foundations/shared.mjs'
+import { deepFreeze, toPixels } from '../vocabulary.mjs'
 
 /* ---------------------------------------------------------------- floors -- */
 

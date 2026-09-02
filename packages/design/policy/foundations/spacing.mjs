@@ -66,9 +66,9 @@
  * needs slack the space scale does not.
  */
 
+import { deepFreeze, toPixels } from '../vocabulary.mjs'
 import { definePolicy } from './contract.mjs'
 import { DENSITY_ORDER } from './density.mjs'
-import { deepFreeze, toPixels } from './shared.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
