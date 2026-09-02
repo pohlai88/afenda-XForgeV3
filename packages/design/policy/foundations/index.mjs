@@ -30,14 +30,27 @@
  *   sizing      how big a thing is, and which things may sit off the grid
  *   radius      four roles as a nesting order
  *   stacking    rendering order, which is not elevation
- *   motion      the reduced-motion answer every role owes -- THE ONE DOMAIN
- *               THIS TREE ACTUALLY GOVERNS. `tooling/generators/tokens.mjs`
- *               imports `MOTION_ROLES` and `motionFailures` from this barrel,
- *               and the kernel's copy was deleted in the same commit rather
- *               than left forwarding. It moved first because it could be proven
- *               identical: same exports, four tables byte-for-byte, and matching
- *               failures over inputs that discriminate. Every other domain here
- *               is still checked only on import and by the unit suite
+ *   motion      the reduced-motion answer every role owes -- GOVERNED FROM HERE
+ *   typography  rank, size and leading floors -- GOVERNED FROM HERE
+ *
+ * THOSE TWO ARE WHAT THIS TREE ACTUALLY GOVERNS. `tooling/generators/tokens.mjs`
+ * and `tests/unit/tokens.test.ts` import them from this barrel, and the kernel's
+ * copies were deleted in the commits that repointed them rather than left
+ * forwarding. Both moved on the same evidence: identical exports, identical
+ * tables, identical failures over inputs that discriminate between the rules --
+ * and each was then shown REFUSING a real violation through the generator, which
+ * is the only part that proves the wiring rather than the code.
+ *
+ * Every other domain here is still checked on import and by the unit suite only.
+ *
+ * TYPOGRAPHY ARRIVED SMALLER THAN IT LEFT, and that is what moving is for. It
+ * shed `LEADING_GRID_PX`, which stood beside `spacing.mjs`'s `GRID_PX` -- the 4px
+ * grid written twice. Two more duplicates fell out of the same pass, both found
+ * by the barrel rather than by reading: `ASSUMED_ROOT_PX` in spacing AND
+ * typography, `DENSITY_ORDER` in density AND spacing. `export *` DROPS a name two
+ * modules define instead of reporting it, so all three were missing from this
+ * index while looking present in the files -- a duplicate that deletes the fact
+ * from the only sanctioned entry point
  *   layout      window classes, reading ceilings, the application shell
  *
  * ── PRESENT ON DISK, DELIBERATELY NOT EXPORTED ─────────────────────────────

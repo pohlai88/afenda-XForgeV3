@@ -726,12 +726,12 @@ describe('the typography floors hold at a premise, not universally', () => {
   const modes = new Map([['base', sizes]])
 
   it('passes at the 16px root the floors were chosen against', () => {
-    expect(policy.typographyFailures(modes)).toEqual([])
-    expect(policy.ASSUMED_ROOT_PX).toBe(16)
+    expect(foundations.typographyFailures(modes)).toEqual([])
+    expect(foundations.ASSUMED_ROOT_PX).toBe(16)
   })
 
   it('and body drops under its floor the moment the root does', () => {
-    const failures = policy.typographyFailures(modes, undefined, 15)
+    const failures = foundations.typographyFailures(modes, undefined, 15)
     expect(failures.join('\n')).toMatch(/body renders at 13\.125px at a 15px root, below its 14px/)
   })
 })
@@ -770,18 +770,18 @@ describe('the 4px grid the leading ratios were chosen for', () => {
 
   it('accepts a line box that lands on the grid', () => {
     // 16 x 1.5 = 24, which is the body role this system actually ships.
-    expect(policy.typographyFailures(at('1rem', 1.5), bodyOnly(1.5, 14))).toEqual([])
+    expect(foundations.typographyFailures(at('1rem', 1.5), bodyOnly(1.5, 14))).toEqual([])
   })
 
   it('absorbs the rounding a stored ratio carries', () => {
     // 12 x 1.3333 = 15.9996. A ratio is stored rounded, so an equality test here
     // would fail every role in the file and the check would be deleted, correctly.
-    expect(policy.typographyFailures(at('0.75rem', 1.3333), bodyOnly(1.3, 12))).toEqual([])
+    expect(foundations.typographyFailures(at('0.75rem', 1.3333), bodyOnly(1.3, 12))).toEqual([])
   })
 
   it('refuses a line box that does not land on it', () => {
     // 16 x 1.6 = 25.6px. Clears its leading floor, so only the grid can object.
-    const failures = policy.typographyFailures(at('1rem', 1.6), bodyOnly(1.5, 14))
+    const failures = foundations.typographyFailures(at('1rem', 1.6), bodyOnly(1.5, 14))
     expect(failures.join('\n')).toMatch(
       /body leading resolves to 25\.60px, which is 1\.60px off the 4px grid/,
     )
@@ -789,7 +789,7 @@ describe('the 4px grid the leading ratios were chosen for', () => {
 
   it('catches the size moving without its ratio, which is how this drifts', () => {
     // 13px at the ratio chosen for 12px: 13 x 1.3333 = 17.33, off by 1.33.
-    const failures = policy.typographyFailures(at('0.8125rem', 1.3333), bodyOnly(1.3, 12))
+    const failures = foundations.typographyFailures(at('0.8125rem', 1.3333), bodyOnly(1.3, 12))
     expect(failures.join('\n')).toMatch(/17\.33px, which is 1\.33px off the 4px grid/)
   })
 
@@ -799,12 +799,18 @@ describe('the 4px grid the leading ratios were chosen for', () => {
     // report as 1.5px off -- every role in the file would go red the moment a
     // reader changed their root, which is the one thing rem sizing exists to
     // survive.
-    expect(policy.typographyFailures(at('0.875rem', 1.7143), bodyOnly(1.5, 12), 15)).toEqual([])
+    expect(foundations.typographyFailures(at('0.875rem', 1.7143), bodyOnly(1.5, 12), 15)).toEqual(
+      [],
+    )
   })
 
   it('states its grid and tolerance rather than hiding them in a literal', () => {
-    expect(policy.LEADING_GRID_PX).toBe(4)
-    expect(policy.LEADING_GRID_TOLERANCE_PX).toBe(0.05)
+    // THE GRID IS SPACING'S NOW, and reading it from there is the assertion. It
+    // was declared in typography and in spacing both -- 4 written twice, dropped
+    // silently by the barrel. Typography keeps only the tolerance, which is
+    // genuinely its own: a leading is a product of two rounded numbers.
+    expect(foundations.GRID_PX).toBe(4)
+    expect(foundations.LEADING_GRID_TOLERANCE_PX).toBe(0.05)
   })
 })
 
@@ -975,35 +981,35 @@ describe('the typography policy names tokens that exist', () => {
   const tokens = flatten(source)
 
   it('resolves every path in the shipped registry, at the type its part requires', () => {
-    expect(() => policy.assertTypographyTokens(tokens)).not.toThrow()
+    expect(() => foundations.assertTypographyTokens(tokens)).not.toThrow()
   })
 
   it('refuses a size path that does not resolve', () => {
     const typo = {
-      ...policy.TYPE_ROLES,
-      body: { ...policy.TYPE_ROLES.body, size: 'semantic.type.bdoy' },
+      ...foundations.TYPE_ROLES,
+      body: { ...foundations.TYPE_ROLES.body, size: 'semantic.type.bdoy' },
     }
-    expect(() => policy.assertTypographyTokens(tokens, typo)).toThrow(
+    expect(() => foundations.assertTypographyTokens(tokens, typo)).toThrow(
       /names size token 'semantic\.type\.bdoy', which does not exist/,
     )
   })
 
   it('refuses a leading path that does not resolve', () => {
     const typo = {
-      ...policy.TYPE_ROLES,
-      body: { ...policy.TYPE_ROLES.body, leading: 'semantic.leading.bdoy' },
+      ...foundations.TYPE_ROLES,
+      body: { ...foundations.TYPE_ROLES.body, leading: 'semantic.leading.bdoy' },
     }
-    expect(() => policy.assertTypographyTokens(tokens, typo)).toThrow(/which does not exist/)
+    expect(() => foundations.assertTypographyTokens(tokens, typo)).toThrow(/which does not exist/)
   })
 
   // A leading that is a dimension rather than a number would be read by the
   // wrong rule: `Number('1.5rem')` is NaN, and the floor it was given never applies.
   it('refuses a part pointing at a token of the wrong type', () => {
     const crossed = {
-      ...policy.TYPE_ROLES,
-      body: { ...policy.TYPE_ROLES.body, leading: 'semantic.type.body' },
+      ...foundations.TYPE_ROLES,
+      body: { ...foundations.TYPE_ROLES.body, leading: 'semantic.type.body' },
     }
-    expect(() => policy.assertTypographyTokens(tokens, crossed)).toThrow(
+    expect(() => foundations.assertTypographyTokens(tokens, crossed)).toThrow(
       /is a dimension and must be a number/,
     )
   })
@@ -1021,7 +1027,7 @@ describe('the typography policy names tokens that exist', () => {
    */
   it('permits a role that omits a part on purpose', () => {
     const minimal = { minimal: { minimumPx: 12, rank: 0, size: 'semantic.type.label' } }
-    expect(() => policy.assertTypographyTokens(tokens, minimal)).not.toThrow()
+    expect(() => foundations.assertTypographyTokens(tokens, minimal)).not.toThrow()
   })
 })
 

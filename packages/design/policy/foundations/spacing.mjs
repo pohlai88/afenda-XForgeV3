@@ -67,6 +67,7 @@
  */
 
 import { definePolicy } from './contract.mjs'
+import { DENSITY_ORDER } from './density.mjs'
 import { deepFreeze, toPixels } from './shared.mjs'
 
 /* ------------------------------------------------------------- premises -- */
@@ -126,8 +127,18 @@ export const ASSUMED_ROOT_PX = 16
  *
  * `default` is the base -- it names no mode block in `$modes.density`, so a
  * resolved map for it is the unmodified token set.
+ *
+ * THE AXIS IS `density.mjs`'S, AND THIS FILE HELD A SECOND COPY. Both declared the
+ * identical three modes in the identical order, so they agreed -- which is the only
+ * state this defect is ever found in. The barrel is what exposed it: two modules
+ * defining one name makes `export *` drop it, so `DENSITY_ORDER` was absent from
+ * `index.mjs` while appearing present in two files.
+ *
+ * It belongs to density, which owns the axis itself. Spacing is a CONSUMER of the
+ * order -- it walks it to assert compact never resolves larger than default -- and
+ * reading it from the owner is what makes that assertion about the axis rather than
+ * about this file's copy of it.
  */
-export const DENSITY_ORDER = deepFreeze(['compact', 'default', 'comfortable'])
 
 /* ---------------------------------------------------------------- roles -- */
 

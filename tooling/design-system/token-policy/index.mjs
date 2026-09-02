@@ -39,21 +39,26 @@
  *   values        shapes per type, serialization, unit conversion
  *   accessibility the interactive target floor
  *   colour        roles, composition contexts, derived pairs, alpha
- *   typography    rank, size and leading floors, hierarchy under density
  *   elevation     layers, and what may separate one from another
  *
  * Colour remains the most developed, because colour is where the defects were.
- * The rest are governed in proportion to what they actually render: typography
- * has consumers and now has rules; a fourth elevation layer does not exist and
- * is not invented here.
+ * A fourth elevation layer does not exist and is not invented here.
  *
- * MOTION HAS LEFT THIS KERNEL. It is
- * `packages/design/policy/foundations/motion.mjs`, which every consumer now
- * imports, and the copy that stood here was deleted in the commit that
- * repointed them -- not left re-exporting, because a forwarding alias is the
- * second home this file's first principle exists to refuse. It was the first
- * domain to move because it could be PROVEN identical: same exports, same four
- * tables byte-for-byte, and the same failures over inputs that discriminate.
+ * MOTION AND TYPOGRAPHY HAVE LEFT THIS KERNEL. They are
+ * `packages/design/policy/foundations/`, which every consumer now imports, and
+ * the copies that stood here were deleted in the commits that repointed them --
+ * not left re-exporting, because a forwarding alias is the second home this
+ * file's first principle exists to refuse. Both moved on the same evidence:
+ * identical exports, identical tables, and identical failures over inputs that
+ * discriminate between the rules rather than tripping one shared gate.
+ *
+ * TYPOGRAPHY DID NOT ARRIVE INTACT, AND THAT IS THE POINT OF MOVING IT. It shed
+ * `LEADING_GRID_PX = 4`, which sat here beside `spacing.mjs`'s `GRID_PX = 4` --
+ * the 4px grid written twice by the pass that wrote both. The grid belongs to
+ * spacing, because `space.1` is 0.25rem and the leading ratios were chosen to
+ * land on the scale spacing already uses. Typography imports it and keeps only
+ * its own tolerance, which is genuinely its own: a leading is the product of two
+ * rounded numbers and needs slack a single exact rem does not.
  *
  * ── WHAT IT STILL DOES NOT GOVERN ──────────────────────────────────────────
  *
@@ -78,7 +83,7 @@ import {
   assertColorPolicyKinds,
   assertPolicyRegistry,
 } from './colour.mjs'
-import { assertElevationLayers, assertTypographyRoles } from './form.mjs'
+import { assertElevationLayers } from './form.mjs'
 import { assertTailwindTables } from './tailwind.mjs'
 import {
   assertContractVersions,
@@ -110,7 +115,6 @@ assertValueShapeRegistry()
 assertColorPolicyKinds()
 assertAlphaPermissions()
 assertPolicyRegistry()
-assertTypographyRoles()
 assertElevationLayers()
 // The Tailwind bridge's own tables. Last, because it is the only projection that
 // leaves this repository's vocabulary for another system's, so a failure here

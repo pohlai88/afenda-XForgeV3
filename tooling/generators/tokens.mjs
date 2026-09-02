@@ -73,16 +73,22 @@ import { pathToFileURL } from 'node:url'
 // that tree load-bearing rather than a directory nobody reads. Through the
 // foundations barrel, not the file, because that index is the authority and its
 // import-time assertions are the point of naming it.
-import { MOTION_ROLES, motionFailures } from '../../packages/design/policy/foundations/index.mjs'
+import {
+  ASSUMED_ROOT_PX,
+  assertTypographyTokens,
+  MOTION_ROLES,
+  motionFailures,
+  TYPE_ROLES,
+  typeRolesFor,
+  typographyFailures,
+} from '../../packages/design/policy/foundations/index.mjs'
 import {
   ALLOWED_EDGES,
-  ASSUMED_ROOT_PX,
   assertExclusionsAreCurrent,
   assertNoUtilityShadowing,
   assertPolicyRegistry,
   assertTailwindProjection,
   assertTargetMinimum,
-  assertTypographyTokens,
   assertUniqueCssNames,
   COLOR_ROLE_POLICIES,
   COMPONENT_TOKEN_CEILING,
@@ -99,11 +105,8 @@ import {
   SUPPORTED_VALUE_SHAPES,
   serializeValue,
   TOKEN_CONTRACT_VERSION,
-  TYPE_ROLES,
   tailwindNameOf,
   tierOf,
-  typeRolesFor,
-  typographyFailures,
   UNPROJECTED,
 } from '../design-system/token-policy/index.mjs'
 

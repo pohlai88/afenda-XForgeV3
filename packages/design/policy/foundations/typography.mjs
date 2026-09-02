@@ -50,7 +50,7 @@
 
 import { definePolicy } from './contract.mjs'
 import { deepFreeze, toPixels } from './shared.mjs'
-import { GRID_PX } from './spacing.mjs'
+import { ASSUMED_ROOT_PX, GRID_PX } from './spacing.mjs'
 
 /* ------------------------------------------------------------------ roles -- */
 
@@ -236,8 +236,20 @@ export const HIERARCHY_DIMENSIONS = deepFreeze(['size', 'weight'])
  * floors are met at this premise and are not a claim about a reader who has
  * changed it. `typographyFailures` takes the root as an argument so that claim
  * can be tested at other roots rather than assumed at this one.
+ *
+ * IT IS NOT DECLARED HERE, AND BRIEFLY WAS -- the same correction `LEADING_GRID_PX`
+ * needed, found the same way. This file and `spacing.mjs` both held
+ * `ASSUMED_ROOT_PX = 16`, and the barrel is what made it visible: `export *` DROPS
+ * a name two modules define rather than reporting it, so the constant was missing
+ * from `index.mjs` entirely and nothing noticed until a consumer asked for it BY
+ * NAME and got a SyntaxError. A duplicate that silently deletes the fact from the
+ * only sanctioned entry point is worse than one that merely disagrees.
+ *
+ * It comes from spacing now, in the direction `GRID_PX` already travels. That file
+ * anticipated a shared premises module and may still be right -- the root is a
+ * property of the DOCUMENT, not of either domain -- but one borrowed constant does
+ * not earn a new module (law 30), and two declarations earn a fix today.
  */
-export const ASSUMED_ROOT_PX = 16
 
 /**
  * THE 4px GRID, WHICH WAS CLAIMED IN TWO PLACES AND VERIFIED IN NONE.
