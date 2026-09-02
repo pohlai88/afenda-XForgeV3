@@ -228,7 +228,26 @@
       // splitting it to satisfy a complexity metric hides the enumeration
       // behind indirection. The rule stays ON for product code, where the same
       // shape usually is a problem.
-      "includes": ["tooling/**"],
+      //
+      // THE SECOND PATH IS THAT SAME KIND OF CODE AT A DIFFERENT ADDRESS.
+      // `packages/design/policy/` is the token kernel being extracted out of
+      // `tooling/design-system/token-policy/`, one domain per file, and its
+      // `*Failures` evaluators enumerate exactly the same way -- the seven that
+      // trip this rule score 22 to 47 by LISTING CONDITIONS, not by branching
+      // cleverly. Refactoring them would buy the metric and spend the property
+      // the comment above is protecting.
+      //
+      // NOTE WHAT THIS OVERRIDE SELECTS ON. It is keyed by PATH and it means by
+      // KIND, so governance code moving out of `tooling/` silently changes which
+      // rules govern it. That is how the extraction got here: untracked, the tree
+      // was never linted at all, and its first contact with the gate was seven
+      // errors the identical code had never raised one directory over. The next
+      // domain to move will do the same, and this line is what has to be
+      // remembered -- which is the shape CLAUDE.md's review prompt is about.
+      //
+      // NARROW TO `policy/**` DELIBERATELY. `packages/design/src/` is product
+      // code -- components, screens -- and keeps the rule.
+      "includes": ["tooling/**", "packages/design/policy/**"],
       "linter": {
         "rules": {
           "complexity": {
