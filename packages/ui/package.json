@@ -6,9 +6,11 @@
   "exports": {
     ".": "./src/index.tsx",
     "./boundary": "./src/boundary.tsx",
+    "./command-match": "./src/command-match.ts",
     "./command-palette": "./src/command-palette.tsx",
     "./contracts": "./src/contracts.ts",
     "./data-grid": "./src/data-grid.tsx",
+    "./data-grid-nav": "./src/data-grid-nav.ts",
     "./live-region": "./src/live-region.ts",
     "./runtime": "./src/runtime.ts",
     "./schema": "./generated/schema.json",

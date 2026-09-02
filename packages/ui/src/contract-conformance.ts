@@ -25,24 +25,20 @@
  * wrong -- and the answer is not automatically the contract.
  */
 import type { ReactElement, ReactNode } from 'react'
-import type * as commandPalette from './command-palette'
 import type { ContractId, DeclaredProps } from './contracts'
-import type * as dataGrid from './data-grid'
-import type * as components from './index'
+import type { ImplementationModules } from './runtime'
 
 /**
- * EVERY MODULE A CONTRACT CAN LIVE IN, and the union is the maintenance cost of
- * the client-boundary split rather than a design choice.
+ * EVERY MODULE A CONTRACT CAN LIVE IN, derived from `runtime.ts`.
  *
- * `CommandPalette` and the DataGrid family hold interactive state, so they are
- * `'use client'` and cannot sit in the barrel that server components import --
- * `boundary.tsx` records why. This file consequently holds a second copy of
- * "where components live", which the runtime map also holds. Nothing derives
- * one from the other, so the failure to watch for is a contract added to a
- * module missing here: it would resolve to `undefined`, and the weld below
- * would go red naming the id, which is the outcome worth having.
+ * Previously this file held a second independent list of the three
+ * implementation modules (`index`, `command-palette`, `data-grid`). Adding a
+ * new `'use client'` module required updating both files, and the comment here
+ * named that as a maintenance cost. Now `runtime.ts` is the single authority:
+ * adding a module to the runtime loader automatically includes it in the
+ * conformance check.
  */
-type Implementations = typeof components & typeof commandPalette & typeof dataGrid
+type Implementations = ImplementationModules
 
 /**
  * Parameter positions are contravariant under `strictFunctionTypes`, so this

@@ -28,17 +28,40 @@
  */
 
 import { Toast as BaseToast } from '@base-ui/react/toast'
-import type { ReactNode } from 'react'
+import { createContext, type ReactNode, useContext } from 'react'
+
+/**
+ * A sentinel that makes mounting two providers visible.
+ *
+ * Two `ToastProvider`s are two independent queues: a toast pushed on one is
+ * invisible in the other's viewport, and the failure looks exactly like a toast
+ * that was never sent. The comment made it a rule; the context makes it
+ * reportable -- the violation surfaces at the mount site in development rather
+ * than as a missing notification in production.
+ */
+const ToastProviderMountedContext = createContext(false)
 
 /**
  * Wraps the application once, so `useToast` has a queue to push onto.
  *
  * At the ROOT, not per screen. Two providers are two independent queues, and a
  * toast pushed on one is invisible in the other's viewport -- a failure that
- * looks exactly like a toast that was never sent.
+ * looks exactly like a toast that was never sent. A dev-mode error fires if a
+ * second provider mounts inside the first.
  */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  return <BaseToast.Provider>{children}</BaseToast.Provider>
+  const alreadyMounted = useContext(ToastProviderMountedContext)
+  if (process.env.NODE_ENV !== 'production' && alreadyMounted) {
+    console.error(
+      '[xf] ToastProvider mounted more than once. ' +
+        'Two providers are two queues — toasts pushed on one will not appear in the other viewport.',
+    )
+  }
+  return (
+    <ToastProviderMountedContext.Provider value={true}>
+      <BaseToast.Provider>{children}</BaseToast.Provider>
+    </ToastProviderMountedContext.Provider>
+  )
 }
 
 /**

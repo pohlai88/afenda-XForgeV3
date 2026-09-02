@@ -38,47 +38,9 @@
 import { Autocomplete } from '@base-ui/react/autocomplete'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import type { ReactElement } from 'react'
+import { type Command, matchesQuery } from './command-match'
 
-/**
- * One runnable command.
- *
- * NOT CONTRACT VOCABULARY, and the reason is the one `contracts.ts` states in
- * its header: a command is an ACTION, and actions are exactly what the metadata
- * language cannot carry -- `onSelect` is a function, as `Button.onClick` is.
- * Metadata can place a palette; populating one waits for the command layer to
- * reference actions by identifier. Recorded rather than worked around, because
- * the alternative is a prop shape that pretends to be configuration.
- */
-export interface Command {
-  disabled?: boolean
-  /** A shortcut, a section, a disambiguator. Searched as well as shown. */
-  hint?: string
-  /** What `onSelect` receives. Never shown. */
-  id: string
-  label: string
-}
-
-/**
- * The match rule, owned here rather than taken as a default.
- *
- * EVERY TERM MUST MATCH, in any order and anywhere in the label or the hint, so
- * "run pay" finds "Run payroll" and "pay run" finds it too. Prefix-only
- * matching fails the second, and a fuzzy subsequence match finds "Run payroll"
- * for "rp" along with a dozen things nobody meant -- in a surface whose first
- * result is activated by Enter, a confident wrong match is worse than none.
- *
- * Written out because it is a PRODUCT decision. Taking the library's default
- * would have made the behaviour of the most keyboard-driven surface in the
- * system a property of a dependency's minor version.
- */
-export function matchesQuery(command: Command, query: string): boolean {
-  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (terms.length === 0) {
-    return true
-  }
-  const haystack = `${command.label} ${command.hint ?? ''}`.toLowerCase()
-  return terms.every((term) => haystack.includes(term))
-}
+export type { Command } from './command-match'
 
 export function CommandPalette({
   label,

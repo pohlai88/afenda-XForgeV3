@@ -23,7 +23,24 @@
  * thing it claims to describe.
  */
 import type { ReactElement, ReactNode } from 'react'
+import type * as commandPaletteModule from './command-palette'
 import type { DeclaredProps, MetadataContractId } from './contracts'
+import type * as dataGridModule from './data-grid'
+import type * as indexModule from './index'
+
+/**
+ * The modules that collectively provide all component implementations.
+ *
+ * ONE declaration of "which modules exist" for both the runtime loader and the
+ * compile-time conformance check. Before this type existed, `contract-
+ * conformance.ts` restated the same three module paths independently --
+ * "the maintenance cost of the client-boundary split" in its own words.
+ * Adding a new `'use client'` module now requires one edit here; the
+ * conformance check derives its `Implementations` union from this type.
+ */
+export type ImplementationModules = typeof indexModule &
+  typeof commandPaletteModule &
+  typeof dataGridModule
 
 /** A component as the contract describes it. */
 type Implementation<Id extends MetadataContractId> = (

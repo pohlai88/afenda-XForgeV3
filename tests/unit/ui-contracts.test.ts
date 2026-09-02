@@ -603,6 +603,9 @@ describe('every button variant answers the pointer', () => {
  */
 describe('the grid implements the model it claims', () => {
   const source = readFileSync(join(ROOT, 'packages/ui/src/data-grid.tsx'), 'utf8')
+  // Arrow-key dispatch was extracted to its own pure module so it can be tested
+  // without React or a DOM. The switch cases live there; data-grid.tsx calls it.
+  const navSource = readFileSync(join(ROOT, 'packages/ui/src/data-grid-nav.ts'), 'utf8')
 
   it('declares composite-grid, or the rest of this asserts nothing', () => {
     expect(contracts.DataGrid.interaction.profile).toBe('composite-grid')
@@ -610,10 +613,10 @@ describe('the grid implements the model it claims', () => {
   })
 
   // APG's grid: arrows in both dimensions, Home and End along a row, and the
-  // ctrl- forms to the grid's own corners. Every one is a `case` in `target`.
+  // ctrl- forms to the grid's own corners. Every one is a `case` in `navigate`.
   for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']) {
     it(`answers ${key}`, () => {
-      expect(source, `no branch handles ${key}`).toContain(`case '${key}':`)
+      expect(navSource, `no branch handles ${key}`).toContain(`case '${key}':`)
     })
   }
 

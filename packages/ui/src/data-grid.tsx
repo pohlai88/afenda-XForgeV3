@@ -37,14 +37,12 @@
 
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
+import { clamp, navigate } from './data-grid-nav'
 
 /** Every cell, row by row, in document order. `thead` and `tbody` alike. */
 function cellsByRow(table: HTMLTableElement): HTMLTableCellElement[][] {
   return Array.from(table.rows).map((row) => Array.from(row.cells))
 }
-
-/** Clamp rather than wrap: APG's grid does not cycle at an edge. */
-const clamp = (value: number, limit: number) => Math.max(0, Math.min(value, limit))
 
 /** Give one cell the tab stop and take it from every other. */
 function moveTabStop(grid: HTMLTableCellElement[][], cell: HTMLTableCellElement | undefined) {
@@ -119,33 +117,6 @@ export function DataGrid({
     moveTabStop(grid, grid[row]?.[col])
   })
 
-  /** Where the tab stop goes next, given a key. `null` means "not ours". */
-  function target(
-    event: ReactKeyboardEvent<HTMLTableElement>,
-    grid: HTMLTableCellElement[][],
-    from: { col: number; row: number },
-  ): { col: number; row: number } | null {
-    const lastRow = grid.length - 1
-    switch (event.key) {
-      case 'ArrowDown':
-        return { col: from.col, row: from.row + 1 }
-      case 'ArrowLeft':
-        return { col: from.col - 1, row: from.row }
-      case 'ArrowRight':
-        return { col: from.col + 1, row: from.row }
-      case 'ArrowUp':
-        return { col: from.col, row: from.row - 1 }
-      case 'End':
-        return event.ctrlKey
-          ? { col: Number.MAX_SAFE_INTEGER, row: lastRow }
-          : { col: Number.MAX_SAFE_INTEGER, row: from.row }
-      case 'Home':
-        return event.ctrlKey ? { col: 0, row: 0 } : { col: 0, row: from.row }
-      default:
-        return null
-    }
-  }
-
   function onKeyDown(event: ReactKeyboardEvent<HTMLTableElement>) {
     /*
      * A CELL BEING EDITED OWNS ITS KEYS. Without this the left arrow moves the
@@ -161,7 +132,7 @@ export function DataGrid({
     if (!from) {
       return
     }
-    const to = target(event, grid, from)
+    const to = navigate(event.key, event.ctrlKey, from, grid.length - 1)
     if (!to) {
       return
     }
