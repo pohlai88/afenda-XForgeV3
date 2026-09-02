@@ -88,11 +88,19 @@ import { deepFreeze } from '../vocabulary.mjs'
  *
  * WebAIM Screen Reader User Survey #10 (fielded Dec 2023 - Jan 2024, 1,539
  * valid responses): JAWS 40.5% primary, NVDA 37.7%, VoiceOver 9.7%. The GDS
- * Service Manual mandates JAWS, NVDA and VoiceOver for UK Service Standard
- * assessment, and axe-core's own support policy admits a combination only above
- * 1% of users, extrapolated from the same survey. Three independent sources
- * converge, which is why this is an enum and not a free string: "tested with a
- * screen reader" is exactly the sentence the ledger says is not evidence.
+ * Service Manual's testing matrix likewise prioritises JAWS, NVDA and
+ * VoiceOver, while W3C APG/ARIA-AT explicitly says application teams still
+ * need to test the browser/AT combinations relevant to their audience.
+ *
+ * Material 3 is a COMPONENT AND INTERACTION benchmark here, not the authority
+ * for this matrix: M3 does not publish a desktop screen-reader/browser
+ * conformance matrix. Naming it as though it did would create exactly the
+ * second-source problem this policy exists to prevent. The evidence matrix is
+ * therefore grounded in observed usage plus interoperability guidance, while
+ * M3 informs the components whose semantics and states are being exercised.
+ *
+ * That convergence is why this is an enum and not a free string: "tested with
+ * a screen reader" is exactly the sentence the ledger says is not evidence.
  */
 export const SUPPORTED_AT = deepFreeze(['JAWS', 'NVDA', 'VoiceOver'])
 
@@ -119,9 +127,43 @@ export const REQUIRED_PAIRINGS = deepFreeze([
   { at: 'JAWS', browser: 'Chrome' },
 ])
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
-const isFilledString = (v) => typeof v === 'string' && v.trim().length > 0
+const isFilledString = (value) => typeof value === 'string' && value.trim().length > 0
+
+const isPlainRecord = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/**
+ * A syntactically ISO-looking date can still be impossible (`2026-02-31`).
+ * Evidence is chronology, so validate the calendar fact rather than the shape.
+ * Deliberately no "not in the future" check: a time-sensitive validator would
+ * make a historical ledger change verdict merely because the wall clock moved.
+ */
+function isIsoCalendarDate(value) {
+  if (!isFilledString(value)) {
+    return false
+  }
+
+  const match = ISO_DATE.exec(value)
+  if (!match) {
+    return false
+  }
+
+  const [, yearText, monthText, dayText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const date = new Date(0)
+  date.setUTCFullYear(year, month - 1, day)
+  date.setUTCHours(0, 0, 0, 0)
+
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  )
+}
+
+const pairingKey = (pairing) => `${pairing.at} + ${pairing.browser}`
 
 /* ------------------------------------------------------------ assertions -- */
 
@@ -143,6 +185,12 @@ export function assertAtPairings(
   readers = SUPPORTED_AT,
   browsers = SUPPORTED_BROWSERS,
 ) {
+  if (!Array.isArray(readers) || readers.length === 0 || !readers.every(isFilledString)) {
+    throw new Error('SUPPORTED_AT is not a non-empty list of screen-reader names')
+  }
+  if (!Array.isArray(browsers) || browsers.length === 0 || !browsers.every(isFilledString)) {
+    throw new Error('SUPPORTED_BROWSERS is not a non-empty list of browser names')
+  }
   if (!Array.isArray(pairings) || pairings.length < 2) {
     throw new Error(
       'REQUIRED_PAIRINGS holds fewer than two pairings -- one reader cannot distinguish a ' +
@@ -153,20 +201,23 @@ export function assertAtPairings(
   const seen = new Set()
 
   for (const pairing of pairings) {
-    if (!readers.includes(pairing?.at)) {
+    if (!isPlainRecord(pairing)) {
+      throw new Error('required pairing is not an object with `at` and `browser`')
+    }
+    if (!readers.includes(pairing.at)) {
       throw new Error(
-        `required pairing names screen reader '${pairing?.at}', which is not one of ` +
+        `required pairing names screen reader '${pairing.at}', which is not one of ` +
           `${readers.join(', ')} -- a gate can only be satisfied by a reader it accepts`,
       )
     }
-    if (!browsers.includes(pairing?.browser)) {
+    if (!browsers.includes(pairing.browser)) {
       throw new Error(
-        `required pairing names browser '${pairing?.browser}', which is not one of ` +
+        `required pairing names browser '${pairing.browser}', which is not one of ` +
           browsers.join(', '),
       )
     }
 
-    const key = `${pairing.at} + ${pairing.browser}`
+    const key = pairingKey(pairing)
     if (seen.has(key)) {
       throw new Error(
         `${key} is required twice -- a duplicated pairing raises the count without raising the ` +
@@ -183,7 +234,7 @@ export function assertAtPairings(
 
 /** `{ name, version }`, both present, with the name drawn from a known set. */
 function toolFailures(where, tool, allowed) {
-  if (tool === null || typeof tool !== 'object' || Array.isArray(tool)) {
+  if (!isPlainRecord(tool)) {
     return [`${where} is not an object with a name and a version`]
   }
   const out = []
@@ -202,7 +253,7 @@ function toolFailures(where, tool, allowed) {
 
 /** One sitting: a pairing, when, who, and what it actually said. */
 function runFailures(where, run) {
-  if (run === null || typeof run !== 'object' || Array.isArray(run)) {
+  if (!isPlainRecord(run)) {
     return [`${where} is not an object`]
   }
   const out = [
@@ -212,8 +263,8 @@ function runFailures(where, run) {
   if (!isFilledString(run.os)) {
     out.push(`${where}.os is missing`)
   }
-  if (!(isFilledString(run.date) && ISO_DATE.test(run.date))) {
-    out.push(`${where}.date is not an ISO yyyy-mm-dd date`)
+  if (!isIsoCalendarDate(run.date)) {
+    out.push(`${where}.date is not a real ISO yyyy-mm-dd calendar date`)
   }
   if (!isFilledString(run.tester)) {
     out.push(`${where}.tester is missing -- an unattributed result cannot be asked about`)
@@ -223,14 +274,23 @@ function runFailures(where, run) {
     out.push(`${where}.scenarios is empty -- a session that exercised nothing proves nothing`)
     return out
   }
+
+  const scenarioNames = new Set()
   run.scenarios.forEach((scenario, i) => {
     const at = `${where}.scenarios[${i}]`
-    if (scenario === null || typeof scenario !== 'object') {
+    if (!isPlainRecord(scenario)) {
       out.push(`${at} is not an object`)
       return
     }
     if (!isFilledString(scenario.name)) {
       out.push(`${at}.name is missing`)
+    } else if (scenarioNames.has(scenario.name.trim())) {
+      out.push(
+        `${at}.name duplicates '${scenario.name.trim()}' -- repeating a scenario raises the evidence ` +
+          'count without exercising another behaviour',
+      )
+    } else {
+      scenarioNames.add(scenario.name.trim())
     }
     // THE LOAD-BEARING FIELD. ADR-025: "A `result: pass` with a scenario list is
     // an attestation only its author can check. A transcript is reviewable by
@@ -253,11 +313,24 @@ function runFailures(where, run) {
  * in the same way an orphaned session is. So this returns `[]` for an absent
  * entry and leaves staleness to the caller.
  */
-export function sessionFailures(id, session, requiredRevision) {
+export function sessionFailures(
+  id,
+  session,
+  requiredRevision,
+  requiredPairings = REQUIRED_PAIRINGS,
+) {
+  if (!isFilledString(id)) {
+    throw new Error('sessionFailures requires a non-empty contract id')
+  }
+  if (!Number.isInteger(requiredRevision) || requiredRevision < 0) {
+    throw new Error(`${id}: required interaction revision is not a non-negative integer`)
+  }
+  assertAtPairings(requiredPairings)
+
   if (session === undefined) {
     return []
   }
-  if (session === null || typeof session !== 'object' || Array.isArray(session)) {
+  if (!isPlainRecord(session)) {
     return [`${id}: evidence is not an object`]
   }
 
@@ -282,7 +355,7 @@ export function sessionFailures(id, session, requiredRevision) {
     out.push(...runFailures(`${id}.runs[${i}]`, run))
   })
 
-  for (const pairing of REQUIRED_PAIRINGS) {
+  for (const pairing of requiredPairings) {
     const covered = session.runs.some(
       (run) => run?.at?.name === pairing.at && run?.browser?.name === pairing.browser,
     )
@@ -318,14 +391,40 @@ export function sessionFailures(id, session, requiredRevision) {
  * "nobody is gated" from "everybody is covered" needs both: those are different
  * facts that a single number reports identically.
  */
-export function ledgerFailures({ contracts, gated, sessions }) {
+export function ledgerFailures({
+  contracts,
+  gated,
+  sessions,
+  requiredPairings = REQUIRED_PAIRINGS,
+}) {
+  if (!isPlainRecord(contracts)) {
+    throw new Error('assistive-technology ledger requires a contracts object')
+  }
+  if (!(Array.isArray(gated) && gated.every(isFilledString))) {
+    throw new Error('assistive-technology ledger requires gated to be a list of contract ids')
+  }
+  if (!isPlainRecord(sessions)) {
+    throw new Error('assistive-technology ledger requires sessions to be an object')
+  }
+  assertAtPairings(requiredPairings)
+
   const owing = new Set(gated)
+  if (owing.size !== gated.length) {
+    throw new Error('gated contains duplicate contract ids -- a set of obligations cannot inflate')
+  }
+
+  for (const id of gated) {
+    const revision = contracts[id]?.interaction?.revision
+    if (!Number.isInteger(revision) || revision < 0) {
+      throw new Error(`${id}: gated contract has no non-negative integer interaction.revision`)
+    }
+  }
 
   return {
     gated: [...gated],
 
     malformed: gated.flatMap((id) =>
-      sessionFailures(id, sessions[id], contracts[id].interaction.revision),
+      sessionFailures(id, sessions[id], contracts[id].interaction.revision, requiredPairings),
     ),
 
     /**

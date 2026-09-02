@@ -1,5 +1,5 @@
 /*
- * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.
+ * GENERATED FROM packages/design/policy/tokens.json -- DO NOT EDIT.
  *
  * Law 27: generated state is never hand-edited. Change the token file and
  * run `pnpm generate`; editing this output makes the generate stage fail,
@@ -157,6 +157,12 @@
   --semantic-color-secondary-pressed: var(--color-neutral-100);
   --semantic-color-shadow-ambient: var(--color-shadow-ambient);
   --semantic-color-shadow-key: var(--color-shadow-key);
+  --semantic-color-sidebar: var(--color-neutral-100);
+  --semantic-color-sidebar-accent: var(--color-teal-100);
+  --semantic-color-sidebar-accent-foreground: var(--color-teal-800);
+  --semantic-color-sidebar-border: var(--color-neutral-300);
+  --semantic-color-sidebar-foreground: var(--color-neutral-900);
+  --semantic-color-sidebar-ring: var(--color-teal-700);
   --semantic-color-statutory: var(--color-brass-100);
   --semantic-color-statutory-foreground: var(--color-brass-700);
   --semantic-color-success: var(--color-green-100);
@@ -311,6 +317,12 @@
   --semantic-color-secondary-pressed: var(--color-ink-800);
   --semantic-color-shadow-ambient: var(--color-shadow-ambient-dark);
   --semantic-color-shadow-key: var(--color-shadow-key-dark);
+  --semantic-color-sidebar: var(--color-ink-900);
+  --semantic-color-sidebar-accent: var(--color-teal-950);
+  --semantic-color-sidebar-accent-foreground: var(--color-teal-300);
+  --semantic-color-sidebar-border: var(--color-ink-600);
+  --semantic-color-sidebar-foreground: var(--color-ink-100);
+  --semantic-color-sidebar-ring: var(--color-teal-500);
   --semantic-color-statutory: var(--color-brass-950);
   --semantic-color-statutory-foreground: var(--color-brass-300);
   --semantic-color-success: var(--color-green-950);

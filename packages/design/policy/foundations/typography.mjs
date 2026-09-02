@@ -40,9 +40,15 @@
  * EVERY DENSITY MODE -- compact is exactly where a distinction gets shaved, and
  * a mode-blind check keeps reporting green while the composition has collapsed.
  *
- * WHAT COUNTS AS A DISTINCTION. Size or weight, and deliberately not leading.
- * Leading is a readability property -- two roles at the same size and weight with
- * different line heights do not read as a hierarchy, they read as a mistake.
+ * WHAT COUNTS AS A DISTINCTION. Size or weight, and deliberately not leading or
+ * tracking. Leading is readability. Tracking is optical correction. Two roles at
+ * the same size and weight do not become a hierarchy because one has a different
+ * line box or a little more letter spacing.
+ *
+ * TYPE IS MODE-INVARIANT. Density comes from spacing, control geometry and layout,
+ * not from making operational text smaller. The evaluator therefore checks the
+ * typography-bearing fields across every resolved mode as well as checking each
+ * mode's hierarchy in isolation.
  *
  * The reasoning lives in `tooling/design-system/POLICY.md` §3a; this holds the
  * table and the refusals.
@@ -78,8 +84,8 @@ import { ASSUMED_ROOT_PX, GRID_PX } from './spacing.mjs'
  */
 export const TYPE_ROLES = deepFreeze({
   /**
-   * 16/24/400 -- READING the software. Prose, descriptions, anything set in
-   * paragraphs.
+   * READING THE SOFTWARE. Prose, descriptions and paragraph content. Concrete
+   * size/leading values belong to the tokens; this table owns their floors and role.
    *
    * WCAG 1.4.12 does not mandate a default line height; it requires that content
    * survive the USER setting 1.5. A body default at least that tall is a
@@ -96,8 +102,8 @@ export const TYPE_ROLES = deepFreeze({
   },
 
   /**
-   * 14/20/400 -- OPERATING the software. Rows, cells, form fields, the second
-   * line of a two-line item.
+   * OPERATING THE SOFTWARE. Rows, cells, form fields and the second line of a
+   * two-line item. Concrete values belong to the tokens; this role owns the job.
    *
    * SPLIT OUT OF `label`, which was doing two jobs. The employee table showed it:
    * `text-label` was the position line (compact BODY) and `font-label
@@ -140,8 +146,8 @@ export const TYPE_ROLES = deepFreeze({
   },
 
   /**
-   * 16/24/500 -- the term against its value. A row's subject beside its detail,
-   * a total beside its lines, a card's title above its content.
+   * EMPHASIS WITHOUT SIZE INFLATION. A row's subject beside its detail, a total
+   * beside its lines, or a card title above its content.
    *
    * Apple sets Headline 17/semibold against Body 17/regular; Material 3 ships an
    * Emphasized variant of all fifteen of its roles. Neither reaches for another
@@ -168,12 +174,9 @@ export const TYPE_ROLES = deepFreeze({
   },
 
   /**
-   * 14/20/500 -- what a thing IS. Field names, column heads, navigation, the
-   * text on a control.
-   *
-   * Same rank and same size as `body-compact`, differing only in weight. That is
-   * the pattern repeated at 16 by `body`/`emphasis`, and it is what
-   * `HIERARCHY_DIMENSIONS` has always listed weight for.
+   * WHAT A THING IS. Field names, column heads, navigation and control text. It
+   * intentionally shares a productive-size tier with `body-compact`; weight, not
+   * another size step, carries the semantic distinction.
    */
   label: {
     leading: 'semantic.leading.label',
@@ -207,11 +210,22 @@ export const TYPE_ROLES = deepFreeze({
 const ROLE_TOKEN_TYPES = deepFreeze({
   leading: 'number',
   size: 'dimension',
+  tracking: 'dimension',
   weight: 'fontWeight',
 })
 
-/** The dimensions a reader perceives as rank. Leading is not one of them. */
+/** The dimensions a reader perceives as rank. Leading and tracking are not among them. */
 export const HIERARCHY_DIMENSIONS = deepFreeze(['size', 'weight'])
+
+/**
+ * Typography-bearing fields that must not change when a mode changes.
+ *
+ * `tracking` is intentionally admitted before any role is required to name it.
+ * That makes Material-style optical correction possible without making this
+ * drop-in depend on new tokens. Once a package adds a tracking token to a role,
+ * token existence/type checks and mode invariance apply automatically.
+ */
+export const MODE_INVARIANT_DIMENSIONS = deepFreeze(['size', 'weight', 'leading', 'tracking'])
 
 /* ----------------------------------------------------------- the premises -- */
 
@@ -311,9 +325,19 @@ export const LEADING_GRID_TOLERANCE_PX = 0.05
  * off while every check went on passing.
  */
 export function typeRolesFor(names, catalogue = TYPE_ROLES) {
+  if (!Array.isArray(names)) {
+    throw new TypeError('type role selection must be an array of role names')
+  }
+
+  const seen = new Set()
   return deepFreeze(
     Object.fromEntries(
       names.map((name) => {
+        if (seen.has(name)) {
+          throw new Error(`type role '${name}' is selected more than once`)
+        }
+        seen.add(name)
+
         const policy = catalogue[name]
         if (policy === undefined) {
           throw new Error(
@@ -387,12 +411,31 @@ export function assertTypographyTokens(tokens, roles = TYPE_ROLES) {
  * indistinguishable from being broken.
  */
 export function assertTypographyRoles(roles = TYPE_ROLES) {
+  if (roles === null || typeof roles !== 'object' || Array.isArray(roles)) {
+    throw new TypeError('typography roles must be an object keyed by semantic role name')
+  }
+
   for (const [role, policy] of Object.entries(roles)) {
-    if (typeof policy.size !== 'string') {
+    if (policy === null || typeof policy !== 'object' || Array.isArray(policy)) {
+      throw new TypeError(`type role '${role}' must be an object`)
+    }
+    if (typeof policy.size !== 'string' || policy.size.length === 0) {
       throw new Error(`type role '${role}' names no size token, so nothing about it is checkable`)
     }
-    if (typeof policy.rank !== 'number') {
-      throw new Error(`type role '${role}' has no rank, so it sits nowhere in the hierarchy`)
+    if (!Number.isInteger(policy.rank) || policy.rank < 0) {
+      throw new Error(`type role '${role}' rank must be a non-negative integer`)
+    }
+    if (!Number.isFinite(policy.minimumPx) || policy.minimumPx <= 0) {
+      throw new Error(`type role '${role}' must state a positive pixel floor`)
+    }
+
+    for (const field of Object.keys(ROLE_TOKEN_TYPES)) {
+      if (
+        policy[field] !== undefined &&
+        (typeof policy[field] !== 'string' || policy[field].length === 0)
+      ) {
+        throw new Error(`type role '${role}' ${field} token must be a non-empty token path`)
+      }
     }
 
     // A SHARED RANK IS LEGAL, AND IT IS HOW EMPHASIS IS EXPRESSED. This used to
@@ -426,8 +469,11 @@ export function assertTypographyRoles(roles = TYPE_ROLES) {
       }
     }
 
-    if (policy.leading !== undefined && typeof policy.minimumLeading !== 'number') {
-      throw new Error(`type role '${role}' has a leading token but no floor for it`)
+    if (
+      policy.leading !== undefined &&
+      (!Number.isFinite(policy.minimumLeading) || policy.minimumLeading <= 0)
+    ) {
+      throw new Error(`type role '${role}' has a leading token but no positive finite floor for it`)
     }
     if (policy.leading === undefined && policy.minimumLeading !== undefined) {
       throw new Error(
@@ -494,9 +540,56 @@ const pixelSize = (raw, rootPx) => {
 export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = ASSUMED_ROOT_PX) {
   const failures = []
 
+  if (!(resolvedByMode instanceof Map)) {
+    return ['typography modes must be a Map<label, Map<tokenPath, literal>>']
+  }
+  if (!Number.isFinite(rootPx) || rootPx <= 0) {
+    return [`typography root must be a positive finite pixel size, received ${String(rootPx)}`]
+  }
+
   const read = (resolved, token) => (token === undefined ? undefined : resolved.get(token))
 
+  // Density and appearance may change layout and colour, but not the typographic
+  // contract. The first resolved value for each role/field is the baseline; every
+  // later mode must resolve that same token to the same literal. This closes the
+  // exact class of defect that originally created this policy: a mode silently
+  // rebinding type while every token remained individually valid.
+  const baselines = new Map()
+
   for (const [label, resolved] of resolvedByMode) {
+    if (!(resolved instanceof Map)) {
+      failures.push(`${label}: resolved typography must be a Map<tokenPath, literal>`)
+      continue
+    }
+
+    for (const [role, policy] of Object.entries(roles)) {
+      for (const dimension of MODE_INVARIANT_DIMENSIONS) {
+        const token = policy[dimension]
+        if (token === undefined) {
+          continue
+        }
+
+        const value = read(resolved, token)
+        if (value === undefined) {
+          continue
+        }
+
+        const key = `${role}:${dimension}`
+        if (!baselines.has(key)) {
+          baselines.set(key, { label, value })
+          continue
+        }
+
+        const baseline = baselines.get(key)
+        if (!Object.is(value, baseline.value)) {
+          failures.push(
+            `${label}: ${role} ${dimension} resolves to ${JSON.stringify(value)}, but ` +
+              `${baseline.label} resolves it to ${JSON.stringify(baseline.value)} -- typography ` +
+              'is mode-invariant; density belongs in spacing/control geometry, not type',
+          )
+        }
+      }
+    }
     // ROLES THAT ARE ABSENT ARE SKIPPED, not reported, and this matches how the
     // colour policy behaves: it is driven by the tokens that EXIST and requires
     // each to have a policy, rather than requiring every policy to have a token.
@@ -556,6 +649,17 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
                 'chosen to land on it, so a size or a ratio has moved without the other',
             )
           }
+        }
+      }
+
+      // TRACKING IS OPTICAL, NOT HIERARCHICAL. It is optional so existing packages
+      // do not need a migration, but once declared it must resolve to a measurable
+      // dimension. No ordering rule is attached to it: Material-style positive
+      // tracking at small sizes and tighter tracking at display sizes are both legal.
+      if (policy.tracking !== undefined && read(resolved, policy.tracking) !== undefined) {
+        const tracking = pixelSize(read(resolved, policy.tracking), rootPx)
+        if (tracking.px === null) {
+          failures.push(`${label}: ${role} tracking ${tracking.why}`)
         }
       }
     }
@@ -626,7 +730,8 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
  * `assertTypographyTokens` and `typographyFailures` need a token map and a
  * resolved mode set respectively -- subjects the registry does not hold -- so
  * they stay exported functions that the generator and the unit suite call with
- * their own subjects.
+ * their own subjects. `MODE_INVARIANT_DIMENSIONS` is exported for tests and
+ * documentation; it is policy data, not generator configuration.
  *
  * The contract allows exactly `id`, `kind` and `assert`; anything else this
  * module wants to say, it says by exporting it.

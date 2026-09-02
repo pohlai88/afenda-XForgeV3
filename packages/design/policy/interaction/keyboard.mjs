@@ -211,30 +211,42 @@ export const PROFILE_COVERAGE = deepFreeze({
 
 /* ------------------------------------------------------------ assertions -- */
 
+const isPlainRecord = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+const isFilledString = (value) => typeof value === 'string' && value.trim().length > 0
+
+function assertUniqueFilledStrings(values, where) {
+  if (!Array.isArray(values)) {
+    throw new Error(`${where} is not an array`)
+  }
+
+  const seen = new Set()
+  for (let i = 0; i < values.length; i += 1) {
+    const value = values[i]
+    if (!isFilledString(value)) {
+      throw new Error(`${where}[${i}] is not a non-empty string`)
+    }
+    if (seen.has(value)) {
+      throw new Error(
+        `${where} contains '${value}' twice -- duplication inflates obligation or coverage without adding any`,
+      )
+    }
+    seen.add(value)
+  }
+
+  return values
+}
+
 /**
- * Every profile the registry can declare has a keyboard entry, and no entry
- * names a profile that does not exist.
+ * Every profile the registry can declare has exactly one keyboard entry, every
+ * entry belongs to a declarable profile, and each entry is structurally useful.
  *
- * TAKES THE PROFILE LIST AS AN ARGUMENT rather than restating it. `contracts.ts`
- * owns `INTERACTION_PROFILES`, and the `InteractionProfile` union is DERIVED
- * from it -- so the union and the runtime list are not two things that agree,
- * they are one declaration read two ways, and this table is checked against it.
- *
- * THE EARLIER VERSION OF THIS PARAGRAPH CLAIMED EXACTLY THAT AND WAS FALSE. It
- * read "whose exhaustiveness the TypeScript compiler checks against the
- * `InteractionProfile` union -- so the union, the runtime list and this table are
- * one fact with one owner and two checks". The export did not exist; grepped, the
- * identifier appeared once in the repository, in that sentence. There were four
- * copies of the eight names -- the union, this table, `PROFILE_COVERAGE`, and a
- * hand-written array in `tests/unit/design-contracts.test.ts` -- and only the
- * middle two were compared, by `assertKeyboardCoverage`.
- *
- * NOTE WHAT WOULD NOT HAVE BEEN ENOUGH, since the false comment described it:
- * `as const satisfies readonly InteractionProfile[]` proves every member of the
- * list is a profile and never that every profile is in the list. It is the right
- * shape for `PROFILES_REQUIRING_AT_EVIDENCE`, which is deliberately a subset,
- * and the wrong one here. Deriving the union removes the question instead of
- * checking it.
+ * The earlier validator checked the two key sets but trusted too much INSIDE an
+ * entry: duplicate profile names in the registry, duplicate keys, non-object
+ * policies and blank key names could all make a passing table say less than it
+ * appeared to. Those are configuration defects, so they fail here rather than
+ * being left for a browser test to discover accidentally.
  */
 export function assertProfileKeyboard(profiles, keyboard = PROFILE_KEYBOARD) {
   if (!Array.isArray(profiles) || profiles.length === 0) {
@@ -243,6 +255,11 @@ export function assertProfileKeyboard(profiles, keyboard = PROFILE_KEYBOARD) {
         'every entry below is consistent with itself and with nothing else',
     )
   }
+  if (!isPlainRecord(keyboard)) {
+    throw new Error('keyboard policy is not an object keyed by interaction profile')
+  }
+
+  assertUniqueFilledStrings(profiles, 'interaction profiles')
 
   for (const profile of profiles) {
     const policy = keyboard[profile]
@@ -252,14 +269,13 @@ export function assertProfileKeyboard(profiles, keyboard = PROFILE_KEYBOARD) {
           'behaviour -- a component could declare it and no reader would know what it promised',
       )
     }
-
-    if (!Array.isArray(policy.keys)) {
-      throw new Error(
-        `profile '${profile}' declares no keys array -- an EMPTY array is a fact ('this profile ` +
-          "owes no keystrokes'), and a missing one is an oversight. They must not look alike",
-      )
+    if (!isPlainRecord(policy)) {
+      throw new Error(`profile '${profile}' keyboard policy is not an object`)
     }
-    if (typeof policy.focus !== 'string' || policy.focus.trim() === '') {
+
+    assertUniqueFilledStrings(policy.keys, `profile '${profile}'.keys`)
+
+    if (!isFilledString(policy.focus)) {
       throw new Error(
         `profile '${profile}' says nothing about focus -- focus management is the half of a ` +
           'profile that a tree inspection cannot see, so leaving it unstated hides the risk',
@@ -290,11 +306,20 @@ export function assertProfileKeyboard(profiles, keyboard = PROFILE_KEYBOARD) {
  * Every profile that owes keyboard behaviour declares what covers it, or says
  * plainly that nothing does.
  *
- * IT DOES NOT DEMAND COVERAGE. It demands that the absence be written down, with
- * a sentence saying what is unproven. That is the difference between a debt this
- * repository has decided to carry and one it has not noticed.
+ * This remains a DECLARATION gate, not a demand that every debt be paid today.
+ * What changes here is that a declaration must itself be reviewable: spec and
+ * subject names are real, unique strings; a covered entry says what it covers;
+ * and a `derived: true` claim names both the deriving suite and the population
+ * it derives over. A filename by itself is not behavioural coverage.
  */
 export function assertKeyboardCoverage(coverage = PROFILE_COVERAGE, keyboard = PROFILE_KEYBOARD) {
+  if (!isPlainRecord(coverage)) {
+    throw new Error('keyboard coverage is not an object keyed by interaction profile')
+  }
+  if (!isPlainRecord(keyboard)) {
+    throw new Error('keyboard policy is not an object keyed by interaction profile')
+  }
+
   for (const profile of Object.keys(keyboard)) {
     const entry = coverage[profile]
     if (entry === undefined) {
@@ -302,6 +327,9 @@ export function assertKeyboardCoverage(coverage = PROFILE_COVERAGE, keyboard = P
         `profile '${profile}' declares keyboard behaviour and nothing says what checks it -- ` +
           'not even that nothing does. An undeclared gap is the one this repository measured',
       )
+    }
+    if (!isPlainRecord(entry)) {
+      throw new Error(`coverage for '${profile}' is not an object`)
     }
 
     if (typeof entry.derived !== 'boolean') {
@@ -312,22 +340,48 @@ export function assertKeyboardCoverage(coverage = PROFILE_COVERAGE, keyboard = P
       )
     }
 
-    if (!Array.isArray(entry.specs)) {
-      throw new Error(`coverage for '${profile}' names no specs array`)
+    assertUniqueFilledStrings(entry.specs, `coverage for '${profile}'.specs`)
+
+    if (entry.subjects !== undefined) {
+      assertUniqueFilledStrings(entry.subjects, `coverage for '${profile}'.subjects`)
+    }
+    if (entry.gap !== undefined && !isFilledString(entry.gap)) {
+      throw new Error(
+        `coverage for '${profile}'.gap is present but empty -- an empty debt records nothing`,
+      )
     }
 
-    const covered = entry.specs.length > 0 && entry.gap === undefined
-    if (!covered && (typeof entry.gap !== 'string' || entry.gap.trim() === '')) {
+    const hasSpecs = entry.specs.length > 0
+    const hasGap = entry.gap !== undefined
+    const hasSubjects = Array.isArray(entry.subjects) && entry.subjects.length > 0
+    const covered = hasSpecs && !hasGap
+
+    if (entry.derived && !hasSpecs) {
+      throw new Error(
+        `coverage for '${profile}' claims to derive its subjects but names no spec -- ` +
+          'there is no executable mechanism carrying the claim',
+      )
+    }
+
+    if (!(covered || hasGap)) {
       throw new Error(
         `profile '${profile}' has no covering spec and states no gap -- 'e2e/axe.ts' survived ` +
           'as an uncalled function for exactly this reason, and nothing went red',
       )
     }
 
-    // A DERIVED SUITE HAS TO SAY WHAT IT DERIVES OVER. "Derived" is the strongest
-    // claim in this table -- it is the property ADR-025 rests on -- so a bare
-    // `true` with no subject named would be the claim without the mechanism.
-    if (entry.derived && (!Array.isArray(entry.subjects) || entry.subjects.length === 0)) {
+    // A claimed covering suite must name its actual subjects. Without this,
+    // `specs: ['some-file.spec.ts']` can pass while the file never exercises the
+    // profile in question -- the same filename-as-proof failure this policy was
+    // introduced to stop.
+    if (covered && !hasSubjects) {
+      throw new Error(
+        `coverage for '${profile}' names a covering spec but no subjects -- a filename is not ` +
+          'proof that the profile is exercised',
+      )
+    }
+
+    if (entry.derived && !hasSubjects) {
       throw new Error(
         `coverage for '${profile}' claims to derive its subjects and names none -- that claim ` +
           'is the one this system relies on, so it does not get made without saying over what',
@@ -345,6 +399,22 @@ export function assertKeyboardCoverage(coverage = PROFILE_COVERAGE, keyboard = P
   }
 
   return coverage
+}
+
+/**
+ * One callable invariant for tests and policy bootstrapping. Keeping the two
+ * lower-level assertions exported is useful for mutation tests; this function
+ * prevents callers that want the WHOLE keyboard policy from accidentally
+ * validating only the coverage table and forgetting registry exhaustiveness.
+ */
+export function assertKeyboardPolicy({
+  profiles,
+  keyboard = PROFILE_KEYBOARD,
+  coverage = PROFILE_COVERAGE,
+}) {
+  assertProfileKeyboard(profiles, keyboard)
+  assertKeyboardCoverage(coverage, keyboard)
+  return { coverage, keyboard }
 }
 
 /* --------------------------------------------------------------- policy -- */

@@ -1,5 +1,5 @@
 /*
- * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.
+ * GENERATED FROM packages/design/policy/tokens.json -- DO NOT EDIT.
  *
  * Law 27: generated state is never hand-edited. Change the token file and
  * run `pnpm generate`; editing this output makes the generate stage fail,
@@ -25,7 +25,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 100 roles projected.
+ * 106 roles projected.
  */
 :root {
   --accent: var(--semantic-color-accent);
@@ -64,6 +64,12 @@
   --secondary-pressed: var(--semantic-color-secondary-pressed);
   --shadow-ambient: var(--semantic-color-shadow-ambient);
   --shadow-key: var(--semantic-color-shadow-key);
+  --sidebar: var(--semantic-color-sidebar);
+  --sidebar-accent: var(--semantic-color-sidebar-accent);
+  --sidebar-accent-foreground: var(--semantic-color-sidebar-accent-foreground);
+  --sidebar-border: var(--semantic-color-sidebar-border);
+  --sidebar-foreground: var(--semantic-color-sidebar-foreground);
+  --sidebar-ring: var(--semantic-color-sidebar-ring);
   --statutory: var(--semantic-color-statutory);
   --statutory-foreground: var(--semantic-color-statutory-foreground);
   --success: var(--semantic-color-success);
@@ -225,6 +231,12 @@
   --color-secondary-foreground: var(--semantic-color-secondary-foreground);
   --color-secondary-hover: var(--semantic-color-secondary-hover);
   --color-secondary-pressed: var(--semantic-color-secondary-pressed);
+  --color-sidebar: var(--semantic-color-sidebar);
+  --color-sidebar-accent: var(--semantic-color-sidebar-accent);
+  --color-sidebar-accent-foreground: var(--semantic-color-sidebar-accent-foreground);
+  --color-sidebar-border: var(--semantic-color-sidebar-border);
+  --color-sidebar-foreground: var(--semantic-color-sidebar-foreground);
+  --color-sidebar-ring: var(--semantic-color-sidebar-ring);
   --color-statutory: var(--semantic-color-statutory);
   --color-statutory-foreground: var(--semantic-color-statutory-foreground);
   --color-success: var(--semantic-color-success);
@@ -298,6 +310,28 @@
   --text-heading--line-height: var(--semantic-leading-heading);
   --text-label--line-height: var(--semantic-leading-label);
   --text-title--line-height: var(--semantic-leading-title);
+
+  /*
+   * TAILWIND'S SCALE NAMES, ALIASED ONTO ROLES -- for vendored components
+   * only. Every line is a reference, so the role remains the single owner
+   * of the value. New code names the role. See SCALE_ALIASES.
+   */
+  --leading-relaxed: var(--semantic-leading-body);
+  --radius-lg: var(--semantic-radius-container);
+  --radius-md: var(--semantic-radius-control);
+  --radius-sm: var(--semantic-radius-precise);
+  --radius-xl: var(--semantic-radius-overlay);
+  --shadow-lg: var(--semantic-elevation-overlay);
+  --shadow-md: var(--semantic-elevation-floating);
+  --shadow-sm: var(--semantic-elevation-raised);
+  --shadow-xl: var(--semantic-elevation-modal);
+  --text-base--line-height: var(--semantic-leading-body);
+  --text-base: var(--semantic-type-body);
+  --text-sm--line-height: var(--semantic-leading-compact);
+  --text-sm: var(--semantic-type-body-compact);
+  --text-xs--line-height: var(--semantic-leading-caption);
+  --text-xs: var(--semantic-type-caption);
+  --tracking-widest: var(--semantic-tracking-shortcut);
 }
 
 /*

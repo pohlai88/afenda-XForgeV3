@@ -45,7 +45,9 @@ import { deepFreeze } from '../vocabulary.mjs'
 /**
  * The five axes, and the values each may take.
  *
- * `paints` says whether a value has a colour role of its own. Most do not: a
+ * `paints` says whether an axis participates in painted-state governance. It
+ * does NOT mean every value on the axis must repaint: `focus` is expressed by
+ * the focus-indicator policy, and a drag may also be carried structurally. A
  * `loading` process state is a component swap, not a repaint, and declaring a
  * token for it would be vocabulary with no consumer. `process` is the only axis
  * that does not paint, which is what keeps that field from being a constant.
@@ -132,6 +134,43 @@ export const STATE_LAYER_OPACITY = deepFreeze({
   hover: 0.08,
   pressed: 0.12,
 })
+
+/* ---------------------------------------------------------- expressions -- */
+
+/**
+ * HOW EACH INTERACTION STATE IS EXPRESSED.
+ *
+ * The state axis answers WHAT is true; this table answers WHICH VISUAL CHANNEL
+ * carries that truth. Keeping those questions separate prevents a colour table
+ * from becoming the dumping ground for focus geometry, elevation, motion and
+ * component swaps merely because all of them happen after interaction.
+ *
+ * `hover` and `pressed` are surface-colour derivations in this system. `focus`
+ * belongs to the focus-indicator policy so keyboard focus cannot disappear into
+ * a subtle tint. `dragged` is structural: elevation/motion carries the ongoing
+ * manipulation rather than requiring every colour family to mint a dragged
+ * token. The M3 dragged ratio remains a reference intensity for any derivation
+ * that intentionally needs it; it is not a requirement to composite at runtime.
+ *
+ * THIS TABLE IS COMPLETE BY CONSTRUCTION. `assertInteractionStateExpressions`
+ * requires one entry for every value on `STATE_AXES.interaction`, including
+ * `rest`, so adding an interaction state without deciding how it is expressed is
+ * a refusal rather than an implicit default.
+ */
+export const INTERACTION_STATE_EXPRESSIONS = deepFreeze({
+  dragged: 'elevation-motion',
+  focus: 'focus-indicator',
+  hover: 'color',
+  pressed: 'color',
+  rest: 'none',
+})
+
+const INTERACTION_EXPRESSION_CHANNELS = deepFreeze([
+  'none',
+  'color',
+  'focus-indicator',
+  'elevation-motion',
+])
 
 /* ---------------------------------------------------------------- roles -- */
 
@@ -266,11 +305,50 @@ export function assertProhibitedNames(prohibited = PROHIBITED_STATE_NAMES) {
   return prohibited
 }
 
-/** The layer ratios' own rules. */
-export function assertStateLayers(layers = STATE_LAYER_OPACITY) {
+/**
+ * The layer ratios' own rules.
+ *
+ * COMPLETE AGAINST THE INTERACTION AXIS. `rest` deliberately has no layer; every
+ * other interaction state does. Before this check, `focus` could disappear from
+ * the ratio table while both tables remained individually valid.
+ *
+ * ORDER, NOT MAGIC VALUES. 8/12/12/16 is today's M3-derived reference set, but
+ * the invariant worth protecting is perceptual ordering: hover is the lightest
+ * commitment and drag is the strongest. Focus and pressed may legitimately be
+ * retuned independently, so equality between them is not policy.
+ */
+export function assertStateLayers(
+  layers = STATE_LAYER_OPACITY,
+  interaction = STATE_AXES.interaction.values,
+) {
   const entries = Object.entries(layers)
   if (entries.length === 0) {
     throw new Error('no state layer ratios are declared -- nothing would guide minting a role')
+  }
+
+  if (!Array.isArray(interaction) || interaction.length < 2) {
+    throw new Error(
+      'interaction states are not a usable axis -- layer completeness cannot be checked',
+    )
+  }
+
+  const expected = new Set(interaction.filter((state) => state !== 'rest'))
+  const actual = new Set(entries.map(([state]) => state))
+  const missing = [...expected].filter((state) => !actual.has(state))
+  const extra = [...actual].filter((state) => !expected.has(state))
+
+  if (missing.length > 0 || extra.length > 0) {
+    const parts = []
+    if (missing.length > 0) {
+      parts.push(`missing ${missing.sort().join(', ')}`)
+    }
+    if (extra.length > 0) {
+      parts.push(`unexpected ${extra.sort().join(', ')}`)
+    }
+    throw new Error(
+      `state layers do not match interaction states minus 'rest' -- ${parts.join('; ')}. ` +
+        'Every interaction intensity must be deliberate, and rest has no layer',
+    )
   }
 
   for (const [state, opacity] of entries) {
@@ -282,13 +360,22 @@ export function assertStateLayers(layers = STATE_LAYER_OPACITY) {
     }
   }
 
-  // ORDER, NOT VALUES. The ratios may be retuned; what may not change is that a
-  // press reads as at least as strong as a hover. Asserting the numbers instead
-  // would be a second copy of the table three lines from the first.
+  if (!(layers.hover < layers.focus)) {
+    throw new Error(
+      `hover (${layers.hover}) is not weaker than focus (${layers.focus}) -- focus must remain ` +
+        'more legible than incidental pointer presence',
+    )
+  }
   if (!(layers.hover < layers.pressed)) {
     throw new Error(
       `hover (${layers.hover}) is not weaker than pressed (${layers.pressed}) -- a hover that ` +
         'reads as strongly as a press tells a person they have already acted',
+    )
+  }
+  if (!(layers.focus <= layers.dragged)) {
+    throw new Error(
+      `focus (${layers.focus}) is stronger than dragged (${layers.dragged}) -- an ongoing drag ` +
+        'must not read as less committed than focus',
     )
   }
   if (!(layers.pressed <= layers.dragged)) {
@@ -299,6 +386,60 @@ export function assertStateLayers(layers = STATE_LAYER_OPACITY) {
   }
 
   return layers
+}
+
+/** The interaction-expression table's own rules. */
+export function assertInteractionStateExpressions(
+  expressions = INTERACTION_STATE_EXPRESSIONS,
+  interaction = STATE_AXES.interaction.values,
+) {
+  if (!Array.isArray(interaction) || interaction.length < 2) {
+    throw new Error(
+      'interaction states are not a usable axis -- expression completeness cannot be checked',
+    )
+  }
+
+  const expected = new Set(interaction)
+  const actual = new Set(Object.keys(expressions))
+  const missing = [...expected].filter((state) => !actual.has(state))
+  const extra = [...actual].filter((state) => !expected.has(state))
+
+  if (missing.length > 0 || extra.length > 0) {
+    const parts = []
+    if (missing.length > 0) {
+      parts.push(`missing ${missing.sort().join(', ')}`)
+    }
+    if (extra.length > 0) {
+      parts.push(`unexpected ${extra.sort().join(', ')}`)
+    }
+    throw new Error(
+      `interaction expressions do not match the interaction axis -- ${parts.join('; ')}. ` +
+        'A state without an expression channel is an implicit implementation decision',
+    )
+  }
+
+  const channels = new Set(INTERACTION_EXPRESSION_CHANNELS)
+  for (const [state, channel] of Object.entries(expressions)) {
+    if (!channels.has(channel)) {
+      throw new Error(
+        `interaction state '${state}' uses unknown expression channel '${channel}' -- use one of ` +
+          [...channels].join(', '),
+      )
+    }
+    if (state === 'rest' && channel !== 'none') {
+      throw new Error(
+        `interaction state 'rest' must use expression channel 'none', not '${channel}'`,
+      )
+    }
+    if (state !== 'rest' && channel === 'none') {
+      throw new Error(
+        `interaction state '${state}' uses expression channel 'none' -- a non-rest state must ` +
+          'be expressed by a channel the design system owns',
+      )
+    }
+  }
+
+  return expressions
 }
 
 /** The role table's own rules: a gap is declared, never merely absent. */
@@ -389,6 +530,23 @@ export function stateFailures(
 }
 
 /* --------------------------------------------------------------- policy -- */
+
+/**
+ * Full in-module consistency check.
+ *
+ * Kept separate from `statesPolicy.assert` for drop-in compatibility: the
+ * registry historically exposes `assertStateAxes`, and changing that function's
+ * subject would make an unrelated consumer migration part of this policy edit.
+ * Tests and integration gates can call this stronger assertion immediately.
+ */
+export function assertStateModel() {
+  assertProhibitedNames(PROHIBITED_STATE_NAMES)
+  assertStateAxes(STATE_AXES, PROHIBITED_STATE_NAMES)
+  assertStateLayers(STATE_LAYER_OPACITY, STATE_AXES.interaction.values)
+  assertInteractionStateExpressions(INTERACTION_STATE_EXPRESSIONS, STATE_AXES.interaction.values)
+  assertStateColorRoles(STATE_COLOR_ROLES)
+  return STATE_AXES
+}
 
 export const statesPolicy = definePolicy({
   assert: assertStateAxes,

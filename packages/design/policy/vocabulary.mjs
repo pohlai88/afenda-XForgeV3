@@ -296,6 +296,25 @@ export const HEX = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
 const LENGTH = /^-?(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em)$/
 const FONT_STACK = /^[^;{}\r\n]+$/
 
+/**
+ * A complete-token curly-brace alias in this package's naming grammar.
+ *
+ * This is deliberately narrower than the full DTCG reference surface: DTCG 2025.10
+ * also requires JSON Pointer `$ref` support for document interchange. This module is
+ * the runtime VALUE vocabulary, not the interchange-document resolver, so it records
+ * that boundary explicitly rather than pretending a `{...}` recogniser is full DTCG
+ * reference conformance.
+ */
+const TOKEN_ALIAS = /^\{[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)*\}$/
+
+const aliasTargetsTier = (alias, tier) => {
+  if (typeof alias !== 'string' || !TOKEN_ALIAS.test(alias)) {
+    return false
+  }
+  const [group] = alias.slice(1, -1).split('.')
+  return TIER_OF_GROUP[group] === tier
+}
+
 /** The eighteen DTCG weight aliases, in full. A partial list would be a trap. */
 const FONT_WEIGHT_KEYWORDS = new Set([
   'thin',
@@ -434,7 +453,7 @@ export const SUPPORTED_VALUE_SHAPES = deepFreeze({
   shadow: {
     describe:
       'an array of layers, each { offsetX, offsetY, blur, spread, color } with ' +
-      'lengths and a color that aliases a token',
+      'lengths and a color that aliases a semantic token',
     serialize: (v) =>
       v.length === 0
         ? 'none'
@@ -457,8 +476,7 @@ export const SUPPORTED_VALUE_SHAPES = deepFreeze({
             (k) => typeof l[k] === 'string' && (l[k] === '0' || LENGTH.test(l[k])),
           ) &&
           typeof l.color === 'string' &&
-          l.color.startsWith('{') &&
-          l.color.endsWith('}'),
+          aliasTargetsTier(l.color, 'semantic'),
       ),
   },
 })
@@ -516,39 +534,192 @@ export function serializeValue(type, value) {
 }
 
 /**
- * Conversion to pixels, or `null` where the caller has not said what a rem is.
+ * Conversion to CSS pixels, or `null` where the caller has not supplied the
+ * contextual size that makes the conversion meaningful.
  *
- * THERE IS NO ROOT SIZE IN THIS MODULE. A hidden `rem: 16` let the target floor
- * and its token agree by SHARING A PREMISE rather than by either being true, so a
- * reader with a smaller root got a target under the floor with everything green.
- * The premise is the caller's to state, out loud, where a reader can disagree.
+ * THERE IS NO HIDDEN ROOT SIZE OR ELEMENT FONT SIZE IN THIS MODULE. A previous
+ * implementation admitted `em` in the dimension vocabulary but treated every
+ * non-`px` value as though it were `rem`. Given `{ rootPx: 16 }`, `1em` therefore
+ * became 16px even when the element's computed font size was 12px or 20px.
  *
- * `null` means one thing: a rem with no usable root. A value that is not a
- * dimension is a refusal, never a `null` -- `null` would invite the "no pixel
- * size, therefore fine" reading that let `50%` clear a 24px floor as the number 50.
+ * The units are now handled as three different facts:
+ *
+ *   px   absolute in this policy model                     -> always measurable
+ *   rem  relative to the document/root font size          -> needs `rootPx`
+ *   em   relative to the element's computed font size     -> needs `fontPx`
+ *
+ * `null` means exactly "valid dimension, insufficient context to convert".
+ * Invalid dimensions still REFUSE through `assertSupportedValue`; they never turn
+ * into `null`, because "cannot measure" and "not a dimension" are different facts.
+ *
+ * BACKWARD COMPATIBILITY: existing `toPixels(value, { rootPx })` callers keep
+ * exactly the same px/rem behaviour. `fontPx` is additive. The only changed
+ * behaviour is the old incorrect conversion of `em` through `rootPx`.
  */
-export function toPixels(length, { rootPx } = {}) {
+export function toPixels(length, { rootPx, fontPx } = {}) {
   assertSupportedValue('dimension', length)
   if (length === '0') {
     return 0
   }
+
+  const value = Number.parseFloat(length)
+
   if (length.endsWith('px')) {
-    return Number.parseFloat(length)
+    return value
   }
-  // rem is the only remaining unit the shape table admits.
-  return typeof rootPx === 'number' && Number.isFinite(rootPx) && rootPx > 0
-    ? Number.parseFloat(length) * rootPx
-    : null
+
+  if (length.endsWith('rem')) {
+    return typeof rootPx === 'number' && Number.isFinite(rootPx) && rootPx > 0
+      ? value * rootPx
+      : null
+  }
+
+  if (length.endsWith('em')) {
+    return typeof fontPx === 'number' && Number.isFinite(fontPx) && fontPx > 0
+      ? value * fontPx
+      : null
+  }
+
+  // `assertSupportedValue` above makes this unreachable. Keeping an explicit
+  // refusal protects this function if the dimension registry is widened later.
+  throw new Error(
+    `dimension '${length}' passed the value registry but toPixels has no conversion for its unit`,
+  )
 }
 
 /* ------------------------------------------------------- contract version -- */
 
 /**
- * The DTCG revision this vocabulary tracks. Pinned rather than re-derived:
- * `2025-11-01` appears in a Figma example as an `updatedAt` and reads exactly
- * like a spec version.
+ * The published DTCG report this vocabulary benchmarks against.
+ *
+ * 2025.10 is the FIRST STABLE DTCG release, published 2025-10-28. This is pinned
+ * to the published report rather than a tool vendor's metadata or the current
+ * editor draft. As of this module's 2026-09 benchmark, the 2026 editor draft
+ * still says not to implement or cite it as authoritative.
+ *
+ * IMPORTANT: tracking the report does NOT mean every internal value shape below
+ * is DTCG-conformant. `DTCG_VALUE_COMPATIBILITY` makes that claim type by type.
  */
-export const DTCG_VERSION = '2025.10'
+export const DTCG_REPORT = deepFreeze({
+  published: '2025-10-28',
+  revision: '2025.10',
+  status: 'stable',
+})
+
+export const DTCG_VERSION = DTCG_REPORT.revision
+
+/**
+ * How this runtime vocabulary relates to DTCG 2025.10 VALUE shapes.
+ *
+ * The package intentionally uses CSS-native internal values in several places.
+ * That can be a good runtime representation, but it must not be described as DTCG
+ * conformance. The interchange boundary is responsible for translating between
+ * these shapes and the published format.
+ *
+ * `conformant` — every admitted value uses the published DTCG value shape.
+ * `subset`     — every admitted value is conformant, but the package accepts only
+ *                a strict subset of the values DTCG permits.
+ * `departure`  — the internal shape deliberately differs and must be translated.
+ */
+export const DTCG_VALUE_COMPATIBILITY = deepFreeze({
+  color: {
+    reason:
+      'runtime colors are 6/8-digit hex strings; DTCG color values are color-space objects with components',
+    status: 'departure',
+  },
+  cubicBezier: {
+    reason: null,
+    status: 'conformant',
+  },
+  dimension: {
+    reason:
+      'runtime dimensions are CSS strings and additionally admit em for tracking; DTCG dimensions are { value, unit } and permit only px/rem',
+    status: 'departure',
+  },
+  duration: {
+    reason:
+      'DTCG admits the same { value, unit } shape; this runtime additionally refuses negative durations as useless for the product',
+    status: 'subset',
+  },
+  fontFamily: {
+    reason:
+      'runtime fontFamily is a CSS font-stack string; DTCG models one family as a string or a fallback list as an array of family strings',
+    status: 'departure',
+  },
+  fontWeight: {
+    reason: null,
+    status: 'conformant',
+  },
+  number: {
+    reason: null,
+    status: 'conformant',
+  },
+  shadow: {
+    reason:
+      'runtime shadow layers keep CSS length strings and semantic color aliases unresolved; DTCG shadow composites use typed dimension/color values or references',
+    status: 'departure',
+  },
+})
+
+/**
+ * The compatibility ledger is coverage, not documentation.
+ *
+ * A newly admitted value type must state its relationship to the stable exchange
+ * format in the same commit. Otherwise "DTCG-shaped" gradually becomes an
+ * unreviewed mixture of conformant and proprietary values.
+ */
+export function assertDtcgValueCompatibility(
+  shapes = SUPPORTED_VALUE_SHAPES,
+  compatibility = DTCG_VALUE_COMPATIBILITY,
+) {
+  const statuses = new Set(['conformant', 'subset', 'departure'])
+
+  for (const type of Object.keys(shapes)) {
+    const entry = compatibility[type]
+    if (!entry) {
+      throw new Error(
+        `value shape '${type}' has no DTCG compatibility entry -- a runtime representation ` +
+          'cannot be described as standards-aligned without saying whether it is conformant, ' +
+          'a subset, or a deliberate departure',
+      )
+    }
+
+    if (!statuses.has(entry.status)) {
+      throw new Error(
+        `value shape '${type}' declares DTCG status '${entry.status}' -- the statuses are ` +
+          `${[...statuses].join(', ')}`,
+      )
+    }
+
+    if (
+      entry.status !== 'conformant' &&
+      (typeof entry.reason !== 'string' || entry.reason.trim() === '')
+    ) {
+      throw new Error(
+        `value shape '${type}' is '${entry.status}' against DTCG without stating why -- ` +
+          'a restricted subset or deliberate departure must record the boundary that creates it',
+      )
+    }
+
+    if (entry.status === 'conformant' && entry.reason !== null) {
+      throw new Error(
+        `value shape '${type}' is 'conformant' but also states a divergence reason -- ` +
+          'the ledger must give one unambiguous conformance answer',
+      )
+    }
+  }
+
+  for (const type of Object.keys(compatibility)) {
+    if (!Object.hasOwn(shapes, type)) {
+      throw new Error(
+        `DTCG compatibility describes '${type}', which is not an admitted value shape -- ` +
+          'dead compatibility entries read like coverage for a type the generator cannot use',
+      )
+    }
+  }
+
+  return compatibility
+}
 
 /**
  * A different question from `DTCG_VERSION`:
@@ -581,8 +752,8 @@ export function assertContractVersions(contract = TOKEN_CONTRACT_VERSION, dtcg =
   }
   if (!DTCG_REVISION.test(dtcg)) {
     throw new Error(
-      `DTCG version '${dtcg}' is not a \`YYYY.MM\` revision -- \`2025-11-01\` is a Figma ` +
-        'updatedAt that reads exactly like a spec version, which is how the wrong one gets pinned',
+      `DTCG version '${dtcg}' is not a \`YYYY.MM\` revision -- the vocabulary pins the ` +
+        'published community-group report revision, not a date-shaped vendor metadata field',
     )
   }
 }
@@ -784,3 +955,4 @@ assertContractVersions()
 assertGroupNamesProjectUnambiguously()
 assertLifecycleRegistry()
 assertValueShapeRegistry()
+assertDtcgValueCompatibility()

@@ -1,4 +1,290 @@
 /**
+ * FOUNDATION — reference palette. Tonal infrastructure, never component API.
+ *
+ * ── PURPOSE ─────────────────────────────────────────────────────────────────
+ *
+ * Material 3 gets one thing exactly right for a system like Afenda: semantic
+ * colour roles should not own arbitrary literal colours. They should resolve
+ * through a stable tonal reference layer that can be rebound for light/dark
+ * appearance without changing component semantics.
+ *
+ * Afenda does NOT adopt Material's public `primary / secondary / tertiary`
+ * palette vocabulary wholesale. The families here are the chromatic domains the
+ * product actually needs:
+ *
+ *   neutral          page/text/surface backbone
+ *   neutral-variant  boundaries, fields and recessed structure
+ *   brand            agency / primary action
+ *   secondary        secondary interaction
+ *   destructive      destructive action
+ *   error            failed state
+ *   success          successful state
+ *   warning          caution
+ *   info             informational state
+ *   statutory        regulatory / legal fact
+ *
+ * The tone ladder follows the useful Material reference cadence:
+ *
+ *   0 10 20 30 40 50 60 70 80 90 95 99 100
+ *
+ * THESE NUMBERS ARE FOUNDATION-ONLY. A component may ask for `primary`,
+ * `success`, `card`, `muted`, etc. It must never ask for `brand.40` or
+ * `neutral.95`. Raw tone access in application code would turn a governed
+ * semantic system back into a colour picker.
+ *
+ * ── VALUES LIVE ELSEWHERE ───────────────────────────────────────────────────
+ *
+ * This file governs family and tone SHAPE, not literal hex values. Literal
+ * colours belong in the token registry, which remains the single source of
+ * truth. That avoids copying Afenda's palette into policy and having two colour
+ * authorities that agree only until one changes.
+ */
+
+import { definePolicy } from '../define-policy.mjs'
+import { ACCESSIBILITY_POLICY } from '../interaction/accessibility.mjs'
+import { assertLifecycle, assertTokenPath, deepFreeze, HEX } from '../vocabulary.mjs'
+
+export const REFERENCE_TONES = deepFreeze([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100])
+
+export const PALETTE_FAMILY_KINDS = deepFreeze({
+  action: {
+    reason: 'agency colour used by interactive semantics',
+  },
+  neutral: {
+    reason: 'structural colour whose hue is subordinate to content',
+  },
+  status: {
+    reason: 'domain state colour whose meaning is not interaction',
+  },
+})
+
+export const REFERENCE_PALETTE_FAMILIES = deepFreeze({
+  brand: {
+    kind: 'action',
+    reason: 'governance teal -- primary agency and selected/focus emphasis',
+  },
+  destructive: {
+    kind: 'action',
+    reason: 'an irreversible or dangerous action, not an error state',
+  },
+  error: {
+    kind: 'status',
+    reason: 'a failed outcome or invalid state',
+  },
+  info: {
+    kind: 'status',
+    reason: 'an informational fact or note',
+  },
+  neutral: {
+    kind: 'neutral',
+    reason: 'page, surface and text backbone',
+  },
+  'neutral-variant': {
+    kind: 'neutral',
+    reason: 'boundaries, fields and recessed structural surfaces',
+  },
+  secondary: {
+    kind: 'action',
+    reason: 'secondary interaction without competing with primary agency',
+  },
+  statutory: {
+    kind: 'status',
+    reason: 'a regulatory or legal fact that is neither advice nor warning',
+  },
+  success: {
+    kind: 'status',
+    reason: 'a completed or successful outcome',
+  },
+  warning: {
+    kind: 'status',
+    reason: 'a caution requiring attention',
+  },
+})
+
+/**
+ * Select a governed subset without allowing a package to invent a palette
+ * family the foundation does not understand.
+ */
+export function paletteFamiliesFor(names, catalogue = REFERENCE_PALETTE_FAMILIES) {
+  if (!Array.isArray(names) || names.length === 0) {
+    throw new Error('a reference palette must declare at least one family')
+  }
+
+  const seen = new Set()
+
+  return deepFreeze(
+    Object.fromEntries(
+      names.map((name) => {
+        if (seen.has(name)) {
+          throw new Error(`reference palette family '${name}' is declared twice`)
+        }
+        seen.add(name)
+
+        const policy = catalogue[name]
+        if (!policy) {
+          throw new Error(
+            `no reference palette family '${name}' -- choose from ` +
+              Object.keys(catalogue).sort().join(', '),
+          )
+        }
+
+        return [name, policy]
+      }),
+    ),
+  )
+}
+
+/** The family catalogue's own rules. */
+export function assertPaletteFamilies(
+  families = REFERENCE_PALETTE_FAMILIES,
+  kinds = PALETTE_FAMILY_KINDS,
+  tones = REFERENCE_TONES,
+) {
+  if (families === null || typeof families !== 'object' || Array.isArray(families)) {
+    throw new Error('reference palette families must be an object')
+  }
+
+  if (!Array.isArray(tones) || tones.length === 0) {
+    throw new Error('reference tone ladder must be a non-empty array')
+  }
+
+  const seenTones = new Set()
+  let previous = Number.NEGATIVE_INFINITY
+
+  for (const tone of tones) {
+    if (!Number.isInteger(tone) || tone < 0 || tone > 100) {
+      throw new Error(`reference tone '${tone}' is not an integer in [0, 100]`)
+    }
+
+    if (seenTones.has(tone)) {
+      throw new Error(`reference tone '${tone}' is declared twice`)
+    }
+
+    if (tone <= previous) {
+      throw new Error('reference tones must be strictly increasing')
+    }
+
+    seenTones.add(tone)
+    previous = tone
+  }
+
+  if (!(seenTones.has(0) && seenTones.has(100))) {
+    throw new Error('reference tone ladder must include both 0 and 100 endpoints')
+  }
+
+  for (const [family, policy] of Object.entries(families)) {
+    if (!kinds[policy.kind]) {
+      throw new Error(
+        `reference palette family '${family}' has kind '${policy.kind}', which is not one of ` +
+          Object.keys(kinds).join(', '),
+      )
+    }
+
+    if (typeof policy.reason !== 'string' || policy.reason.trim() === '') {
+      throw new Error(`reference palette family '${family}' must state why it exists`)
+    }
+  }
+
+  return families
+}
+
+/**
+ * Validate a concrete reference palette without assuming the repository's token
+ * namespace.
+ *
+ * `values` shape:
+ *
+ *   Map<family, Map<tone, "#RRGGBB">>
+ *
+ * A migration can therefore prove a palette before deciding whether its token
+ * path is `primitive.color.*`, `ref.color.*` or something else.
+ */
+export function assertReferencePaletteValues(
+  values,
+  families = REFERENCE_PALETTE_FAMILIES,
+  tones = REFERENCE_TONES,
+) {
+  if (!(values instanceof Map)) {
+    throw new Error('reference palette validation requires Map<family, Map<tone, color>>')
+  }
+
+  for (const family of Object.keys(families)) {
+    const scale = values.get(family)
+
+    if (!(scale instanceof Map)) {
+      throw new Error(`reference palette family '${family}' has no tone Map`)
+    }
+
+    for (const tone of tones) {
+      const value = scale.get(tone)
+
+      if (typeof value !== 'string' || !HEX.test(value)) {
+        throw new Error(
+          `reference palette '${family}.${tone}' is ${JSON.stringify(value)}, which is not hex`,
+        )
+      }
+
+      if (value.length === 9) {
+        throw new Error(
+          `reference palette '${family}.${tone}' carries alpha -- tonal primitives must be ` +
+            'opaque so their luminance is stable before composition',
+        )
+      }
+    }
+  }
+
+  return values
+}
+
+/**
+ * Validate registry tokens after a project chooses its concrete token-path
+ * convention. `pathFor(family, tone)` is supplied by the registry owner rather
+ * than invented here.
+ */
+export function assertReferencePaletteTokens(
+  tokens,
+  pathFor,
+  families = REFERENCE_PALETTE_FAMILIES,
+  tones = REFERENCE_TONES,
+) {
+  if (!(tokens instanceof Map)) {
+    throw new Error('reference palette token validation requires a Map of token paths')
+  }
+
+  if (typeof pathFor !== 'function') {
+    throw new Error('reference palette token validation requires pathFor(family, tone)')
+  }
+
+  for (const family of Object.keys(families)) {
+    for (const tone of tones) {
+      const path = pathFor(family, tone)
+
+      if (typeof path !== 'string' || path.trim() === '') {
+        throw new Error(`pathFor('${family}', ${tone}) returned no token path`)
+      }
+
+      const token = tokens.get(path)
+
+      if (!token) {
+        throw new Error(`reference palette token '${path}' does not exist`)
+      }
+
+      if (token.type !== 'color') {
+        throw new Error(`reference palette token '${path}' is a ${token.type} and must be a color`)
+      }
+    }
+  }
+
+  return families
+}
+
+export const palettePolicy = definePolicy({
+  assert: assertPaletteFamilies,
+  id: 'foundation.palette',
+  kind: 'foundation',
+})
+
+/**
  * COLOUR — what a role may be painted, and what it must contrast against.
  *
  * Implements POLICY.md §3's contrast and target-size rows. Two domains in one
@@ -7,10 +293,6 @@
  *
  * The reasoning lives in POLICY.md; this holds the tables and the refusals.
  */
-
-import { definePolicy } from '../define-policy.mjs'
-import { ACCESSIBILITY_POLICY } from '../interaction/accessibility.mjs'
-import { assertLifecycle, assertTokenPath, deepFreeze, HEX } from '../vocabulary.mjs'
 
 /**
  * THE ACCESSIBILITY FLOORS ARE NOT HERE, and this file is where a reader coming
@@ -261,6 +543,12 @@ export const COMPOSITION_CONTEXTS = deepFreeze([
   'popover',
   'primary',
   'secondary',
+  // TWO CONTEXTS FOR THE RAIL, NOT ONE. The frame and the selected item inside
+  // it are different backdrops, and a single 'sidebar' context would measure
+  // sidebar-accent-foreground against the rail it does not sit on -- the same
+  // error `color.ring` avoids by citing the surfaces a focused control touches.
+  'sidebar',
+  'sidebar-accent',
   'statutory',
 ])
 
@@ -638,6 +926,36 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     kind: 'compositing',
     reason: 'the tight, nearer layer of a shadow; composited, not a pair',
   },
+  // THE RAIL IS SET INTO THE PAGE, NOT LIFTED OFF IT. `card` is shallower than
+  // the page and `sidebar` is deeper -- neutral.100 under a neutral.50 page in
+  // light, ink.900 over an ink.950 page in dark. Making them one surface was the
+  // alternative and it fails in both directions: a rail matching the card stops
+  // reading as frame, and a card matching the rail stops reading as content.
+  // `semantic.shell` already says this in its own words -- "the persistent frame,
+  // which is a different system from the workspace inside it" -- and owns that
+  // frame's DIMENSIONS. These are the same frame's colours, and the two families
+  // are deliberately not merged: a width and a fill are different facts.
+  'color.sidebar': {
+    kind: 'surface',
+    providesContexts: ['sidebar'],
+    reason: 'the persistent navigation frame, proved through sidebar-foreground',
+  },
+  'color.sidebar-accent': {
+    kind: 'surface',
+    providesContexts: ['sidebar-accent'],
+    reason: 'the hovered or selected nav item fill, proved through sidebar-accent-foreground',
+  },
+  'color.sidebar-accent-foreground': { againstContexts: ['sidebar-accent'], kind: 'text' },
+  'color.sidebar-border': {
+    kind: 'decorative',
+    reason: 'a divider inside the rail, never a sole control boundary',
+  },
+  'color.sidebar-foreground': { againstContexts: ['sidebar'], kind: 'text' },
+  // MEASURED AGAINST THE RAIL AND NOT THE PAGE. `color.ring` cites 'card' and
+  // 'page' because that is where a focused control sits; a focused nav item sits
+  // on the sidebar, and a ring proved against the page would be proved against a
+  // surface it never touches.
+  'color.sidebar-ring': { againstContexts: ['sidebar'], kind: 'ui' },
   // STATUTORY. EPF, SOCSO, EIS and PCB rates are law, not advice and not a
   // warning. It measures like any other text pair; what it does not do is borrow
   // `info`, which would read as guidance a reader could choose to ignore.
@@ -956,6 +1274,144 @@ export function assertColorRoleRegistry(registry = COLOR_ROLE_POLICIES) {
   }
 
   assertContextsResolve(registry)
+}
+
+/* ----------------------------------------------------- model completeness -- */
+
+/**
+ * Validate the perceptual-distinctness table itself.
+ *
+ * `distinctnessFailures` evaluates resolved colours, but a malformed pair table
+ * can make that evaluator quietly do the wrong work. This assertion closes the
+ * table before any colour math runs:
+ *
+ *   • each entry is [roleA, roleB, reason]
+ *   • both roles exist
+ *   • both roles are surfaces (paired-against roles)
+ *   • a role is never paired with itself
+ *   • unordered pairs are unique
+ *   • every pair says why perceptual distinction matters
+ */
+export function assertDistinctPairs(
+  pairs = DISTINCT_PAIRS,
+  registry = COLOR_ROLE_POLICIES,
+  floor = DISTINCT_MINIMUM_DELTA_E,
+) {
+  if (!Array.isArray(pairs)) {
+    throw new Error('distinct colour pairs must be an array')
+  }
+
+  if (!(typeof floor === 'number' && Number.isFinite(floor) && floor > 0)) {
+    throw new Error(
+      `distinct-colour floor is ${JSON.stringify(floor)} -- it must be a positive finite Delta E`,
+    )
+  }
+
+  const seen = new Set()
+
+  for (const entry of pairs) {
+    if (!Array.isArray(entry) || entry.length !== 3) {
+      throw new Error(
+        `distinct colour pair ${JSON.stringify(entry)} must be [roleA, roleB, reason]`,
+      )
+    }
+
+    const [a, b, why] = entry
+
+    for (const role of [a, b]) {
+      if (typeof role !== 'string' || role.trim() === '') {
+        throw new Error(`distinct colour pair ${JSON.stringify(entry)} names an empty role`)
+      }
+
+      if (!registry[role]) {
+        throw new Error(
+          `distinct colour pair '${a}' / '${b}' names '${role}', which has no colour policy`,
+        )
+      }
+
+      if (!kindPolicy(registry[role].kind).pairedAgainst) {
+        throw new Error(
+          `distinct colour pair '${a}' / '${b}' includes '${role}', which is not a surface -- ` +
+            'this table measures surface-to-surface distinction, not foreground contrast',
+        )
+      }
+    }
+
+    if (a === b) {
+      throw new Error(`distinct colour pair '${a}' compares a role with itself`)
+    }
+
+    if (typeof why !== 'string' || why.trim() === '') {
+      throw new Error(`distinct colour pair '${a}' / '${b}' must say why the distinction matters`)
+    }
+
+    const key = [a, b].sort((x, y) => x.localeCompare(y)).join('\u0000')
+    if (seen.has(key)) {
+      throw new Error(
+        `distinct colour pair '${a}' / '${b}' is declared more than once, including reversed order`,
+      )
+    }
+    seen.add(key)
+  }
+
+  return pairs
+}
+
+/**
+ * Prove that every semantic colour role governed by this file names a real
+ * semantic colour token, and that the token has the colour value type.
+ *
+ * Policy paths are relative (`color.card`); token paths are full
+ * (`semantic.color.card`). A typo in the policy must fail here instead of
+ * silently removing the role from contrast/distinctness governance.
+ */
+export function assertColorTokens(tokens, registry = COLOR_ROLE_POLICIES) {
+  if (!(tokens instanceof Map)) {
+    throw new Error('colour token validation requires a Map of token paths')
+  }
+
+  for (const role of Object.keys(registry)) {
+    const path = `semantic.${role}`
+    const token = tokens.get(path)
+
+    if (!token) {
+      throw new Error(
+        `colour role '${role}' names '${path}', which does not exist -- the role would remain in ` +
+          'policy while no token carries its accessibility obligation',
+      )
+    }
+
+    if (token.type !== 'color') {
+      throw new Error(
+        `colour role '${role}' names '${path}', which is a ${token.type} and must be a color`,
+      )
+    }
+  }
+
+  return registry
+}
+
+/**
+ * One entry point for suites that have the token registry available.
+ *
+ * Kept separate from `colorPolicy.assert` for drop-in compatibility: the
+ * registry policy can validate its own table at import time, while token
+ * existence requires the token Map owned by the generator/unit suite.
+ */
+export function assertColorModel(
+  tokens,
+  registry = COLOR_ROLE_POLICIES,
+  kinds = COLOR_POLICY_KINDS,
+  permittedAlphaKinds = MAY_CARRY_ALPHA,
+  pairs = DISTINCT_PAIRS,
+) {
+  assertColorPolicyKinds(kinds)
+  assertAlphaPermissions(permittedAlphaKinds, kinds)
+  assertColorRoleRegistry(registry)
+  assertDistinctPairs(pairs, registry)
+  assertColorTokens(tokens, registry)
+
+  return registry
 }
 
 /**

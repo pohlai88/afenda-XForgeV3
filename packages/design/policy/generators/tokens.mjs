@@ -2,7 +2,7 @@
 /**
  * Design tokens -> CSS custom properties.
  *
- * `packages/design/tokens.json` is the authority; the CSS is DERIVED. Writing
+ * `packages/design/policy/tokens.json` is the authority; the CSS is DERIVED. Writing
  * both by hand would give one design value two homes, which is the defect this
  * repository keeps having -- and the cheapest place to prevent it is where the
  * second home does not exist yet.
@@ -304,7 +304,7 @@ const CLOSURE_REASON = deepFreeze({
 
 const outputsFor = (pkg) => ({
   foundations: join(ROOT, pkg, 'generated/FOUNDATIONS.md'),
-  input: join(ROOT, pkg, 'tokens.json'),
+  input: join(ROOT, pkg, 'policy/tokens.json'),
   manifest: join(ROOT, pkg, 'generated/token-names.json'),
   merge: join(ROOT, pkg, 'generated/twmerge.ts'),
   output: join(ROOT, pkg, 'generated/tokens.css'),
@@ -801,7 +801,7 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
 
   const lines = [
     '/*',
-    ' * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.',
+    ' * GENERATED FROM packages/design/policy/tokens.json -- DO NOT EDIT.',
     ' *',
     ' * Law 27: generated state is never hand-edited. Change the token file and',
     ' * run `pnpm generate`; editing this output makes the generate stage fail,',
@@ -1022,6 +1022,126 @@ function typeScaleLineHeights(typeRoles) {
   return lines.sort((a, b) => a.localeCompare(b))
 }
 
+/**
+ * THE COMPATIBILITY SCALE. Tailwind's size names, pointed at this system's roles.
+ *
+ * A closed namespace removes Tailwind's own scale, which is the entire point: a
+ * screen cannot write `text-sm` or `rounded-md` and get a number nobody here
+ * chose. It also breaks every VENDORED component, because shadcn writes `text-sm`
+ * and `rounded-md` and knows nothing about `body-compact` or `control`. Installing
+ * one component library produced 232 such references in a single commit.
+ *
+ * These aliases are the bridge, and three properties stop them becoming a second
+ * design system:
+ *
+ *   ONE VALUE, TWO NAMES. Every entry is a var() reference to a role. There is no
+ *   literal in this table, so the role stays the only place a value is decided
+ *   and an alias cannot drift from the thing it aliases.
+ *
+ *   ONLY WHERE THE NAMESPACE IS CLOSED. An alias in an OPEN namespace would
+ *   shadow a Tailwind default rather than replace a removed one -- two scales on
+ *   one prefix, which is the defect the radius closure was written to remove.
+ *   `scaleAliases` enforces that rather than trusting this table.
+ *
+ *   THE TARGET MUST EXIST, AND MUST NOT COLLIDE. A renamed role would leave
+ *   `--text-sm` pointing at nothing, and Tailwind drops an unresolvable reference
+ *   exactly as CSS does -- silently, at the utility, inside whichever component
+ *   used it. A role that ever took one of these names would be overwritten by
+ *   the alias instead. Both are refused at generation.
+ *
+ * NOT FOR NEW CODE. `text-sm` says how big; `text-body-compact` says what it is,
+ * and only the second survives a decision to change the scale. New work names the
+ * role. This table exists so vendored code compiles.
+ *
+ * `tracking-tight` is DELIBERATELY ABSENT. Tailwind's is -0.025em, this system
+ * has no negative tracking role, and aliasing it would mean inventing a value
+ * here -- the one thing this table must never do. The component using it is a
+ * component to fix.
+ */
+const SCALE_ALIASES = deepFreeze({
+  leading: { relaxed: 'semantic.leading.body' },
+  radius: {
+    lg: 'semantic.radius.container',
+    md: 'semantic.radius.control',
+    sm: 'semantic.radius.precise',
+    xl: 'semantic.radius.overlay',
+  },
+  shadow: {
+    lg: 'semantic.elevation.overlay',
+    md: 'semantic.elevation.floating',
+    sm: 'semantic.elevation.raised',
+    xl: 'semantic.elevation.modal',
+  },
+  text: {
+    base: 'semantic.type.body',
+    sm: 'semantic.type.body-compact',
+    xs: 'semantic.type.caption',
+  },
+  tracking: { widest: 'semantic.tracking.shortcut' },
+})
+
+/**
+ * The alias lines, or a refusal.
+ *
+ * `rows` is passed so a collision with a real projected role is a failure rather
+ * than a silent overwrite: both land in the same `@theme inline` block, and the
+ * later declaration wins.
+ */
+function scaleAliases(tokens, closes, typeRoles, rows) {
+  const closed = new Set(closes)
+  const taken = new Set(rows.map((row) => row.name))
+  const lines = []
+
+  for (const [namespace, entries] of Object.entries(SCALE_ALIASES)) {
+    if (!closed.has(namespace)) {
+      throw new Error(
+        `scale aliases are declared for '${namespace}', which this package does not close -- ` +
+          'an alias in an open namespace shadows a Tailwind default instead of replacing a ' +
+          'removed one, which puts two scales on one prefix',
+      )
+    }
+    for (const [alias, path] of Object.entries(entries)) {
+      const name = `--${namespace}-${alias}`
+      if (!tokens.has(path)) {
+        throw new Error(
+          `scale alias ${name} points at '${path}', which no token declares -- an alias to a ` +
+            'renamed role resolves to nothing, and Tailwind drops an unresolvable reference silently',
+        )
+      }
+      if (taken.has(name)) {
+        throw new Error(
+          `scale alias ${name} collides with a projected role of the same name -- the alias is ` +
+            'emitted later in the same block and would silently replace it',
+        )
+      }
+      lines.push(`  ${name}: var(${cssName(path)});`)
+
+      // A size and its leading travel together, exactly as they do for the role
+      // names. A `text-sm` that inherits the wrong line height is a half-applied
+      // alias, and it presents as a spacing bug rather than a typography one.
+      if (namespace !== 'text') {
+        continue
+      }
+      const leading = typeRoles?.[path.slice('semantic.type.'.length)]?.leading
+      if (leading !== undefined) {
+        lines.push(`  ${name}--line-height: var(${cssName(leading)});`)
+      }
+    }
+  }
+
+  return lines.length === 0
+    ? []
+    : [
+        '',
+        '  /*',
+        "   * TAILWIND'S SCALE NAMES, ALIASED ONTO ROLES -- for vendored components",
+        '   * only. Every line is a reference, so the role remains the single owner',
+        '   * of the value. New code names the role. See SCALE_ALIASES.',
+        '   */',
+        ...lines.sort((a, b) => a.localeCompare(b)),
+      ]
+}
+
 function tailwindTheme(tokens, closes, typeRoles, resolved) {
   // A BREAKPOINT CANNOT BE A REFERENCE, and it is the one place `inline` is
   // wrong. `@theme inline` emits `var(--semantic-breakpoint-medium)` -- which is
@@ -1043,7 +1163,7 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
 
   return [
     '/*',
-    ' * GENERATED FROM packages/design/tokens.json -- DO NOT EDIT.',
+    ' * GENERATED FROM packages/design/policy/tokens.json -- DO NOT EDIT.',
     ' *',
     ' * Law 27: generated state is never hand-edited. Change the token file and',
     ' * run `pnpm generate`; editing this output makes the generate stage fail,',
@@ -1071,6 +1191,7 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
     ]),
     ...rows.map((row) => `  ${row.name}: var(${cssName(row.path)});`),
     ...typeScaleLineHeights(typeRoles),
+    ...scaleAliases(tokens, closes, typeRoles, rows),
     '}',
     '',
     ...(breakpoints.length === 0
@@ -1141,7 +1262,7 @@ function foundations(tokens, blocks) {
   const lines = [
     '# Design token foundations',
     '',
-    '**GENERATED FROM `packages/design/tokens.json` -- DO NOT EDIT.**',
+    '**GENERATED FROM `packages/design/policy/tokens.json` -- DO NOT EDIT.**',
     '',
     'Law 27: generated state is never hand-edited. Change the token file and run',
     '`pnpm generate`; the `generate` stage regenerates this document and asserts it is',

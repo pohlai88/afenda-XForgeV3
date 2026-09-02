@@ -1,53 +1,62 @@
 /**
- * FOUNDATION — motion. What a motion role must answer for.
+ * FOUNDATION — motion. Semantic duration, easing intent and reduced-motion proof.
  *
- * ── PROVENANCE ─────────────────────────────────────────────────────────────
+ * ── WHAT THIS DOMAIN GOVERNS ────────────────────────────────────────────────
  *
- * EXTRACTED from the motion third of `tooling/design-system/token-policy/form.mjs`.
- * The same commit that wires this in must delete `REDUCED_MOTION_ANSWERS`,
- * `MAXIMUM_TRANSITION_MS`, `MOTION_ROLES`, `EASING_ROLES`, `assertMotionRoles`
- * and `motionFailures` from that file and re-point `token-policy/index.mjs`,
- * which calls `assertMotionRoles()` on import. Two authorities agree only until
- * someone edits one.
+ * Components do not choose arbitrary millisecond steps. They name WHY something
+ * moves:
  *
- * After typography and this, `form.mjs` holds elevation alone -- at which point
- * it is `elevation.mjs` under a wrong name, and the last step is a rename rather
- * than an extraction.
+ *   none     → motion neutralised while preserving lifecycle events
+ *   press    → immediate response to a user action
+ *   state    → a small visual state/content change
+ *   base     → the ordinary transition
+ *   overlay  → a spatial transition with real visual weight
+ *   pulse    → the one repeating loading treatment
  *
- * ── THE QUESTION THIS DOMAIN EXISTS TO FORCE ───────────────────────────────
+ * Material 3 is useful here as motion PHYSICS, not as the component API. Its
+ * broad duration ladder is deliberately not exposed through this policy; Afenda
+ * keeps the smaller semantic ladder above so duration cannot become taste.
  *
- * Not "how long". It is "what happens for someone who has asked for less
- * motion". `prefers-reduced-motion` is a stated user preference, and a design
- * system that treats it as a per-component courtesy will honour it in the
- * components someone remembered.
+ * ── REDUCED MOTION IS PART OF THE ROLE ─────────────────────────────────────
  *
- * So a motion role is not allowed to exist without an answer, and the answer is
- * a closed set, because "we thought about it" is not one.
+ * Every motion role must answer `prefers-reduced-motion` with exactly one of:
  *
- * ── A STALE CLAIM, CORRECTED IN THE MOVE ───────────────────────────────────
+ *   removed      the motion does not run
+ *   shortened    it still communicates the change, but faster
+ *   unaffected   it was already effectively motionless / non-vestibular
  *
- * `form.mjs` says of `motionFailures`: *"IT CANNOT CURRENTLY FAIL, AND THAT IS
- * SAID HERE RATHER THAN DISCOVERED. The registry holds one role, that role loops,
- * and looping roles are skipped two lines into the loop."*
+ * `assertMotionRoles` proves every role states an answer.
+ * `reducedMotionFailures` proves the resolved reduced-motion behaviour actually
+ * matches that answer. A declaration without a resolved proof is documentation,
+ * not governance.
  *
- * THAT IS NO LONGER TRUE, and it is corrected here rather than carried across.
- * The table now holds six roles and only `pulse` loops. The other five resolve to
- * real durations and are measured on every run:
+ * ── EASING ──────────────────────────────────────────────────────────────────
  *
- *   press     70ms  against a 100ms ceiling
- *   state    110ms  against 150ms
- *   base     150ms  against 200ms
- *   overlay  240ms  against 300ms
- *   none    0.01ms  against 1ms
+ * Duration answers "how much time". Easing answers "how energy enters/leaves".
+ * The semantic intents are deliberately small:
  *
- * All five pass, so the stage is green for the reason it should be. The honest
- * statement is now the opposite of the one it replaces: this check is live.
+ *   default    neutral in/out movement for an object that remains present
+ *   enter      decelerating arrival / expansion
+ *   exit       accelerating departure / contraction
+ *   linear     continuous progress only
  *
- * WORTH RECORDING RATHER THAN QUIETLY FIXING. The comment was accurate when
- * written and became false when roles were added -- nothing edits a paragraph
- * when a table grows. It is the defect CLAUDE.md keeps a list of, in the file
- * that documents that defect, and it was found only by reading the table beside
- * the prose while moving both.
+ * These intents borrow Material 3's directional discipline without importing
+ * every Material easing name into component APIs. Only token paths that actually
+ * exist belong in EASING_ROLES; the semantic intent catalogue can exist without
+ * forcing a new token into the registry.
+ *
+ * ── COMPATIBILITY ───────────────────────────────────────────────────────────
+ *
+ * Existing exports and token paths are preserved:
+ *   REDUCED_MOTION_ANSWERS
+ *   MAXIMUM_TRANSITION_MS
+ *   MOTION_ROLES
+ *   EASING_ROLES
+ *   assertMotionRoles
+ *   motionFailures
+ *   motionPolicy
+ *
+ * New validators are additive.
  */
 
 import { definePolicy } from '../define-policy.mjs'
@@ -55,35 +64,19 @@ import { deepFreeze } from '../vocabulary.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
-/**
- * The closed set of answers a role may give to `prefers-reduced-motion`.
- *
- *   removed      the motion does not run at all
- *   shortened    it runs, faster, still conveying the change
- *   unaffected   it was never motion a vestibular reader would object to
- */
 export const REDUCED_MOTION_ANSWERS = deepFreeze(['removed', 'shortened', 'unaffected'])
 
 /**
- * The upper bound on any ceiling a non-looping role may declare.
+ * House ceiling for any one-shot transition.
  *
- * A HOUSE NUMBER, AND RECORDED AS ONE: no criterion sets it. It is the point past
- * which a transition stops reading as feedback and starts reading as latency,
- * which for a data-entry tool is the more common complaint. Looping motion is
- * governed by its answer, not by this.
- *
- * A CAP, NOT A DEFAULT, and it used to be neither. `motionFailures` once read
- * `policy.maximumMs ?? MAXIMUM_TRANSITION_MS` while `assertMotionRoles` refused
- * any non-looping role that did not state `maximumMs` -- so for every registry
- * that passed the assertion the fallback could not fire, and this constant, with
- * this comment, governed nothing at all. Two rules about one fact, one of them
- * unreachable.
- *
- * Resolved in the direction that keeps both live: a role states its own ceiling
- * and may only be STRICTER than the house number. Declaring `maximumMs: 2000` and
- * calling it policy is the thing a house maximum exists to prevent.
+ * Individual semantic roles must declare a ceiling that is no looser than this.
+ * The current roles are intentionally much stricter; 500ms is a refusal line,
+ * not a recommendation.
  */
 export const MAXIMUM_TRANSITION_MS = 500
+
+/** Numeric slack only for comparing equivalent resolved durations. */
+export const MOTION_TIME_TOLERANCE_MS = 0.001
 
 /* ---------------------------------------------------------------- roles -- */
 
@@ -95,12 +88,8 @@ export const MOTION_ROLES = deepFreeze({
   },
 
   'semantic.motion.duration.none': {
-    // The reduced-motion answer itself, and therefore unaffected BY the
-    // preference -- it is what the preference resolves to.
-    //
-    // 0.01ms rather than 0, and the reason travels with it: a zero-duration
-    // transition does not fire `transitionend`, so a component waiting on that
-    // event would hang for exactly the people who asked for less motion.
+    // 0.01ms rather than 0 preserves `transitionend` for components whose
+    // lifecycle waits on that event.
     maximumMs: 1,
     reason: 'motion neutralised under prefers-reduced-motion',
     reducedMotion: 'unaffected',
@@ -113,21 +102,12 @@ export const MOTION_ROLES = deepFreeze({
   },
 
   'semantic.motion.duration.press': {
-    // A press must read as a RESPONSE, not as an animation. Carbon puts this at
-    // 70ms and calls it instant response to user action; past ~100ms a press
-    // starts to read as latency rather than as feedback.
     maximumMs: 100,
-    reason: 'a press or a toggle -- instant response to a user action',
+    reason: 'a press or toggle -- immediate response to a user action',
     reducedMotion: 'shortened',
   },
 
   'semantic.motion.duration.pulse': {
-    // THE ONE LOOP IN THE SYSTEM, and the reason this table has a `loops` field
-    // at all. WCAG 2.2.2 requires that anything moving automatically for more
-    // than five seconds can be paused, stopped or hidden. A loop never stops on
-    // its own, so it is always in scope -- and `shortened` does not discharge the
-    // obligation, because a faster loop is still a loop. The only answer that
-    // does is that it stops.
     loops: true,
     reason: 'the loading placeholder shimmer, which repeats until content arrives',
     reducedMotion: 'removed',
@@ -135,28 +115,63 @@ export const MOTION_ROLES = deepFreeze({
 
   'semantic.motion.duration.state': {
     maximumMs: 150,
-    reason: 'a fade; a small element entering or leaving',
+    reason: 'a fade or a small element entering or leaving',
     reducedMotion: 'shortened',
   },
 })
 
 /**
- * Easing roles, which assert nothing about time but must name a real curve.
+ * Existing easing token paths.
  *
- * WHY THERE IS ONE CURVE IN THE POLICY AND THREE IN THE TOKENS. Law 31 asks for a
- * second real use case before generalising. `semantic.ease` declares standard,
- * entrance and exit; this table names the one the policy has a rule for. The
- * others are declared and unpoliced, which is a smaller gap than pretending a
- * rule covers them -- and it is the honest place to start when the rule would
- * only be "it is a cubic-bezier", which the value-shape check already asserts.
+ * Kept as an array for drop-in compatibility. Add a token here only when that
+ * token exists in the registry and has a real consumer.
  */
 export const EASING_ROLES = deepFreeze(['semantic.motion.easing.default'])
 
+/**
+ * Semantic easing intent. This is vocabulary, not a requirement that four token
+ * paths already exist.
+ *
+ * `direction` is the mechanical characteristic a future token binding must
+ * preserve. It is intentionally more semantic than Material's public names.
+ */
+export const EASING_INTENTS = deepFreeze({
+  default: {
+    direction: 'neutral',
+    reason: 'ordinary movement for an object that remains present',
+  },
+  enter: {
+    direction: 'decelerate',
+    reason: 'an arriving or expanding object should settle rather than stop abruptly',
+  },
+  exit: {
+    direction: 'accelerate',
+    reason: 'a leaving or contracting object should depart decisively',
+  },
+  linear: {
+    direction: 'linear',
+    reason: 'continuous progress or repeated travel whose speed must not imply acceleration',
+  },
+})
+
 /* ------------------------------------------------------------ assertions -- */
 
-/** The motion table's own rules. */
+/** The motion role table's own structural rules. */
 export function assertMotionRoles(roles = MOTION_ROLES) {
-  for (const [role, policy] of Object.entries(roles)) {
+  if (roles === null || typeof roles !== 'object' || Array.isArray(roles)) {
+    throw new Error('motion roles must be an object')
+  }
+
+  const entries = Object.entries(roles)
+  if (entries.length === 0) {
+    throw new Error('no motion roles are declared -- an empty motion model governs nothing')
+  }
+
+  for (const [role, policy] of entries) {
+    if (policy === null || typeof policy !== 'object' || Array.isArray(policy)) {
+      throw new Error(`motion role '${role}' has no policy object`)
+    }
+
     if (!REDUCED_MOTION_ANSWERS.includes(policy.reducedMotion)) {
       throw new Error(
         `motion role '${role}' answers '${policy.reducedMotion}' for reduced motion -- the ` +
@@ -169,26 +184,44 @@ export function assertMotionRoles(roles = MOTION_ROLES) {
       throw new Error(`motion role '${role}' must say what it animates`)
     }
 
-    if (policy.loops && policy.reducedMotion !== 'removed') {
+    if (policy.loops !== undefined && typeof policy.loops !== 'boolean') {
+      throw new Error(`motion role '${role}' has non-boolean loops=${JSON.stringify(policy.loops)}`)
+    }
+
+    if (policy.loops) {
+      if (policy.reducedMotion !== 'removed') {
+        throw new Error(
+          `motion role '${role}' loops but answers '${policy.reducedMotion}' -- a faster loop is ` +
+            'still a loop, so reduced motion must remove it',
+        )
+      }
+
+      if (policy.maximumMs !== undefined) {
+        throw new Error(
+          `motion role '${role}' loops but declares maximumMs=${policy.maximumMs} -- the ceiling ` +
+            'governs one-shot latency, while a loop is governed by stopping under reduced motion',
+        )
+      }
+
+      continue
+    }
+
+    if (
+      !(
+        typeof policy.maximumMs === 'number' &&
+        Number.isFinite(policy.maximumMs) &&
+        policy.maximumMs > 0
+      )
+    ) {
       throw new Error(
-        `motion role '${role}' loops but answers '${policy.reducedMotion}' -- WCAG 2.2.2 wants ` +
-          'motion that runs past five seconds to be stoppable, and a loop never stops on its ' +
-          'own, so a faster loop is still a loop',
+        `motion role '${role}' does not loop and must state a positive finite maximumMs ceiling`,
       )
     }
 
-    if (!policy.loops && typeof policy.maximumMs !== 'number') {
+    if (policy.maximumMs > MAXIMUM_TRANSITION_MS) {
       throw new Error(
-        `motion role '${role}' does not loop and must state its ceiling -- an unbounded ` +
-          'one-shot is the transition that reads as latency',
-      )
-    }
-
-    if (!(policy.loops || (policy.maximumMs > 0 && policy.maximumMs <= MAXIMUM_TRANSITION_MS))) {
-      throw new Error(
-        `motion role '${role}' declares a ceiling of ${policy.maximumMs}ms, which is not ` +
-          `within (0, ${MAXIMUM_TRANSITION_MS}] -- a role may hold itself to less than the ` +
-          'house maximum and may not exempt itself from it by naming a larger number',
+        `motion role '${role}' declares a ceiling of ${policy.maximumMs}ms, past the ` +
+          `${MAXIMUM_TRANSITION_MS}ms house maximum`,
       )
     }
   }
@@ -196,58 +229,288 @@ export function assertMotionRoles(roles = MOTION_ROLES) {
   return roles
 }
 
+/** Existing easing-token catalogue rules. */
+export function assertEasingRoles(easingRoles = EASING_ROLES) {
+  if (!Array.isArray(easingRoles) || easingRoles.length === 0) {
+    throw new Error('easing roles must be a non-empty array')
+  }
+
+  const seen = new Set()
+
+  for (const role of easingRoles) {
+    if (typeof role !== 'string' || role.trim() === '') {
+      throw new Error(`easing role ${JSON.stringify(role)} names no token`)
+    }
+
+    if (seen.has(role)) {
+      throw new Error(`easing role '${role}' is declared twice`)
+    }
+
+    seen.add(role)
+  }
+
+  return easingRoles
+}
+
+/**
+ * Semantic easing vocabulary rules.
+ *
+ * No token existence is checked here; intents are deliberately allowed to
+ * precede a concrete token as long as components cannot bind to them directly.
+ */
+export function assertEasingIntents(intents = EASING_INTENTS) {
+  const allowed = new Set(['neutral', 'decelerate', 'accelerate', 'linear'])
+
+  if (intents === null || typeof intents !== 'object' || Array.isArray(intents)) {
+    throw new Error('easing intents must be an object')
+  }
+
+  for (const [intent, policy] of Object.entries(intents)) {
+    if (!allowed.has(policy.direction)) {
+      throw new Error(
+        `easing intent '${intent}' has direction '${policy.direction}' -- expected one of ` +
+          Array.from(allowed).join(', '),
+      )
+    }
+
+    if (typeof policy.reason !== 'string' || policy.reason.trim() === '') {
+      throw new Error(`easing intent '${intent}' must say what motion it is for`)
+    }
+  }
+
+  return intents
+}
+
+/**
+ * Every declared motion/easing token must exist and have the correct token type.
+ *
+ * Duration is DTCG `duration`; cubic-bezier values are DTCG `cubicBezier`.
+ */
+export function assertMotionTokens(tokens, roles = MOTION_ROLES, easingRoles = EASING_ROLES) {
+  if (!(tokens instanceof Map)) {
+    throw new Error('motion token validation requires a Map of token paths')
+  }
+
+  for (const role of Object.keys(roles)) {
+    const token = tokens.get(role)
+
+    if (!token) {
+      throw new Error(
+        `motion role '${role}' names a duration token that does not exist -- its ceiling and ` +
+          'reduced-motion answer would no longer govern anything',
+      )
+    }
+
+    if (token.type !== 'duration') {
+      throw new Error(
+        `motion role '${role}' resolves to token type '${token.type}' and must be a duration`,
+      )
+    }
+  }
+
+  for (const role of easingRoles) {
+    const token = tokens.get(role)
+
+    if (!token) {
+      throw new Error(`easing role '${role}' names a token that does not exist`)
+    }
+
+    if (token.type !== 'cubicBezier') {
+      throw new Error(
+        `easing role '${role}' resolves to token type '${token.type}' and must be a cubicBezier`,
+      )
+    }
+  }
+
+  return { easingRoles, roles }
+}
+
+/** Composite structural assertion for suites that want one entry point. */
+export function assertMotionModel(
+  roles = MOTION_ROLES,
+  easingRoles = EASING_ROLES,
+  intents = EASING_INTENTS,
+) {
+  assertMotionRoles(roles)
+  assertEasingRoles(easingRoles)
+  assertEasingIntents(intents)
+
+  return { easingRoles, intents, roles }
+}
+
 /* ------------------------------------------------------------ evaluation -- */
 
 /**
- * Every motion failure, given resolved durations.
+ * Parse the two duration shapes the repository currently accepts:
  *
- * Non-looping roles are held to their stated ceiling. Looping ones are not: the
- * length of one cycle is a design choice, and the accessibility obligation on
- * them is discharged by stopping rather than by being brief.
+ *   "150ms" / "0.15s"
+ *   { value: 150, unit: "ms" }
+ */
+const durationMs = (raw) => {
+  let value
+  let unit
+
+  if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+    value = Number(raw.value)
+    unit = raw.unit
+  } else {
+    const parsed = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(String(raw))
+    if (!parsed) {
+      return { ms: null, why: `${JSON.stringify(raw)} is not a duration` }
+    }
+    value = Number(parsed[1])
+    unit = parsed[2]
+  }
+
+  if (!(Number.isFinite(value) && (unit === 'ms' || unit === 's'))) {
+    return { ms: null, why: `${JSON.stringify(raw)} is not a duration` }
+  }
+
+  const ms = value * (unit === 's' ? 1000 : 1)
+
+  return Number.isFinite(ms)
+    ? { ms }
+    : { ms: null, why: `${JSON.stringify(raw)} does not resolve to finite milliseconds` }
+}
+
+/**
+ * Every normal-mode motion failure.
+ *
+ * Looping roles are intentionally not held to a cycle-duration ceiling. Their
+ * accessibility contract is verified by `reducedMotionFailures`: the loop must
+ * disappear when reduced motion is requested.
  */
 export function motionFailures(resolvedByMode, roles = MOTION_ROLES) {
   const failures = []
 
+  if (!(resolvedByMode instanceof Map)) {
+    return ['motion evaluation requires resolvedByMode to be a Map']
+  }
+
   for (const [label, resolved] of resolvedByMode) {
+    if (!(resolved instanceof Map)) {
+      failures.push(`${label}: resolved motion tokens are not a Map`)
+      continue
+    }
+
     for (const [role, policy] of Object.entries(roles)) {
       const raw = resolved.get(role)
 
-      // Absent is skipped, not failed -- the same rule as typography, spacing and
-      // colour: the policy governs what EXISTS. A role in USE that vanished is
-      // caught by `tokens-referenced-are-tokens-that-exist` against the stylesheet.
+      // Token existence is owned by assertMotionTokens. Keep this evaluator
+      // compatible with synthetic sources that intentionally omit typography/
+      // motion domains.
       if (raw === undefined || policy.loops) {
         continue
       }
 
-      // BOTH SHAPES, AND THE OBJECT ONE IS WHY THIS ONCE NEVER RAN. `duration`
-      // reached its DTCG 2025.10 representation -- an object { value, unit } --
-      // while the check still did `String(raw)` and matched a CSS length, so every
-      // duration would have been reported as "not a duration".
-      //
-      // Nothing caught it because the only role in the table then named a token
-      // that did not exist, so the loop skipped it before ever reaching here. A
-      // dormant check and a BROKEN one look identical from outside, which is the
-      // argument for a table that governs something.
-      const parsed =
-        raw !== null && typeof raw === 'object'
-          ? [null, String(raw.value), raw.unit]
-          : /^(\d+(?:\.\d+)?)(ms|s)$/.exec(String(raw))
+      const { ms, why } = durationMs(raw)
 
-      if (
-        !(parsed && (parsed[2] === 'ms' || parsed[2] === 's') && Number.isFinite(Number(parsed[1])))
-      ) {
-        failures.push(`${label}: '${role}' is '${JSON.stringify(raw)}', which is not a duration`)
+      if (ms === null) {
+        failures.push(`${label}: '${role}' ${why}`)
         continue
       }
 
-      const value = Number(parsed[1]) * (parsed[2] === 's' ? 1000 : 1)
+      if (!(ms > 0)) {
+        failures.push(
+          `${label}: '${role}' resolves to ${ms}ms -- use the dedicated 'none' role rather than ` +
+            'a literal zero that can suppress transition lifecycle events',
+        )
+        continue
+      }
 
-      // No `?? MAXIMUM_TRANSITION_MS`. `assertMotionRoles` refuses a non-looping
-      // role without a ceiling, so a default here could only ever apply to a
-      // registry that has already been rejected -- which is what made the house
-      // number unreachable.
-      if (value > policy.maximumMs) {
-        failures.push(`${label}: '${role}' is ${value}ms, past its ${policy.maximumMs}ms ceiling`)
+      if (ms > policy.maximumMs) {
+        failures.push(`${label}: '${role}' is ${ms}ms, past its ${policy.maximumMs}ms ceiling`)
+      }
+    }
+  }
+
+  return failures
+}
+
+/**
+ * Prove the reduced-motion declaration against two resolved token maps.
+ *
+ * `normalResolved` and `reducedResolved` are Map<tokenPath, literal>.
+ *
+ * Contract:
+ *   shortened  → reduced duration is present and strictly shorter
+ *   unaffected → reduced duration is equivalent
+ *   removed    → token is absent OR resolves at/below the neutral-motion ceiling
+ *
+ * For a looping role `removed` is the only legal answer, so this also proves the
+ * loop is no longer active in the reduced-motion resolution.
+ */
+export function reducedMotionFailures(normalResolved, reducedResolved, roles = MOTION_ROLES) {
+  const failures = []
+
+  if (!(normalResolved instanceof Map && reducedResolved instanceof Map)) {
+    return ['reduced-motion evaluation requires normalResolved and reducedResolved Maps']
+  }
+
+  const neutralCeiling = roles['semantic.motion.duration.none']?.maximumMs ?? 1
+
+  for (const [role, policy] of Object.entries(roles)) {
+    const normalRaw = normalResolved.get(role)
+    const reducedRaw = reducedResolved.get(role)
+
+    if (policy.reducedMotion === 'removed') {
+      if (reducedRaw === undefined) {
+        continue
+      }
+
+      const { ms, why } = durationMs(reducedRaw)
+
+      if (ms === null) {
+        failures.push(`reduced: '${role}' is declared removed but ${why}`)
+      } else if (ms > neutralCeiling) {
+        failures.push(
+          `reduced: '${role}' is declared removed but still resolves to ${ms}ms -- removed motion ` +
+            `must be absent or at/below the ${neutralCeiling}ms neutral-motion ceiling`,
+        )
+      }
+
+      continue
+    }
+
+    if (normalRaw === undefined || reducedRaw === undefined) {
+      failures.push(
+        `reduced: '${role}' declares '${policy.reducedMotion}' but one of its normal/reduced ` +
+          'durations is absent, so the declaration cannot be proved',
+      )
+      continue
+    }
+
+    const normal = durationMs(normalRaw)
+    const reduced = durationMs(reducedRaw)
+
+    if (normal.ms === null) {
+      failures.push(`normal: '${role}' ${normal.why}`)
+      continue
+    }
+
+    if (reduced.ms === null) {
+      failures.push(`reduced: '${role}' ${reduced.why}`)
+      continue
+    }
+
+    if (policy.reducedMotion === 'shortened') {
+      if (!(reduced.ms + MOTION_TIME_TOLERANCE_MS < normal.ms)) {
+        failures.push(
+          `reduced: '${role}' declares shortened but resolves to ${reduced.ms}ms against ` +
+            `${normal.ms}ms normally -- reduced motion must be strictly shorter`,
+        )
+      }
+      continue
+    }
+
+    if (policy.reducedMotion === 'unaffected') {
+      const drift = Math.abs(reduced.ms - normal.ms)
+
+      if (drift > MOTION_TIME_TOLERANCE_MS) {
+        failures.push(
+          `reduced: '${role}' declares unaffected but changes from ${normal.ms}ms to ` +
+            `${reduced.ms}ms`,
+        )
       }
     }
   }
@@ -257,6 +520,11 @@ export function motionFailures(resolvedByMode, roles = MOTION_ROLES) {
 
 /* --------------------------------------------------------------- policy -- */
 
+/**
+ * Keep the registry handle backward-compatible: import-time policy assertion
+ * validates the role table. Token and resolved-mode checks require subjects the
+ * registry handle itself does not own, so they remain exported evaluators.
+ */
 export const motionPolicy = definePolicy({
   assert: assertMotionRoles,
   id: 'foundation.motion',

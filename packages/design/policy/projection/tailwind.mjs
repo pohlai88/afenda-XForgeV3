@@ -1,5 +1,5 @@
 import { definePolicy } from '../define-policy.mjs'
-import { deepFreeze, tierOf } from '../vocabulary.mjs'
+import { assertTokenPath as assertTokenPathGrammar, deepFreeze, tierOf } from '../vocabulary.mjs'
 
 /**
  * TAILWIND PROJECTION -- how a semantic role becomes a utility class.
@@ -229,6 +229,205 @@ export const UNPROJECTED = deepFreeze({
     'no --duration-* theme namespace; reached through the `duration-state` @utility',
 })
 
+const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const CUSTOM_PROPERTY = /^--[a-z0-9]+(?:-[a-z0-9]+)*$/
+const UTILITY_PREFIX = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-$/
+
+const isPlainRecord = (value) => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
+
+const ownStringKeys = (value, where) => {
+  if (!isPlainRecord(value)) {
+    throw new Error(
+      `${where} must be a plain object -- configuration with a prototype can hide fields`,
+    )
+  }
+  const symbols = Object.getOwnPropertySymbols(value)
+  if (symbols.length > 0) {
+    throw new Error(
+      `${where} contains symbol keys -- policy tables are string-addressed canonical data`,
+    )
+  }
+  return Object.keys(value)
+}
+
+const assertKebab = (value, where) => {
+  if (typeof value !== 'string' || !KEBAB.test(value)) {
+    throw new Error(`${where} '${value}' must be lowercase kebab-case`)
+  }
+  return value
+}
+
+/**
+ * THE NAMING GRAMMAR IS VOCABULARY'S, AND THIS FILE HELD A SECOND COPY OF IT.
+ *
+ * `vocabulary.mjs` says of `cssReferenceOf`: "ONE ALGORITHM, NOT TWO ... a copy
+ * that differed from this one in two ways nobody had compared: it required at
+ * least two path segments, and it did not resolve the tier. That module is
+ * deleted and this is the single seam." The module deleted was
+ * `projection/identity.mjs`. THIS copy survived that pass with the same two
+ * differences -- an arity floor of three, and no `tierOf` -- so the comment
+ * claiming a single seam was two files away from the second one.
+ *
+ * They agreed until `color.scrim` arrived: two segments, a legal primitive under
+ * the grammar, refused here. Generation went red rather than wrong, which is the
+ * good outcome of the pair diverging and not one to rely on twice.
+ *
+ * The label is preserved because the call sites use it to say WHICH table the
+ * bad path came from, which the kernel cannot know.
+ */
+const assertTokenPath = (path, where = 'token path') => {
+  try {
+    return assertTokenPathGrammar(path)
+  } catch (error) {
+    throw new Error(`${where}: ${error.message}`)
+  }
+}
+
+/**
+ * The arity floor lives HERE and not above, because it was never a fact about
+ * token paths -- `color.scrim` is a two-segment path and a valid token. It is a
+ * fact about what may cross the Tailwind bridge: a bridge path is semantic or
+ * component tier, and both are `tier.group.name` by construction.
+ */
+const assertBridgePath = (path, where) => {
+  assertTokenPath(path, where)
+  if (path.split('.').length < 3) {
+    throw new Error(
+      `${where} '${path}' must contain at least tier.group.name to cross the Tailwind bridge`,
+    )
+  }
+  const tier = path.split('.')[0]
+  if (tier !== 'semantic' && tier !== 'component') {
+    throw new Error(
+      `${where} '${path}' is ${tier} tier -- only semantic and component roles may enter ` +
+        'or be deliberately excluded from the Tailwind bridge',
+    )
+  }
+  return path
+}
+
+const assertCustomProperty = (name, where) => {
+  if (typeof name !== 'string' || !CUSTOM_PROPERTY.test(name)) {
+    throw new Error(`${where} '${name}' is not a valid lowercase Tailwind theme custom property`)
+  }
+  return name
+}
+
+const assertUniqueStringList = (values, where) => {
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new Error(`${where} must be a non-empty array`)
+  }
+  const seen = new Set()
+  for (const value of values) {
+    assertKebab(value, `${where} entry`)
+    if (seen.has(value)) {
+      throw new Error(`${where} contains '${value}' twice -- one namespace must have one identity`)
+    }
+    seen.add(value)
+  }
+  return values
+}
+
+/**
+ * Resolve a theme variable to its namespace by LONGEST matching namespace.
+ *
+ * `--font-weight-*` also begins with `--font-*`. First-match resolution therefore
+ * makes array order decide semantics. Every caller uses this resolver so static
+ * validation, projection validation and utility-shadow analysis classify a
+ * variable the same way.
+ */
+export function tailwindNamespaceOf(name, namespaces = TAILWIND_NAMESPACES) {
+  assertCustomProperty(name, 'Tailwind variable')
+  assertUniqueStringList(namespaces, 'Tailwind namespaces')
+
+  return [...namespaces]
+    .sort((a, b) => b.length - a.length || a.localeCompare(b))
+    .find((namespace) => name.startsWith(`--${namespace}-`))
+}
+
+const assertExclusionTable = (excluded, paths = PATH_PROJECTION) => {
+  const keys = ownStringKeys(excluded, 'UNPROJECTED')
+  for (const path of keys) {
+    assertBridgePath(path, 'UNPROJECTED path')
+    const reason = excluded[path]
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new Error(
+        `'${path}' is excluded from the bridge with no reason -- an unexplained exclusion is ` +
+          'indistinguishable from an oversight',
+      )
+    }
+    if (Object.hasOwn(paths, path)) {
+      throw new Error(
+        `'${path}' is both explicitly projected and explicitly excluded -- two authorities decide ` +
+          'opposite outcomes, and precedence would hide one of them',
+      )
+    }
+  }
+  return excluded
+}
+
+const assertPrefixTable = (prefixes, namespaces = TAILWIND_NAMESPACES) => {
+  const keys = ownStringKeys(prefixes, 'CONTESTED_PREFIX')
+  const counts = new Map()
+
+  for (const namespace of keys) {
+    if (!namespaces.includes(namespace)) {
+      throw new Error(
+        `CONTESTED_PREFIX names '${namespace}', which is not a Tailwind namespace ` +
+          `(${namespaces.join(', ')})`,
+      )
+    }
+    const utilityPrefix = prefixes[namespace]
+    if (typeof utilityPrefix !== 'string' || !UTILITY_PREFIX.test(utilityPrefix)) {
+      throw new Error(
+        `CONTESTED_PREFIX for '${namespace}' is '${utilityPrefix}' -- utility prefixes must be ` +
+          'lowercase kebab-case and end in a hyphen',
+      )
+    }
+    counts.set(utilityPrefix, (counts.get(utilityPrefix) ?? 0) + 1)
+  }
+
+  for (const [utilityPrefix, count] of counts) {
+    if (count < 2) {
+      throw new Error(
+        `CONTESTED_PREFIX lists '${utilityPrefix}' for only one namespace -- this table exists ` +
+          'only where two or more namespaces bid for the same utility family',
+      )
+    }
+  }
+  return prefixes
+}
+
+const tokenPathsOf = (tokens, where) => {
+  if (
+    tokens == null ||
+    typeof tokens === 'string' ||
+    typeof tokens[Symbol.iterator] !== 'function'
+  ) {
+    throw new Error(`${where} must be an iterable of token paths`)
+  }
+
+  const paths = [...tokens]
+  const seen = new Set()
+  for (const path of paths) {
+    assertTokenPath(path, `${where} entry`)
+    if (seen.has(path)) {
+      throw new Error(
+        `${where} contains '${path}' twice -- duplicate input must not masquerade as a ` +
+          'projection collision',
+      )
+    }
+    seen.add(path)
+  }
+  return paths
+}
+
 /**
  * The tables' own rules, checked on import beside every other kernel table.
  *
@@ -241,8 +440,38 @@ export function assertTailwindTables(
   groups = GROUP_PROJECTION,
   paths = PATH_PROJECTION,
   namespaces = TAILWIND_NAMESPACES,
+  excluded = UNPROJECTED,
+  prefixes = CONTESTED_PREFIX,
 ) {
-  for (const [group, rule] of Object.entries(groups)) {
+  assertUniqueStringList(namespaces, 'Tailwind namespaces')
+
+  const groupKeys = ownStringKeys(groups, 'GROUP_PROJECTION')
+  if (groupKeys.length === 0) {
+    throw new Error(
+      'GROUP_PROJECTION is empty -- an empty map proves itself while projecting no semantic group',
+    )
+  }
+
+  for (const group of groupKeys) {
+    assertKebab(group, 'projection group')
+    const rule = groups[group]
+    const ruleKeys = ownStringKeys(rule, `projection rule for '${group}'`)
+    const allowed = ['keepGroup', 'namespace']
+
+    for (const key of ruleKeys) {
+      if (!allowed.includes(key)) {
+        throw new Error(
+          `projection rule for '${group}' declares unknown field '${key}' -- the rule contract is ` +
+            allowed.join(', '),
+        )
+      }
+    }
+    for (const key of allowed) {
+      if (!Object.hasOwn(rule, key)) {
+        throw new Error(`projection rule for '${group}' is missing '${key}'`)
+      }
+    }
+
     if (!namespaces.includes(rule.namespace)) {
       throw new Error(
         `the '${group}' group projects into '${rule.namespace}', which is not a Tailwind ` +
@@ -258,14 +487,32 @@ export function assertTailwindTables(
     }
   }
 
-  for (const [path, name] of Object.entries(paths)) {
-    if (!namespaces.some((ns) => name.startsWith(`--${ns}-`))) {
+  const pathKeys = ownStringKeys(paths, 'PATH_PROJECTION')
+  const projectedNames = new Map()
+
+  for (const path of pathKeys) {
+    assertBridgePath(path, 'PATH_PROJECTION path')
+    const name = assertCustomProperty(paths[path], `projection for '${path}'`)
+    const namespace = tailwindNamespaceOf(name, namespaces)
+    if (namespace === undefined) {
       throw new Error(
         `'${path}' is named '${name}', which is in no Tailwind namespace ` +
           `(${namespaces.join(', ')})`,
       )
     }
+
+    const other = projectedNames.get(name)
+    if (other !== undefined) {
+      throw new Error(
+        `PATH_PROJECTION maps both '${path}' and '${other}' to '${name}' -- an explicit override ` +
+          'table must be injective before any token set is considered',
+      )
+    }
+    projectedNames.set(name, path)
   }
+
+  assertExclusionTable(excluded, paths)
+  assertPrefixTable(prefixes, namespaces)
 }
 
 /** The path with its tier segment removed, hyphenated. */
@@ -279,6 +526,23 @@ const withoutTier = (path) => path.split('.').slice(1).join('-')
  * them silently either.
  */
 export function tailwindNameOf(path) {
+  assertTokenPath(path)
+  const tier = tierOf(path)
+
+  if (tier === 'primitive') {
+    throw new Error(
+      `'${path}' is primitive tier and has no Tailwind projection -- a primitive carries a ` +
+        'value and no role, so exposing one as a utility would let a screen reach past the ' +
+        'semantic layer that modes rebind',
+    )
+  }
+
+  if (Object.hasOwn(UNPROJECTED, path) && Object.hasOwn(PATH_PROJECTION, path)) {
+    throw new Error(
+      `'${path}' is both projected and excluded -- run assertTailwindTables to repair the ` +
+        'configuration rather than relying on lookup precedence',
+    )
+  }
   if (Object.hasOwn(UNPROJECTED, path)) {
     return null
   }
@@ -286,18 +550,18 @@ export function tailwindNameOf(path) {
     return PATH_PROJECTION[path]
   }
 
-  const tier = tierOf(path)
   if (tier === 'component') {
-    // The component tier is geometry only, and it is spacing in every case. The
-    // tier segment goes and the component's own name stays, so
-    // `component.button.padding-block` reads `--spacing-button-padding-block`.
+    // The component tier is geometry only, and it is spacing in every case. This
+    // remains the deliberate component-tier rule; unlike a semantic group default,
+    // it is constrained by the vocabulary invariant that components carry geometry
+    // rather than palette or mode-bearing roles.
     return `--spacing-${withoutTier(path)}`
   }
+
   if (tier !== 'semantic') {
     throw new Error(
-      `'${path}' is ${tier} tier and has no Tailwind projection -- a primitive carries a ` +
-        'value and no role, so exposing one as a utility would let a screen reach past the ' +
-        'semantic layer that modes rebind',
+      `'${path}' is ${tier} tier and has no Tailwind projection -- only semantic and component ` +
+        'roles may cross this bridge',
     )
   }
 
@@ -313,7 +577,11 @@ export function tailwindNameOf(path) {
   }
 
   const local = rule.keepGroup ? withoutTier(path) : path.split('.').slice(2).join('-')
-  return `--${rule.namespace}-${local}`
+  if (local === '') {
+    throw new Error(`'${path}' has no local token name to project into '${rule.namespace}'`)
+  }
+
+  return assertCustomProperty(`--${rule.namespace}-${local}`, `generated projection for '${path}'`)
 }
 
 /**
@@ -324,7 +592,13 @@ export function tailwindNameOf(path) {
  * which is invisible in the output and looks exactly like a role nobody used.
  */
 export function assertTailwindProjection(tokens) {
-  const paths = [...tokens].filter((p) => tierOf(p) !== 'primitive')
+  // A token-set proof is meaningless if the tables deciding the projection are
+  // malformed, so the static authority is validated first rather than relying on
+  // some other caller having done it earlier.
+  assertTailwindTables()
+
+  const source = tokenPathsOf(tokens, 'Tailwind projection token set')
+  const paths = source.filter((path) => tierOf(path) !== 'primitive')
   if (paths.length === 0) {
     throw new Error(
       'the Tailwind projection was proven over zero tokens -- every rule here is about a ' +
@@ -339,9 +613,7 @@ export function assertTailwindProjection(tokens) {
       continue
     }
 
-    const namespace = TAILWIND_NAMESPACES.find(
-      (ns) => name.startsWith(`--${ns}-`) && !name.slice(2 + ns.length + 1).includes('--'),
-    )
+    const namespace = tailwindNamespaceOf(name)
     if (namespace === undefined) {
       throw new Error(
         `'${path}' projects to '${name}', which is in no known Tailwind namespace ` +
@@ -360,15 +632,6 @@ export function assertTailwindProjection(tokens) {
     }
     seen.set(name, path)
   }
-
-  for (const [path, reason] of Object.entries(UNPROJECTED)) {
-    if (typeof reason !== 'string' || reason.trim() === '') {
-      throw new Error(
-        `'${path}' is excluded from the bridge with no reason -- an unexplained exclusion is ` +
-          'indistinguishable from an oversight',
-      )
-    }
-  }
 }
 
 /**
@@ -386,7 +649,10 @@ export function assertTailwindProjection(tokens) {
  * exclusion. One function, one question.
  */
 export function assertExclusionsAreCurrent(tokens, excluded = UNPROJECTED) {
-  const paths = new Set(tokens)
+  assertExclusionTable(excluded, PATH_PROJECTION)
+
+  const source = tokenPathsOf(tokens, 'exclusion-currentness token set')
+  const paths = new Set(source)
   for (const path of Object.keys(excluded)) {
     if (!paths.has(path)) {
       throw new Error(
@@ -417,20 +683,21 @@ export function assertExclusionsAreCurrent(tokens, excluded = UNPROJECTED) {
  * coincidence and stops the day the token changes.
  */
 export function assertNoUtilityShadowing(tokens, prefixes = CONTESTED_PREFIX) {
+  assertPrefixTable(prefixes, TAILWIND_NAMESPACES)
+  const source = tokenPathsOf(tokens, 'utility-shadow token set')
   const claimed = new Map()
+  const contestedNamespaces = Object.keys(prefixes)
 
-  for (const path of [...tokens].filter((p) => tierOf(p) !== 'primitive')) {
+  for (const path of source.filter((candidate) => tierOf(candidate) !== 'primitive')) {
     const name = tailwindNameOf(path)
     if (name === null) {
       continue
     }
 
-    // Longest namespace first: `--font-weight-body` is in `font-weight`, not in
-    // `font` with a name of `weight-body`. Matching short-first would file it
-    // under the wrong namespace and compare the wrong class name.
-    const namespace = Object.keys(prefixes)
-      .sort((a, b) => b.length - a.length)
-      .find((ns) => name.startsWith(`--${ns}-`))
+    // The same longest-match rule used by the projection validator. In particular,
+    // `--font-weight-body` belongs to `font-weight`, never to `font` because that
+    // shorter namespace happened to be encountered first.
+    const namespace = tailwindNamespaceOf(name, contestedNamespaces)
     if (namespace === undefined) {
       continue
     }
@@ -441,12 +708,28 @@ export function assertNoUtilityShadowing(tokens, prefixes = CONTESTED_PREFIX) {
       throw new Error(
         `'${path}' and '${other.path}' both generate the class '${utility}' -- ` +
           `'${name}' and '${other.name}' are different variables in different namespaces, ` +
-          'so nothing above notices, but Tailwind awards the class to one of them and the ' +
-          'other role becomes unreachable from any utility. Rename one projection',
+          'so variable-level injectivity does not notice, but Tailwind awards the class to one ' +
+          'of them and the other role becomes unreachable from that utility. Rename one projection',
       )
     }
     claimed.set(utility, { name, path })
   }
+}
+
+/**
+ * Full bridge proof for callers that DO have the vocabulary in scope.
+ *
+ * The registered policy remains `assertTailwindTables` because a policy registry
+ * owns static configuration and does not carry token paths. Generator/tests that
+ * own the real vocabulary can call this once to prove all four questions without
+ * inventing another source of projection rules.
+ */
+export function assertTailwindBridge(tokens) {
+  assertTailwindTables()
+  assertTailwindProjection(tokens)
+  assertExclusionsAreCurrent(tokens)
+  assertNoUtilityShadowing(tokens)
+  return tokens
 }
 
 /**

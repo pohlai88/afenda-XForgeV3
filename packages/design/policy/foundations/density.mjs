@@ -1,88 +1,90 @@
 /**
- * FOUNDATION — density. The axis itself, not any domain that rides on it.
+ * FOUNDATION — density. A spatial compression axis, not a visual theme or layout breakpoint.
  *
- * ── WHY THIS IS NOT A DOMAIN ───────────────────────────────────────────────
+ * ── M3-ALIGNED MODEL ────────────────────────────────────────────────────────
  *
- * Every other foundation here owns a table of roles. This one owns none. Density
- * declares no token; it REBINDS tokens other foundations declare -- eleven of
- * them today: nine space roles, `control.min-size` and `icon.size`.
+ * Material's useful lesson is not a particular "density number". It is the
+ * separation of concerns:
  *
- * That makes it an axis, and an axis has invariants no single domain can check:
- * `spacing.mjs` cannot see that density left type alone, because it does not know
- * what type is. `typography.mjs` iterates modes but cannot tell a density mode
- * from a theme one. Only something looking ACROSS the domains can.
+ *   • adaptive/window size decides LAYOUT
+ *   • typography remains readable and independently scalable
+ *   • visual bounds may become denser for precise-pointer/keyboard work
+ *   • interactive target safety is not something density is allowed to erase
  *
- * So the split is: a domain owns whether ITS values are well-formed; this owns
- * whether the AXIS is. The line is membership and direction versus magnitude.
+ * Afenda therefore treats density as a SPATIAL axis. It may rebind only the
+ * spatial semantic domains explicitly admitted below. Everything else is
+ * forbidden by default rather than waiting for a growing denylist.
  *
- * ── WHAT IT ASSERTS, AND WHAT IT FOUND ─────────────────────────────────────
+ * The conceptual order is:
  *
- * Measured against the shipped `$modes` (2026-09-02). All four hold, and not one
- * was checked by anything before this file:
+ *   compact → default → comfortable
  *
- *   symmetry     compact and comfortable rebind an IDENTICAL 11-token set
- *   two axes     0 tokens rebound by both theme (39) and density (11)
- *   type         0 type/leading/weight/font/tracking tokens in any density block
- *   direction    every rebound token is monotone across compact->comfortable
+ * `default` is the unmodified token set and therefore has no declaration block.
  *
- * THE SECOND IS THE ONE WITH TEETH. Theme and density selectors are both
- * `:root[data-*]` -- equal specificity -- so a token rebound by both resolves by
- * GENERATOR EMIT ORDER. Not by a rule anyone wrote, and not visibly: both modes
- * would work in isolation and the pair would fail only when both were set. It is
- * the two-axis law `references/xforge.md` states, and nothing has enforced it.
+ * ── WHAT THIS FILE PROVES ───────────────────────────────────────────────────
  *
- * THE THIRD IS POLICY.md §3c, made mechanical for the first time: *density packs
- * information and never touches type.* It was a sentence. A `semantic.type.body`
- * added to `$modes.density.compact` would have been accepted by every check in
- * the repository, and the typography hierarchy proof -- which reads resolved
- * modes -- would then have been measuring a scale the policy says cannot exist.
+ * Declaration-time:
  *
- * ── WHAT IT DELIBERATELY DOES NOT ASSERT ───────────────────────────────────
+ *   1. the declared modes are exactly compact + comfortable
+ *   2. both modes rebind the exact same token set
+ *   3. every rebound token belongs to a density-owned spatial namespace
+ *   4. density and theme never rebind the same token
+ *   5. density never declares typography/layout/colour/motion/etc by accident
  *
- * THE WCAG TARGET FLOOR. `colour.mjs` owns it: `TARGET_MINIMUM_PX = 24` and
- * `assertTargetMinimum`, asserted in every mode. Both token descriptions say so
- * in `tokens.json` -- *"the accessibility policy asserts that exact path in every
- * mode -- density may not shrink it."* Re-checking it here would put one floor in
- * two files, which is the defect the whole tree is being reorganised against.
- * Compact resolves `control.min-size` to 32px against a 24px floor; that is
- * enforced, elsewhere, and correctly.
+ * Resolution-time:
  *
- * MAGNITUDE. Whether 8px is the right `normal` at compact is spacing's question,
- * and whether 32px still reads as a control is sizing's. This file asks only
- * whether the axis moved them in the direction it claims to.
+ *   6. every governed value is measurable geometry
+ *   7. compact <= default <= comfortable for every rebound token
+ *   8. every rebound token actually changes across the axis
+ *
+ * Magnitude remains owned by the underlying domain. This file does not decide
+ * whether 8px is the correct space or 32px is the correct visual control size;
+ * it proves only membership and direction.
+ *
+ * ── TOUCH TARGETS ───────────────────────────────────────────────────────────
+ *
+ * Material 3's current Compose implementation preserves a recommended 48dp
+ * minimum interactive region even when the visual element is smaller. Afenda
+ * should model that as a separate interaction-target token, not by preventing
+ * compact VISUAL controls.
+ *
+ * This file therefore protects target-like namespaces from density, but does
+ * not duplicate an accessibility floor. The floor remains accessibility
+ * policy's authority.
  */
 
 import { definePolicy } from '../define-policy.mjs'
-import { deepFreeze } from '../vocabulary.mjs'
+import { deepFreeze, toPixels } from '../vocabulary.mjs'
+import { ASSUMED_ROOT_PX } from './spacing.mjs'
 
 /* ------------------------------------------------------------- premises -- */
 
-/**
- * The density modes, LEAST TO MOST GENEROUS. The order IS the assertion.
- *
- * POLICY.md §3c says density packs information. That is a claim with a
- * direction, and a direction is checkable: a mode called `compact` resolving a
- * role LARGER than `default` has inverted the axis, and every component bound to
- * that role gets roomier when the user asked for tighter.
- *
- * `default` names no block in `$modes.density` -- it is the unmodified token set.
- * It sits in the middle rather than at an end, which is why this is an ORDER and
- * not a pair of deltas.
- */
+/** Least to most spatially generous. `default` has no declaration block. */
 export const DENSITY_ORDER = deepFreeze(['compact', 'default', 'comfortable'])
 
+/** The two mode blocks that must actually exist in `$modes.density`. */
+export const DENSITY_DECLARED_MODES = deepFreeze(['compact', 'comfortable'])
+
 /**
- * The token groups density may not rebind, and the reason is not aesthetic.
+ * Density is fail-closed: only spatial domains admitted here may be rebound.
  *
- * A density mode that moved `semantic.type.body` would be a THIRD axis wearing
- * the second one's name: the typography hierarchy proof reads resolved modes, so
- * it would faithfully measure a scale POLICY.md says cannot exist and report it
- * green. The prohibition is what keeps that proof about one thing.
+ * `semantic.control.*` remains admitted for drop-in compatibility with the
+ * current `semantic.control.min-size`. The recommended follow-up is to separate
+ * visual control bounds from the interaction hit target, then keep the latter
+ * outside this allowlist.
+ */
+export const DENSITY_MAY_REBIND = deepFreeze([
+  'semantic.space.',
+  'semantic.control.',
+  'semantic.icon.',
+])
+
+/**
+ * Preserved export, now expanded as documentation and better error text.
  *
- * Stated as GROUPS rather than as token names so a role added to
- * `semantic.leading` is covered the day it exists. An allowlist of names would
- * need maintaining by whoever added the token, which is the person least likely
- * to be thinking about the density axis.
+ * The allowlist above is the enforcement. This list identifies especially
+ * important forbidden families so a violation explains WHICH axis it tried to
+ * smuggle into density.
  */
 export const DENSITY_MAY_NOT_REBIND = deepFreeze([
   'semantic.type.',
@@ -90,101 +92,188 @@ export const DENSITY_MAY_NOT_REBIND = deepFreeze([
   'semantic.weight.',
   'semantic.font.',
   'semantic.tracking.',
+  'semantic.radius.',
+  'semantic.color.',
+  'semantic.motion.',
+  'semantic.elevation.',
+  'semantic.layer.',
+  'semantic.layout.',
+  'semantic.breakpoint.',
+  'semantic.target.',
+  'semantic.hit-target.',
 ])
 
-/* ------------------------------------------------------------ assertions -- */
+/** Floating-point slack for rem/px conversion comparisons. */
+export const DENSITY_TOLERANCE_PX = 0.001
 
-/** Every token path a mode block rebinds, flattened. */
+/* --------------------------------------------------------------- helpers -- */
+
+const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/**
+ * Every token path a mode block rebinds, flattened.
+ *
+ * The mode source is DTCG-shaped nested data. `$*` metadata is never a token
+ * path. A node carrying `$value` is a token and terminates traversal.
+ */
 const reboundPaths = (block, prefix = '') => {
+  if (!isRecord(block)) {
+    throw new Error(`density mode block at '${prefix || '<root>'}' is not an object`)
+  }
+
   const out = []
+
   for (const [key, value] of Object.entries(block)) {
-    if (key.startsWith('$') || value === null || typeof value !== 'object') {
+    if (key.startsWith('$')) {
       continue
     }
+
+    if (!isRecord(value)) {
+      // A mode declaration is expected to rebind token objects, not contain
+      // arbitrary scalar leaves. Ignore nothing silently.
+      throw new Error(
+        `density mode '${prefix + key}' is ${JSON.stringify(value)} -- rebound leaves must be token objects`,
+      )
+    }
+
     if (value.$value !== undefined) {
       out.push(prefix + key)
       continue
     }
+
     out.push(...reboundPaths(value, `${prefix + key}.`))
   }
+
   return out
 }
 
 export { reboundPaths }
 
-/**
- * The axis's own rules, checked against the mode DECLARATIONS rather than
- * against resolved values -- because symmetry and exclusivity are properties of
- * what a mode SAYS, and a resolved map has already lost the distinction between
- * "rebound to the same value" and "not rebound at all".
- *
- * Takes both axes as arguments. A validator that could only read the token file
- * beside it could not be shown a violation, which is the kernel's third
- * principle and the reason every table here is passed its subject.
- */
-export function assertDensityAxis(densityModes, themeModes = {}) {
-  const density = new Map()
-  for (const [mode, block] of Object.entries(densityModes)) {
-    if (mode.startsWith('$')) {
-      continue
+const declaredModes = (modes) => Object.entries(modes).filter(([mode]) => !mode.startsWith('$'))
+
+const densityPaths = (densityModes) => {
+  const entries = declaredModes(densityModes)
+  return new Set(entries.flatMap(([, block]) => reboundPaths(block)))
+}
+
+const dimensionPx = (raw, rootPx) => {
+  if (typeof raw !== 'string') {
+    return {
+      px: null,
+      why: `${JSON.stringify(raw)} is not a dimension`,
     }
-    density.set(mode, new Set(reboundPaths(block)))
   }
 
-  if (density.size === 0) {
+  try {
+    const px = toPixels(raw, { rootPx })
+    return px === null
+      ? { px: null, why: `'${raw}' cannot be measured with root ${rootPx}px` }
+      : { px }
+  } catch (error) {
+    return {
+      px: null,
+      why: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+/* ------------------------------------------------------------ assertions -- */
+
+/**
+ * Declaration-time axis invariants.
+ *
+ * `densityModes` and `themeModes` are the raw mode declaration blocks, not
+ * resolved maps. Symmetry/exclusivity depend on knowing what was explicitly
+ * rebound rather than what value happened to result.
+ */
+export function assertDensityAxis(densityModes, themeModes = {}) {
+  if (!isRecord(densityModes)) {
+    throw new Error('density modes must be an object')
+  }
+
+  if (!isRecord(themeModes)) {
+    throw new Error('theme modes must be an object')
+  }
+
+  const entries = declaredModes(densityModes)
+  const names = entries.map(([mode]) => mode).sort()
+  const expected = [...DENSITY_DECLARED_MODES].sort()
+
+  if (entries.length < 2) {
     throw new Error(
-      'the density axis declares no modes -- an axis with one position is not an axis, and ' +
-        'every role it would rebind is then a constant nothing can compress',
+      `density declares ${entries.length} mode${entries.length === 1 ? '' : 's'} -- compact and ` +
+        'comfortable must both exist around the unmodified default',
     )
   }
 
-  /* SYMMETRY. A role rebound by `compact` and not by `comfortable` falls back to
-     base in one mode -- so the axis has a hole exactly where nobody looks, and
-     the role silently stops participating in half of it. */
+  const missingModes = expected.filter((mode) => !names.includes(mode))
+  const extraModes = names.filter((mode) => !expected.includes(mode))
+
+  if (missingModes.length > 0 || extraModes.length > 0) {
+    throw new Error(
+      `density mode declarations must be exactly ${DENSITY_DECLARED_MODES.join(' + ')} -- ` +
+        `missing (${missingModes.join(', ') || 'nothing'}), unexpected ` +
+        `(${extraModes.join(', ') || 'nothing'}). 'default' is the unmodified token set and ` +
+        'must not have its own block',
+    )
+  }
+
+  const density = new Map(entries.map(([mode, block]) => [mode, new Set(reboundPaths(block))]))
+
   const [reference, ...rest] = [...density.entries()]
+
+  if (reference[1].size === 0) {
+    throw new Error(
+      `density mode '${reference[0]}' rebinds no tokens -- an axis that moves nothing is only a selector`,
+    )
+  }
+
+  // Symmetry: every declared density mode owns the exact same token membership.
   for (const [mode, paths] of rest) {
     const missing = [...reference[1]].filter((path) => !paths.has(path))
     const extra = [...paths].filter((path) => !reference[1].has(path))
+
     if (missing.length > 0 || extra.length > 0) {
       throw new Error(
         `density modes '${reference[0]}' and '${mode}' rebind different tokens -- ` +
           `${mode} is missing (${missing.join(', ') || 'nothing'}) and adds ` +
-          `(${extra.join(', ') || 'nothing'}). A role rebound by one mode and not another ` +
-          'falls back to base in that mode, so the axis has a hole where nothing looks',
+          `(${extra.join(', ') || 'nothing'}). Every governed role must participate in the ` +
+          'whole axis rather than falling back to default on one side',
       )
     }
   }
 
-  const all = new Set([...density.values()].flatMap((paths) => [...paths]))
+  const all = new Set(reference[1])
 
-  /* THE TYPE PROHIBITION. POLICY.md 3c, mechanical. */
+  // Fail closed: spatial namespaces are admitted; every other foundation stays
+  // invariant under density unless this policy itself is consciously extended.
   for (const path of all) {
-    const forbidden = DENSITY_MAY_NOT_REBIND.find((prefix) => path.startsWith(prefix))
-    if (forbidden !== undefined) {
+    const allowed = DENSITY_MAY_REBIND.some((prefix) => path.startsWith(prefix))
+
+    if (!allowed) {
+      const forbidden = DENSITY_MAY_NOT_REBIND.find((prefix) => path.startsWith(prefix))
+      const reason =
+        forbidden === undefined
+          ? `it is outside the admitted spatial namespaces ${DENSITY_MAY_REBIND.join(', ')}`
+          : `it belongs to '${forbidden}', which is not the density axis`
+
       throw new Error(
-        `density rebinds '${path}' -- density packs information and never touches type. ` +
-          `Anything under '${forbidden}' is a third axis wearing the second one's name, and ` +
-          'the typography hierarchy proof would measure it as if it were the scale',
+        `density rebinds '${path}' -- ${reason}. Density compresses spatial affordances; it ` +
+          'does not become a theme, type scale, shape system, motion system or layout breakpoint',
       )
     }
   }
 
-  /* TWO AXES, EQUAL SPECIFICITY. `:root[data-theme]` and `:root[data-density]`
-     are both (0,2,0), so a token rebound by both is decided by the order the
-     generator happens to emit -- and both modes work in isolation, so nothing
-     shows until someone sets both. */
-  const theme = new Set(
-    Object.entries(themeModes)
-      .filter(([mode]) => !mode.startsWith('$'))
-      .flatMap(([, block]) => reboundPaths(block)),
-  )
+  // Theme and density selectors have equal specificity in the generated CSS.
+  // One token on both axes would therefore be resolved by output order.
+  const theme = new Set(declaredModes(themeModes).flatMap(([, block]) => reboundPaths(block)))
+
   const contested = [...all].filter((path) => theme.has(path))
+
   if (contested.length > 0) {
     throw new Error(
-      `${contested.join(', ')} rebound by BOTH theme and density -- their selectors have ` +
-        'equal specificity, so the winner is whichever the generator emits last. Each mode ' +
-        'works alone and the pair fails only when both are set, which is the failure nobody ' +
-        'reproduces. One token, one axis',
+      `${contested.join(', ')} rebound by BOTH theme and density -- equal-specificity selectors ` +
+        'make generator order the hidden third rule. One semantic token belongs to one axis',
     )
   }
 
@@ -193,13 +282,109 @@ export function assertDensityAxis(densityModes, themeModes = {}) {
 
 /* ------------------------------------------------------------ evaluation -- */
 
+/**
+ * Resolution-time density failures.
+ *
+ * `resolvedByDensity`:
+ *   Map<'compact'|'default'|'comfortable', Map<tokenPath, literal>>
+ *
+ * `densityModes` is also passed because the resolved maps contain every token;
+ * the declarations tell us which token membership this axis actually owns.
+ *
+ * Direction is non-decreasing:
+ *
+ *   compact <= default <= comfortable
+ *
+ * Base may legitimately equal one side, but compact and comfortable may not be
+ * equal: rebinding a token without changing it means the axis claims ownership
+ * of a role it does not actually move.
+ */
+export function densityFailures(resolvedByDensity, densityModes, rootPx = ASSUMED_ROOT_PX) {
+  const failures = []
+
+  if (!(resolvedByDensity instanceof Map)) {
+    return ['density evaluation requires resolvedByDensity to be a Map']
+  }
+
+  if (!isRecord(densityModes)) {
+    return ['density evaluation requires raw density mode declarations']
+  }
+
+  if (!(typeof rootPx === 'number' && Number.isFinite(rootPx) && rootPx > 0)) {
+    return [`density evaluation root is ${JSON.stringify(rootPx)} -- rootPx must be positive`]
+  }
+
+  const paths = densityPaths(densityModes)
+
+  for (const mode of DENSITY_ORDER) {
+    if (!(resolvedByDensity.get(mode) instanceof Map)) {
+      failures.push(`density resolution has no '${mode}' token Map`)
+    }
+  }
+
+  if (failures.length > 0) {
+    return failures
+  }
+
+  for (const path of paths) {
+    const measured = []
+
+    for (const mode of DENSITY_ORDER) {
+      const resolved = resolvedByDensity.get(mode)
+      const raw = resolved.get(path)
+
+      if (raw === undefined) {
+        failures.push(`${mode}: density-owned token '${path}' does not resolve`)
+        measured.push([mode, null])
+        continue
+      }
+
+      const { px, why } = dimensionPx(raw, rootPx)
+
+      if (px === null) {
+        failures.push(`${mode}: density-owned token '${path}' ${why}`)
+        measured.push([mode, null])
+        continue
+      }
+
+      measured.push([mode, px])
+    }
+
+    if (measured.some(([, px]) => px === null)) {
+      continue
+    }
+
+    for (let index = 1; index < measured.length; index += 1) {
+      const [lowerMode, lowerPx] = measured[index - 1]
+      const [upperMode, upperPx] = measured[index]
+
+      if (lowerPx > upperPx + DENSITY_TOLERANCE_PX) {
+        failures.push(
+          `'${path}' inverts density: ${lowerMode}=${lowerPx}px, ${upperMode}=${upperPx}px -- ` +
+            `the axis order is ${DENSITY_ORDER.join(' < ')}`,
+        )
+      }
+    }
+
+    const compactPx = measured[0][1]
+    const comfortablePx = measured[measured.length - 1][1]
+
+    if (Math.abs(compactPx - comfortablePx) <= DENSITY_TOLERANCE_PX) {
+      failures.push(
+        `'${path}' is rebound by density but compact and comfortable both resolve to ` +
+          `${compactPx}px -- a no-op token does not belong to the axis`,
+      )
+    }
+  }
+
+  return failures
+}
+
 /* --------------------------------------------------------------- policy -- */
 
 /**
- * `assert` here takes the MODE DECLARATIONS, where every other foundation's
- * takes a role table. That asymmetry is the point of the file: density has no
- * roles, so there is no table for it to self-check. What it can check without a
- * token map is the shape of the axis, and that is what it does.
+ * Density has no role table of its own. Its import-time subject is the raw mode
+ * declaration because membership is the thing this axis owns.
  */
 export const densityPolicy = definePolicy({
   assert: assertDensityAxis,

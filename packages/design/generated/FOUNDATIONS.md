@@ -1,6 +1,6 @@
 # Design token foundations
 
-**GENERATED FROM `packages/design/tokens.json` -- DO NOT EDIT.**
+**GENERATED FROM `packages/design/policy/tokens.json` -- DO NOT EDIT.**
 
 Law 27: generated state is never hand-edited. Change the token file and run
 `pnpm generate`; the `generate` stage regenerates this document and asserts it is
@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 232 custom properties: 118 primitive, 114 semantic, 0 component (ceiling 12).
+- 238 custom properties: 118 primitive, 120 semantic, 0 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -189,6 +189,12 @@ elevation domains.
 | `--semantic-color-secondary-pressed` | `semantic.color.secondary-pressed` | color | `{color.neutral.100}` | surface · provides secondary |
 | `--semantic-color-shadow-ambient` | `semantic.color.shadow-ambient` | color | `{color.shadow.ambient}` | compositing · exempt, the wide, faint layer of a shadow; composited, not a pair |
 | `--semantic-color-shadow-key` | `semantic.color.shadow-key` | color | `{color.shadow.key}` | compositing · exempt, the tight, nearer layer of a shadow; composited, not a pair |
+| `--semantic-color-sidebar` | `semantic.color.sidebar` | color | `{color.neutral.100}` | surface · provides sidebar |
+| `--semantic-color-sidebar-accent` | `semantic.color.sidebar-accent` | color | `{color.teal.100}` | surface · provides sidebar-accent |
+| `--semantic-color-sidebar-accent-foreground` | `semantic.color.sidebar-accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against sidebar-accent |
+| `--semantic-color-sidebar-border` | `semantic.color.sidebar-border` | color | `{color.neutral.300}` | decorative · exempt, a divider inside the rail, never a sole control boundary |
+| `--semantic-color-sidebar-foreground` | `semantic.color.sidebar-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against sidebar |
+| `--semantic-color-sidebar-ring` | `semantic.color.sidebar-ring` | color | `{color.teal.700}` | ui · ≥3:1 against sidebar |
 | `--semantic-color-statutory` | `semantic.color.statutory` | color | `{color.brass.100}` | surface · provides statutory |
 | `--semantic-color-statutory-foreground` | `semantic.color.statutory-foreground` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory |
 | `--semantic-color-success` | `semantic.color.success` | color | `{color.green.100}` | surface · provides success |
@@ -312,7 +318,7 @@ Selector `:root[data-density='compact']`, 11 rebound.
 
 ### `theme=dark`
 
-Selector `:root[data-theme='dark']`, 41 rebound.
+Selector `:root[data-theme='dark']`, 47 rebound.
 
 | Custom property | Value in this mode |
 | --- | --- |
@@ -351,6 +357,12 @@ Selector `:root[data-theme='dark']`, 41 rebound.
 | `--semantic-color-secondary-pressed` | `{color.ink.800}` |
 | `--semantic-color-shadow-ambient` | `{color.shadow.ambient-dark}` |
 | `--semantic-color-shadow-key` | `{color.shadow.key-dark}` |
+| `--semantic-color-sidebar` | `{color.ink.900}` |
+| `--semantic-color-sidebar-accent` | `{color.teal.950}` |
+| `--semantic-color-sidebar-accent-foreground` | `{color.teal.300}` |
+| `--semantic-color-sidebar-border` | `{color.ink.600}` |
+| `--semantic-color-sidebar-foreground` | `{color.ink.100}` |
+| `--semantic-color-sidebar-ring` | `{color.teal.500}` |
 | `--semantic-color-statutory` | `{color.brass.950}` |
 | `--semantic-color-statutory-foreground` | `{color.brass.300}` |
 | `--semantic-color-success` | `{color.green.950}` |
