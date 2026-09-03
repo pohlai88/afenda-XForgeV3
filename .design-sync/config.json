@@ -29,6 +29,7 @@
     "Specimen": "../../packages/design/src/components/specimen.tsx",
     "Stack": "../../packages/design/src/components/stack.tsx",
     "Status": "../../packages/design/src/components/status.tsx",
+    "Swatch": "../../packages/design/src/components/swatch.tsx",
     "Switch": "../../packages/design/src/components/switch.tsx",
     "Text": "../../packages/design/src/components/text.tsx"
   },
