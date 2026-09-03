@@ -71,7 +71,9 @@ export class ResourceBoundary extends Component<
     return (
       <Alert tone="danger" {...props}>
         <Text>This section could not be displayed.</Text>
-        <Text tone="muted">
+        {/* Default ink, not muted: the muted ink is measured against the page and the
+            card, and on the danger tint it is 4.31:1, under AA. axe found it, 2026-09-04. */}
+        <Text>
           The page is out of date with the server. Reloading will fetch the current version.
         </Text>
         <Button onClick={() => window.location.reload()} variant="outline">
