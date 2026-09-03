@@ -159,6 +159,18 @@
         "semantic.elevation.flat"
       ]
     },
+    "family.mono": {
+      "class": "font-mono",
+      "tokens": [
+        "semantic.font.mono"
+      ]
+    },
+    "family.sans": {
+      "class": "font-sans",
+      "tokens": [
+        "semantic.font.sans"
+      ]
+    },
     "focus.ring": {
       "class": "focus-visible:focus-ring",
       "tokens": [
@@ -779,6 +791,14 @@
         "semantic.weight.label",
         "semantic.type.label",
         "semantic.leading.label"
+      ]
+    },
+    "typography.subheading": {
+      "class": "font-heading text-subheading",
+      "tokens": [
+        "semantic.weight.heading",
+        "semantic.type.subheading",
+        "semantic.leading.subheading"
       ]
     },
     "typography.title": {

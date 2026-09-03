@@ -170,7 +170,7 @@ export const TYPE_ROLES = deepFreeze({
     leading: 'semantic.leading.display',
     minimumLeading: 1.15,
     minimumPx: 24,
-    rank: 5,
+    rank: 6,
     size: 'semantic.type.display',
     tracking: NONE,
     weight: 'semantic.weight.heading',
@@ -202,7 +202,7 @@ export const TYPE_ROLES = deepFreeze({
     leading: 'semantic.leading.heading',
     minimumLeading: 1.15,
     minimumPx: 16,
-    rank: 3,
+    rank: 4,
     size: 'semantic.type.heading',
     tracking: NONE,
     weight: 'semantic.weight.heading',
@@ -224,6 +224,30 @@ export const TYPE_ROLES = deepFreeze({
     weight: 'semantic.weight.label',
   },
 
+  /**
+   * A HEADING AT BODY SIZE. The third outline level: a group title inside a
+   * section, a card's title, a label that heads a block rather than a field.
+   *
+   * ADMITTED WITH ITS CONSUMER (ADR-034 step 7). Heading level 3 rendered
+   * `text-heading` and was pixel-identical to level 2 until 2026-09-03; the fix
+   * set it to `text-body` at the heading weight, which is 16px/600 -- a
+   * combination no role named, so the moment recipes select STYLE symbols
+   * instead of writing classes there was no symbol to select. This is that
+   * role: emphasis's size, heading's weight, body's leading (16 x 1.5 = 24, on
+   * the grid). Rank sits between emphasis and heading; it differs from emphasis
+   * by weight and from heading by size, which is what the hierarchy check asks.
+   */
+  subheading: {
+    font: 'semantic.font.sans',
+    leading: 'semantic.leading.subheading',
+    minimumLeading: 1.5,
+    minimumPx: 14,
+    rank: 3,
+    size: 'semantic.type.subheading',
+    tracking: NONE,
+    weight: 'semantic.weight.heading',
+  },
+
   // A PAGE TITLE IS NOT A SECTION HEADING, and until this existed they were the
   // same 20px/600 in every mode -- an h1 and an h2 pixel-identical, so the
   // document outline a screen reader announces had no visual counterpart.
@@ -232,7 +256,7 @@ export const TYPE_ROLES = deepFreeze({
     leading: 'semantic.leading.title',
     minimumLeading: 1.15,
     minimumPx: 18,
-    rank: 4,
+    rank: 5,
     size: 'semantic.type.title',
     tracking: NONE,
     weight: 'semantic.weight.heading',

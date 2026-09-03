@@ -196,6 +196,7 @@
   --semantic-type-label: var(--size-text-sm);
   --semantic-type-body: var(--size-text-md);
   --semantic-type-emphasis: var(--size-text-md);
+  --semantic-type-subheading: var(--size-text-md);
   --semantic-type-heading: var(--size-text-lg);
   --semantic-type-title: var(--size-text-xl);
   --semantic-type-display: var(--size-text-2xl);
@@ -212,6 +213,7 @@
   --semantic-leading-compact: var(--leading-normal);
   --semantic-leading-label: var(--leading-normal);
   --semantic-leading-body: var(--leading-loose);
+  --semantic-leading-subheading: var(--leading-loose);
   --semantic-leading-heading: var(--leading-snug);
   --semantic-leading-title: var(--leading-tight);
   --semantic-leading-display: var(--leading-tight);

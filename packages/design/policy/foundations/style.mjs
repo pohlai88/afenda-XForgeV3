@@ -215,6 +215,8 @@ function geometrySymbols(tree, omitted) {
   set(tree, ['easing', 'standard'], symbol('ease-standard', ['semantic.ease.standard']))
   set(tree, ['easing', 'entrance'], symbol('ease-entrance', ['semantic.ease.entrance']))
   set(tree, ['easing', 'exit'], symbol('ease-exit', ['semantic.ease.exit']))
+  set(tree, ['family', 'sans'], symbol('font-sans', ['semantic.font.sans']))
+  set(tree, ['family', 'mono'], symbol('font-mono', ['semantic.font.mono']))
   set(tree, ['size', 'control'], symbol('h-control', ['semantic.control.min-size']))
   set(tree, ['size', 'icon'], symbol('size-icon', ['semantic.icon.size']))
   set(tree, ['stroke', 'width'], symbol('border-stroke', ['semantic.size.stroke']))

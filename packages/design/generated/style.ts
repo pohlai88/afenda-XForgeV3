@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 124 symbols. Roles without one, and why:
+ * 127 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -52,6 +52,10 @@ export const STYLE = {
     above: 'shadow-floating',
     base: 'shadow-flat',
     panel: 'shadow-flat',
+  },
+  family: {
+    mono: 'font-mono',
+    sans: 'font-sans',
   },
   focus: {
     ring: 'focus-visible:focus-ring',
@@ -237,6 +241,7 @@ export const STYLE = {
     emphasis: 'font-emphasis text-emphasis',
     heading: 'font-heading text-heading',
     label: 'font-label text-label',
+    subheading: 'font-heading text-subheading',
     title: 'font-heading text-title',
   },
 } as const

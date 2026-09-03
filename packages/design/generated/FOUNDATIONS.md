@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 242 custom properties: 119 primitive, 123 semantic, 0 component (ceiling 12).
+- 244 custom properties: 119 primitive, 125 semantic, 0 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -227,6 +227,7 @@ elevation domains.
 | `--semantic-leading-display` | `semantic.leading.display` | number | `{leading.tight}` | type display · leading ≥1.15 |
 | `--semantic-leading-heading` | `semantic.leading.heading` | number | `{leading.snug}` | type heading · leading ≥1.15 |
 | `--semantic-leading-label` | `semantic.leading.label` | number | `{leading.normal}` | type label · leading ≥1.4 |
+| `--semantic-leading-subheading` | `semantic.leading.subheading` | number | `{leading.loose}` | type subheading · leading ≥1.5 |
 | `--semantic-leading-title` | `semantic.leading.title` | number | `{leading.tight}` | type title · leading ≥1.15 |
 | `--semantic-motion-duration-base` | `semantic.motion.duration.base` | duration | `{duration.base}` | one-shot · shortened under reduced motion |
 | `--semantic-motion-duration-none` | `semantic.motion.duration.none` | duration | `{duration.none}` | one-shot · unaffected under reduced motion |
@@ -265,6 +266,7 @@ elevation domains.
 | `--semantic-type-emphasis` | `semantic.type.emphasis` | dimension | `{size.text-md}` | type emphasis · ≥14px at a 16px root |
 | `--semantic-type-heading` | `semantic.type.heading` | dimension | `{size.text-lg}` | type heading · ≥16px at a 16px root |
 | `--semantic-type-label` | `semantic.type.label` | dimension | `{size.text-sm}` | type label · ≥12px at a 16px root |
+| `--semantic-type-subheading` | `semantic.type.subheading` | dimension | `{size.text-md}` | type subheading · ≥14px at a 16px root |
 | `--semantic-type-title` | `semantic.type.title` | dimension | `{size.text-xl}` | type title · ≥18px at a 16px root |
 | `--semantic-weight-body` | `semantic.weight.body` | fontWeight | `{weight.normal}` | -- |
 | `--semantic-weight-body-compact` | `semantic.weight.body-compact` | fontWeight | `{weight.normal}` | -- |

@@ -1629,6 +1629,8 @@ describe('the style contract (ADR-034 Decision 4)', () => {
   it('projects the other role tables as their own words', () => {
     expect(leaves.get('typography.body')?.class).toBe('font-body text-body tracking-body')
     expect(leaves.get('typography.display')?.class).toBe('font-heading text-display')
+    expect(leaves.get('typography.subheading')?.class).toBe('font-heading text-subheading')
+    expect(leaves.get('family.mono')?.class).toBe('font-mono')
     expect(leaves.get('shape.control')?.class).toBe('rounded-control')
     expect(leaves.get('space.tight.gap')?.class).toBe('gap-tight')
     expect(leaves.get('elevation.above')?.class).toBe('shadow-floating')

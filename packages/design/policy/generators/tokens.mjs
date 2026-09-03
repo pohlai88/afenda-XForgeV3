@@ -182,6 +182,7 @@ export const TOKEN_PACKAGES = deepFreeze([
       'label',
       'body',
       'emphasis',
+      'subheading',
       'heading',
       'title',
       'display',
