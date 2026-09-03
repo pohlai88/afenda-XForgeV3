@@ -1,7 +1,7 @@
 'use client'
 
-import type { ComponentProps } from 'react'
 import { Switch as Primitive } from '#components/ui/switch'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Switch — a binary control: on or off, and it takes effect at once.
@@ -31,10 +31,7 @@ import { Switch as Primitive } from '#components/ui/switch'
 
 /** Section 3 — the Target. Each adopted word is listed; nothing arrives by inheritance. */
 export interface SwitchProps
-  extends Pick<
-    ComponentProps<'span'>,
-    'id' | 'aria-label' | 'aria-labelledby' | 'aria-describedby'
-  > {
+  extends Pick<NativeProps<'span'>, 'id' | 'aria-label' | 'aria-labelledby' | 'aria-describedby'> {
   readonly checked?: boolean
   readonly defaultChecked?: boolean
   readonly disabled?: boolean

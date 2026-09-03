@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react'
 import { Button as Primitive } from '#components/ui/button'
-import { cn } from '#lib/cn'
+import { STYLE } from '#generated/style'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Button — the one control a person presses to make something happen.
@@ -31,9 +32,10 @@ import { cn } from '#lib/cn'
  * globals.css and consumed by nothing, so Tailwind never emitted it, and
  * upstream's `h-8` held every button at 32px beneath a 40px floor. The
  * design-sync preview found that on 2026-09-03. A button is the one control
- * an Adapter renders directly, so the floor is applied here; a min-height
- * wins over upstream's height without the two classes colliding, and twMerge
- * knows no group for an `@utility`, so neither is dropped.
+ * an Adapter renders directly, so the floor is applied here, selected as
+ * `STYLE.size.control`; a min-height wins over upstream's height without the
+ * two classes colliding. The Target carries no `className` of its own
+ * (Decision 12), so nothing a screen writes can argue with the floor.
  */
 
 /** Section 1 — the axis Xforge owns, translated to the adaptee's vocabulary. */
@@ -46,15 +48,15 @@ export const BUTTON_VARIANT = {
 type PrimitiveProps = ComponentProps<typeof Primitive>
 
 /** Section 3 — the Target. Xforge vocabulary over the native button's attributes. */
-export interface ButtonProps extends ComponentProps<'button'> {
+export interface ButtonProps extends NativeProps<'button'> {
   readonly variant?: keyof typeof BUTTON_VARIANT
 }
 
 /** Section 4 — the Adapter. Translation, and the control floor. */
-export function Button({ className, variant = 'primary', ...props }: ButtonProps) {
+export function Button({ variant = 'primary', ...props }: ButtonProps) {
   return (
     <Primitive
-      className={cn('h-control', className)}
+      className={STYLE.size.control}
       data-variant={variant}
       variant={BUTTON_VARIANT[variant]}
       {...props}

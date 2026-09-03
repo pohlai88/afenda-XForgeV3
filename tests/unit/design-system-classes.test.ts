@@ -137,7 +137,17 @@ const THEMED = [
 ]
 
 /** Names Tailwind resolves without a theme variable. */
-const BUILT_IN = new Set(['transparent', 'current', 'inherit', 'screen', 'full', 'auto', 'none'])
+// `dashed` is a border STYLE keyword (`border-dashed`), not a colour or a width.
+const BUILT_IN = new Set([
+  'transparent',
+  'current',
+  'inherit',
+  'screen',
+  'full',
+  'auto',
+  'none',
+  'dashed',
+])
 
 const compile = async (candidates: string[]): Promise<string> => {
   const postcss = requireFromApp('postcss')
@@ -261,84 +271,46 @@ describe('the design system vocabulary compiles', () => {
   }, 30_000)
 })
 
-describe('every token-driven class the design system writes compiles', () => {
+/**
+ * ADR-031 Decision 12 / ADR-034 step 7: the authored layer SELECTS style, it does not write
+ * it. Every design-bearing class a component renders arrives through a `STYLE` symbol,
+ * whose class the manifest test above proves compiles; so the string literals in authored
+ * source may carry structural words (`flex`, `items-start`, `shrink-0`), zero resets
+ * (`m-0`, `p-0`) and nothing that names a token. This replaces the check that compiled
+ * every literal the layer wrote: once nothing is written, "does it compile" is answered by
+ * the symbol, and the question left is "was anything written at all".
+ *
+ * Observed RED on 2026-09-03 before the recipes moved: 46 design-bearing literals across
+ * twelve files, `bg-error` to `text-body-compact`. Green once every one became a symbol.
+ */
+describe('the authored layer selects style; it does not write it', () => {
+  const RESET = /^(m|p|mx|my|px|py)-0$/
   const isThemed = (word: string): boolean => {
     const bare = word.slice(word.lastIndexOf(':') + 1)
     const prefix = THEMED.find((p) => bare.startsWith(p))
-    return prefix === undefined ? false : !BUILT_IN.has(bare.slice(prefix.length))
+    return prefix === undefined
+      ? false
+      : !(BUILT_IN.has(bare.slice(prefix.length)) || RESET.test(bare))
   }
 
-  const candidates = [
-    ...new Set(
-      sourceFiles(join(PKG, 'src')).flatMap((f) =>
-        [...readFileSync(f, 'utf8').matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)]
-          .flatMap((m) => (m[1] ?? m[2] ?? '').split(/\s+/))
-          .filter(Boolean)
-          .filter(isThemed),
-      ),
-    ),
-  ].sort()
+  // Comments are not literals: cn.ts explains a merge with `"p-normal p-loose"` in prose.
+  const stripComments = (text: string) =>
+    text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  const literals = sourceFiles(join(PKG, 'src')).flatMap((f) =>
+    [...stripComments(readFileSync(f, 'utf8')).matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)]
+      .flatMap((m) => (m[1] ?? m[2] ?? '').split(/\s+/))
+      .filter(Boolean)
+      .map((word) => ({ file: f.slice(PKG.length + 1), word })),
+  )
 
-  it('compiles every one of them', async () => {
-    // Vacuously true until components land, and that is honest rather than a
-    // hole: the suite above proves the vocabulary, and this one proves what is
-    // written against it. A minimum here would fail the day the package is
-    // scaffolded and pass for the wrong reason the day after.
-    if (candidates.length === 0) {
-      expect(candidates).toEqual([])
-      return
-    }
-    const css = await compile(candidates)
-    expect(
-      missingFrom(css, candidates),
-      'these classes are written in packages/design and generate no CSS',
-    ).toEqual([])
-  }, 30_000)
+  it('has authored source to hold to it', () => {
+    expect(literals.length).toBeGreaterThan(20)
+  })
 
-  /**
-   * THE TWO HOLES CLEARING A NAMESPACE CANNOT REACH, and both were found by
-   * looking at a screen rather than by any check here.
-   *
-   * The Tailwind bridge clears `--text-*`, `--leading-*`, `--font-weight-*` and
-   * `--color-*', which is what turned forty-six vendored 'text-sm`s into
-   * failures above: a utility driven by a theme variable stops existing when the
-   * variable does. Two kinds of utility are not driven by one.
-   *
-   *   STATIC        `leading-none` is `line-height: 1` written into Tailwind
-   *                 itself. Clearing the leading namespace does not touch it, so
-   *                 it compiled, rendered a 14px label at a 1.0 ratio, and was
-   *                 invisible to the assertion above.
-   *   ARBITRARY     `text-[0.8rem]` is a design value typed by hand into a class
-   *                 attribute -- exactly what `tokens-are-the-authority` refuses
-   *                 in CSS, arriving through a channel no guard reads. It
-   *                 compiles, because Tailwind will emit whatever is in the
-   *                 brackets.
-   *
-   * Both are the same defect as `bg-red-500`: a design value with no role, no
-   * mode rebinding and no measurement. Neither can be refused by construction,
-   * so they are refused by name.
-   */
-  it('and no class carries a value the token file never chose', () => {
-    // Static utilities that survive their namespace being cleared. Listed rather
-    // than pattern-matched: the point is to name the ones that are real holes,
-    // not to guess at a shape.
-    const STATIC_HOLES =
-      /^(leading-(none|tight|snug|normal|relaxed|loose)|tracking-(tighter|tight|normal|wide|wider|widest)|text-(left|center|right|justify|start|end))$/
-    // Anything in square brackets, on a property this design system owns.
-    const ARBITRARY =
-      /^(text|leading|tracking|font|p|px|py|pt|pr|pb|pl|m|mx|my|gap|w|h|size|rounded|border|bg|shadow)(-[a-z]+)?-\[/
-
-    const offenders = candidates
-      .map((c) => ({ bare: c.slice(c.lastIndexOf(':') + 1), full: c }))
-      .filter(({ bare }) => STATIC_HOLES.test(bare) || ARBITRARY.test(bare))
-      // Alignment is not a design value -- `text-center` chooses no size, colour
-      // or spacing, and there is no token that could own it.
-      .filter(({ bare }) => !/^text-(left|center|right|justify|start|end)$/.test(bare))
-      .map(({ full }) => full)
-
-    expect(
-      offenders,
-      'these classes write a design value directly instead of naming a role',
-    ).toEqual([])
+  it('writes no design-bearing class literal', () => {
+    const offenders = literals
+      .filter(({ word }) => isThemed(word))
+      .map(({ file, word }) => `${file}: ${word}`)
+    expect(offenders, 'design-bearing classes written instead of selected').toEqual([])
   })
 })

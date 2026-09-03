@@ -25,6 +25,14 @@ const authored = readdirSync(COMPONENTS, { withFileTypes: true })
 
 const source = (file: string) => readFileSync(join(COMPONENTS, file), 'utf8')
 
+/**
+ * Code, not commentary. Both rules below are lexical, and a header that EXPLAINS why
+ * `className` is not a prop would otherwise trip the rule that says so. Block and line
+ * comments are removed first; no authored file carries `//` inside a string.
+ */
+const stripComments = (text: string) =>
+  text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
 /** Identifiers a file imports from the vendored tree -- its adaptees. */
 function adapteeIdentifiers(text: string): string[] {
   const out: string[] = []
@@ -87,6 +95,32 @@ describe('the Adapter file schema (ADR-031)', () => {
       .filter((x): x is string => x !== undefined && x !== self)
       .filter((x) => authored.includes(`${x}.tsx`))
     expect(bypassed, `${file} imports the adaptee of ${bypassed.join(', ')}`).toEqual([])
+  })
+
+  /**
+   * ADR-031 Decision 12: public Targets do not expose `className` or `style`. Intrinsic
+   * element props come through `NativeProps<'x'>` (#lib/props), which omits both; an
+   * adaptee's own props type (`ComponentProps<typeof Primitive>`) stays legal inside the
+   * Adapter. Observed RED on thirteen of fifteen files, 2026-09-03, before step 7.
+   */
+  it.each(authored)(
+    '%s takes intrinsic props through NativeProps, never ComponentProps',
+    (file) => {
+      expect(stripComments(source(file))).not.toMatch(/ComponentProps<'/)
+    },
+  )
+
+  /**
+   * `className` may appear only as the attribute the Adapter sets on its adaptee -- never
+   * destructured from props, never in a type, never as a table field. A Target that
+   * accepted it would let a screen paint with any class Tailwind compiles, which is the
+   * hole Decision 12 measured at thirteen of fifteen.
+   */
+  it.each(authored)('%s names className only as the attribute it passes down', (file) => {
+    const stray = [...stripComments(source(file)).matchAll(/\bclassName\b(?!=)/g)].map(
+      (m) => m.index,
+    )
+    expect(stray, `${file} uses className other than as a JSX attribute`).toEqual([])
   })
 
   it.each(authored)('%s carries the four provenance labels', (file) => {

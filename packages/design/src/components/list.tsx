@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * List — a collection, kept as a real `<ul>`.
@@ -14,10 +15,10 @@ import { cn } from '#lib/cn'
  * no navigation. The visual reset — no marker, no indent — is styling, and it
  * does not cost the semantics, which is the whole reason not to reach for divs.
  */
-export function List({ children, className, ...props }: ComponentProps<'ul'>) {
+export function List({ children, ...props }: NativeProps<'ul'>) {
   return (
     <ul
-      className={cn('flex list-none flex-col gap-tight p-0', className)}
+      className={cn('flex list-none flex-col p-0', STYLE.space.tight.gap)}
       data-slot="list"
       {...props}
     >

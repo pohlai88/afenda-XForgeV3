@@ -1,5 +1,5 @@
-import type { ComponentProps } from 'react'
 import { Card as Primitive } from '#components/ui/card'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Card — a bounded surface that groups one thing's content.
@@ -20,7 +20,7 @@ import { Card as Primitive } from '#components/ui/card'
  */
 
 /** Section 3 — the Target. */
-export type CardProps = ComponentProps<'div'>
+export type CardProps = NativeProps<'div'>
 
 /** Section 4 — the Adapter. Translation only; today that is identity. */
 export function Card(props: CardProps) {

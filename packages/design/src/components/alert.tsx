@@ -1,6 +1,7 @@
 import { CircleCheck, CircleX, Info, TriangleAlert } from 'lucide-react'
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Alert — a message about the state of the thing on screen, not about the application.
@@ -46,30 +47,46 @@ export const ALERT_TONE = {
   // and only the copy told them apart. There was no error TINT, because
   // `destructive` is a saturated action fill, not a backdrop somebody reads.
   danger: {
-    className: 'bg-error text-error-foreground border-border',
+    classes: cn(
+      STYLE.status.danger.background,
+      STYLE.status.danger.foreground,
+      STYLE.stroke.border.border,
+    ),
     Icon: CircleX,
     role: 'alert',
   },
   info: {
-    className: 'bg-info text-info-foreground border-border',
+    classes: cn(
+      STYLE.status.info.background,
+      STYLE.status.info.foreground,
+      STYLE.stroke.border.border,
+    ),
     Icon: Info,
     role: 'status',
   },
   // `success` existed as a role with no consumer anywhere in the system: nothing
   // could express an outcome that went well.
   success: {
-    className: 'bg-success text-success-foreground border-border',
+    classes: cn(
+      STYLE.status.success.background,
+      STYLE.status.success.foreground,
+      STYLE.stroke.border.border,
+    ),
     Icon: CircleCheck,
     role: 'status',
   },
   warning: {
-    className: 'bg-warning text-warning-foreground border-border',
+    classes: cn(
+      STYLE.status.warning.background,
+      STYLE.status.warning.foreground,
+      STYLE.stroke.border.border,
+    ),
     Icon: TriangleAlert,
     role: 'alert',
   },
 } as const satisfies Record<
   string,
-  { className: string; Icon: typeof Info; role: 'alert' | 'status' }
+  { classes: string; Icon: typeof Info; role: 'alert' | 'status' }
 >
 
 /**
@@ -81,18 +98,22 @@ export const ALERT_TONE = {
  * is why every Adapter that forwards props into an Alert narrows its own type by hand
  * (`resource-boundary.tsx`).
  */
-export interface AlertProps extends Omit<ComponentProps<'div'>, 'role'> {
+export interface AlertProps extends Omit<NativeProps<'div'>, 'role'> {
   readonly tone?: keyof typeof ALERT_TONE
 }
 
-export function Alert({ children, className, tone = 'info', ...props }: AlertProps) {
-  const { Icon, className: toneClassName, role } = ALERT_TONE[tone]
+export function Alert({ children, tone = 'info', ...props }: AlertProps) {
+  const { Icon, classes, role } = ALERT_TONE[tone]
   return (
     <div
       className={cn(
-        'flex items-start gap-tight rounded-control border px-row-x py-control-y',
-        toneClassName,
-        className,
+        'flex items-start',
+        STYLE.space.tight.gap,
+        STYLE.shape.control,
+        STYLE.stroke.width,
+        STYLE.space.rowX.paddingX,
+        STYLE.space.controlY.paddingY,
+        classes,
       )}
       data-slot="alert"
       data-tone={tone}
@@ -103,8 +124,8 @@ export function Alert({ children, className, tone = 'info', ...props }: AlertPro
           first line box is taller, so it sits marginally high of optical centre.
           Closing that gap would mean writing a length this system has no role
           for, and a two-pixel literal is a worse trade than two pixels. */}
-      <Icon aria-hidden="true" className="size-icon shrink-0" />
-      <div className="flex flex-col gap-tight">{children}</div>
+      <Icon aria-hidden="true" className={cn(STYLE.size.icon, 'shrink-0')} />
+      <div className={cn('flex flex-col', STYLE.space.tight.gap)}>{children}</div>
     </div>
   )
 }

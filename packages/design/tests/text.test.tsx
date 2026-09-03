@@ -37,7 +37,7 @@ describe('Text renders the role and tone it is asked for', () => {
   it.each([
     ['body', 'font-body text-body'],
     ['emphasis', 'font-emphasis text-emphasis'],
-    ['label', 'font-label text-body-compact'],
+    ['label', 'font-label text-label'],
     // The headline figure: heading weight, one size above title.
     ['display', 'font-heading text-display'],
   ] as const)('variant %s sets its role classes', (variant, classes) => {

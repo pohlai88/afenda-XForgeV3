@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Page — the document surface: the one element that establishes the type and colour
@@ -16,12 +17,15 @@ import { cn } from '#lib/cn'
  * that needed its own font-size was the failure this replaces -- forty-six of
  * them, each individually reasonable.
  */
-export function Page({ children, className, ...props }: ComponentProps<'div'>) {
+export function Page({ children, ...props }: NativeProps<'div'>) {
   return (
     <div
       className={cn(
-        'min-h-screen bg-background font-body font-sans text-body text-foreground',
-        className,
+        'min-h-screen',
+        STYLE.surface.page.background,
+        STYLE.family.sans,
+        STYLE.typography.body,
+        STYLE.ink.default.text,
       )}
       data-slot="page"
       {...props}

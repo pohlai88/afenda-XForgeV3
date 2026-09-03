@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Status — work in progress, announced rather than only drawn.
@@ -22,14 +23,14 @@ import { cn } from '#lib/cn'
  * not props: a caller's `role="alert"` or `aria-live="assertive"` would otherwise win
  * through the spread (rendered to check) and turn a polite wait into an interruption.
  */
-export type StatusProps = Omit<ComponentProps<'p'>, 'aria-busy' | 'aria-live' | 'role'>
+export type StatusProps = Omit<NativeProps<'p'>, 'aria-busy' | 'aria-live' | 'role'>
 
-export function Status({ children, className, ...props }: StatusProps) {
+export function Status({ children, ...props }: StatusProps) {
   return (
     <p
       aria-busy="true"
       aria-live="polite"
-      className={cn('m-0 text-body text-muted-foreground', className)}
+      className={cn('m-0', STYLE.typography.body, STYLE.surface.muted.foreground)}
       data-slot="status"
       /**
        * THE ROLE, WHICH WAS MISSING. `aria-live="polite"` alone does announce,

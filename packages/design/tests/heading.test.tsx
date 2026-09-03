@@ -10,7 +10,8 @@
  * MUTATION WATCHED GO RED, 2026-09-03: written against the table as it stood, the distinct-
  * roles case failed on levels 2 and 3 sharing `text-heading`; green once level 3 moved to
  * `text-body` at the heading weight (16px/600 -- apart from h2 by size, from `emphasis` by
- * weight, from body by both).
+ * weight, from body by both). ADR-034 step 7 then minted that combination as the
+ * `subheading` role, and level 3 selects it.
  *
  * JSX-free: `createElement` + `renderToStaticMarkup`, node environment.
  */
@@ -26,7 +27,7 @@ const render = (level: (typeof LEVELS)[number]) =>
   renderToStaticMarkup(createElement(Heading, { level }, 'Section'))
 
 const sizeRole = (html: string) => {
-  const match = html.match(/\btext-(title|heading|body|display|emphasis|body-compact)\b/)
+  const match = html.match(/\btext-(title|heading|subheading|body|display|emphasis|body-compact)\b/)
   return match?.[1]
 }
 
@@ -53,6 +54,10 @@ describe('Heading gives every outline level its own look', () => {
   })
 
   it('rank falls with level: title above heading above body', () => {
-    expect(LEVELS.map((level) => sizeRole(render(level)))).toEqual(['title', 'heading', 'body'])
+    expect(LEVELS.map((level) => sizeRole(render(level)))).toEqual([
+      'title',
+      'heading',
+      'subheading',
+    ])
   })
 })

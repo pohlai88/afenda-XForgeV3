@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * EmptyState — nothing here, said as an invitation, never as an apology.
@@ -19,25 +20,33 @@ import { cn } from '#lib/cn'
  * event. It occupies the space the content would have occupied.
  */
 export function EmptyState({
-  className,
   description,
   title,
   ...props
-}: Omit<ComponentProps<'div'>, 'title'> & {
+}: Omit<NativeProps<'div'>, 'title'> & {
   readonly description?: string
   readonly title: string
 }) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-tight rounded-control border border-border border-dashed px-row-x py-section',
-        className,
+        'flex flex-col border-dashed',
+        STYLE.space.tight.gap,
+        STYLE.shape.control,
+        STYLE.stroke.width,
+        STYLE.stroke.border.border,
+        STYLE.space.rowX.paddingX,
+        STYLE.space.section.paddingY,
       )}
       data-slot="empty-state"
       {...props}
     >
-      <p className="m-0 font-emphasis text-emphasis text-foreground">{title}</p>
-      {description ? <p className="m-0 text-body text-muted-foreground">{description}</p> : null}
+      <p className={cn('m-0', STYLE.typography.emphasis, STYLE.ink.default.text)}>{title}</p>
+      {description ? (
+        <p className={cn('m-0', STYLE.typography.body, STYLE.surface.muted.foreground)}>
+          {description}
+        </p>
+      ) : null}
     </div>
   )
 }

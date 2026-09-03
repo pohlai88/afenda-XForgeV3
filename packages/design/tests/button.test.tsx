@@ -12,7 +12,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { BUTTON_VARIANT, Button } from '../src/components/button'
+import { BUTTON_VARIANT, Button, type ButtonProps } from '../src/components/button'
 
 const variants = Object.keys(BUTTON_VARIANT) as (keyof typeof BUTTON_VARIANT)[]
 
@@ -39,10 +39,11 @@ describe('Button adapts Xforge vocabulary onto the primitive', () => {
         /class="[^"]*\bh-control\b/,
       )
     }
-    // A caller's className is merged, not dropped, and the floor stays.
-    const html = renderToStaticMarkup(createElement(Button, { className: 'w-full' }, 'Go'))
-    expect(html).toMatch(/class="[^"]*\bh-control\b/)
-    expect(html).toMatch(/class="[^"]*\bw-full\b/)
+    // The Target has no className (ADR-031 Decision 12): a screen cannot argue with the
+    // floor, or paint the button, from a call site. The refusal is the type.
+    // @ts-expect-error -- className is not a prop of the Target
+    const illegal: ButtonProps = { className: 'w-full' }
+    expect(illegal).toBeTypeOf('object')
   })
 
   it('defaults to primary and forwards native attributes', () => {

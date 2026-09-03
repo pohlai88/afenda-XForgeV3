@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import type { ComponentProps } from 'react'
-import { cn } from '#lib/cn'
+import { STYLE } from '#generated/style'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Text — a paragraph, at one of the roles the scale actually has.
@@ -53,29 +53,28 @@ const textVariants = cva('m-0', {
   },
   variants: {
     tone: {
-      danger: 'text-error-foreground',
-      default: 'text-foreground',
-      muted: 'text-muted-foreground',
-      success: 'text-success-foreground',
+      danger: STYLE.status.danger.foreground,
+      default: STYLE.ink.default.text,
+      muted: STYLE.surface.muted.foreground,
+      success: STYLE.status.success.foreground,
     },
     variant: {
-      body: 'font-body text-body',
-      display: 'font-heading text-display',
-      emphasis: 'font-emphasis text-emphasis',
-      label: 'font-label text-body-compact',
+      body: STYLE.typography.body,
+      display: STYLE.typography.display,
+      emphasis: STYLE.typography.emphasis,
+      label: STYLE.typography.label,
     },
   },
 })
 
 export function Text({
   children,
-  className,
   tone,
   variant,
   ...props
-}: ComponentProps<'p'> & VariantProps<typeof textVariants>) {
+}: NativeProps<'p'> & VariantProps<typeof textVariants>) {
   return (
-    <p className={cn(textVariants({ tone, variant }), className)} data-slot="text" {...props}>
+    <p className={textVariants({ tone, variant })} data-slot="text" {...props}>
       {children}
     </p>
   )

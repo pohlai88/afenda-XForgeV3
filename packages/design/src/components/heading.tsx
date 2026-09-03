@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Heading — a heading, with its level and its size decided separately.
@@ -21,9 +22,8 @@ import { cn } from '#lib/cn'
  * AND THEN h2 AND h3 WERE, one level down, until 2026-09-03: both mapped to
  * `text-heading`. The design-sync preview showed it; no check here could have,
  * because the kernel proves adjacent TYPE ROLES differ and nothing proved this
- * table used different ones. Level 3 is now `text-body` at the heading weight
- * -- 16px/600, apart from h2 by size, from `emphasis` by weight, from body by
- * both -- and `heading.test.tsx` holds every level to its own role.
+ * table used different ones. Level 3 is now the `subheading` role -- 16px/600, minted for
+ * it in ADR-034 step 7; apart from h2 by size, from `emphasis` by weight -- and `heading.test.tsx` holds every level to its own role.
  *
  * A TABLE RATHER THAN `cva`, WHICH THE REST OF THE SYSTEM USES. `level` does not
  * only choose an appearance: it chooses the ELEMENT, and `cva` emits class
@@ -33,26 +33,21 @@ import { cn } from '#lib/cn'
  * role. Where a variant is purely appearance (`text`, `stack`), it is `cva`.
  */
 const ROLE = {
-  1: 'text-title',
-  2: 'text-heading',
-  3: 'text-body',
+  1: STYLE.typography.title,
+  2: STYLE.typography.heading,
+  3: STYLE.typography.subheading,
 } as const
 
 export function Heading({
   children,
-  className,
   level = 2,
   ...props
-}: ComponentProps<'h2'> & {
+}: NativeProps<'h2'> & {
   readonly level?: keyof typeof ROLE
 }) {
   const Tag = `h${level}` as const
   return (
-    <Tag
-      className={cn('m-0 font-heading text-foreground', ROLE[level], className)}
-      data-slot="heading"
-      {...props}
-    >
+    <Tag className={cn('m-0', STYLE.ink.default.text, ROLE[level])} data-slot="heading" {...props}>
       {children}
     </Tag>
   )

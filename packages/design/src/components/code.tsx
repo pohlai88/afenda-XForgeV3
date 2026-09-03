@@ -1,5 +1,6 @@
-import type { ComponentProps } from 'react'
+import { STYLE } from '#generated/style'
 import { cn } from '#lib/cn'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Code — an identifier, a wire code, a request id: read by comparison, not as a word.
@@ -14,12 +15,17 @@ import { cn } from '#lib/cn'
  * proportional digits are how a transposed pair of numbers stops being visible.
  * In a payroll product that is a correctness property, not a typographic one.
  */
-export function Code({ children, className, ...props }: ComponentProps<'code'>) {
+export function Code({ children, ...props }: NativeProps<'code'>) {
   return (
     <code
       className={cn(
-        'rounded-precise bg-muted px-related font-mono text-body-compact text-foreground tabular-nums',
-        className,
+        STYLE.shape.precise,
+        STYLE.surface.muted.background,
+        STYLE.space.related.paddingX,
+        STYLE.family.mono,
+        STYLE.typography.bodyCompact,
+        STYLE.ink.default.text,
+        'tabular-nums',
       )}
       data-slot="code"
       {...props}

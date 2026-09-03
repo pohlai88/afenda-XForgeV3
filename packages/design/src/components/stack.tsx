@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import type { ComponentProps } from 'react'
-import { cn } from '#lib/cn'
+import { STYLE } from '#generated/style'
+import type { NativeProps } from '#lib/props'
 
 /**
  * Stack — one-dimensional layout, and the only way a screen gets to space things.
@@ -26,22 +26,21 @@ const stackVariants = cva('flex', {
       row: 'flex-row items-center',
     },
     gap: {
-      loose: 'gap-loose',
-      normal: 'gap-normal',
-      tight: 'gap-tight',
+      loose: STYLE.space.loose.gap,
+      normal: STYLE.space.normal.gap,
+      tight: STYLE.space.tight.gap,
     },
   },
 })
 
 export function Stack({
   children,
-  className,
   direction,
   gap,
   ...props
-}: ComponentProps<'div'> & VariantProps<typeof stackVariants>) {
+}: NativeProps<'div'> & VariantProps<typeof stackVariants>) {
   return (
-    <div className={cn(stackVariants({ direction, gap }), className)} data-slot="stack" {...props}>
+    <div className={stackVariants({ direction, gap })} data-slot="stack" {...props}>
       {children}
     </div>
   )
