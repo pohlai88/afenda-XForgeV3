@@ -46,35 +46,51 @@ import type { NativeProps } from '#lib/props'
  * naming inconsistency at once. Nothing is lost: `role` was never carrying the
  * policy's meaning to the DOM, only to a lookup table.
  */
+/**
+ * The axes, exported as tables so a check can read every word and require it framed
+ * somewhere: a state nobody frames is scanned by nothing, and every check stays green.
+ * The tone is the ink; `muted` is measured against the page and the card, never against a
+ * status tint.
+ */
+export const TEXT_TONE = {
+  danger: STYLE.status.danger.foreground,
+  default: STYLE.ink.default.text,
+  muted: STYLE.surface.muted.foreground,
+  success: STYLE.status.success.foreground,
+} as const
+
+export const TEXT_VARIANT = {
+  body: STYLE.typography.body,
+  display: STYLE.typography.display,
+  emphasis: STYLE.typography.emphasis,
+  label: STYLE.typography.label,
+} as const
+
 const textVariants = cva(STYLE.space.none.margin, {
   defaultVariants: {
     tone: 'default',
     variant: 'body',
   },
   variants: {
-    tone: {
-      danger: STYLE.status.danger.foreground,
-      default: STYLE.ink.default.text,
-      muted: STYLE.surface.muted.foreground,
-      success: STYLE.status.success.foreground,
-    },
-    variant: {
-      body: STYLE.typography.body,
-      display: STYLE.typography.display,
-      emphasis: STYLE.typography.emphasis,
-      label: STYLE.typography.label,
-    },
+    tone: TEXT_TONE,
+    variant: TEXT_VARIANT,
   },
 })
 
 export function Text({
   children,
-  tone,
-  variant,
+  tone = 'default',
+  variant = 'body',
   ...props
 }: NativeProps<'p'> & VariantProps<typeof textVariants>) {
   return (
-    <p className={textVariants({ tone, variant })} data-slot="text" {...props}>
+    <p
+      className={textVariants({ tone, variant })}
+      data-slot="text"
+      data-tone={tone}
+      data-variant={variant}
+      {...props}
+    >
       {children}
     </p>
   )
