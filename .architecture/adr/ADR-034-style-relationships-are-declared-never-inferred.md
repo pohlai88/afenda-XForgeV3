@@ -1,7 +1,7 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **All ten migration steps are built**, the same day
-(`88dceb6` … `e352b39`; each step's DONE note below names its commit). The colour and
+**Status:** Proposed · 2026-09-03 · **All ten migration steps and the follow-through are built**,
+the same day (`88dceb6` … `f4c4e40`; each step's DONE note below names its commit). The colour and
 typography contracts exist and their refusals are tested RED-first. Per-channel colour
 capability is enforced by emission: 52 `@utility` blocks, no colour role projected into
 `--color-*`, and an empty shim table, because no Adapter imports a vendored file any more.
@@ -90,7 +90,7 @@ A design arrived proposing an *Adaptive Schema Engine*: a five-stage compiler em
 *Adaptive Style Manifest*, beneath an *Adaptive Component Schema*, with ADR-031's Adapter on
 top. It named a real gap and assumed a repository that does not exist here. Its motivation
 was four generators diverging. There is one: `packages/design/policy/generators/tokens.mjs`
-(1,462 lines when measured; 1,627 after the ten steps) runs `flatten` → `resolve` → `readMode` → the `assert*` family → `emit` and
+(1,462 lines when measured; 1,499 after step 11, which removed the alias emitter) runs `flatten` → `resolve` → `readMode` → the `assert*` family → `emit` and
 writes its artefacts from one resolved graph — `tokens.css`, `tailwind-theme.css`,
 `twmerge.ts`, `FOUNDATIONS.md`, and since step 6 `style.ts` and `style-manifest.json` in
 place of `token-names.json`.
@@ -142,7 +142,8 @@ a naming convention no check reads. The stem is the model — the sixth appearan
 defect `CLAUDE.md` keeps a list of: a fact with two sources that agree until they do not.
 
 Typography was not parallel either. Measured 2026-09-03 after ADR-031 step 7 added `display`
-and before this ADR's step 7 added `subheading` (type 9 and leading 8 now):
+and before this ADR's step 7 added `subheading` and step 11 deleted the two shim tokens (type 9,
+weight 6, leading 8, tracking 1 now):
 
 ```
   semantic.type       8   caption body-compact label body emphasis heading title display
@@ -155,8 +156,9 @@ and before this ADR's step 7 added `subheading` (type 9 and leading 8 now):
 `medium`; `leading` said `compact` where `type` said `body-compact` and had no `emphasis`;
 `tracking` covered two roles. Each gap was either a decision or an omission, and the table
 could not say which. Step 4 made it say: `title` and `display` reuse `heading`'s weight
-explicitly, `emphasis` reuses `body`'s leading, `weight.medium` is a listed shim with its
-reason, and `compact` against `body-compact` was renamed in the follow-through step below.
+explicitly, `emphasis` reuses `body`'s leading, `weight.medium` was a listed shim with its
+reason until step 11 deleted it, and `compact` against `body-compact` was renamed in that same
+step.
 
 ### What the authored layer renders
 
@@ -226,12 +228,15 @@ primary-sources table ends at E23 and the 31 August table already uses E24–E28
 sources, so these are E32–E35 (the first evidence pass found them filed as E28–E31, colliding
 with the 31 August E28; renumbered). E22 itself is used by both tables — DTCG in the primary
 table, PostgreSQL in the 31 August one — a collision this ADR inherits and does not resolve.
+Grades: E22 is a published standard (S); the three Tailwind pages and the Figma reference are
+vendor documentation (V). The primary-sources table carries no grade column, so E22's grade
+is stated here and nowhere else.
 
 | Source | Supports |
 |---|---|
 | W3C DTCG *Format Module* 2025.10 §3.7 (repeated at the head of §6) — "Groups are arbitrary and tools _SHOULD NOT_ use them to infer the type or purpose of design tokens." (E22) | That "declare, never infer" is the published rule; the direct argument against deriving a family from a name stem |
 | Same, §6.3 `$type` (the rule is numbered §6.7.3, Type Inheritance) — a group's `$type` is a default for tokens that declare none (E22) | The behaviour `flatten()` already implements |
-| Same, Example 37 — a typography composite with `fontFamily`, `fontSize`, `fontWeight`, `lineHeight` (E22). §9.8 (Typography) was truncated in the first draft's retrieved render | That the composite exists; Decision 2 does not rest on its full field list |
+| Same, Example 37 — a typography composite whose spec source enumerates `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight` (E22). §9.8 (Typography) is truncated in every rendered fetch so far; the five come from the source markdown | That the composite exists; Decision 2 does not rest on its full field list |
 | Tailwind v4 *Theme variables* — "Theme variables are defined in _namespaces_ and each namespace corresponds to one or more utility class or variant APIs"; "set the global theme variable namespace to `initial`… none of the default utility classes that are driven by theme variables will be available" (**E33**) | That closure is the supported mechanism — and that adding `--spacing-row-y` enlarges the namespace rather than replacing it |
 | Tailwind v4 *Margin* — `m-<number>` → `margin: calc(var(--spacing) * <number>)`; the utilities "are driven by the `--spacing` theme variable" (**E34**) | That the numeric scale is derived from a multiplier, not enumerated. Unboundedness follows from the formula and is inferred, not quoted |
 | Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E35**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
@@ -326,9 +331,10 @@ red.
 **Typography — `TYPE_ROLES` completed, not moved.** It already is the typography composite
 and holds what DTCG's has no field for; moving it into `tokens.json` would lose the floors or
 split one fact across two homes. Every role declares `font`, `size`, `weight`, `leading`,
-`tracking` — reference, explicit reuse, or `NONE`. Today's gaps become work items: a weight
-for `title` and `display` or an explicit reuse of `heading`'s, a leading for `emphasis`, one
-name for `compact`/`body-compact`, and an owner or a deletion for `weight.medium`.
+`tracking` — reference, explicit reuse, or `NONE`. The gaps measured in Context were work
+items, all discharged: `title` and `display` reuse `heading`'s weight explicitly and `emphasis`
+reuses `body`'s leading (step 4); `compact` became `body-compact` and `weight.medium` was
+deleted with the alias table that needed it (step 11).
 
 ### 3. Closed CSS vocabulary. Tailwind compiles Xforge; it does not invent Xforge.
 
@@ -336,9 +342,9 @@ Three closures, one rule: **a design-bearing value or capability nobody declared
 compile.**
 
 **Per-channel capability, enforced by emission.** A colour role's KIND declares the CSS
-channels its roles may be used through (`text` roles through `text`; surfaces through `bg`;
-`ui` roles through `border`, `outline` and `ring`; decorative roles through `border`;
-compositing inks through none), and the compiler emits one `@utility` per channel and nothing
+channels its roles may be used through (`text` and `inactive` roles through `text`; surfaces
+through `bg`; `ui` roles through `border`, `outline` and `ring`; decorative roles through
+`border`; compositing inks through none), and the compiler emits one `@utility` per channel and nothing
 else: `bg-error` exists, `text-error` does not, and the compile test asserts both directions.
 The draft wrote this per role; it was built per kind, one table instead of forty-nine entries.
 A role stays projected into `--color-*` only under a SHIM — a declared list of the extra
@@ -594,3 +600,17 @@ pre-step figures they are, with the post-step values beside them; three DTCG sec
 the three Tailwind sources regraded S → V; the typography shims' reasons, which cited a
 vendored tree no longer scanned; the rollback claim for steps 7 and 8; and a new "does NOT
 prove" bullet naming the words the build minted with no source behind them.
+
+Second pass, after step 11 (HEAD `39170b1`): every first-pass correction holds; step 11
+verified against the tree (no `SCALE_ALIASES`, no `weight.medium` or `tracking.shortcut`,
+`leading.body-compact` present, the alias custom properties gone, the shim table empty); unit
+407 green; `gen:tokens` byte-identical. One blocking finding, folded in: Context still said
+`weight.medium` "is a listed shim" after step 11 deleted it. Non-blocking, folded in: "ten
+steps" where there are eleven; the generator's line count moved again (1,499); weight 6 and
+tracking 1 marked; the register misreported the first filing as E24–E27 (it was E28–E31);
+ADR-031's "Deleted" paragraph credited the literal check with refusing `shadow-md` and
+`tracking-widest`, which the namespace closures refuse and the check did not see — the check
+now covers both prefixes; the `inactive` kind added to Decision 3's list; Decision 2's work
+items marked discharged; Example 37's five sub-properties taken from the spec source, since
+the rendered page truncates before §9.8; E22's grade stated. Not folded: the closure proof is
+a Tailwind compile on one machine, which the last "does NOT prove" bullet already says.

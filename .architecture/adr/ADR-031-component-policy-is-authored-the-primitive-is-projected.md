@@ -577,9 +577,12 @@ four parts are decided differently:
     vendored file and the app no longer scans that tree, so `SCALE_ALIASES` and its emitter
     went from the generator, and the two typography tokens that existed only to be aliased
     (`semantic.weight.medium`, `semantic.tracking.shortcut`) went from the token file. The
-    third condition was met by construction: the literal check refuses every alias word in
-    authored code. `text-sm`, `rounded-md`, `shadow-md`, `tracking-widest` and
-    `leading-relaxed` compile to nothing anywhere in this repository.
+    third condition is met by the namespace closures: `text-sm`, `rounded-md`, `shadow-md`,
+    `tracking-widest` and `leading-relaxed` compile to nothing anywhere in this repository,
+    because `--text-*`, `--radius-*`, `--shadow-*`, `--tracking-*` and `--leading-*` are
+    `initial`. The literal check refuses the words in authored code as well, and since the
+    second ADR-034 evidence pass it watches the `shadow-` and `tracking-` prefixes it had
+    missed.
 
 11. **The tone→announcement rule has one owner: the table exported beside Alert.** The
     e2e specs assert the DOM; Verification 1 asserts the DOM agrees with the table. Today

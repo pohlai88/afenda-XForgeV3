@@ -1720,10 +1720,10 @@ no upstream backing of any kind.
 
 ## Verified 3 September 2026
 
-Retrieved once, by the author of ADR-034's first draft, and quoted there. Numbered
+Retrieved by the author of ADR-034's first draft and re-fetched for the ADR's revision; quoted there. Numbered
 from E32 because the primary-sources table ends at E23 and the 31 August table
-already spent E24–E28 on other sources (the first filing said E24–E27 and collided with E28); reusing a number would send a reader to
-the wrong claim.
+already spent E24–E28 on other sources (the first filing numbered these E28–E31 and collided
+with the 31 August E28); reusing a number would send a reader to the wrong claim.
 
 | # | Source | Retrieved | Grade | Supports | Outcome |
 |---|---|---|---|---|---|

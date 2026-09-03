@@ -122,6 +122,8 @@ const THEMED = [
   'rounded-',
   'font-',
   'leading-',
+  'tracking-',
+  'shadow-',
   'ease-',
   'p-',
   'px-',
