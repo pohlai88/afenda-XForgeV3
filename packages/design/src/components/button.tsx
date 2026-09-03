@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { Button as Primitive } from '#components/ui/button'
+import { cn } from '#lib/cn'
 
 /**
  * Button — the one control a person presses to make something happen.
@@ -23,6 +24,16 @@ import { Button as Primitive } from '#components/ui/button'
  * business until a token policy says otherwise; what Xforge owns is the word a
  * screen writes and its translation. That is why section 1 here is a mapping
  * table and not a cva object.
+ *
+ * ONE CLASS IS XFORGE'S, AND IT IS A FLOOR, NOT A STYLE. `h-control` sets
+ * `min-block-size` to the control minimum -- the WCAG 2.5.8 target floor the
+ * density axis rebinds (40px, 48 comfortable, 32 compact). It was defined in
+ * globals.css and consumed by nothing, so Tailwind never emitted it, and
+ * upstream's `h-8` held every button at 32px beneath a 40px floor. The
+ * design-sync preview found that on 2026-09-03. A button is the one control
+ * an Adapter renders directly, so the floor is applied here; a min-height
+ * wins over upstream's height without the two classes colliding, and twMerge
+ * knows no group for an `@utility`, so neither is dropped.
  */
 
 /** Section 1 — the axis Xforge owns, translated to the adaptee's vocabulary. */
@@ -39,7 +50,14 @@ export interface ButtonProps extends ComponentProps<'button'> {
   readonly variant?: keyof typeof BUTTON_VARIANT
 }
 
-/** Section 4 — the Adapter. Translation only. */
-export function Button({ variant = 'primary', ...props }: ButtonProps) {
-  return <Primitive data-variant={variant} variant={BUTTON_VARIANT[variant]} {...props} />
+/** Section 4 — the Adapter. Translation, and the control floor. */
+export function Button({ className, variant = 'primary', ...props }: ButtonProps) {
+  return (
+    <Primitive
+      className={cn('h-control', className)}
+      data-variant={variant}
+      variant={BUTTON_VARIANT[variant]}
+      {...props}
+    />
+  )
 }

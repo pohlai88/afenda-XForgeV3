@@ -29,6 +29,22 @@ describe('Button adapts Xforge vocabulary onto the primitive', () => {
     expect(html).toContain('>Save</button>')
   })
 
+  it('meets the control floor: h-control is on every button', () => {
+    // `h-control` (min-block-size: the control minimum) was defined in globals.css as the
+    // WCAG 2.5.8 floor and consumed by nothing, so Tailwind never emitted it; upstream's
+    // `h-8` set every button at 32px under a 40px floor. Found by the design-sync preview,
+    // 2026-09-03. Red before the Adapter carried the class.
+    for (const variant of variants) {
+      expect(renderToStaticMarkup(createElement(Button, { variant }, 'Go'))).toMatch(
+        /class="[^"]*\bh-control\b/,
+      )
+    }
+    // A caller's className is merged, not dropped, and the floor stays.
+    const html = renderToStaticMarkup(createElement(Button, { className: 'w-full' }, 'Go'))
+    expect(html).toMatch(/class="[^"]*\bh-control\b/)
+    expect(html).toMatch(/class="[^"]*\bw-full\b/)
+  })
+
   it('defaults to primary and forwards native attributes', () => {
     const html = renderToStaticMarkup(
       createElement(Button, { disabled: true, type: 'submit' }, 'Go'),
