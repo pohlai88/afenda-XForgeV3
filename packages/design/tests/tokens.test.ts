@@ -368,7 +368,7 @@ describe('what the generator refuses', () => {
       withSource((s) => {
         set(s, 'size.target-min', { $value: '1rem' })
       }),
-    ).toThrow(/which is a rem -- a floor cannot be measured through an assumed root size/)
+    ).toThrow(/which is a rem -- a target floor cannot be measured through an assumed root size/)
   })
 
   it('a theme mode reaching into geometry', () => {
@@ -819,8 +819,20 @@ describe('the 4px grid the leading ratios were chosen for', () => {
  * below except the last passed before this change.
  */
 describe('the elevation model', () => {
-  const ground = { rank: 0, reason: 'the page', separatedBy: [], surface: 'color.background' }
-  const card = { rank: 1, reason: 'a card', separatedBy: ['surface'], surface: 'color.card' }
+  const ground = {
+    elevation: 'semantic.elevation.flat',
+    rank: 0,
+    reason: 'the page',
+    separatedBy: [],
+    surface: 'color.background',
+  }
+  const card = {
+    elevation: 'semantic.elevation.flat',
+    rank: 1,
+    reason: 'a card',
+    separatedBy: ['surface'],
+    surface: 'color.card',
+  }
 
   it('refuses to prove itself over zero layers', () => {
     expect(() => policy.assertElevationLayers({})).toThrow(/over zero layers/)
@@ -841,7 +853,7 @@ describe('the elevation model', () => {
       Object.entries(policy.COLOR_ROLE_POLICIES).filter(([role]) => role !== 'color.scrim'),
     )
     expect(() => policy.assertElevationLayers(undefined, withoutScrim)).toThrow(
-      /painted by the colour role 'color\.scrim' -- and that role does not exist/,
+      /painted by colour role 'color\.scrim' -- and that role does not exist/,
     )
   })
 
@@ -884,7 +896,7 @@ describe('the elevation model', () => {
         ground,
         x: { ...card, separatedBy: ['shadow'] },
       }),
-    ).toThrow(/forced-colors mode discards box-shadow/)
+    ).toThrow(/shadow may reinforce separation but may never be the only boundary/)
 
     expect(() =>
       policy.assertElevationLayers({
@@ -1039,12 +1051,21 @@ describe('the typography policy names tokens that exist', () => {
  */
 describe('the accessibility floors', () => {
   const cited = {
-    target: { criterion: '2.5.8', minimum: 24 },
-    text: { criterion: '1.4.3', minimum: 4.5 },
+    target: { criterion: '2.5.8', minimum: 24, unit: 'px' },
+    text: { criterion: '1.4.3', minimum: 4.5, unit: 'ratio' },
   }
   const floor = (contrast: unknown) => ({
     contrast,
-    targetMinimumPx: { adopted: 24, cites: 'target' },
+    target: {
+      pointer: { adopted: 24, cites: 'target', unit: 'px' },
+      touch: {
+        adopted: 48,
+        cites: null,
+        reason: 'coarse input adopts a larger hit area than the pointer floor',
+        unit: 'px',
+      },
+    },
+    targetMinimumPx: { adopted: 24, cites: 'target', unit: 'px' },
   })
 
   it('holds the shipped policy to every criterion it cites', () => {
@@ -1064,24 +1085,32 @@ describe('the accessibility floors', () => {
 
   it('permits a floor stricter than its criterion and refuses one below it', () => {
     expect(() =>
-      policy.assertAccessibilityPolicy(floor({ text: { adopted: 7, cites: 'text' } }), cited),
+      policy.assertAccessibilityPolicy(
+        floor({ text: { adopted: 7, cites: 'text', unit: 'ratio' } }),
+        cited,
+      ),
     ).not.toThrow()
     expect(() =>
-      policy.assertAccessibilityPolicy(floor({ text: { adopted: 3, cites: 'text' } }), cited),
-    ).toThrow(/below the 4\.5 that WCAG 1\.4\.3 requires/)
+      policy.assertAccessibilityPolicy(
+        floor({ text: { adopted: 3, cites: 'text', unit: 'ratio' } }),
+        cited,
+      ),
+    ).toThrow(/below the 4\.5:1 that WCAG 1\.4\.3 requires/)
   })
 
   // `inactive` cites nothing -- WCAG exempts inactive components and the
   // exemption is declined. A number with no standard behind it owes an argument.
   it('refuses an uncited floor that states no reason', () => {
     expect(() =>
-      policy.assertAccessibilityPolicy(floor({ inactive: { adopted: 3, cites: null } })),
+      policy.assertAccessibilityPolicy(
+        floor({ inactive: { adopted: 3, cites: null, unit: 'ratio' } }),
+      ),
     ).toThrow(/cites no criterion and states no reason/)
   })
 
   it('refuses a target in rem, which no root size may be assumed for', () => {
     expect(() => policy.assertTargetMinimum('1.5rem')).toThrow(
-      /a floor cannot be measured through an assumed root size/,
+      /a target floor cannot be measured through an assumed root size/,
     )
     expect(() => policy.assertTargetMinimum('16px')).toThrow(/below the 24px floor/)
     expect(policy.assertTargetMinimum('24px')).toBe(24)
@@ -1133,12 +1162,12 @@ describe('the motion policy', () => {
     const { maximumMs, ...noCeiling } = oneShot['semantic.motion.duration.x']
     expect(() =>
       foundations.assertMotionRoles({ 'semantic.motion.duration.x': noCeiling }),
-    ).toThrow(/must state its ceiling/)
+    ).toThrow(/must state a positive finite maximumMs ceiling/)
     expect(() =>
       foundations.assertMotionRoles({
         'semantic.motion.duration.x': { ...oneShot['semantic.motion.duration.x'], maximumMs: 2000 },
       }),
-    ).toThrow(/may not exempt itself from it by naming a larger number/)
+    ).toThrow(/past the 500ms house maximum/)
     expect(foundations.MAXIMUM_TRANSITION_MS).toBe(500)
   })
 
