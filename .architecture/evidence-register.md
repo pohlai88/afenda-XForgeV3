@@ -54,7 +54,7 @@ Xforge tests answer: *"Did we implement the pattern correctly here?"*
 | Open-code UI primitives | E18 | V | design-system, a11y, ERP-primitive tests | REVERSIBLE |
 | Auth behind a facade | E19, E21 | V | business topology stays outside the provider | STABLE / provider REVERSIBLE |
 | Durable executor behind the outbox | E20 — *executor capability, not the source of durable business intent* | V | AQS-013 | REVERSIBLE |
-| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E22 (declare, never infer), E29–E31 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E28 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | ADR-034 Verification, all unwritten | PROPOSED |
+| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E22 (declare, never infer), E33–E35 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E32 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | ADR-034 Verification, all unwritten | PROPOSED |
 | DTCG-shaped token document, pinned at 2025.10 | E22, E23 — the version is real and its value shapes are normative. **What it does not prove:** that `tokens.json` conforms. It does not, deliberately and in writing — colour is a hex string where E23 requires `{colorSpace, components}`, dimension is a CSS length string where E22 requires `{value, unit}`, and `$modes` is a root property the schema does not enumerate. Precedent qualifies the TARGET, not the current document | S | `tokens.test.ts` value-shape suite, `assertContractVersions` | STABLE / migration tracked |
 
 ---
@@ -1721,13 +1721,13 @@ no upstream backing of any kind.
 ## Verified 3 September 2026
 
 Retrieved once, by the author of ADR-034's first draft, and quoted there. Numbered
-from E28 because the primary-sources table ends at E23 and the 31 August table
-already spent E24–E27 on other sources; reusing a number would send a reader to
+from E32 because the primary-sources table ends at E23 and the 31 August table
+already spent E24–E28 on other sources (the first filing said E24–E27 and collided with E28); reusing a number would send a reader to
 the wrong claim.
 
 | # | Source | Retrieved | Grade | Supports | Outcome |
 |---|---|---|---|---|---|
-| E28 | [Figma REST API — Variables](https://developers.figma.com/docs/rest-api/variables-types/) | 2026-09-03 | V | Per-variable `scopes` exist, and "setting scopes for a variable does not prevent that variable from being bound in other scopes… only limits the variables that are shown in pickers" — advisory, not enforced | REJECT as published; capability is enforced by emission instead (ADR-034 Decision 3) |
-| E29 | [Tailwind CSS v4 — Theme variables](https://tailwindcss.com/docs/theme) | 2026-09-03 | S | Namespaces decide which utilities exist; `--<ns>-*: initial` removes a namespace's default utilities; adding a variable to a namespace enlarges it | ADOPT (nine namespaces already closed this way) |
-| E30 | [Tailwind CSS v4 — Margin](https://tailwindcss.com/docs/margin) | 2026-09-03 | S | `m-<number>` is `calc(var(--spacing) * <number>)`, driven by one theme variable; the numeric scale is derived, not enumerated | ADOPT as the reason `--spacing-*` must be closed rather than linted (ADR-034 Decision 3) |
-| E31 | [Tailwind CSS v4 — Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files) | 2026-09-03 | S | `@source not` excludes paths from class detection; `source(none)` disables it | ADAPT: a complement to closure, never a substitute — it bounds emitted CSS and restores no padding |
+| E32 | [Figma REST API — Variables](https://developers.figma.com/docs/rest-api/variables-types/) | 2026-09-03 | V | Per-variable `scopes` exist, and "setting scopes for a variable does not prevent that variable from being bound in other scopes… only limits the variables that are shown in pickers" — advisory, not enforced | REJECT as published; capability is enforced by emission instead (ADR-034 Decision 3) |
+| E33 | [Tailwind CSS v4 — Theme variables](https://tailwindcss.com/docs/theme) | 2026-09-03 | V | Namespaces decide which utilities exist; `--<ns>-*: initial` removes a namespace's default utilities; adding a variable to a namespace enlarges it | ADOPT (nine namespaces already closed this way) |
+| E34 | [Tailwind CSS v4 — Margin](https://tailwindcss.com/docs/margin) | 2026-09-03 | V | `m-<number>` is `calc(var(--spacing) * <number>)`, driven by one theme variable; the numeric scale is derived, not enumerated | ADOPT as the reason `--spacing-*` must be closed rather than linted (ADR-034 Decision 3) |
+| E35 | [Tailwind CSS v4 — Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files) | 2026-09-03 | V | `@source not` excludes paths from class detection; `source(none)` disables it | ADAPT: a complement to closure, never a substitute — it bounds emitted CSS and restores no padding |

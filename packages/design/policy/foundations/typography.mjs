@@ -295,9 +295,10 @@ export const TYPE_ROLE_FIELDS = deepFreeze(['font', 'size', 'weight', 'leading',
  * fact that moved.
  */
 export const TYPE_TOKEN_SHIMS = deepFreeze({
-  'semantic.tracking.shortcut': 'SCALE_ALIASES projects it as tracking-widest for vendored kbd',
+  'semantic.tracking.shortcut':
+    'kept while SCALE_ALIASES still projects it as tracking-widest (ADR-031 Decision 10); no authored file names it',
   'semantic.weight.medium':
-    'vendored shadcn writes font-medium; retire with the Decision 3 closure',
+    'the token behind font-medium; no authored file names it and no vendored file is scanned, so it survives only until a step whose generated output may move retires it',
 })
 
 /** The dimensions a reader perceives as rank. Leading and tracking are not among them. */

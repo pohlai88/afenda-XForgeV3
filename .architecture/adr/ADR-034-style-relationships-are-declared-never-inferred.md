@@ -1,18 +1,21 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **All ten migration steps are built** (commits `88dceb6`,
-`04199cc`, `d4f31dc`, `164bc22`, and step 5 the same day): the colour and typography contracts
-exist, their refusals are tested RED-first, and per-channel colour capability is enforced by
-emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
-shims; `generated/style.ts` and `style-manifest.json` carry 124 semantic symbols and replace
+**Status:** Proposed · 2026-09-03 · **All ten migration steps are built**, the same day
+(`88dceb6` … `e352b39`; each step's DONE note below names its commit). The colour and
+typography contracts exist and their refusals are tested RED-first. Per-channel colour
+capability is enforced by emission: 52 `@utility` blocks, no colour role projected into
+`--color-*`, and an empty shim table, because no Adapter imports a vendored file any more.
+`generated/style.ts` and `style-manifest.json` carry 159 semantic symbols and replace
 `token-names.json`; every authored recipe selects those symbols and no Target exposes
-`className` or `style`; no Adapter imports a vendored file and the app no longer scans that
-tree for classes; the numeric spacing scale is closed and the zero is a role; arbitrary bracket
-values are refused on any prefix. What remains is the freeze question, which law 34 answers with
-evidence this ADR does not yet have: the qualification tests are written and green, and nothing
-external has run them. No section is FROZEN and none may be: law 34
-gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
-external claims retrieved once.
+`className` or `style`; the app no longer scans the vendored tree for classes; the numeric
+spacing scale is closed and the zero is a role; arbitrary bracket values are refused on any
+prefix. What remains is the freeze question, which law 34 answers with evidence this ADR does
+not yet have: the qualification tests are written and green on this machine, and nothing
+external has run them. No section is FROZEN and none may be.
+
+**Measurements in the Context below are the ones the decisions were taken on**, made on
+2026-09-03 before the steps ran. Where a step changed a figure, the sentence says so or the
+step's DONE note carries the new one; a figure with no such mark is unchanged.
 
 **Simplified on the owner's review, 2026-09-03.** The first draft (commit `ca61f6a`, kept
 whole in history) ran to eight decisions because it was answering three questions at once:
@@ -87,7 +90,7 @@ A design arrived proposing an *Adaptive Schema Engine*: a five-stage compiler em
 *Adaptive Style Manifest*, beneath an *Adaptive Component Schema*, with ADR-031's Adapter on
 top. It named a real gap and assumed a repository that does not exist here. Its motivation
 was four generators diverging. There is one: `packages/design/policy/generators/tokens.mjs`
-(1,462 lines) runs `flatten` → `resolve` → `readMode` → the `assert*` family → `emit` and
+(1,462 lines when measured; 1,627 after the ten steps) runs `flatten` → `resolve` → `readMode` → the `assert*` family → `emit` and
 writes its artefacts from one resolved graph — `tokens.css`, `tailwind-theme.css`,
 `twmerge.ts`, `FOUNDATIONS.md`, and since step 6 `style.ts` and `style-manifest.json` in
 place of `token-names.json`.
@@ -105,7 +108,7 @@ Three of the proposal's five stages are already enforced with tests that go red:
                 specificity and emission order would decide
 ```
 
-`policy/vocabulary.mjs` (944 lines) proves the CSS projection injective
+`policy/vocabulary.mjs` (944 lines then, 955 now) proves the CSS projection injective
 (`assertUniqueCssNames`), states DTCG conformance type by type (`DTCG_VALUE_COMPATIBILITY`),
 and keeps `TOKEN_CONTRACT_VERSION` apart from `DTCG_VERSION`.
 
@@ -118,7 +121,8 @@ and nothing caught it.
 
 ### What does not exist: declared relationships
 
-The 48 semantic colour roles collapse to **26 stems in four shapes**:
+When measured, before step 3, the 48 semantic colour roles collapsed to **26 stems in four
+shapes**:
 
 ```
   base + foreground + hover + pressed   accent, primary, secondary                    3
@@ -131,12 +135,14 @@ The 48 semantic colour roles collapse to **26 stems in four shapes**:
                                         sidebar-border, sidebar-ring                 11
 ```
 
-`destructive` has a hover and no pressed, and nothing in the repository can say whether that
-is a decision or an omission. That `card` pairs with `card-foreground` is carried entirely by
+`destructive` had a hover and no pressed, and nothing in the repository could say whether that
+was a decision or an omission — the motivating defect. Step 3 answered it by minting
+`destructive-pressed` (49 roles; the second row above is empty and the first holds four). That `card` pairs with `card-foreground` is carried entirely by
 a naming convention no check reads. The stem is the model — the sixth appearance of the
 defect `CLAUDE.md` keeps a list of: a fact with two sources that agree until they do not.
 
-Typography is not parallel either. Measured 2026-09-03, after ADR-031 step 7 added `display`:
+Typography was not parallel either. Measured 2026-09-03 after ADR-031 step 7 added `display`
+and before this ADR's step 7 added `subheading` (type 9 and leading 8 now):
 
 ```
   semantic.type       8   caption body-compact label body emphasis heading title display
@@ -145,10 +151,13 @@ Typography is not parallel either. Measured 2026-09-03, after ADR-031 step 7 add
   semantic.tracking   2
 ```
 
-`weight` has no `title` or `display` (both borrow `heading`'s) and carries an orphan
-`medium`; `leading` says `compact` where `type` says `body-compact` and has no `emphasis`;
-`tracking` covers two roles. Each gap is either a decision or an omission, and the table
-cannot say which.
+`weight` had no `title` or `display` (both borrowed `heading`'s) and carried an orphan
+`medium`; `leading` said `compact` where `type` said `body-compact` and had no `emphasis`;
+`tracking` covered two roles. Each gap was either a decision or an omission, and the table
+could not say which. Step 4 made it say: `title` and `display` reuse `heading`'s weight
+explicitly, `emphasis` reuses `body`'s leading, `weight.medium` is a listed shim with its
+reason, and only `compact` against `body-compact` remains — a rename, for a step whose
+generated output may move.
 
 ### What the authored layer renders
 
@@ -156,7 +165,7 @@ Measured 2026-09-03 across the 15 authored components in
 `packages/design/src/components/*.tsx`, `apps/web/app/**`, and the 59 vendored files under
 `components/ui/`. REACHABLE is the transitive import closure of the four vendored files the
 Adapters import (`button`, `card`, `combobox`, `switch` → plus `input`, `input-group`,
-`textarea`): 7 files. Counted by regular expression over class strings, so the figures are
+`textarea`): 7 files before step 8, and 0 after it — no Adapter imports a vendored file now. Counted by regular expression over class strings, so the figures are
 the order of magnitude, not an audit.
 
 ```
@@ -168,8 +177,8 @@ the order of magnitude, not an audit.
   role-named spacing utilities               16           —           0               0
 ```
 
-**The authored layer already lives under the law.** Its six numeric classes are `m-0` and
-`p-0` — resets, not design values. Its bracketed expressions are attribute selectors
+**The authored layer already lived under the law.** Its six numeric classes were `m-0` and
+`p-0` — resets, not design values, and since step 9 the role `space.none`. Its bracketed expressions are attribute selectors
 (`[variant]`, `[tone]`, `[level]`). Its spacing is `gap-tight`, `px-row-x`, `py-control-y`,
 `py-section`, `px-related` — role names, every one. So **the cost of every closure below
 falls on the vendored tree**, which ADR-031 Decision 7 never edits and ADR-033 never exports.
@@ -179,18 +188,21 @@ That single fact is what makes Decision 3 tractable.
 
 Nine Tailwind namespaces are closed in `generated/tailwind-theme.css` with `--<ns>-*:
 initial`: `color`, `font-weight`, `text`, `leading`, `tracking`, `shadow`, `radius`,
-`breakpoint`, `container`. **`--spacing-*` is not**, and the same file adds twenty role
-names into it. Tailwind's `--spacing` multiplier survives, so `p-control-x` and `p-13`
-compile side by side — the two-scales-on-one-prefix defect that `CLOSURE_REASON.radius`
-records as the reason radius was closed, live in a tenth place nobody had looked at.
+`breakpoint`, `container`. **The tenth was not**: numeric spacing is Tailwind's `--spacing`
+MULTIPLIER, not a namespace, and it survived while the same file projected twenty role names
+(25 now) beside it, so `p-control-x` and `p-13` compiled side by side — the
+two-scales-on-one-prefix defect that `CLOSURE_REASON.radius` records as the reason radius was
+closed, live in a tenth place nobody had looked at. Closed in step 9 (`e352b39`).
 
 ### The capability hole
 
-`--color-*` is a namespace, not a channel. Projecting `semantic.color.scrim` makes
-`bg-scrim`, `text-scrim` and `border-scrim` all real; one of them means something. The
-generator already solved this once, coarsely: `shadow-ambient` and `shadow-key` are withheld
-from projection, and the generated header says why. But the lever is all-or-nothing — a role
-is projected into every channel its namespace implies, or into none.
+`--color-*` is a namespace, not a channel. Projecting `semantic.color.scrim` made
+`bg-scrim`, `text-scrim` and `border-scrim` all real; one of them meant something. The
+generator had solved this once, coarsely: `shadow-ambient` and `shadow-key` were withheld from
+projection, and the generated header said why. But the lever was all-or-nothing — a role was
+projected into every channel its namespace implies, or into none. Step 5 (`3ad8ce8`) made the
+lever per channel; step 8 (`3edbc58`) made the emission total. No colour role projects into
+`--color-*` today.
 
 ## Prior art
 
@@ -210,18 +222,21 @@ colour roles** — cited for unpaired roles being first-class; **retrieval faile
 
 Retrieved 2026-09-03 by the first draft's author; **all four re-fetched for this revision**
 and every quoted sentence found on its page (the Figma variables reference now lives at
-`developers.figma.com/docs/rest-api/variables-types/`; the old URL redirects). Register IDs: the primary-sources table ends at E23 and the 31 August table
-already uses E24–E27 for other sources, so these are E28–E31.
+`developers.figma.com/docs/rest-api/variables-types/`; the old URL redirects). Register IDs: the
+primary-sources table ends at E23 and the 31 August table already uses E24–E28 for other
+sources, so these are E32–E35 (the first evidence pass found them filed as E28–E31, colliding
+with the 31 August E28; renumbered). E22 itself is used by both tables — DTCG in the primary
+table, PostgreSQL in the 31 August one — a collision this ADR inherits and does not resolve.
 
 | Source | Supports |
 |---|---|
-| W3C DTCG *Format Module* 2025.10 §3.7 / §6.1 — "Groups are arbitrary and tools _SHOULD NOT_ use them to infer the type or purpose of design tokens." (E22) | That "declare, never infer" is the published rule; the direct argument against deriving a family from a name stem |
-| Same, §6.3.2 — a group's `$type` is a default for tokens that declare none (E22) | The behaviour `flatten()` already implements |
-| Same, Example 37 — a typography composite with `fontFamily`, `fontSize`, `fontWeight`, `lineHeight` (E22). §9.7 was truncated in the retrieved render | That the composite exists; Decision 2 does not rest on its full field list |
-| Tailwind v4 *Theme variables* — "Theme variables are defined in _namespaces_ and each namespace corresponds to one or more utility class or variant APIs"; "set the global theme variable namespace to `initial`… none of the default utility classes that are driven by theme variables will be available" (**E29**) | That closure is the supported mechanism — and that adding `--spacing-row-y` enlarges the namespace rather than replacing it |
-| Tailwind v4 *Margin* — `m-<number>` → `margin: calc(var(--spacing) * <number>)`; the utilities "are driven by the `--spacing` theme variable" (**E30**) | That the numeric scale is derived from a multiplier, not enumerated. Unboundedness follows from the formula and is inferred, not quoted |
-| Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E31**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
-| Figma REST API *Variables* — "Setting scopes for a variable does not prevent that variable from being bound in other scopes… This only limits the variables that are shown in pickers within the Figma UI." (**E28**) | That a shipped tool modelled per-variable scope, and that its scopes are advisory |
+| W3C DTCG *Format Module* 2025.10 §3.7 (repeated at the head of §6) — "Groups are arbitrary and tools _SHOULD NOT_ use them to infer the type or purpose of design tokens." (E22) | That "declare, never infer" is the published rule; the direct argument against deriving a family from a name stem |
+| Same, §6.3 `$type` (the rule is numbered §6.7.3, Type Inheritance) — a group's `$type` is a default for tokens that declare none (E22) | The behaviour `flatten()` already implements |
+| Same, Example 37 — a typography composite with `fontFamily`, `fontSize`, `fontWeight`, `lineHeight` (E22). §9.8 (Typography) was truncated in the first draft's retrieved render | That the composite exists; Decision 2 does not rest on its full field list |
+| Tailwind v4 *Theme variables* — "Theme variables are defined in _namespaces_ and each namespace corresponds to one or more utility class or variant APIs"; "set the global theme variable namespace to `initial`… none of the default utility classes that are driven by theme variables will be available" (**E33**) | That closure is the supported mechanism — and that adding `--spacing-row-y` enlarges the namespace rather than replacing it |
+| Tailwind v4 *Margin* — `m-<number>` → `margin: calc(var(--spacing) * <number>)`; the utilities "are driven by the `--spacing` theme variable" (**E34**) | That the numeric scale is derived from a multiplier, not enumerated. Unboundedness follows from the formula and is inferred, not quoted |
+| Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E35**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
+| Figma REST API *Variables* — "Setting scopes for a variable does not prevent that variable from being bound in other scopes… This only limits the variables that are shown in pickers within the Figma UI." (**E32**) | That a shipped tool modelled per-variable scope, and that its scopes are advisory |
 
 For the relationship layer itself:
 
@@ -239,19 +254,30 @@ For the relationship layer itself:
 - **DTCG's `SHOULD NOT` is about groups.** It rules out inferring a family from a prefix. It
   says nothing about whether a declared contract is right, or whether these 26 stems are
   correctly paired.
-- **Tailwind documents closure; it does not endorse closing spacing.** E29 and E30 establish
+- **Tailwind documents closure; it does not endorse closing spacing.** E33 and E34 establish
   the mechanism and the multiplier. Whether to remove the numeric scale rests on the local
   measurement alone.
-- **E31 proves `@source not` exists; it does not make it a fix.** Excluding the vendored tree
+- **E35 proves `@source not` exists; it does not make it a fix.** Excluding the vendored tree
   from detection has the same visual consequence as closing the namespace: the classes go
-  inert. It bounds emitted CSS. It does not restore the padding.
+  inert — which the page does not state; it is inferred, and proved here by the compile test.
+  It bounds emitted CSS. It does not restore the padding.
 - **Figma proves scopes are wanted and proves they are not enforced.** Reading it as support
   for normative scopes reads it backwards.
 - **A DTCG typography composite is not precedent for migrating to one.** It has no field for
   a floor, a rank, or a per-mode hierarchy assertion.
 - **Material 3 proves nothing here**, because it was not retrieved.
-- **Nothing external qualifies any of this.** Only Verification does, and every check named
-  there is unwritten.
+- **Nothing external supports the words this ADR minted while building.** The semantic
+  taxonomy in `STYLE_NAMES` (`error` → `status.danger`, `destructive` → `action.danger`,
+  `sidebar` → `surface.rail`, `ring` → `stroke.focus`); the `INTERACTION_STATES` mapping of Base
+  UI's data attributes to roles (checked → primary, unchecked → field, highlighted → accent);
+  `pressed` as `:active` and `disabled` as `:disabled`; the switch track aliased to the control
+  minimum and the target floor; the `subheading` and `space.none` roles; Button's outline
+  hovering `secondary`; and channels declared per KIND rather than per role — every one is
+  local design, qualified only by tests written the same day by the same hands, and graded by
+  no source. The register's `no-direct-match` for the relationship layer covers what they
+  extend, not them.
+- **Nothing external qualifies any of this.** Only Verification does; its cases are written
+  and green on this machine, and nothing external has run them.
 
 ## Decision
 
@@ -310,24 +336,31 @@ name for `compact`/`body-compact`, and an owner or a deletion for `weight.medium
 Three closures, one rule: **a design-bearing value or capability nobody declared cannot
 compile.**
 
-**Per-channel capability, enforced by emission.** Each colour role declares the CSS channels
-it may be used through — `css: { background, text, border, fill, stroke }` — and the compiler
-emits only those. A role narrower than its namespace leaves `--color-*` and is emitted as
-explicit `@utility` blocks: `bg-scrim` exists, `text-scrim` does not, and the existing
-compile test turns any use of it into an authorship-time failure. Roles that genuinely span
-the namespace (`primary`, `foreground`) keep the projection. This generalises what
-`shadow-ambient` already gets, from per-role all-or-nothing to per-channel. Measured cost:
-roles that leave the namespace lose Tailwind's opacity modifier. The authored layer and the
-application use none; all 50 reachable occurrences are vendored.
+**Per-channel capability, enforced by emission.** A colour role's KIND declares the CSS
+channels its roles may be used through (`text` roles through `text`; surfaces through `bg`;
+`ui` roles through `border`, `outline` and `ring`; decorative roles through `border`;
+compositing inks through none), and the compiler emits one `@utility` per channel and nothing
+else: `bg-error` exists, `text-error` does not, and the compile test asserts both directions.
+The draft wrote this per role; it was built per kind, one table instead of forty-nine entries.
+A role stays projected into `--color-*` only under a SHIM — a declared list of the extra
+channels or opacity modifiers a reachable vendored file still writes, held to that file by a
+test — and **the shim table is empty since step 8**, so no colour role is in the namespace and
+every one is `@utility`. This generalises what `shadow-ambient` already got, from per-role
+all-or-nothing to per-channel. The cost measured before step 8: roles that leave the namespace
+lose Tailwind's opacity modifier, which the authored layer and the application never used and
+the then-reachable vendored files used 50 times. That cost was never paid: the Adapters
+stopped importing those files.
 
-**Close `--spacing-*`, the tenth namespace.** Closed, the numeric scale ceases to exist and
-`p-row-x` is the only way to say padding. Cost: zero design values in authored code (six
-resets), zero in the application, 106 utilities across the 7 reachable vendored files.
-**Sequencing is the whole risk:** those 106 classes are what pads Card, Combobox, Switch and
-their inner parts. Closing the namespace and `@source not` on the tree have the same visual
-consequence — the classes go inert and the primitives lose their padding — so the closure
-lands **after** the Adapters above those files own their spacing in role names, one
-component at a time, never as a flag flip.
+**Close the numeric spacing scale.** It is Tailwind's `--spacing` multiplier, not a namespace
+— `p-13` is `calc(var(--spacing) * 13)` — so clearing the variable closes the scale and leaves
+the `--spacing-<role>` custom properties alone; `p-row-x` is the only way to say padding, and
+the zero is a role (`space.none`) because `m-0` went with the numbers. The cost measured before
+step 8: zero design values in authored code (six resets), zero in the application, 106
+utilities across the 7 then-reachable vendored files — the classes that padded Card, Combobox
+and Switch. **Sequencing was the whole risk**, and the risk was retired rather than paid: step
+8 moved every Adapter onto Base UI or the element itself, so by step 9 no vendored file was
+reachable and nothing lost its padding. `@source not` on the tree (step 8) and the closure
+(step 9) then landed as flags, because there was nothing left for them to break.
 
 **Refuse arbitrary `[...]` design values.** In authored code now (cost: zero; the bracketed
 expressions there are attribute selectors). Everywhere else, on the same per-component
@@ -340,10 +373,12 @@ symbols over the emitted classes — `STYLE.action.primary.background`,
 `STYLE.radius.control`, `STYLE.type.label` — and `generated/style-manifest.json`, the same
 facts for tools. `token-names.json` is subsumed and deleted in that commit (ADR-024: the
 replaced check goes in the same change). Where Decision 3 closes a namespace, the compiler
-emits the utilities that replace it from the same tables — role-named spacing, complete
-`type-*` utilities setting all five typography fields at once, `motion-*` pairing duration
-with easing, `elevation-*` for the planes — so the authored layer has a whole vocabulary and
-never reassembles one from parts.
+emits the utilities that replace it from the same tables — role-named spacing is emitted
+today. The composite utilities this decision also named — `type-*` setting all five
+typography fields at once, `motion-*` pairing a duration with an easing, `elevation-*` for the
+planes — are **NOT BUILT**: a typography symbol resolves to `font-heading text-title`, a motion
+symbol to `duration-press`, elevation through the `--shadow-*` projection. They wait for a
+consumer that needs the composite rather than the parts.
 
 The consumer is the component: ADR-031 Decision 12 makes STYLE SELECTION hold these symbols
 rather than authored class strings, which is what makes `style.ts` law-27 generated state with
@@ -467,8 +502,9 @@ moves, the step is wrong.
 ```
 
 Steps 1–4 land alone and roll back by deleting the tables and assertions; nothing else
-references them. Steps 5–9 roll back by restoring the namespace projection, one line in the
-`closes` table of `TOKEN_PACKAGES`.
+references them. Steps 5, 6 and 9 roll back in the generator (the channel emission, the two
+style artefacts, the `spacing` closure). Steps 7 and 8 rewrote fifteen Adapters and
+`globals.css` and roll back only by reverting their commits.
 
 ## Verification
 
@@ -518,7 +554,7 @@ The suite runs as `vitest run --project unit`.
 on; if the unpaired-roles argument ever wants external support it needs a source that returns
 content. `pnpm verify` does not exist in this checkout — `CLAUDE.md` describes
 `verify:fast` / `verify` / `verify:ci` and a `tooling/verify/stages.mjs`, and as of 2026-09-03
-`package.json` declares no `verify` script and `tooling/verify/` holds one file. An ADR must
+`package.json` declares no `verify` script and `tooling/verify/` holds one directory with one file. An ADR must
 name an executable proof, so the commands above are the ones that run; the drift belongs on
 `CLAUDE.md`'s own list of policies written down that read like policies enforced.
 
@@ -532,5 +568,21 @@ folded into 2; Decisions 4, 7 and 8 folded into 3; the emission half of 8 into 4
 reduced to Decision 5's one paragraph; the ownership boundary stated once at the top. The
 draft's `REACHABLE (15)` was re-measured as **7** (transitive import closure from the four
 files the Adapters import), and its vendored counts were re-measured by a stated method; the
-figures changed, the conclusion did not. The four unregistered sources became E28–E31, and
-the README index row was added, in the same commit as this revision.
+figures changed, the conclusion did not. The four unregistered sources became register
+entries, and the README index row was added, in the same commit as this revision.
+
+First `adr-evidence-reviewer` pass, after all ten steps (HEAD `e2c0af2`): every quoted
+sentence found on its page, all five register URLs resolve, every WRITTEN verification case
+found, `gen:tokens` byte-identical, the unit suite green (407). Five blocking findings, all
+folded in here: the Status paragraph still carried step-5/6 figures (forty utilities, eight
+shimmed roles, 124 symbols) against a tree with 52, none and 159; the four sources had
+been filed as E28–E31 while the 31 August table already held an E28 (now E32–E35; the E22
+collision between the two tables is recorded, not resolved); Decision 3 described per-role
+channel declarations and roles "keeping the projection" while the tree declares per kind and
+projects no colour role, and its own test asserts so; Decision 4 named composite `type-*`,
+`motion-*` and `elevation-*` utilities that do not exist; and "does NOT prove" said every check
+was unwritten. Non-blocking, also folded in: the Context measurements are now marked as the
+pre-step figures they are, with the post-step values beside them; three DTCG section numbers;
+the three Tailwind sources regraded S → V; the typography shims' reasons, which cited a
+vendored tree no longer scanned; the rollback claim for steps 7 and 8; and a new "does NOT
+prove" bullet naming the words the build minted with no source behind them.
