@@ -23,7 +23,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 69 roles projected; 52 colour utilities emitted per channel.
+ * 67 roles projected; 52 colour utilities emitted per channel.
  */
 :root {
   --accent: var(--semantic-color-accent);
@@ -229,10 +229,9 @@
   --font-weight-emphasis: var(--semantic-weight-emphasis);
   --font-weight-heading: var(--semantic-weight-heading);
   --font-weight-label: var(--semantic-weight-label);
-  --font-weight-medium: var(--semantic-weight-medium);
   --leading-body: var(--semantic-leading-body);
+  --leading-body-compact: var(--semantic-leading-body-compact);
   --leading-caption: var(--semantic-leading-caption);
-  --leading-compact: var(--semantic-leading-compact);
   --leading-display: var(--semantic-leading-display);
   --leading-heading: var(--semantic-leading-heading);
   --leading-label: var(--semantic-leading-label);
@@ -282,9 +281,8 @@
   --text-subheading: var(--semantic-type-subheading);
   --text-title: var(--semantic-type-title);
   --tracking-body: var(--semantic-tracking-body);
-  --tracking-shortcut: var(--semantic-tracking-shortcut);
   --text-body--line-height: var(--semantic-leading-body);
-  --text-body-compact--line-height: var(--semantic-leading-compact);
+  --text-body-compact--line-height: var(--semantic-leading-body-compact);
   --text-caption--line-height: var(--semantic-leading-caption);
   --text-display--line-height: var(--semantic-leading-display);
   --text-emphasis--line-height: var(--semantic-leading-body);
@@ -292,28 +290,6 @@
   --text-label--line-height: var(--semantic-leading-label);
   --text-subheading--line-height: var(--semantic-leading-subheading);
   --text-title--line-height: var(--semantic-leading-title);
-
-  /*
-   * TAILWIND'S SCALE NAMES, ALIASED ONTO ROLES -- for vendored components
-   * only. Every line is a reference, so the role remains the single owner
-   * of the value. New code names the role. See SCALE_ALIASES.
-   */
-  --leading-relaxed: var(--semantic-leading-body);
-  --radius-lg: var(--semantic-radius-container);
-  --radius-md: var(--semantic-radius-control);
-  --radius-sm: var(--semantic-radius-precise);
-  --radius-xl: var(--semantic-radius-overlay);
-  --shadow-lg: var(--semantic-elevation-overlay);
-  --shadow-md: var(--semantic-elevation-floating);
-  --shadow-sm: var(--semantic-elevation-raised);
-  --shadow-xl: var(--semantic-elevation-modal);
-  --text-base--line-height: var(--semantic-leading-body);
-  --text-base: var(--semantic-type-body);
-  --text-sm--line-height: var(--semantic-leading-compact);
-  --text-sm: var(--semantic-type-body-compact);
-  --text-xs--line-height: var(--semantic-leading-caption);
-  --text-xs: var(--semantic-type-caption);
-  --tracking-widest: var(--semantic-tracking-shortcut);
 }
 
 /*

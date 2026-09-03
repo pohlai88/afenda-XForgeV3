@@ -1133,7 +1133,8 @@ describe('typography role contracts (ADR-034)', () => {
 
   it('the shipped tokens are all named by a role or listed as a shim', () => {
     expect(() => foundations.assertTypographyCoverage(tokens)).not.toThrow()
-    expect(Object.keys(foundations.TYPE_TOKEN_SHIMS)).toContain('semantic.weight.medium')
+    // Empty since the shims retired with SCALE_ALIASES; the rule below still holds.
+    expect(Object.keys(foundations.TYPE_TOKEN_SHIMS)).toEqual([])
   })
 
   it('refuses a typography token no role names and no shim lists', () => {
@@ -1145,13 +1146,11 @@ describe('typography role contracts (ADR-034)', () => {
   })
 
   it('refuses a shim a role also names, because the list would be stale', () => {
-    const roles = {
-      ...foundations.TYPE_ROLES,
-      body: { ...foundations.TYPE_ROLES.body, weight: 'semantic.weight.medium' },
-    }
-    expect(() => foundations.assertTypographyCoverage(tokens, roles)).toThrow(
-      /'semantic\.weight\.medium' is listed as a shim and named by type role 'body'/,
-    )
+    // A synthetic shim on a token a role does name: the list would be a second source.
+    const shims = { 'semantic.weight.heading': 'pretend shadcn still needs it' }
+    expect(() =>
+      foundations.assertTypographyCoverage(tokens, foundations.TYPE_ROLES, shims),
+    ).toThrow(/'semantic\.weight\.heading' is listed as a shim and named by type role/)
   })
 })
 

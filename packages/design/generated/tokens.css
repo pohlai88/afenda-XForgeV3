@@ -213,10 +213,9 @@
   --semantic-weight-body: var(--weight-normal);
   --semantic-weight-label: var(--weight-medium);
   --semantic-weight-emphasis: var(--weight-medium);
-  --semantic-weight-medium: var(--weight-medium);
   --semantic-weight-heading: var(--weight-semibold);
   --semantic-leading-caption: var(--leading-tight);
-  --semantic-leading-compact: var(--leading-normal);
+  --semantic-leading-body-compact: var(--leading-normal);
   --semantic-leading-label: var(--leading-normal);
   --semantic-leading-body: var(--leading-loose);
   --semantic-leading-subheading: var(--leading-loose);
@@ -224,7 +223,6 @@
   --semantic-leading-title: var(--leading-tight);
   --semantic-leading-display: var(--leading-tight);
   --semantic-tracking-body: var(--tracking-normal);
-  --semantic-tracking-shortcut: var(--tracking-wide);
   --semantic-ease-standard: var(--easing-standard);
   --semantic-ease-entrance: var(--easing-entrance);
   --semantic-ease-exit: var(--easing-exit);

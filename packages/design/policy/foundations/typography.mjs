@@ -117,7 +117,7 @@ export const TYPE_ROLES = deepFreeze({
    */
   'body-compact': {
     font: 'semantic.font.sans',
-    leading: 'semantic.leading.compact',
+    leading: 'semantic.leading.body-compact',
     minimumLeading: 1.4,
     minimumPx: 14,
     rank: 1,
@@ -287,19 +287,15 @@ const ROLE_TOKEN_TYPES = deepFreeze({
 export const TYPE_ROLE_FIELDS = deepFreeze(['font', 'size', 'weight', 'leading', 'tracking'])
 
 /**
- * TYPOGRAPHY TOKENS NO ROLE NAMES, each with the reason it still exists. A token here is a
- * shim for the sealed vendored tree (ADR-031 Decision 12): shadcn writes `font-medium` and
- * `tracking-widest`, and until ADR-034 Decision 3 closes the namespaces above those files,
- * the classes must resolve to something. Listed so the coverage check can refuse the third
- * orphan, and refuse a shim the moment a role adopts it -- a stale entry is a copy of a
- * fact that moved.
+ * TYPOGRAPHY TOKENS NO ROLE NAMES, each with the reason it still exists. EMPTY since the
+ * ADR-034 follow-through retired the two it held: `semantic.weight.medium` (the token behind
+ * shadcn's `font-medium`) and `semantic.tracking.shortcut` (`tracking-widest`) existed for a
+ * vendored tree that no Adapter imports and no stylesheet scans any more, and went with the
+ * alias table that projected them (ADR-031 Decision 10). The table stays because the rule
+ * stays: a typography token no role names is refused unless it is listed here with a reason,
+ * and a listed token a role adopts is refused as stale.
  */
-export const TYPE_TOKEN_SHIMS = deepFreeze({
-  'semantic.tracking.shortcut':
-    'kept while SCALE_ALIASES still projects it as tracking-widest (ADR-031 Decision 10); no authored file names it',
-  'semantic.weight.medium':
-    'the token behind font-medium; no authored file names it and no vendored file is scanned, so it survives only until a step whose generated output may move retires it',
-})
+export const TYPE_TOKEN_SHIMS = deepFreeze({})
 
 /** The dimensions a reader perceives as rank. Leading and tracking are not among them. */
 export const HIERARCHY_DIMENSIONS = deepFreeze(['size', 'weight'])

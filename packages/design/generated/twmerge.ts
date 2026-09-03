@@ -13,10 +13,10 @@ export const TWMERGE_CLASS_GROUPS = {
   'border-color': [{ border: ['border', 'input', 'ring', 'sidebar-border', 'sidebar-ring'] }],
   'font-family': [{ font: ['mono', 'sans'] }],
   'font-size': [{ text: ['body', 'body-compact', 'caption', 'display', 'emphasis', 'heading', 'label', 'subheading', 'title'] }],
-  'font-weight': [{ font: ['body', 'body-compact', 'caption', 'emphasis', 'heading', 'label', 'medium'] }],
-  'leading': [{ leading: ['body', 'caption', 'compact', 'display', 'heading', 'label', 'subheading', 'title'] }],
+  'font-weight': [{ font: ['body', 'body-compact', 'caption', 'emphasis', 'heading', 'label'] }],
+  'leading': [{ leading: ['body', 'body-compact', 'caption', 'display', 'heading', 'label', 'subheading', 'title'] }],
   'outline-color': [{ outline: ['input', 'ring', 'sidebar-ring'] }],
   'ring-color': [{ ring: ['input', 'ring', 'sidebar-ring'] }],
   'text-color': [{ text: ['accent-foreground', 'card-foreground', 'destructive-foreground', 'disabled-foreground', 'error-foreground', 'foreground', 'info-foreground', 'muted-foreground', 'popover-foreground', 'primary-foreground', 'secondary-foreground', 'sidebar-accent-foreground', 'sidebar-foreground', 'statutory-foreground', 'success-foreground', 'warning-foreground'] }],
-  'tracking': [{ tracking: ['body', 'shortcut'] }],
+  'tracking': [{ tracking: ['body'] }],
 } as const

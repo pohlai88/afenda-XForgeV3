@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 250 custom properties: 120 primitive, 126 semantic, 4 component (ceiling 12).
+- 248 custom properties: 120 primitive, 124 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -223,8 +223,8 @@ elevation domains.
 | `--semantic-layer-local` | `semantic.layer.local` | number | `10` | -- |
 | `--semantic-layer-overlay` | `semantic.layer.overlay` | number | `50` | -- |
 | `--semantic-leading-body` | `semantic.leading.body` | number | `{leading.loose}` | type body · leading ≥1.5 |
+| `--semantic-leading-body-compact` | `semantic.leading.body-compact` | number | `{leading.normal}` | type body-compact · leading ≥1.4 |
 | `--semantic-leading-caption` | `semantic.leading.caption` | number | `{leading.tight}` | type caption · leading ≥1.33 |
-| `--semantic-leading-compact` | `semantic.leading.compact` | number | `{leading.normal}` | type body-compact · leading ≥1.4 |
 | `--semantic-leading-display` | `semantic.leading.display` | number | `{leading.tight}` | type display · leading ≥1.15 |
 | `--semantic-leading-heading` | `semantic.leading.heading` | number | `{leading.snug}` | type heading · leading ≥1.15 |
 | `--semantic-leading-label` | `semantic.leading.label` | number | `{leading.normal}` | type label · leading ≥1.4 |
@@ -260,7 +260,6 @@ elevation domains.
 | `--semantic-space-tight` | `semantic.space.tight` | dimension | `{space.2}` | -- |
 | `--semantic-target-minimum` | `semantic.target.minimum` | dimension | `{size.target-min}` | -- |
 | `--semantic-tracking-body` | `semantic.tracking.body` | dimension | `{tracking.normal}` | -- |
-| `--semantic-tracking-shortcut` | `semantic.tracking.shortcut` | dimension | `{tracking.wide}` | -- |
 | `--semantic-type-body` | `semantic.type.body` | dimension | `{size.text-md}` | type body · ≥14px at a 16px root |
 | `--semantic-type-body-compact` | `semantic.type.body-compact` | dimension | `{size.text-sm}` | type body-compact · ≥14px at a 16px root |
 | `--semantic-type-caption` | `semantic.type.caption` | dimension | `{size.text-xs}` | type caption · ≥12px at a 16px root |
@@ -276,7 +275,6 @@ elevation domains.
 | `--semantic-weight-emphasis` | `semantic.weight.emphasis` | fontWeight | `{weight.medium}` | -- |
 | `--semantic-weight-heading` | `semantic.weight.heading` | fontWeight | `{weight.semibold}` | -- |
 | `--semantic-weight-label` | `semantic.weight.label` | fontWeight | `{weight.medium}` | -- |
-| `--semantic-weight-medium` | `semantic.weight.medium` | fontWeight | `{weight.medium}` | -- |
 
 ## Component
 

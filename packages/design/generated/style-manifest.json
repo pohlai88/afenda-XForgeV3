@@ -942,7 +942,7 @@
       "tokens": [
         "semantic.weight.body-compact",
         "semantic.type.body-compact",
-        "semantic.leading.compact"
+        "semantic.leading.body-compact"
       ]
     },
     "typography.caption": {
