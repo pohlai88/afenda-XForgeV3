@@ -539,14 +539,17 @@ describe('the component tier', () => {
   it('stays under its ceiling, which is a tripwire and not a verdict', () => {
     const { componentTokens } = generate(source)
     expect(componentTokens.length).toBeLessThanOrEqual(12)
-    // Deliberately NOT `toBeGreaterThan(0)`. Eight component tokens existed in
-    // the system this replaces; here a component is styled with utilities that
-    // name semantic roles directly, and no second use case has justified
-    // minting one (law 31). Requiring a non-empty tier would force a token to
-    // be created to keep a test company, which is exactly backwards -- so the
-    // emptiness is asserted, and the refusal case below still proves the
-    // ceiling governs whatever enters it.
-    expect(componentTokens).toEqual([])
+    // The tier was empty until ADR-034 step 8, and its emptiness was asserted so
+    // that no token would be minted to keep a test company. The Switch's track is
+    // the first justified entry (ADR-031 Decision 6): geometry no semantic role
+    // names, each token aliasing a semantic role rather than a number, so density
+    // rebinds it. Exactly these, and nothing arrives without being listed here.
+    expect([...componentTokens].sort((a, b) => a.localeCompare(b))).toEqual([
+      'component.switch.inset',
+      'component.switch.thumb',
+      'component.switch.track-height',
+      'component.switch.track-width',
+    ])
   })
 
   it('refuses to grow past the ceiling without someone raising it deliberately', () => {
@@ -1482,9 +1485,16 @@ describe('colour channels (ADR-034)', () => {
     })
   })
 
-  it('a role with a shim stays in the namespace, every channel and modifier working', () => {
-    expect(foundations.colorChannelsOf('color.destructive').projection).toBe('namespace')
-    expect(Object.keys(COLOR_CHANNEL_SHIMS)).toContain('color.input')
+  it('a role with a shim stays in the namespace; today no role has one', () => {
+    // The mechanism, on a synthetic shim: a listed role is projected whole.
+    expect(
+      foundations.colorChannelsOf('color.destructive', COLOR_ROLE_POLICIES, {
+        'color.destructive': ['text'],
+      }).projection,
+    ).toBe('namespace')
+    // The shipped table is empty since ADR-034 step 8: nothing vendored is reachable.
+    expect(Object.keys(COLOR_CHANNEL_SHIMS)).toEqual([])
+    expect(foundations.colorChannelsOf('color.destructive').projection).toBe('utility')
   })
 
   it('refuses a shim for a role that does not exist, or naming a channel that does not', () => {
@@ -1502,7 +1512,7 @@ describe('colour channels (ADR-034)', () => {
     ).toThrow(/'bg' is already primary's natural channel/)
   })
 
-  it('the shipped bridge emits narrowed roles as @utility and keeps shimmed roles in --color-*', () => {
+  it('the shipped bridge emits every colour role as @utility and none into --color-*', () => {
     const [pkg] = TOKEN_PACKAGES
     if (pkg === undefined) {
       throw new Error('no token package to generate')
@@ -1515,8 +1525,9 @@ describe('colour channels (ADR-034)', () => {
     expect(theme).toContain('@utility text-error-foreground {')
     expect(theme).not.toContain('--color-error:')
     expect(theme).not.toContain('@utility text-error {')
-    expect(theme).toContain('--color-destructive: var(--semantic-color-destructive);')
-    expect(theme).not.toContain('@utility bg-destructive {')
+    // With the shim table empty, no colour role is projected into --color-* at all.
+    expect(theme).not.toMatch(/--color-[a-z-]+: var\(/)
+    expect(theme).toContain('@utility bg-destructive {')
     // twMerge learns the colour channels, so `text-foreground text-muted-foreground` still
     // resolves to the last one once both are @utility blocks it would not otherwise know.
     expect(mergeGroups).toMatch(/'text-color': \[\{ text: \[[^\]]*'muted-foreground'/)
@@ -1547,7 +1558,6 @@ describe('colour channels (ADR-034)', () => {
       reachable.add(name)
       queue.push(...importsOf(readFileSync(join(UI, `${name}.tsx`), 'utf8')))
     }
-    expect(reachable.size).toBeGreaterThan(3)
 
     const roles = new Set(Object.keys(COLOR_ROLE_POLICIES).map((key) => key.slice('color.'.length)))
     const channels = Object.keys(COLOR_CHANNELS).sort((a, b) => b.length - a.length)
@@ -1567,8 +1577,11 @@ describe('colour channels (ADR-034)', () => {
         }
       }
     }
-    expect(used.size).toBeGreaterThan(10)
 
+    // ADR-034 step 8 ended with every Adapter on Base UI or the element itself, so no
+    // vendored file is reachable and the shim table is EMPTY: every colour role reaches
+    // the stylesheet through its declared channels alone. The day an Adapter imports a
+    // vendored primitive again, this case says which channels it needs a shim for.
     const unshimmed: string[] = []
     for (const [key, file] of used) {
       const [role, use] = key.split(' ') as [string, string]
@@ -1591,6 +1604,9 @@ describe('colour channels (ADR-034)', () => {
       }
     }
     expect(stale, 'shims no reachable file needs any more').toEqual([])
+    if (reachable.size === 0) {
+      expect(Object.keys(shims)).toEqual([])
+    }
   })
 })
 
@@ -1632,6 +1648,17 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     // A state role selects through its own variant, decided once in the language.
     expect(leaves.get('state.disabled.background')?.class).toBe('disabled:bg-disabled')
     expect(leaves.get('state.disabled.foreground')?.class).toBe('disabled:text-disabled-foreground')
+    // Base UI's data-state vocabulary selects declared roles, one table (ADR-034 step 8).
+    expect(leaves.get('interaction.checked.background')?.class).toBe('data-checked:bg-primary')
+    expect(leaves.get('interaction.unchecked.background')?.class).toBe('data-unchecked:bg-field')
+    expect(leaves.get('interaction.highlighted.foreground')?.class).toBe(
+      'data-highlighted:text-accent-foreground',
+    )
+    expect(leaves.get('interaction.disabled.background')?.class).toBe('data-disabled:bg-disabled')
+    expect(leaves.get('field.placeholder')?.class).toBe('placeholder:text-muted-foreground')
+    // Component-tier geometry, each aliasing a semantic role, projected into spacing.
+    expect(leaves.get('component.switch.trackWidth')?.class).toBe('w-switch-track-width')
+    expect(leaves.get('component.switch.thumb')?.class).toBe('size-switch-thumb')
   })
 
   it('projects the other role tables as their own words', () => {

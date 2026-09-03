@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 244 custom properties: 119 primitive, 125 semantic, 0 component (ceiling 12).
+- 248 custom properties: 119 primitive, 125 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -159,10 +159,10 @@ elevation domains.
 | `--semantic-color-accent-hover` | `semantic.color.accent-hover` | color | `{color.teal.200}` | surface · provides accent · bg only |
 | `--semantic-color-accent-pressed` | `semantic.color.accent-pressed` | color | `{color.teal.300}` | surface · provides accent · bg only |
 | `--semantic-color-background` | `semantic.color.background` | color | `{color.neutral.50}` | surface · provides page · bg only |
-| `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary · border only |
 | `--semantic-color-card` | `semantic.color.card` | color | `{color.neutral.0}` | surface · provides card · bg only |
 | `--semantic-color-card-foreground` | `semantic.color.card-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against card · text only |
-| `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive · bg only |
 | `--semantic-color-destructive-foreground` | `semantic.color.destructive-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against destructive · text only |
 | `--semantic-color-destructive-hover` | `semantic.color.destructive-hover` | color | `{color.red.800}` | surface · provides destructive · bg only |
 | `--semantic-color-destructive-pressed` | `semantic.color.destructive-pressed` | color | `{color.red.950}` | surface · provides destructive · bg only |
@@ -171,19 +171,19 @@ elevation domains.
 | `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error · bg only |
 | `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against card, error, page · text only |
 | `--semantic-color-field` | `semantic.color.field` | color | `{color.neutral.0}` | surface · provides field · bg only |
-| `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page · text only |
 | `--semantic-color-info` | `semantic.color.info` | color | `{color.sky.100}` | surface · provides info · bg only |
 | `--semantic-color-info-foreground` | `semantic.color.info-foreground` | color | `{color.sky.700}` | text · ≥4.5:1 against info · text only |
-| `--semantic-color-input` | `semantic.color.input` | color | `{color.neutral.500}` | ui · ≥3:1 against card, page · every channel, kept in the namespace by a vendored shim |
-| `--semantic-color-muted` | `semantic.color.muted` | color | `{color.neutral.100}` | surface · provides muted · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-input` | `semantic.color.input` | color | `{color.neutral.500}` | ui · ≥3:1 against card, page · border, outline, ring only |
+| `--semantic-color-muted` | `semantic.color.muted` | color | `{color.neutral.100}` | surface · provides muted · bg only |
 | `--semantic-color-muted-foreground` | `semantic.color.muted-foreground` | color | `{color.neutral.600}` | text · ≥4.5:1 against card, muted, page · text only |
 | `--semantic-color-popover` | `semantic.color.popover` | color | `{color.neutral.0}` | surface · provides popover · bg only |
 | `--semantic-color-popover-foreground` | `semantic.color.popover-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against popover · text only |
-| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary · every channel, kept in the namespace by a vendored shim |
-| `--semantic-color-primary-foreground` | `semantic.color.primary-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary · bg only |
+| `--semantic-color-primary-foreground` | `semantic.color.primary-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary · text only |
 | `--semantic-color-primary-hover` | `semantic.color.primary-hover` | color | `{color.teal.800}` | surface · provides primary · bg only |
 | `--semantic-color-primary-pressed` | `semantic.color.primary-pressed` | color | `{color.teal.950}` | surface · provides primary · bg only |
-| `--semantic-color-ring` | `semantic.color.ring` | color | `{color.teal.700}` | ui · ≥3:1 against card, page · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-ring` | `semantic.color.ring` | color | `{color.teal.700}` | ui · ≥3:1 against card, page · border, outline, ring only |
 | `--semantic-color-scrim` | `semantic.color.scrim` | color | `{color.scrim}` | compositing · exempt, an alpha layer, not a foreground pair · no utility |
 | `--semantic-color-secondary` | `semantic.color.secondary` | color | `{color.neutral.0}` | surface · provides secondary · bg only |
 | `--semantic-color-secondary-foreground` | `semantic.color.secondary-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against secondary · text only |
@@ -278,7 +278,12 @@ elevation domains.
 
 ## Component
 
-_None._
+| Custom property | Token | Type | Value |
+| --- | --- | --- | --- |
+| `--component-switch-inset` | `component.switch.inset` | dimension | `{semantic.size.ring-offset}` |
+| `--component-switch-thumb` | `component.switch.thumb` | dimension | `{semantic.icon.size}` |
+| `--component-switch-track-height` | `component.switch.track-height` | dimension | `{semantic.target.minimum}` |
+| `--component-switch-track-width` | `component.switch.track-width` | dimension | `{semantic.control.min-size}` |
 
 ## Modes
 

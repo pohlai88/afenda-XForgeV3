@@ -23,7 +23,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 72 roles projected; 40 colour utilities emitted per channel.
+ * 68 roles projected; 52 colour utilities emitted per channel.
  */
 :root {
   --accent: var(--semantic-color-accent);
@@ -196,14 +196,6 @@
    */
   --container-*: initial;
 
-  --color-border: var(--semantic-color-border);
-  --color-destructive: var(--semantic-color-destructive);
-  --color-foreground: var(--semantic-color-foreground);
-  --color-input: var(--semantic-color-input);
-  --color-muted: var(--semantic-color-muted);
-  --color-primary: var(--semantic-color-primary);
-  --color-primary-foreground: var(--semantic-color-primary-foreground);
-  --color-ring: var(--semantic-color-ring);
   --container-dialog: var(--semantic-content-dialog);
   --container-form: var(--semantic-content-form);
   --container-prose: var(--semantic-content-prose);
@@ -255,6 +247,10 @@
   --spacing-shell-nav-expanded: var(--semantic-shell-nav-expanded);
   --spacing-snug: var(--semantic-space-snug);
   --spacing-stroke: var(--semantic-size-stroke);
+  --spacing-switch-inset: var(--component-switch-inset);
+  --spacing-switch-thumb: var(--component-switch-thumb);
+  --spacing-switch-track-height: var(--component-switch-track-height);
+  --spacing-switch-track-width: var(--component-switch-track-width);
   --spacing-target-minimum: var(--semantic-target-minimum);
   --spacing-tight: var(--semantic-space-tight);
   --text-body: var(--semantic-type-body);
@@ -322,6 +318,9 @@
 @utility bg-card {
   background-color: var(--semantic-color-card);
 }
+@utility bg-destructive {
+  background-color: var(--semantic-color-destructive);
+}
 @utility bg-destructive-hover {
   background-color: var(--semantic-color-destructive-hover);
 }
@@ -340,8 +339,14 @@
 @utility bg-info {
   background-color: var(--semantic-color-info);
 }
+@utility bg-muted {
+  background-color: var(--semantic-color-muted);
+}
 @utility bg-popover {
   background-color: var(--semantic-color-popover);
+}
+@utility bg-primary {
+  background-color: var(--semantic-color-primary);
 }
 @utility bg-primary-hover {
   background-color: var(--semantic-color-primary-hover);
@@ -373,14 +378,35 @@
 @utility bg-warning {
   background-color: var(--semantic-color-warning);
 }
+@utility border-border {
+  border-color: var(--semantic-color-border);
+}
+@utility border-input {
+  border-color: var(--semantic-color-input);
+}
+@utility border-ring {
+  border-color: var(--semantic-color-ring);
+}
 @utility border-sidebar-border {
   border-color: var(--semantic-color-sidebar-border);
 }
 @utility border-sidebar-ring {
   border-color: var(--semantic-color-sidebar-ring);
 }
+@utility outline-input {
+  outline-color: var(--semantic-color-input);
+}
+@utility outline-ring {
+  outline-color: var(--semantic-color-ring);
+}
 @utility outline-sidebar-ring {
   outline-color: var(--semantic-color-sidebar-ring);
+}
+@utility ring-input {
+  --tw-ring-color: var(--semantic-color-input);
+}
+@utility ring-ring {
+  --tw-ring-color: var(--semantic-color-ring);
 }
 @utility ring-sidebar-ring {
   --tw-ring-color: var(--semantic-color-sidebar-ring);
@@ -400,6 +426,9 @@
 @utility text-error-foreground {
   color: var(--semantic-color-error-foreground);
 }
+@utility text-foreground {
+  color: var(--semantic-color-foreground);
+}
 @utility text-info-foreground {
   color: var(--semantic-color-info-foreground);
 }
@@ -408,6 +437,9 @@
 }
 @utility text-popover-foreground {
   color: var(--semantic-color-popover-foreground);
+}
+@utility text-primary-foreground {
+  color: var(--semantic-color-primary-foreground);
 }
 @utility text-secondary-foreground {
   color: var(--semantic-color-secondary-foreground);

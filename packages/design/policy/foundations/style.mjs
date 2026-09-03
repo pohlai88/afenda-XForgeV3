@@ -93,6 +93,36 @@ const COMPANION_VARIANT = deepFreeze({ hover: 'hover', pressed: 'active' })
  */
 const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
 
+/**
+ * BASE UI'S STATE VOCABULARY, EACH STATE SELECTING A DECLARED ROLE (ADR-031 Decision 12: a
+ * state may select a state role and may not introduce styling of its own). The adaptee
+ * exposes `data-checked`, `data-unchecked`, `data-highlighted`, `data-disabled`; which
+ * colour each means is Xforge's decision, made here once: checked is the primary action
+ * fill, unchecked is the field surface, highlighted is the accent fill, disabled is the
+ * disabled role. A recipe writes `STYLE.interaction.checked.background` and never assembles
+ * `data-checked:` by hand.
+ */
+export const INTERACTION_STATES = deepFreeze({
+  checked: { root: 'primary', selector: 'data-checked' },
+  disabled: { root: 'disabled', selector: 'data-disabled' },
+  highlighted: { root: 'accent', selector: 'data-highlighted' },
+  unchecked: { root: 'field', selector: 'data-unchecked' },
+})
+
+/**
+ * Component-tier geometry, as the utilities that read it. The tier projects into the
+ * spacing namespace (`--spacing-switch-track-width`), so a length becomes `w-`, `h-`,
+ * `size-` or `p-` of the token's name; which utility each token is FOR is declared here.
+ */
+const COMPONENT_GEOMETRY = deepFreeze({
+  switch: {
+    inset: ['p', 'component.switch.inset'],
+    thumb: ['size', 'component.switch.thumb'],
+    trackHeight: ['h', 'component.switch.track-height'],
+    trackWidth: ['w', 'component.switch.track-width'],
+  },
+})
+
 const roleOf = (path) => path.slice(path.lastIndexOf('.') + 1)
 
 export function assertStyleNames(names = STYLE_NAMES, contracts = COLOR_ROLE_CONTRACTS) {
@@ -234,6 +264,35 @@ function geometrySymbols(tree, omitted) {
   set(tree, ['easing', 'standard'], symbol('ease-standard', ['semantic.ease.standard']))
   set(tree, ['easing', 'entrance'], symbol('ease-entrance', ['semantic.ease.entrance']))
   set(tree, ['easing', 'exit'], symbol('ease-exit', ['semantic.ease.exit']))
+  for (const [state, { root, selector }] of Object.entries(INTERACTION_STATES)) {
+    const contract = COLOR_ROLE_CONTRACTS[root]
+    const { channels } = colorChannelsOf(`color.${root}`)
+    const node = {}
+    for (const channel of channels) {
+      node[CHANNEL_KEY[channel]] = symbol(`${selector}:${channel}-${root}`, [contract.base])
+    }
+    if (contract.foreground !== NONE) {
+      node.foreground = symbol(`${selector}:text-${roleOf(contract.foreground)}`, [
+        contract.foreground,
+      ])
+    }
+    set(tree, ['interaction', state], node)
+  }
+  // The field's placeholder is the muted ink through the `::placeholder` pseudo-element.
+  set(
+    tree,
+    ['field', 'placeholder'],
+    symbol('placeholder:text-muted-foreground', ['semantic.color.muted-foreground']),
+  )
+  for (const [component, parts] of Object.entries(COMPONENT_GEOMETRY)) {
+    for (const [part, [utility, token]] of Object.entries(parts)) {
+      set(
+        tree,
+        ['component', component, part],
+        symbol(`${utility}-${token.slice('component.'.length).replace('.', '-')}`, [token]),
+      )
+    }
+  }
   set(tree, ['family', 'sans'], symbol('font-sans', ['semantic.font.sans']))
   set(tree, ['family', 'mono'], symbol('font-mono', ['semantic.font.mono']))
   set(tree, ['size', 'control'], symbol('h-control', ['semantic.control.min-size']))

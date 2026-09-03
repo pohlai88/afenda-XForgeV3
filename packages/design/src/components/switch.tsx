@@ -1,14 +1,16 @@
 'use client'
 
-import { Switch as Primitive } from '#components/ui/switch'
+import { Switch as Primitive } from '@base-ui/react/switch'
+import { STYLE } from '#generated/style'
+import { cn } from '#lib/cn'
 import type { NativeProps } from '#lib/props'
 
 /**
  * Switch — a binary control: on or off, and it takes effect at once.
  *
- * Adaptee   shadcn `switch` (style base-nova) over Base UI Switch
+ * Adaptee   Base UI Switch (`@base-ui/react/switch`): Root + Thumb, directly
  * Intent    ADOPT
- * Owns      none — no screen has asked for a size; upstream's `size` stays behind the boundary
+ * Owns      none — no screen has asked for a size; the recipe is Xforge's
  * Contract  inherited from the adaptee: `role="switch"`, `aria-checked`, Space and Enter,
  *           `data-checked` / `data-unchecked` / `data-disabled` as the state vocabulary
  *
@@ -21,7 +23,20 @@ import type { NativeProps } from '#lib/props'
  * vocabulary for a switch and inventing a synonym would be a leak in the other
  * direction. Adopted EXPLICITLY, one by one, in `SwitchProps`; not by re-exporting the
  * adaptee's type. Upstream's `size` axis is NOT adopted (Decision 4: no speculative
- * axis), and its `className` is not exposed: a screen does not style a switch.
+ * axis), and no `className` is exposed: a screen does not style a switch.
+ *
+ * THE RECIPE IS XFORGE'S (ADR-034 step 8), AND IT NEEDED FOUR WORDS THE KERNEL DID NOT
+ * HAVE. Upstream sized the track `h-[18.4px] w-[32px]` and moved the thumb by
+ * `translate-x-[calc(100%-2px)]` — hand-typed lengths no role owns. A switch track is the
+ * textbook component-tier token (ADR-031 Decision 6: geometry a component needs and no
+ * semantic role names), so `component.switch.*` was minted, each aliasing a SEMANTIC role
+ * rather than a number: the track is the target floor high (24px, WCAG 2.5.8) and the
+ * control minimum wide (40px; density rebinds it), the thumb is the icon size, the inset
+ * is the ring offset. The thumb travels by flex alignment — `justify-start` unchecked,
+ * `justify-end` checked — so no translate distance exists to name. The track fill is a
+ * DECLARED interaction state: unchecked selects the field surface, checked the primary
+ * action fill, disabled the disabled role (Decision 12: a state selects a state role and
+ * introduces no styling of its own).
  *
  * `onCheckedChange` receives the new value only. Base UI calls its handler with a second
  * argument, an event-details object, and a callback passed straight through would
@@ -42,13 +57,34 @@ export interface SwitchProps
   readonly value?: string
 }
 
-/** Section 4 — the Adapter. Translation only; the primitive does the work. */
+/** Section 4 — the Adapter. Behaviour from Base UI; every class a symbol. */
 export function Switch({ onCheckedChange, ...props }: SwitchProps) {
   return (
-    <Primitive
+    <Primitive.Root
+      className={cn(
+        'relative inline-flex shrink-0 items-center justify-start rounded-full outline-none',
+        'transition-colors data-disabled:cursor-not-allowed data-checked:justify-end',
+        STYLE.component.switch.trackWidth,
+        STYLE.component.switch.trackHeight,
+        STYLE.component.switch.inset,
+        STYLE.interaction.unchecked.background,
+        STYLE.interaction.checked.background,
+        STYLE.interaction.disabled.background,
+        STYLE.focus.ring,
+        STYLE.motion.press,
+      )}
       data-slot="switch"
       onCheckedChange={onCheckedChange ? (checked) => onCheckedChange(checked) : undefined}
       {...props}
-    />
+    >
+      <Primitive.Thumb
+        className={cn(
+          'block rounded-full',
+          STYLE.component.switch.thumb,
+          STYLE.surface.page.background,
+        )}
+        data-slot="switch-thumb"
+      />
+    </Primitive.Root>
   )
 }

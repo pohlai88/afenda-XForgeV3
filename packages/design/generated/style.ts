@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 131 symbols. Roles without one, and why:
+ * 143 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -47,6 +47,14 @@ export const STYLE = {
       pressed: 'active:bg-secondary-pressed',
     },
   },
+  component: {
+    switch: {
+      inset: 'p-switch-inset',
+      thumb: 'size-switch-thumb',
+      trackHeight: 'h-switch-track-height',
+      trackWidth: 'w-switch-track-width',
+    },
+  },
   easing: {
     entrance: 'ease-entrance',
     exit: 'ease-exit',
@@ -61,12 +69,32 @@ export const STYLE = {
     mono: 'font-mono',
     sans: 'font-sans',
   },
+  field: {
+    placeholder: 'placeholder:text-muted-foreground',
+  },
   focus: {
     ring: 'focus-visible:focus-ring',
   },
   ink: {
     default: {
       text: 'text-foreground',
+    },
+  },
+  interaction: {
+    checked: {
+      background: 'data-checked:bg-primary',
+      foreground: 'data-checked:text-primary-foreground',
+    },
+    disabled: {
+      background: 'data-disabled:bg-disabled',
+      foreground: 'data-disabled:text-disabled-foreground',
+    },
+    highlighted: {
+      background: 'data-highlighted:bg-accent',
+      foreground: 'data-highlighted:text-accent-foreground',
+    },
+    unchecked: {
+      background: 'data-unchecked:bg-field',
     },
   },
   layer: {

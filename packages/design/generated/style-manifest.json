@@ -147,6 +147,30 @@
         "semantic.color.secondary-pressed"
       ]
     },
+    "component.switch.inset": {
+      "class": "p-switch-inset",
+      "tokens": [
+        "component.switch.inset"
+      ]
+    },
+    "component.switch.thumb": {
+      "class": "size-switch-thumb",
+      "tokens": [
+        "component.switch.thumb"
+      ]
+    },
+    "component.switch.trackHeight": {
+      "class": "h-switch-track-height",
+      "tokens": [
+        "component.switch.track-height"
+      ]
+    },
+    "component.switch.trackWidth": {
+      "class": "w-switch-track-width",
+      "tokens": [
+        "component.switch.track-width"
+      ]
+    },
     "easing.entrance": {
       "class": "ease-entrance",
       "tokens": [
@@ -195,6 +219,12 @@
         "semantic.font.sans"
       ]
     },
+    "field.placeholder": {
+      "class": "placeholder:text-muted-foreground",
+      "tokens": [
+        "semantic.color.muted-foreground"
+      ]
+    },
     "focus.ring": {
       "class": "focus-visible:focus-ring",
       "tokens": [
@@ -206,6 +236,48 @@
       "class": "text-foreground",
       "tokens": [
         "semantic.color.foreground"
+      ]
+    },
+    "interaction.checked.background": {
+      "class": "data-checked:bg-primary",
+      "tokens": [
+        "semantic.color.primary"
+      ]
+    },
+    "interaction.checked.foreground": {
+      "class": "data-checked:text-primary-foreground",
+      "tokens": [
+        "semantic.color.primary-foreground"
+      ]
+    },
+    "interaction.disabled.background": {
+      "class": "data-disabled:bg-disabled",
+      "tokens": [
+        "semantic.color.disabled"
+      ]
+    },
+    "interaction.disabled.foreground": {
+      "class": "data-disabled:text-disabled-foreground",
+      "tokens": [
+        "semantic.color.disabled-foreground"
+      ]
+    },
+    "interaction.highlighted.background": {
+      "class": "data-highlighted:bg-accent",
+      "tokens": [
+        "semantic.color.accent"
+      ]
+    },
+    "interaction.highlighted.foreground": {
+      "class": "data-highlighted:text-accent-foreground",
+      "tokens": [
+        "semantic.color.accent-foreground"
+      ]
+    },
+    "interaction.unchecked.background": {
+      "class": "data-unchecked:bg-field",
+      "tokens": [
+        "semantic.color.field"
       ]
     },
     "layer.local": {

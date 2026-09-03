@@ -122,6 +122,10 @@
   --easing-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
   --easing-entrance: cubic-bezier(0, 0, 0.38, 0.9);
   --easing-exit: cubic-bezier(0.2, 0, 1, 0.9);
+  --component-switch-track-width: var(--semantic-control-min-size);
+  --component-switch-track-height: var(--semantic-target-minimum);
+  --component-switch-thumb: var(--semantic-icon-size);
+  --component-switch-inset: var(--semantic-size-ring-offset);
   --semantic-color-accent: var(--color-teal-100);
   --semantic-color-accent-foreground: var(--color-teal-800);
   --semantic-color-accent-hover: var(--color-teal-200);

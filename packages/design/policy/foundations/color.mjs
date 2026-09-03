@@ -394,32 +394,11 @@ export const COLOR_CHANNELS = deepFreeze({
  * the file stops writing it.
  */
 export const COLOR_CHANNEL_SHIMS = deepFreeze({
-  // combobox.tsx paints its separator with bg-border.
-  'color.border': ['bg'],
-  // button.tsx: the destructive variant and every aria-invalid ring/border in six files.
-  'color.destructive': [
-    'bg/10',
-    'bg/20',
-    'bg/30',
-    'border',
-    'border/40',
-    'border/50',
-    'ring/20',
-    'ring/40',
-    'text',
-  ],
-  // switch.tsx paints the dark thumb bg-foreground; card.tsx and combobox.tsx ring in it.
-  'color.foreground': ['bg', 'ring/10'],
-  // input is the field STROKE colour, and six files also fill with it (the switch track).
-  'color.input': ['bg', 'bg/30', 'bg/50', 'bg/80', 'border/30'],
-  // button.tsx and card.tsx: hover fills at half opacity.
-  'color.muted': ['bg/50'],
-  // button.tsx: the link variant's text, and the hover fill at 80%.
-  'color.primary': ['bg/80', 'text'],
-  // switch.tsx: the dark checked thumb.
-  'color.primary-foreground': ['bg'],
-  // six files: focus ring at half opacity.
-  'color.ring': ['ring/50'],
+  // EMPTY SINCE ADR-034 STEP 8. Every Adapter sits on Base UI or the element itself, so no
+  // vendored file is reachable and no role needs the namespace kept whole for it. The table
+  // stays because the rule stays: the day an Adapter imports a vendored primitive again,
+  // the unit suite names the channels it would need a shim for, and they are written here
+  // with the file that needs them -- never inferred.
 })
 
 /**

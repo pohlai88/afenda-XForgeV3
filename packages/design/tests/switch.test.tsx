@@ -52,13 +52,25 @@ describe('Switch keeps the primitive behaviour and exposes only Xforge words', (
     expect(html).toContain('tabindex="-1"')
   })
 
-  it('does not expose the adaptee size axis', () => {
+  it('does not expose a size axis, and stamps none', () => {
     // The refusal is the type, and tsc covers this file: the day `size` is adopted, this
     // line fails the typecheck. (`'size' in {}` stood here before, and is false whatever
     // the Target says -- a case that could not go red.)
     // @ts-expect-error -- the Target has no size axis (Decision 4)
     render({ size: 'sm' })
-    // What renders is upstream's default, untouched by the Adapter.
-    expect(render({})).toContain('data-size="default"')
+    // Upstream stamped `data-size="default"`; the Xforge recipe has no size to stamp.
+    expect(render({})).not.toContain('data-size')
+  })
+
+  it('selects its track geometry and fills from the language', () => {
+    const html = render({ 'aria-label': 'Notify' })
+    for (const cls of [
+      'w-switch-track-width',
+      'h-switch-track-height',
+      'data-unchecked:bg-field',
+      'data-checked:bg-primary',
+    ]) {
+      expect(html).toContain(cls)
+    }
   })
 })

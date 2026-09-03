@@ -284,13 +284,17 @@ describe('the design system vocabulary compiles', () => {
  * twelve files, `bg-error` to `text-body-compact`. Green once every one became a symbol.
  */
 describe('the authored layer selects style; it does not write it', () => {
-  const RESET = /^(m|p|mx|my|px|py)-0$/
+  // Zero resets and alignment keywords carry no token: `min-w-0` lets a flex child shrink,
+  // `text-center` chooses no size, colour or spacing.
+  const RESET = /^(m|p|mx|my|px|py|min-w|min-h)-0$/
+  const ALIGNMENT = /^text-(left|center|right|justify|start|end)$/
   const isThemed = (word: string): boolean => {
     const bare = word.slice(word.lastIndexOf(':') + 1)
     const prefix = THEMED.find((p) => bare.startsWith(p))
-    return prefix === undefined
-      ? false
-      : !(BUILT_IN.has(bare.slice(prefix.length)) || RESET.test(bare))
+    if (prefix === undefined || RESET.test(bare) || ALIGNMENT.test(bare)) {
+      return false
+    }
+    return !BUILT_IN.has(bare.slice(prefix.length))
   }
 
   // Comments are not literals: cn.ts explains a merge with `"p-normal p-loose"` in prose.

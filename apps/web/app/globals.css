@@ -37,6 +37,14 @@
  */
 @source "../../../packages/design/src/";
 /*
+ * AND NOT THE VENDORED TREE (ADR-034 step 8). No Adapter imports a file under
+ * components/ui any more -- each sits on Base UI or the element itself and owns its
+ * recipe -- so the classes those files write would be compiled for nothing that renders
+ * them. Excluding the directory bounds the emitted CSS to what the authored layer
+ * selects; it is a complement to the namespace closures, never a substitute (E31).
+ */
+@source not "../../../packages/design/src/components/ui/";
+/*
  * CUSTOM UTILITIES — the widths Tailwind has no namespace for.
  *
  * There is no border-width or outline-width theme namespace in v4: `border` is

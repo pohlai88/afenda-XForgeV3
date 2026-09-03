@@ -1,33 +1,41 @@
 'use client'
 
-import {
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-  Combobox as Root,
-} from '#components/ui/combobox'
+import { Combobox as Primitive } from '@base-ui/react'
+import { CheckIcon } from 'lucide-react'
+import { STYLE } from '#generated/style'
+import { cn } from '#lib/cn'
 
 /**
  * Combobox — pick one option from a list, by typing to narrow it.
  *
- * Adaptee   shadcn `combobox` (style base-nova) over Base UI Combobox:
- *           Root + Input + Content + List + Item + Empty, six of its sixteen parts
+ * Adaptee   Base UI Combobox (`@base-ui/react`): Root, Input, Portal, Positioner,
+ *           Popup, List, Item, ItemIndicator, Empty — nine of its twenty-seven parts, directly
  * Intent    ADOPT
- * Owns      none — the axis a screen would write does not exist yet
+ * Owns      none — the axis a screen would write does not exist yet; the recipe is Xforge's
  * Contract  inherited from the adaptee: `role="combobox"` on the input, `aria-expanded`,
  *           `aria-controls`, listbox and option roles, arrow traversal, Escape, Enter
  *
  * WHAT NORMALIZE DECIDED. This is the beta's COMPOUND case: several primitives become one
- * Xforge concept. Upstream exposes sixteen parts — chips, groups, separators, a clear
- * button, a bare trigger, an anchor hook — as an assembly kit, and every screen would
- * assemble it differently. Xforge's concept is smaller: a list of options, one of which
- * may be selected, reached by typing. So the Target is `options` + `value` +
- * `onValueChange` + `placeholder` + `disabled` + `emptyMessage` + a label, and the
- * assembly is done ONCE, here. Multiple selection, chips, grouping and a custom filter
- * are not adopted until a screen needs them (Decision 4); when one does, it is a new
- * word here, not a leak of sixteen.
+ * Xforge concept. Base UI exposes twenty-seven parts — chips, groups, separators, a clear
+ * button, a trigger, an anchor hook — as an assembly kit, and every screen would assemble
+ * it differently. Xforge's concept is smaller: a list of options, one of which may be
+ * selected, reached by typing. So the Target is `options` + `value` + `onValueChange` +
+ * `placeholder` + `disabled` + `emptyMessage` + a label, and the assembly is done ONCE,
+ * here. Multiple selection, chips, grouping, a clear button, a chevron trigger and a custom
+ * filter are not adopted until a screen needs them (Decision 4); when one does, it is a
+ * new word here, not a leak of twenty-seven.
+ *
+ * THE RECIPE IS XFORGE'S (ADR-034 step 8). Until 2026-09-03 this assembled the vendored
+ * shadcn parts, which pulled `input-group`, `input`, `button` and `textarea` into the
+ * reachable tree. Now the field is the field recipe — the control floor, control padding,
+ * control radius, the field surface and stroke, the body type role, the muted placeholder,
+ * the one focus ring, the disabled role — and the popup is the popover surface at the
+ * floating elevation on the overlay layer, with the container radius. A highlighted option
+ * selects the accent fill, a declared interaction state; the selected option shows a check.
+ * Upstream's entrance animation, side-aware slide and `min-w-[calc(...)]` are dropped: the
+ * first names a duration no motion role paired with an easing, the rest are hand-typed.
+ * The positioner's `--anchor-width` and `--available-height` are Base UI's own layout
+ * plumbing and carry no design value; they are used as the variables they are.
  *
  * VALUE IS A STRING ID, NOT THE OPTION OBJECT. Base UI's `value` is whichever item object
  * is selected; a screen holds ids, not objects, and a Target that handed back the
@@ -84,7 +92,45 @@ function selectedOption(
   return found
 }
 
-/** Section 4 — the Adapter. Six parts assembled once; ids in, ids out. */
+const FIELD = cn(
+  'w-full min-w-0 outline-none transition-colors disabled:cursor-not-allowed',
+  STYLE.size.control,
+  STYLE.space.controlX.paddingX,
+  STYLE.shape.control,
+  STYLE.stroke.width,
+  STYLE.stroke.field.border,
+  STYLE.surface.field.background,
+  STYLE.ink.default.text,
+  STYLE.typography.body,
+  STYLE.field.placeholder,
+  STYLE.focus.ring,
+  STYLE.state.disabled.background,
+  STYLE.state.disabled.foreground,
+)
+
+const POPUP = cn(
+  'group/popup max-h-(--available-height) w-(--anchor-width) overflow-hidden',
+  STYLE.surface.popover.background,
+  STYLE.surface.popover.foreground,
+  STYLE.shape.container,
+  STYLE.stroke.width,
+  STYLE.stroke.border.border,
+  STYLE.elevation.above,
+)
+
+const ITEM = cn(
+  'relative flex w-full cursor-default select-none items-center outline-none',
+  STYLE.space.tight.gap,
+  STYLE.space.tight.paddingX,
+  STYLE.space.related.paddingY,
+  STYLE.shape.precise,
+  STYLE.typography.bodyCompact,
+  STYLE.interaction.highlighted.background,
+  STYLE.interaction.highlighted.foreground,
+  STYLE.interaction.disabled.foreground,
+)
+
+/** Section 4 — the Adapter. Nine parts assembled once; ids in, ids out. */
 export function Combobox({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
@@ -99,7 +145,7 @@ export function Combobox({
 }: ComboboxProps) {
   const selected = selectedOption(options, value)
   return (
-    <Root
+    <Primitive.Root
       disabled={disabled}
       items={options}
       itemToStringLabel={label}
@@ -112,23 +158,54 @@ export function Combobox({
       }
       value={selected}
     >
-      <ComboboxInput
+      <Primitive.Input
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
+        className={FIELD}
         data-slot="combobox"
         id={inputId}
         placeholder={placeholder}
       />
-      <ComboboxContent>
-        <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        <ComboboxList>
-          {(option: ComboboxOption) => (
-            <ComboboxItem key={option.value} value={option}>
-              {option.label}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Root>
+      <Primitive.Portal>
+        <Primitive.Positioner className={cn('isolate', STYLE.layer.overlay)}>
+          <Primitive.Popup className={POPUP} data-slot="combobox-content">
+            <Primitive.Empty
+              className={cn(
+                'hidden w-full justify-center text-center group-data-empty/popup:flex',
+                STYLE.space.tight.paddingY,
+                STYLE.typography.bodyCompact,
+                STYLE.surface.muted.foreground,
+              )}
+              data-slot="combobox-empty"
+            >
+              {emptyMessage}
+            </Primitive.Empty>
+            <Primitive.List
+              className={cn(
+                'max-h-(--available-height) overflow-y-auto overscroll-contain',
+                STYLE.space.related.padding,
+              )}
+              data-slot="combobox-list"
+            >
+              {(option: ComboboxOption) => (
+                <Primitive.Item
+                  className={ITEM}
+                  data-slot="combobox-item"
+                  key={option.value}
+                  value={option}
+                >
+                  {option.label}
+                  <Primitive.ItemIndicator
+                    className={cn('ml-auto flex shrink-0 items-center', STYLE.size.icon)}
+                  >
+                    <CheckIcon aria-hidden="true" />
+                  </Primitive.ItemIndicator>
+                </Primitive.Item>
+              )}
+            </Primitive.List>
+          </Primitive.Popup>
+        </Primitive.Positioner>
+      </Primitive.Portal>
+    </Primitive.Root>
   )
 }
