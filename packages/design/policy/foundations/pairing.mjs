@@ -1,5 +1,4 @@
-import { flatten, luminance } from '../generators/tokens.mjs'
-import { deepFreeze } from '../vocabulary.mjs'
+import { deepFreeze, flatten, luminance } from '../vocabulary.mjs'
 import { COLOR_ROLE_CONTRACTS } from './color.mjs'
 
 /**
@@ -170,6 +169,187 @@ export function assertPairsNameRoots(pairs = COLOR_PAIRS, contracts = COLOR_ROLE
       if (!(fill.replace(/-(hover|pressed)$/, '') in contracts)) {
         throw new Error(`COLOR_PAIRS pairs '${ink}' with '${fill}', which is no contract root`)
       }
+    }
+  }
+}
+
+/**
+ * MATERIAL 3'S COLOUR ROLES, PLACED. Every role m3.material.io/styles/color/roles names
+ * (read 2026-09-04): the 26 standard roles and the add-ons the page names. Each row is one
+ * verdict -- `ours`, the root (or roots) of ours that carries the role, or `absent`, with
+ * the reason nothing here has it. The test holds every row to exactly one verdict and every
+ * `ours` to a root that exists, so this table cannot drift from the contracts in silence;
+ * the generator prints it into FOUNDATIONS.md and the gallery's colour plate reads the
+ * manifest it feeds. A comparison in a scratch file is what this replaces.
+ */
+export const M3_COLOR_ROLES = deepFreeze({
+  // Error
+  error: { ours: 'error' },
+  'error-container': { ours: 'error-container' },
+  'inverse-on-surface': {
+    absent: 'no inverse surface exists here, so there is no ink to pair with it',
+  },
+  'inverse-primary': { absent: 'no inverse surface exists here for an inverse action to sit on' },
+  // Add-ons the page names
+  'inverse-surface': {
+    absent: 'the inverse roles exist for snackbars; there is no Toast (project-state records why)',
+  },
+  'on-error': { ours: 'on-error' },
+  'on-error-container': { ours: 'on-error-container' },
+  'on-primary': { ours: 'on-primary' },
+  'on-primary-container': { ours: 'on-primary-container' },
+  'on-primary-fixed': {
+    absent: 'no fixed primary exists here, so there is no ink to pair with it',
+  },
+  'on-primary-fixed-variant': {
+    absent: 'no fixed primary exists here, so there is no lower-emphasis ink for it either',
+  },
+  'on-secondary': { absent: 'no secondary accent exists here, so there is no ink to pair with it' },
+  'on-secondary-container': {
+    absent: 'no secondary container exists here, so there is no ink to pair with it',
+  },
+  'on-secondary-fixed': {
+    absent: 'no fixed secondary exists here, so there is no ink to pair with it',
+  },
+  'on-secondary-fixed-variant': {
+    absent: 'no fixed secondary exists here, so there is no lower-emphasis ink for it either',
+  },
+  'on-surface': { ours: 'on-surface' },
+  'on-surface-variant': { ours: 'on-surface-variant' },
+  'on-tertiary': { absent: 'no tertiary accent exists here, so there is no ink to pair with it' },
+  'on-tertiary-container': {
+    absent: 'no tertiary container exists here, so there is no ink to pair with it',
+  },
+  'on-tertiary-fixed': {
+    absent: 'no fixed tertiary exists here, so there is no ink to pair with it',
+  },
+  'on-tertiary-fixed-variant': {
+    absent: 'no fixed tertiary exists here, so there is no lower-emphasis ink for it either',
+  },
+  // Outline
+  outline: { ours: 'outline' },
+  'outline-variant': { ours: 'outline-variant' },
+  // Accent: primary
+  primary: { ours: 'primary' },
+  'primary-container': { ours: 'primary-container' },
+  'primary-fixed': {
+    absent:
+      "M3: 'if you aren't sure whether your product should use the add-on roles, it probably shouldn't'",
+  },
+  'primary-fixed-dim': {
+    absent:
+      'a fixed accent that ignores the theme; M3 warns it is likely to break contrast, and nothing has asked',
+  },
+  scrim: { ours: 'scrim' },
+  // Accent: secondary -- what we called `secondary` was a white neutral, now surface-lowest
+  secondary: {
+    absent:
+      'a lower-emphasis accent has no consumer; our former `secondary` was a neutral fill and is `surface-lowest` now',
+  },
+  'secondary-container': {
+    absent:
+      'the tonal-button fill; the day a tonal button arrives it is this role, not a reuse of primary-container',
+  },
+  'secondary-fixed': { absent: 'as primary-fixed, and there is no secondary accent' },
+  'secondary-fixed-dim': {
+    absent: 'a fixed accent that ignores the theme, of an accent that does not exist here',
+  },
+  shadow: { ours: ['shadow-ambient', 'shadow-key'] },
+  // Surface
+  surface: { ours: 'surface' },
+  'surface-bright': {
+    absent:
+      'an add-on surface that keeps its brightness across themes; nothing here has asked for one',
+  },
+  'surface-container': { ours: 'surface-container' },
+  'surface-container-high': {
+    absent: 'three rungs carry two screens; the ladder grows when nesting asks',
+  },
+  'surface-container-highest': {
+    absent: 'three rungs carry two screens; the ladder grows when nesting asks',
+  },
+  'surface-container-low': {
+    absent: 'three rungs carry two screens; the ladder grows when nesting asks, one rung at a time',
+  },
+  'surface-container-lowest': { ours: 'surface-lowest' },
+  'surface-dim': {
+    absent:
+      "keeps relative brightness across themes; M3: 'most products won't need' the add-ons, and nothing here has asked",
+  },
+  // Accent: tertiary
+  tertiary: {
+    absent: "M3: 'at the designer's discretion'; nothing here has asked for a third accent",
+  },
+  'tertiary-container': {
+    absent: 'no tertiary accent exists here, so no container tint of it either',
+  },
+  'tertiary-fixed': { absent: 'as primary-fixed, and there is no tertiary accent' },
+  'tertiary-fixed-dim': {
+    absent: 'a fixed accent that ignores the theme, of an accent that does not exist here',
+  },
+})
+
+/**
+ * Roots of ours that carry no Material 3 role, each with the reason it exists anyway. A root
+ * in neither table is a word minted without a benchmark, which the test refuses.
+ */
+export const XFORGE_ONLY_ROLES = deepFreeze({
+  disabled:
+    'M3 draws disabled as on-surface at 38% over a 12% container; ours are explicit fills so the pair can be measured (3.2:1, held to 3:1)',
+  focus:
+    'M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once',
+  'info-container':
+    "M3's custom-colour pattern: a status container with its on-colour and no high-emphasis fill, because nothing has asked for one",
+  'on-disabled': 'the ink of the explicit disabled fill; see disabled',
+  'statutory-container':
+    'a custom status container: EPF, SOCSO, EIS and PCB are law, not advice, and do not borrow info',
+  'success-container': 'a custom status container; see info-container',
+  'warning-container': 'a custom status container; see info-container',
+})
+
+/** Every M3 role placed once; every root of ours placed once. Throws with the first gap. */
+export function assertColorRolesPlaced(
+  contracts = COLOR_ROLE_CONTRACTS,
+  m3 = M3_COLOR_ROLES,
+  only = XFORGE_ONLY_ROLES,
+) {
+  const roots = new Set(Object.keys(contracts))
+  // A carrier is a root, or the on-colour a root declares: `on-primary` is primary's
+  // foreground in the contract and M3's `on-primary` role at once.
+  const onColours = new Set(
+    Object.values(contracts)
+      .map((c) => c.foreground)
+      .filter((f) => typeof f === 'string')
+      .map((f) => f.slice('semantic.color.'.length)),
+  )
+  const carried = new Set()
+  for (const [role, row] of Object.entries(m3)) {
+    const hasOurs = row.ours !== undefined
+    const hasAbsent = typeof row.absent === 'string' && row.absent.length > 0
+    if (hasOurs === hasAbsent) {
+      throw new Error(
+        `M3 role '${role}' must carry exactly one verdict: ours, or absent with a reason`,
+      )
+    }
+    for (const ours of hasOurs ? [row.ours].flat() : []) {
+      if (!(roots.has(ours) || onColours.has(ours))) {
+        throw new Error(
+          `M3 role '${role}' is carried by '${ours}', which is neither a colour root nor a declared on-colour`,
+        )
+      }
+      carried.add(ours)
+    }
+  }
+  for (const root of roots) {
+    if (carried.has(root) && root in only) {
+      throw new Error(
+        `colour root '${root}' is both carried by an M3 role and declared Xforge-only`,
+      )
+    }
+    if (!(carried.has(root) || root in only)) {
+      throw new Error(
+        `colour root '${root}' carries no M3 role and is not declared Xforge-only -- a word minted without a benchmark`,
+      )
     }
   }
 }

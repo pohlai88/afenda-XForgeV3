@@ -80,6 +80,13 @@ import { pathToFileURL } from 'node:url'
 // imports is a name one module owns; there is no longer a second file that could
 // answer the same question differently.
 import {
+  assertColorRolesPlaced,
+  COLOR_PAIRS,
+  contrastOfPair,
+  M3_COLOR_ROLES,
+  XFORGE_ONLY_ROLES,
+} from '../foundations/pairing.mjs'
+import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
   assertColorRoleContracts,
@@ -120,6 +127,7 @@ import {
   typographyFailures,
   UNPROJECTED,
 } from '../index.mjs'
+import { flatten, luminance } from '../vocabulary.mjs'
 
 const ROOT = join(import.meta.dirname, '../../../..')
 
@@ -355,44 +363,6 @@ const aliasTarget = (value) => value.slice(1, -1)
 const cssName = cssNameOf
 
 /**
- * Every token as a flat path -> { value, type }, keeping `$`-prefixed metadata
- * out of the result but inheriting `$type` down from the group that declared it.
- * The type is what axis ownership is checked against, so it has to travel with
- * the token rather than being re-derived from the name.
- *
- * EXPORTED FOR THE UNIT SUITE, which asserts that the paths `TYPE_ROLES` names
- * resolve against the real token file. That check cannot run inside `generate`
- * -- synthetic sources declare no typography and would fail it -- and a test that
- * flattened the tree itself would be a second implementation of `$type`
- * inheritance, which is the defect this whole package is arranged against.
- */
-export function flatten(root) {
-  // The recursion is an inner walk so the exported signature carries NO default
-  // parameters. With `flatten(node, path = [], inheritedType, out = new Map())`
-  // two lint rules fought over it -- one stripped the `= undefined` that the
-  // other then demanded back -- which is the cycle that removed `sourceFiles()`'s
-  // default three times. A signature with nothing to reorder ends the argument.
-  const out = new Map()
-
-  const walk = (node, path, inheritedType) => {
-    const type = node.$type ?? inheritedType
-    for (const [key, value] of Object.entries(node)) {
-      if (key.startsWith('$')) {
-        continue
-      }
-      if (value && typeof value === 'object' && '$value' in value) {
-        out.set([...path, key].join('.'), { type: value.$type ?? type, value: value.$value })
-      } else if (value && typeof value === 'object') {
-        walk(value, [...path, key], type)
-      }
-    }
-  }
-
-  walk(root, [], undefined)
-  return out
-}
-
-/**
  * Validate the alias graph: no dangling reference, no cycle, no illegal tier
  * edge. Returns fully resolved literals, which nothing is emitted from any more
  * but which prove every chain terminates.
@@ -556,18 +526,6 @@ function assertLegacyModeSourcePresent(source) {
   return axes
 }
 
-const channel = (c) => {
-  const s = c / 255
-  return s <= 0.040_45 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-}
-
-/** WCAG relative luminance. Alpha is ignored; alpha-bearing roles are exempt. */
-export function luminance(hex) {
-  const m = hex.replace('#', '').slice(0, 6)
-  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(m.slice(i, i + 2), 16))
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
-}
-
 const contrastRatio = (a, b) => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (hi + 0.05) / (lo + 0.05)
@@ -660,6 +618,7 @@ function assertColorPolicies(tokens, byColourMode) {
   // Which tokens are ONE ROLE (ADR-034 Decision 2). After the policy check so that a role
   // nobody declared fails as "no policy" first, which is the older and better-known message.
   assertColorRoleContracts(tokens)
+  assertColorRolesPlaced()
 
   const failures = []
   for (const [label, resolved] of byColourMode) {
@@ -880,7 +839,7 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
     blocks,
     componentTokens,
     css: lines.join('\n'),
-    foundations: foundations(tokens, blocks),
+    foundations: foundations(tokens, blocks, source),
     mergeGroups: twMergeGroups(projectedRows(tokens), tokens),
     style: styleContract(),
     styleManifest: styleManifestJson(),
@@ -1195,6 +1154,7 @@ function styleManifestJson() {
   const manifest = {
     contract: TOKEN_CONTRACT_VERSION,
     omitted,
+    roles: colourRoleModel(),
     symbols: Object.fromEntries(styleLeaves(symbols)),
   }
   return `${JSON.stringify(manifest, null, 2)}\n`
@@ -1291,7 +1251,7 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
  * policy modules and joining them by hand. Joining them is the one thing a
  * generated document can do that the source files cannot do for themselves.
  */
-function foundations(tokens, blocks) {
+function foundations(tokens, blocks, source) {
   const rows = [...tokens.entries()]
     .map(([path, token]) => ({ ...token, css: cssName(path), path, tier: tierOf(path) }))
     .sort((a, b) => a.css.localeCompare(b.css))
@@ -1359,6 +1319,8 @@ function foundations(tokens, blocks) {
     '',
     ...table(counted('component'), false),
     '',
+    ...colourRules(source),
+    '',
     '## Modes',
     '',
     'Two axes compose: `theme` owns colour, `density` owns geometry. A token rebound by',
@@ -1384,6 +1346,90 @@ function foundations(tokens, blocks) {
 
   lines.push('')
   return lines.join('\n')
+}
+
+/**
+ * The colour rules, printed from the tables that hold them (ADR-034, fourth pass): the
+ * grammar, every Material 3 role placed, every root of ours placed, and every declared pair
+ * with the ratio the token file gives it in each theme. Nothing here is typed twice; a table
+ * that changes changes this section and the tests in the same commit.
+ */
+function colourRules(source) {
+  const m3 = Object.entries(M3_COLOR_ROLES).map(([role, row]) => {
+    const ours = row.ours === undefined ? undefined : [row.ours].flat()
+    return ours
+      ? `| \`${role}\` | ${ours.map((r) => `\`${r}\``).join(', ')} | carried |`
+      : `| \`${role}\` | -- | ${row.absent} |`
+  })
+  const only = Object.entries(XFORGE_ONLY_ROLES).map(([root, why]) => `| \`${root}\` | ${why} |`)
+  const pairs = Object.entries(COLOR_PAIRS).flatMap(([ink, { fills, floor }]) =>
+    fills.map((fill) => {
+      // A fixture source may lack a root the pairs name; the shipped file never does, and
+      // color-pairs.test.ts holds every pair against it. Here an absent pair prints as `--`.
+      const ratio = (theme) => {
+        try {
+          return `${contrastOfPair(source, ink, fill, theme).toFixed(2)}:1`
+        } catch {
+          return '--'
+        }
+      }
+      return `| \`${ink}\` | \`${fill}\` | ${floor}:1 | ${ratio('light')} | ${ratio('dark')} |`
+    }),
+  )
+  return [
+    '## Colour rules',
+    '',
+    "The colour roots follow the grammar of Material 3's colour roles",
+    '(m3.material.io/styles/color/roles, read 2026-09-04; evidence register E37):',
+    '',
+    '- **surface** is a background; **surface-lowest** and **surface-container** are its rungs',
+    '  above the page, white and a tint in light, ink.850 and ink.750 in dark.',
+    '- **on-`<fill>`** is the one ink paired with that fill. `on-surface` and `on-surface-variant`',
+    '  are roots of their own because they sit on every surface rung.',
+    '- **`<accent>`-container** is the low-emphasis tint of an accent, for fills that carry text and',
+    '  icons; **`<status>`-container** follows the same shape for info, success, warning, statutory.',
+    '- **outline** is a boundary that must be seen (3:1); **outline-variant** is a divider or a card',
+    '  edge, decorative, and the edge of a target only where what is inside carries the contrast.',
+    '- **Hover and pressed are fills**, not state layers: a composite is a pair the token graph',
+    '  cannot measure.',
+    '',
+    '**The pairing law.** An ink may sit only on the fills declared for it, and every declared pair',
+    'clears its floor in both themes -- 4.5:1 for text, 3:1 for boundaries and the disabled pair.',
+    'The table below is computed from the token file; `color-pairs.test.ts` refuses a pair under',
+    'its floor and the generator refuses a root placed against no Material 3 role.',
+    '',
+    '### Material 3 roles, placed',
+    '',
+    '| M3 role | Ours | Verdict |',
+    '| --- | --- | --- |',
+    ...m3,
+    '',
+    '### Roots with no Material 3 role',
+    '',
+    '| Root | Why it exists |',
+    '| --- | --- |',
+    ...only,
+    '',
+    '### Declared pairs',
+    '',
+    '| Ink | Fill | Floor | Light | Dark |',
+    '| --- | --- | --- | --- | --- |',
+    ...pairs,
+  ]
+}
+
+/** Each colour root\'s place against Material 3, for the manifest: the role it carries or why not. */
+function colourRoleModel() {
+  const model = {}
+  for (const [role, row] of Object.entries(M3_COLOR_ROLES)) {
+    for (const ours of row.ours === undefined ? [] : [row.ours].flat()) {
+      model[ours] = { m3: role }
+    }
+  }
+  for (const [root, why] of Object.entries(XFORGE_ONLY_ROLES)) {
+    model[root] = { m3: null, why }
+  }
+  return Object.fromEntries(Object.entries(model).sort(([a], [b]) => a.localeCompare(b)))
 }
 
 /** What the policy requires of one token, or `--` where no domain claims it. */

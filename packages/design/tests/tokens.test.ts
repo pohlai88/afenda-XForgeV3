@@ -23,9 +23,11 @@ import { describe, expect, it } from 'vitest'
 // gets its own sentence rather than inheriting a wrong one.
 import * as foundations from '../policy/foundations/index.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-import { flatten, generate, TOKEN_PACKAGES } from '../policy/generators/tokens.mjs'
+import { generate, TOKEN_PACKAGES } from '../policy/generators/tokens.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
 import * as policy from '../policy/index.mjs'
+// @ts-expect-error -- untyped policy module
+import { flatten } from '../policy/vocabulary.mjs'
 
 const ROOT = join(import.meta.dirname, '../../..')
 const source = JSON.parse(readFileSync(join(ROOT, 'packages/design/policy/tokens.json'), 'utf8'))

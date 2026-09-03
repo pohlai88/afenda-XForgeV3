@@ -26,6 +26,90 @@
       "role": "semantic.motion.duration.pulse"
     }
   ],
+  "roles": {
+    "disabled": {
+      "m3": null,
+      "why": "M3 draws disabled as on-surface at 38% over a 12% container; ours are explicit fills so the pair can be measured (3.2:1, held to 3:1)"
+    },
+    "error": {
+      "m3": "error"
+    },
+    "error-container": {
+      "m3": "error-container"
+    },
+    "focus": {
+      "m3": null,
+      "why": "M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once"
+    },
+    "info-container": {
+      "m3": null,
+      "why": "M3's custom-colour pattern: a status container with its on-colour and no high-emphasis fill, because nothing has asked for one"
+    },
+    "on-disabled": {
+      "m3": null,
+      "why": "the ink of the explicit disabled fill; see disabled"
+    },
+    "on-error": {
+      "m3": "on-error"
+    },
+    "on-error-container": {
+      "m3": "on-error-container"
+    },
+    "on-primary": {
+      "m3": "on-primary"
+    },
+    "on-primary-container": {
+      "m3": "on-primary-container"
+    },
+    "on-surface": {
+      "m3": "on-surface"
+    },
+    "on-surface-variant": {
+      "m3": "on-surface-variant"
+    },
+    "outline": {
+      "m3": "outline"
+    },
+    "outline-variant": {
+      "m3": "outline-variant"
+    },
+    "primary": {
+      "m3": "primary"
+    },
+    "primary-container": {
+      "m3": "primary-container"
+    },
+    "scrim": {
+      "m3": "scrim"
+    },
+    "shadow-ambient": {
+      "m3": "shadow"
+    },
+    "shadow-key": {
+      "m3": "shadow"
+    },
+    "statutory-container": {
+      "m3": null,
+      "why": "a custom status container: EPF, SOCSO, EIS and PCB are law, not advice, and do not borrow info"
+    },
+    "success-container": {
+      "m3": null,
+      "why": "a custom status container; see info-container"
+    },
+    "surface": {
+      "m3": "surface"
+    },
+    "surface-container": {
+      "m3": "surface-container"
+    },
+    "surface-lowest": {
+      "m3": "surface-container-lowest"
+    },
+    "warning-container": {
+      "m3": null,
+      "why": "a custom status container; see info-container"
+    }
+  },
   "symbols": {
     "accent.primary.background": {
       "class": "bg-primary",

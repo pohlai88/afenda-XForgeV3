@@ -273,6 +273,130 @@ elevation domains.
 | `--component-switch-track-height` | `component.switch.track-height` | dimension | `{semantic.target.minimum}` |
 | `--component-switch-track-width` | `component.switch.track-width` | dimension | `{semantic.control.min-size}` |
 
+## Colour rules
+
+The colour roots follow the grammar of Material 3's colour roles
+(m3.material.io/styles/color/roles, read 2026-09-04; evidence register E37):
+
+- **surface** is a background; **surface-lowest** and **surface-container** are its rungs
+  above the page, white and a tint in light, ink.850 and ink.750 in dark.
+- **on-`<fill>`** is the one ink paired with that fill. `on-surface` and `on-surface-variant`
+  are roots of their own because they sit on every surface rung.
+- **`<accent>`-container** is the low-emphasis tint of an accent, for fills that carry text and
+  icons; **`<status>`-container** follows the same shape for info, success, warning, statutory.
+- **outline** is a boundary that must be seen (3:1); **outline-variant** is a divider or a card
+  edge, decorative, and the edge of a target only where what is inside carries the contrast.
+- **Hover and pressed are fills**, not state layers: a composite is a pair the token graph
+  cannot measure.
+
+**The pairing law.** An ink may sit only on the fills declared for it, and every declared pair
+clears its floor in both themes -- 4.5:1 for text, 3:1 for boundaries and the disabled pair.
+The table below is computed from the token file; `color-pairs.test.ts` refuses a pair under
+its floor and the generator refuses a root placed against no Material 3 role.
+
+### Material 3 roles, placed
+
+| M3 role | Ours | Verdict |
+| --- | --- | --- |
+| `error` | `error` | carried |
+| `error-container` | `error-container` | carried |
+| `inverse-on-surface` | -- | no inverse surface exists here, so there is no ink to pair with it |
+| `inverse-primary` | -- | no inverse surface exists here for an inverse action to sit on |
+| `inverse-surface` | -- | the inverse roles exist for snackbars; there is no Toast (project-state records why) |
+| `on-error` | `on-error` | carried |
+| `on-error-container` | `on-error-container` | carried |
+| `on-primary` | `on-primary` | carried |
+| `on-primary-container` | `on-primary-container` | carried |
+| `on-primary-fixed` | -- | no fixed primary exists here, so there is no ink to pair with it |
+| `on-primary-fixed-variant` | -- | no fixed primary exists here, so there is no lower-emphasis ink for it either |
+| `on-secondary` | -- | no secondary accent exists here, so there is no ink to pair with it |
+| `on-secondary-container` | -- | no secondary container exists here, so there is no ink to pair with it |
+| `on-secondary-fixed` | -- | no fixed secondary exists here, so there is no ink to pair with it |
+| `on-secondary-fixed-variant` | -- | no fixed secondary exists here, so there is no lower-emphasis ink for it either |
+| `on-surface` | `on-surface` | carried |
+| `on-surface-variant` | `on-surface-variant` | carried |
+| `on-tertiary` | -- | no tertiary accent exists here, so there is no ink to pair with it |
+| `on-tertiary-container` | -- | no tertiary container exists here, so there is no ink to pair with it |
+| `on-tertiary-fixed` | -- | no fixed tertiary exists here, so there is no ink to pair with it |
+| `on-tertiary-fixed-variant` | -- | no fixed tertiary exists here, so there is no lower-emphasis ink for it either |
+| `outline` | `outline` | carried |
+| `outline-variant` | `outline-variant` | carried |
+| `primary` | `primary` | carried |
+| `primary-container` | `primary-container` | carried |
+| `primary-fixed` | -- | M3: 'if you aren't sure whether your product should use the add-on roles, it probably shouldn't' |
+| `primary-fixed-dim` | -- | a fixed accent that ignores the theme; M3 warns it is likely to break contrast, and nothing has asked |
+| `scrim` | `scrim` | carried |
+| `secondary` | -- | a lower-emphasis accent has no consumer; our former `secondary` was a neutral fill and is `surface-lowest` now |
+| `secondary-container` | -- | the tonal-button fill; the day a tonal button arrives it is this role, not a reuse of primary-container |
+| `secondary-fixed` | -- | as primary-fixed, and there is no secondary accent |
+| `secondary-fixed-dim` | -- | a fixed accent that ignores the theme, of an accent that does not exist here |
+| `shadow` | `shadow-ambient`, `shadow-key` | carried |
+| `surface` | `surface` | carried |
+| `surface-bright` | -- | an add-on surface that keeps its brightness across themes; nothing here has asked for one |
+| `surface-container` | `surface-container` | carried |
+| `surface-container-high` | -- | three rungs carry two screens; the ladder grows when nesting asks |
+| `surface-container-highest` | -- | three rungs carry two screens; the ladder grows when nesting asks |
+| `surface-container-low` | -- | three rungs carry two screens; the ladder grows when nesting asks, one rung at a time |
+| `surface-container-lowest` | `surface-lowest` | carried |
+| `surface-dim` | -- | keeps relative brightness across themes; M3: 'most products won't need' the add-ons, and nothing here has asked |
+| `tertiary` | -- | M3: 'at the designer's discretion'; nothing here has asked for a third accent |
+| `tertiary-container` | -- | no tertiary accent exists here, so no container tint of it either |
+| `tertiary-fixed` | -- | as primary-fixed, and there is no tertiary accent |
+| `tertiary-fixed-dim` | -- | a fixed accent that ignores the theme, of an accent that does not exist here |
+
+### Roots with no Material 3 role
+
+| Root | Why it exists |
+| --- | --- |
+| `disabled` | M3 draws disabled as on-surface at 38% over a 12% container; ours are explicit fills so the pair can be measured (3.2:1, held to 3:1) |
+| `focus` | M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once |
+| `info-container` | M3's custom-colour pattern: a status container with its on-colour and no high-emphasis fill, because nothing has asked for one |
+| `on-disabled` | the ink of the explicit disabled fill; see disabled |
+| `statutory-container` | a custom status container: EPF, SOCSO, EIS and PCB are law, not advice, and do not borrow info |
+| `success-container` | a custom status container; see info-container |
+| `warning-container` | a custom status container; see info-container |
+
+### Declared pairs
+
+| Ink | Fill | Floor | Light | Dark |
+| --- | --- | --- | --- | --- |
+| `focus` | `surface` | 3:1 | 6.43:1 | 6.17:1 |
+| `focus` | `surface-lowest` | 3:1 | 7.03:1 | 5.58:1 |
+| `on-disabled` | `disabled` | 3:1 | 3.19:1 | 3.22:1 |
+| `on-error` | `error` | 4.5:1 | 8.01:1 | 7.88:1 |
+| `on-error` | `error-hover` | 4.5:1 | 10.58:1 | 9.67:1 |
+| `on-error` | `error-pressed` | 4.5:1 | 18.55:1 | 15.12:1 |
+| `on-error-container` | `error-container` | 4.5:1 | 6.13:1 | 7.39:1 |
+| `on-error-container` | `surface` | 4.5:1 | 7.33:1 | 7.88:1 |
+| `on-error-container` | `surface-lowest` | 4.5:1 | 8.01:1 | 7.13:1 |
+| `on-info-container` | `info-container` | 4.5:1 | 7.33:1 | 8.63:1 |
+| `on-primary` | `primary` | 4.5:1 | 7.03:1 | 6.17:1 |
+| `on-primary` | `primary-hover` | 4.5:1 | 9.76:1 | 8.08:1 |
+| `on-primary` | `primary-pressed` | 4.5:1 | 16.04:1 | 9.80:1 |
+| `on-primary-container` | `primary-container` | 4.5:1 | 7.96:1 | 7.95:1 |
+| `on-primary-container` | `primary-container-hover` | 4.5:1 | 7.02:1 | 6.13:1 |
+| `on-primary-container` | `primary-container-pressed` | 4.5:1 | 4.84:1 | 4.84:1 |
+| `on-statutory-container` | `statutory-container` | 4.5:1 | 5.77:1 | 8.96:1 |
+| `on-success-container` | `success-container` | 4.5:1 | 5.71:1 | 9.26:1 |
+| `on-success-container` | `surface` | 4.5:1 | 6.79:1 | 10.27:1 |
+| `on-success-container` | `surface-lowest` | 4.5:1 | 7.42:1 | 9.30:1 |
+| `on-surface` | `surface` | 4.5:1 | 11.83:1 | 16.21:1 |
+| `on-surface` | `surface-lowest` | 4.5:1 | 12.94:1 | 14.67:1 |
+| `on-surface` | `surface-lowest-hover` | 4.5:1 | 11.83:1 | 14.67:1 |
+| `on-surface` | `surface-lowest-pressed` | 4.5:1 | 10.37:1 | 13.93:1 |
+| `on-surface` | `surface-container` | 4.5:1 | 10.37:1 | 12.35:1 |
+| `on-surface` | `error-container` | 4.5:1 | 9.89:1 | 15.20:1 |
+| `on-surface` | `info-container` | 4.5:1 | 9.90:1 | 13.37:1 |
+| `on-surface` | `success-container` | 4.5:1 | 9.95:1 | 14.61:1 |
+| `on-surface` | `warning-container` | 4.5:1 | 9.94:1 | 14.77:1 |
+| `on-surface` | `statutory-container` | 4.5:1 | 10.27:1 | 15.31:1 |
+| `on-surface-variant` | `surface` | 4.5:1 | 5.15:1 | 6.19:1 |
+| `on-surface-variant` | `surface-lowest` | 4.5:1 | 5.63:1 | 5.60:1 |
+| `on-surface-variant` | `surface-container` | 4.5:1 | 4.52:1 | 4.72:1 |
+| `on-warning-container` | `warning-container` | 4.5:1 | 5.48:1 | 9.50:1 |
+| `outline` | `surface` | 3:1 | 3.96:1 | 4.22:1 |
+| `outline` | `surface-lowest` | 3:1 | 4.33:1 | 3.82:1 |
+
 ## Modes
 
 Two axes compose: `theme` owns colour, `density` owns geometry. A token rebound by

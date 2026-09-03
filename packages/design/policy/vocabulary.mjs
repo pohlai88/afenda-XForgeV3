@@ -953,3 +953,53 @@ assertGroupNamesProjectUnambiguously()
 assertLifecycleRegistry()
 assertValueShapeRegistry()
 assertDtcgValueCompatibility()
+
+/**
+ * Every token as a flat path -> { value, type }, keeping `$`-prefixed metadata
+ * out of the result but inheriting `$type` down from the group that declared it.
+ * The type is what axis ownership is checked against, so it has to travel with
+ * the token rather than being re-derived from the name.
+ *
+ * EXPORTED FOR THE UNIT SUITE, which asserts that the paths `TYPE_ROLES` names
+ * resolve against the real token file. That check cannot run inside `generate`
+ * -- synthetic sources declare no typography and would fail it -- and a test that
+ * flattened the tree itself would be a second implementation of `$type`
+ * inheritance, which is the defect this whole package is arranged against.
+ */
+export function flatten(root) {
+  // The recursion is an inner walk so the exported signature carries NO default
+  // parameters. With `flatten(node, path = [], inheritedType, out = new Map())`
+  // two lint rules fought over it -- one stripped the `= undefined` that the
+  // other then demanded back -- which is the cycle that removed `sourceFiles()`'s
+  // default three times. A signature with nothing to reorder ends the argument.
+  const out = new Map()
+
+  const walk = (node, path, inheritedType) => {
+    const type = node.$type ?? inheritedType
+    for (const [key, value] of Object.entries(node)) {
+      if (key.startsWith('$')) {
+        continue
+      }
+      if (value && typeof value === 'object' && '$value' in value) {
+        out.set([...path, key].join('.'), { type: value.$type ?? type, value: value.$value })
+      } else if (value && typeof value === 'object') {
+        walk(value, [...path, key], type)
+      }
+    }
+  }
+
+  walk(root, [], undefined)
+  return out
+}
+
+const channel = (c) => {
+  const s = c / 255
+  return s <= 0.040_45 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+}
+
+/** WCAG relative luminance. Alpha is ignored; alpha-bearing roles are exempt. */
+export function luminance(hex) {
+  const m = hex.replace('#', '').slice(0, 6)
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(m.slice(i, i + 2), 16))
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}

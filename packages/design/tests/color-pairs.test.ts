@@ -11,8 +11,14 @@
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error -- untyped policy module, as tokens.test.ts imports it
 import { COLOR_ROLE_CONTRACTS } from '../policy/foundations/color.mjs'
-// @ts-expect-error -- untyped policy module
-import { COLOR_PAIRS, contrastOfPair } from '../policy/foundations/pairing.mjs'
+import {
+  COLOR_PAIRS,
+  contrastOfPair,
+  M3_COLOR_ROLES,
+  XFORGE_ONLY_ROLES,
+  // @ts-expect-error -- untyped policy module; TypeScript reports the missing declaration on
+  // the specifier line of a multi-line import, so the directive sits above that line
+} from '../policy/foundations/pairing.mjs'
 import tokens from '../policy/tokens.json' with { type: 'json' }
 
 interface Pair {
@@ -99,5 +105,58 @@ describe('every declared pair clears its floor in both themes, from the token fi
     expect(contrastOfPair(tokens, 'on-surface-variant', 'error-container', 'light')).toBeLessThan(
       4.5,
     )
+  })
+})
+
+describe('every Material 3 colour role is placed: carried by a root of ours, or absent with a reason', () => {
+  const m3 = M3_COLOR_ROLES as Readonly<
+    Record<string, { ours?: string | readonly string[]; absent?: string }>
+  >
+  const only = XFORGE_ONLY_ROLES as Readonly<Record<string, string>>
+  const roots = Object.keys(contracts)
+  const carriers = [
+    ...roots,
+    ...Object.values(contracts)
+      .map((c) => c.foreground)
+      .filter((f): f is string => typeof f === 'string')
+      .map((f) => f.slice('semantic.color.'.length)),
+  ]
+
+  it('names the 26 standard roles and the add-ons the page names', () => {
+    expect(Object.keys(m3).length).toBeGreaterThanOrEqual(26 + 5)
+    for (const role of [
+      'surface',
+      'on-surface',
+      'on-surface-variant',
+      'surface-container-lowest',
+      'outline-variant',
+      'tertiary',
+      'inverse-surface',
+      'primary-fixed',
+    ]) {
+      expect(m3, role).toHaveProperty(role)
+    }
+  })
+
+  it('each row carries exactly one verdict: a root of ours, or a reason for its absence', () => {
+    for (const [role, row] of Object.entries(m3)) {
+      const carried = row.ours !== undefined
+      const absent = typeof row.absent === 'string' && row.absent.length > 20
+      expect(carried !== absent, `${role}: one of ours/absent`).toBe(true)
+      for (const ours of carried ? [row.ours].flat() : []) {
+        expect(carriers, `${role} -> ${ours}`).toContain(ours)
+      }
+    }
+  })
+
+  it('every root of ours carries an M3 role or is declared Xforge-only with a reason', () => {
+    const carried = new Set(Object.values(m3).flatMap((row) => [row.ours ?? []].flat()))
+    for (const root of roots) {
+      expect(carried.has(root) || root in only, root).toBe(true)
+      if (root in only) {
+        expect(only[root]?.length, root).toBeGreaterThan(20)
+        expect(carried.has(root), `${root} is both carried and Xforge-only`).toBe(false)
+      }
+    }
   })
 })
