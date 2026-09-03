@@ -33,6 +33,14 @@ import {
  * is selected; a screen holds ids, not objects, and a Target that handed back the
  * object would make the caller's state Base UI's shape. The adapter maps both ways.
  *
+ * AN ID THE OPTIONS DO NOT CONTAIN IS REFUSED, NOT CLEARED. The first version coerced it
+ * to "nothing selected": the input rendered empty, the form carried nothing, and the
+ * parent's state still held the id -- an empty field submitted as the answer, in a
+ * payroll form, with nothing saying so. A stale id after the options changed, or options
+ * that arrive after the value, are states nobody modelled; the throw names them. The
+ * consequence is deliberate: a screen renders this control once its options exist.
+ * `null` remains the modelled "controlled, nothing selected".
+ *
  * WHAT IS PROVED HERE AND WHAT IS NOT. A server render shows the input, its role and
  * its closed state. Opening, filtering, selection, the id mapping under real events and
  * Escape are proved in Chromium by `tests/combobox.browser.test.tsx`
@@ -61,6 +69,21 @@ export interface ComboboxProps {
 const label = (option: ComboboxOption) => option.label
 const id = (option: ComboboxOption) => option.value
 
+/** `undefined` is uncontrolled, `null` is controlled-empty, a string must be an option. */
+function selectedOption(
+  options: readonly ComboboxOption[],
+  value: string | null | undefined,
+): ComboboxOption | null | undefined {
+  if (value === undefined || value === null) {
+    return value
+  }
+  const found = options.find((option) => option.value === value)
+  if (found === undefined) {
+    throw new Error(`Combobox: value '${value}' is not one of the ${options.length} options`)
+  }
+  return found
+}
+
 /** Section 4 — the Adapter. Six parts assembled once; ids in, ids out. */
 export function Combobox({
   'aria-label': ariaLabel,
@@ -74,8 +97,7 @@ export function Combobox({
   placeholder,
   value,
 }: ComboboxProps) {
-  const selected =
-    value === undefined ? undefined : (options.find((o) => o.value === value) ?? null)
+  const selected = selectedOption(options, value)
   return (
     <Root
       disabled={disabled}

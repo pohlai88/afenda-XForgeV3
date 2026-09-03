@@ -53,4 +53,11 @@ describe('Combobox assembles the primitive once, in Xforge words', () => {
     const html = render({ onValueChange: () => {}, value: 'emp-2' })
     expect(html).toContain('value="Bola Adeyemi"')
   })
+
+  it('null is controlled-empty; an id the options lack is refused with the state named', () => {
+    expect(render({ onValueChange: () => {}, value: null })).not.toContain('value="')
+    expect(() => render({ onValueChange: () => {}, value: 'emp-9' })).toThrow(
+      "Combobox: value 'emp-9' is not one of the 2 options",
+    )
+  })
 })
