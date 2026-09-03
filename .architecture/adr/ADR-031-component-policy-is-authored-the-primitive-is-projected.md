@@ -573,6 +573,14 @@ four parts are decided differently:
     by Decision 12, and forbidden from appearing in any generated Xforge style symbol. It
     is deleted when the vendored tree stops needing it, which is ADR-034's Migration step 8.
 
+    **Deleted 2026-09-03**, in ADR-034's follow-through after step 8: no Adapter imports a
+    vendored file and the app no longer scans that tree, so `SCALE_ALIASES` and its emitter
+    went from the generator, and the two typography tokens that existed only to be aliased
+    (`semantic.weight.medium`, `semantic.tracking.shortcut`) went from the token file. The
+    third condition was met by construction: the literal check refuses every alias word in
+    authored code. `text-sm`, `rounded-md`, `shadow-md`, `tracking-widest` and
+    `leading-relaxed` compile to nothing anywhere in this repository.
+
 11. **The tone→announcement rule has one owner: the table exported beside Alert.** The
     e2e specs assert the DOM; Verification 1 asserts the DOM agrees with the table. Today
     they disagree — named here, not fixed here. And the decision inside it is asked, not

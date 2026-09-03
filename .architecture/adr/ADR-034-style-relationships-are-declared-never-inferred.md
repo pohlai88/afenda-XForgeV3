@@ -156,8 +156,7 @@ and before this ADR's step 7 added `subheading` (type 9 and leading 8 now):
 `tracking` covered two roles. Each gap was either a decision or an omission, and the table
 could not say which. Step 4 made it say: `title` and `display` reuse `heading`'s weight
 explicitly, `emphasis` reuses `body`'s leading, `weight.medium` is a listed shim with its
-reason, and only `compact` against `body-compact` remains — a rename, for a step whose
-generated output may move.
+reason, and `compact` against `body-compact` was renamed in the follow-through step below.
 
 ### What the authored layer renders
 
@@ -499,6 +498,15 @@ moves, the step is wrong.
                                                             DONE: any prefix, values only;
                                                             predicate proved on upstream's
                                                             words; zero offenders
+  11  follow-through: retire the vendor shims the ten steps made pointless
+                                                            DONE: SCALE_ALIASES and its
+                                                            emitter deleted (ADR-031
+                                                            Decision 10's condition met);
+                                                            semantic.weight.medium and
+                                                            semantic.tracking.shortcut
+                                                            deleted; TYPE_TOKEN_SHIMS empty;
+                                                            semantic.leading.compact renamed
+                                                            body-compact, its role's name
 ```
 
 Steps 1–4 land alone and roll back by deleting the tables and assertions; nothing else
