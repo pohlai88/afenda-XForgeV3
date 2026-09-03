@@ -38,9 +38,10 @@ export function Specimen({ children, footer, label, ...props }: SpecimenProps) {
       data-slot="specimen"
       {...props}
     >
+      {/* A figcaption wears the caption role -- the one type role nothing else said. */}
       <figcaption
         className={cn(
-          STYLE.typography.label,
+          STYLE.typography.caption,
           STYLE.surface.muted.foreground,
           STYLE.space.none.margin,
         )}

@@ -27,8 +27,10 @@ export function ListItem({ children, ...props }: NativeProps<'li'>) {
         STYLE.stroke.width,
         STYLE.stroke.border.border,
         STYLE.surface.card.background,
+        // A row's padding is the row role on both axes; it borrowed the control's
+        // vertical padding until the space plate showed rowY worn by nothing.
         STYLE.space.rowX.paddingX,
-        STYLE.space.controlY.paddingY,
+        STYLE.space.rowY.paddingY,
       )}
       data-slot="list-item"
       {...props}
