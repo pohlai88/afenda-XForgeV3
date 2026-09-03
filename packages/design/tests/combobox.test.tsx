@@ -4,8 +4,9 @@
  * What a server render can prove: the assembled input carries the platform role and
  * its closed state; the Target's words reach the DOM (`placeholder`, `disabled`, the
  * label); the option list is not in the document while closed; and the Target does
- * not leak the adaptee's part vocabulary. Opening and selecting are Base UI's and are
- * proved in Chromium by `combobox.browser.test.tsx`.
+ * not accept the adaptee's part vocabulary (a compile-time case below -- the header
+ * claimed this before any case asserted it). Opening and selecting are Base UI's and
+ * are proved in Chromium by `combobox.browser.test.tsx`.
  *
  * MUTATIONS WATCHED, 2026-09-03: with `placeholder` no longer passed to the input, the
  * first case went red. With `disabled` removed from the INPUT the third case stayed
@@ -39,6 +40,11 @@ describe('Combobox assembles the primitive once, in Xforge words', () => {
     expect(html).toContain('data-slot="combobox"')
   })
 
+  it('does not accept the adaptee part vocabulary', () => {
+    // @ts-expect-error -- `items` is Base UI's word; the Target says `options`
+    render({ items: options })
+  })
+
   it('keeps the option list out of the document while closed', () => {
     const html = render()
     expect(html).not.toContain('Alice Ng')
@@ -55,7 +61,11 @@ describe('Combobox assembles the primitive once, in Xforge words', () => {
   })
 
   it('null is controlled-empty; an id the options lack is refused with the state named', () => {
-    expect(render({ onValueChange: () => {}, value: null })).not.toContain('value="')
+    // The input is present and empty; no option label is in the document.
+    expect(render({ onValueChange: () => {}, value: null })).toMatch(
+      /<input[^>]*role="combobox"[^>]*value=""/,
+    )
+    expect(render({ onValueChange: () => {}, value: null })).not.toContain('Alice Ng')
     expect(() => render({ onValueChange: () => {}, value: 'emp-9' })).toThrow(
       "Combobox: value 'emp-9' is not one of the 2 options",
     )

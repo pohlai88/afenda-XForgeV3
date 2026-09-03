@@ -22,9 +22,8 @@ import { cn } from '#lib/cn'
  * only choose an appearance: it chooses the ELEMENT, and `cva` emits class
  * strings. Converting this would move the size into a variant and leave the tag
  * selection beside it, which is one decision described in two places. Same
- * reason `alert.tsx` keeps its `TONE` table -- there the value carries an icon.
- * Where a variant is purely appearance (`text`, `stack`, `button`, `badge`), it
- * is `cva`.
+ * reason `alert.tsx` keeps `ALERT_TONE` -- there the value carries an icon and a
+ * role. Where a variant is purely appearance (`text`, `stack`), it is `cva`.
  */
 const ROLE = {
   1: 'text-title',

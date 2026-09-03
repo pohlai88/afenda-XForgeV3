@@ -33,10 +33,8 @@ export function Status({ children, className, ...props }: StatusProps) {
       data-slot="status"
       /**
        * THE ROLE, WHICH WAS MISSING. `aria-live="polite"` alone does announce,
-       * so this was not silent — but the contract declares `live-region` and the
-       * conformance suite asserts the ROLE, and nothing rendered one. The
-       * component and the specification of it disagreed, and only a browser
-       * could say so.
+       * so this was not silent -- but the end-to-end conformance specs assert
+       * the ROLE, and nothing rendered one; only a browser could say so.
        *
        * `role="status"` implies `aria-live="polite"`; the attribute stays
        * because `aria-busy` has to sit on the live region either way, and the

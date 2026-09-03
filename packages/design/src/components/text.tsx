@@ -38,13 +38,13 @@ import { cn } from '#lib/cn'
  * ROLES and that word is right in the policy -- but on a component it shadowed
  * the global ARIA attribute of the same name, and the three values it takes are
  * not valid ARIA roles. So `<Text role="label">` read to a linter, and to anyone
- * skimming the JSX, as an invalid `role` on a paragraph. It needed a four-line
- * comment in the gallery to explain that it was not.
+ * skimming the JSX, as an invalid `role` on a paragraph, and needed a comment at
+ * every call site to say it was not.
  *
- * `variant` is what `Button` and `Badge` already expose for the same question --
- * which of a fixed set of appearances -- so the rename removes the collision and
- * closes a naming inconsistency at once. Nothing is lost: `role` was never
- * carrying the policy's meaning to the DOM, only to a lookup table.
+ * `variant` is what `Button` already exposes for the same question -- which of a
+ * fixed set of appearances -- so the rename removes the collision and closes a
+ * naming inconsistency at once. Nothing is lost: `role` was never carrying the
+ * policy's meaning to the DOM, only to a lookup table.
  */
 const textVariants = cva('m-0', {
   defaultVariants: {
