@@ -149,8 +149,9 @@ export const PROFILE_COVERAGE = deepFreeze({
   composite: {
     derived: false,
     gap:
-      'no browser suite exercises arrow traversal or activedescendant for Command, DropdownMenu ' +
-      'or Select. Base UI supplies the mechanics, so what is unproven is the composition',
+      'no browser suite exercises arrow traversal or activedescendant for Combobox, the one ' +
+      'authored composite (Command, DropdownMenu and Select are vendored and unexported). Base UI ' +
+      'supplies the mechanics, so what is unproven is the composition',
     specs: [],
   },
   'composite-grid': {
@@ -170,14 +171,21 @@ export const PROFILE_COVERAGE = deepFreeze({
   disclosure: {
     derived: false,
     gap:
-      'Tooltip is scanned in the vocabulary suite but no check asserts what a disclosure ' +
-      'announces, which is the whole of its risk and is why it is A11y-3 gated',
-    specs: ['e2e/design-system-conformance.spec.ts'],
+      'no authored component is a disclosure; Tooltip is vendored and unexported (ADR-033), so ' +
+      'this is dormant rather than uncovered',
+    specs: [],
   },
   'form-control': {
     derived: false,
-    specs: ['e2e/a11y-conformance.spec.ts'],
-    subjects: ['Input', 'Textarea'],
+    // The row said `Input` and `Textarea`, covered by the a11y spec, until 2026-09-04:
+    // neither component ever existed under src/components and the spec named neither.
+    // `keyboard-coverage.test.ts` now holds every subject to an authored file.
+    gap:
+      'axe over the text-input and date-input stories proves the label and description ' +
+      'wiring; no browser case types into a control, tabs through a Field or clears a date, ' +
+      "so the platform's keyboard mechanics are unproven here",
+    specs: ['e2e/design-system-conformance.spec.ts'],
+    subjects: ['TextInput', 'DateInput'],
   },
   'live-region': {
     derived: false,
@@ -188,10 +196,10 @@ export const PROFILE_COVERAGE = deepFreeze({
   },
   modal: {
     derived: false,
-    specs: ['e2e/design-system-conformance.spec.ts'],
-    // Named individually, by the trigger's button text. A second modal contract
-    // inherits the A11y-3 debt automatically and inherits none of this.
-    subjects: ['Dialog'],
+    gap:
+      'no authored component is a modal; Dialog is vendored and unexported (ADR-033), so this ' +
+      'is dormant rather than uncovered',
+    specs: [],
   },
   'native-control': {
     derived: false,
@@ -203,9 +211,11 @@ export const PROFILE_COVERAGE = deepFreeze({
     subjects: ['every tab stop the product routes to'],
   },
   none: {
-    derived: true,
-    specs: ['tests/unit/design-contracts.test.ts'],
-    subjects: ['every contract, from the registry'],
+    derived: false,
+    gap:
+      'the contract registry this derived from was deleted (ae4e294) with the test that read ' +
+      'it; a component owing no keys proves it by rendering nothing focusable, which nothing asserts',
+    specs: [],
   },
 })
 

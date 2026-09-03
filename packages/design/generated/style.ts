@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 147 symbols. Roles without one, and why:
+ * 153 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -20,9 +20,11 @@ export const STYLE = {
   accent: {
     primary: {
       background: 'bg-primary',
+      border: 'border-primary',
       foreground: 'text-on-primary',
       hover: 'hover:bg-primary-hover',
       hoverForeground: 'hover:text-on-primary',
+      outline: 'outline-primary',
       pressed: 'active:bg-primary-pressed',
     },
     primaryContainer: {
@@ -58,9 +60,11 @@ export const STYLE = {
     },
     default: {
       background: 'bg-error',
+      border: 'border-error',
       foreground: 'text-on-error',
       hover: 'hover:bg-error-hover',
       hoverForeground: 'hover:text-on-error',
+      outline: 'outline-error',
       pressed: 'active:bg-error-pressed',
     },
   },
@@ -85,7 +89,9 @@ export const STYLE = {
   interaction: {
     checked: {
       background: 'data-checked:not-data-disabled:bg-primary',
+      border: 'data-checked:not-data-disabled:border-primary',
       foreground: 'data-checked:not-data-disabled:text-on-primary',
+      outline: 'data-checked:not-data-disabled:outline-primary',
     },
     disabled: {
       background: 'data-disabled:bg-disabled',

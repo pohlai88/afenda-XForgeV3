@@ -1475,6 +1475,8 @@ describe('colour channels (ADR-034)', () => {
     }
     expect(COLOR_POLICY_KINDS.text.channels).toEqual(['text'])
     expect(COLOR_POLICY_KINDS.surface.channels).toEqual(['bg'])
+    // A fill that is also drawn as a line: the invalid and focused field outlines (E40).
+    expect(COLOR_POLICY_KINDS.accent.channels).toEqual(['bg', 'border', 'outline'])
     expect(COLOR_POLICY_KINDS.compositing.channels).toEqual([])
   })
 

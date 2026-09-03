@@ -117,6 +117,12 @@
         "semantic.color.primary"
       ]
     },
+    "accent.primary.border": {
+      "class": "border-primary",
+      "tokens": [
+        "semantic.color.primary"
+      ]
+    },
     "accent.primary.foreground": {
       "class": "text-on-primary",
       "tokens": [
@@ -133,6 +139,12 @@
       "class": "hover:text-on-primary",
       "tokens": [
         "semantic.color.on-primary"
+      ]
+    },
+    "accent.primary.outline": {
+      "class": "outline-primary",
+      "tokens": [
+        "semantic.color.primary"
       ]
     },
     "accent.primary.pressed": {
@@ -249,6 +261,12 @@
         "semantic.color.error"
       ]
     },
+    "error.default.border": {
+      "class": "border-error",
+      "tokens": [
+        "semantic.color.error"
+      ]
+    },
     "error.default.foreground": {
       "class": "text-on-error",
       "tokens": [
@@ -265,6 +283,12 @@
       "class": "hover:text-on-error",
       "tokens": [
         "semantic.color.on-error"
+      ]
+    },
+    "error.default.outline": {
+      "class": "outline-error",
+      "tokens": [
+        "semantic.color.error"
       ]
     },
     "error.default.pressed": {
@@ -316,10 +340,22 @@
         "semantic.color.primary"
       ]
     },
+    "interaction.checked.border": {
+      "class": "data-checked:not-data-disabled:border-primary",
+      "tokens": [
+        "semantic.color.primary"
+      ]
+    },
     "interaction.checked.foreground": {
       "class": "data-checked:not-data-disabled:text-on-primary",
       "tokens": [
         "semantic.color.on-primary"
+      ]
+    },
+    "interaction.checked.outline": {
+      "class": "data-checked:not-data-disabled:outline-primary",
+      "tokens": [
+        "semantic.color.primary"
       ]
     },
     "interaction.disabled.background": {

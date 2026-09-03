@@ -345,6 +345,12 @@ export const palettePolicy = definePolicy({
  * PROVES.
  */
 export const COLOR_POLICY_KINDS = deepFreeze({
+  // A HIGH-EMPHASIS FILL THAT IS ALSO DRAWN AS A LINE. M3's outlined text field takes
+  // `primary` for its focused outline and `error` for its invalid one (Text fields
+  // specs, read 2026-09-04), and this system's Field wants the same redundant cue.
+  // The fill proves nothing about itself, like any surface; its edge against the
+  // surfaces a field sits on is held at 3:1 by COLOR_PAIRS (`error`, `primary`).
+  accent: { channels: ['bg', 'border', 'outline'], pairedAgainst: true },
   // `channels` is the CSS the role may be used through (ADR-034 Decision 3). A
   // compositing ink has none: shadow-ambient and shadow-key are consumed by the
   // elevation tokens through var(), and scrim by an overlay's own rule; projected,
@@ -873,9 +879,11 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     reason: 'the fill of a control that cannot be operated, proved through on-disabled',
   },
   'color.error': {
-    kind: 'surface',
+    kind: 'accent',
     providesContexts: ['error'],
-    reason: "M3 'error': the high-emphasis fill of a destructive action, proved through on-error",
+    reason:
+      "M3 'error': the high-emphasis fill of a destructive action, proved through on-error; " +
+      "drawn as the invalid field's outline, held at 3:1 against the surfaces",
   },
   'color.error-container': {
     kind: 'surface',
@@ -948,9 +956,11 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     reason: 'a divider or a card edge, never a sole control boundary',
   },
   'color.primary': {
-    kind: 'surface',
+    kind: 'accent',
     providesContexts: ['primary'],
-    reason: "M3 'primary': the fill of the most prominent action, proved through on-primary",
+    reason:
+      "M3 'primary': the fill of the most prominent action, proved through on-primary; " +
+      "drawn as the focused field's outline, held at 3:1 against the surfaces",
   },
   'color.primary-container': {
     kind: 'surface',

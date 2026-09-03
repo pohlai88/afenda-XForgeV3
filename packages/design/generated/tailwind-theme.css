@@ -23,7 +23,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 75 roles projected; 38 colour utilities emitted per channel.
+ * 75 roles projected; 42 colour utilities emitted per channel.
  */
 :root {
   --disabled: var(--semantic-color-disabled);
@@ -354,6 +354,9 @@
 @utility bg-warning-container {
   background-color: var(--semantic-color-warning-container);
 }
+@utility border-error {
+  border-color: var(--semantic-color-error);
+}
 @utility border-focus {
   border-color: var(--semantic-color-focus);
 }
@@ -363,11 +366,20 @@
 @utility border-outline-variant {
   border-color: var(--semantic-color-outline-variant);
 }
+@utility border-primary {
+  border-color: var(--semantic-color-primary);
+}
+@utility outline-error {
+  outline-color: var(--semantic-color-error);
+}
 @utility outline-focus {
   outline-color: var(--semantic-color-focus);
 }
 @utility outline-outline {
   outline-color: var(--semantic-color-outline);
+}
+@utility outline-primary {
+  outline-color: var(--semantic-color-primary);
 }
 @utility ring-focus {
   --tw-ring-color: var(--semantic-color-focus);

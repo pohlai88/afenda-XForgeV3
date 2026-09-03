@@ -159,7 +159,7 @@ elevation domains.
 | `--semantic-breakpoint-large` | `semantic.breakpoint.large` | dimension | `{breakpoint.large}` | -- |
 | `--semantic-breakpoint-medium` | `semantic.breakpoint.medium` | dimension | `{breakpoint.medium}` | -- |
 | `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled · bg only |
-| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.700}` | surface · provides error · bg only |
+| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.700}` | accent · provides error · bg, border, outline only |
 | `--semantic-color-error-container` | `semantic.color.error-container` | color | `{color.red.100}` | surface · provides error-container · bg only |
 | `--semantic-color-error-hover` | `semantic.color.error-hover` | color | `{color.red.800}` | surface · provides error · bg only |
 | `--semantic-color-error-pressed` | `semantic.color.error-pressed` | color | `{color.red.950}` | surface · provides error · bg only |
@@ -178,7 +178,7 @@ elevation domains.
 | `--semantic-color-on-warning-container` | `semantic.color.on-warning-container` | color | `{color.amber.800}` | text · ≥4.5:1 against warning-container · text only |
 | `--semantic-color-outline` | `semantic.color.outline` | color | `{color.neutral.500}` | ui · ≥3:1 against surface, surface-lowest · border, outline, ring only |
 | `--semantic-color-outline-variant` | `semantic.color.outline-variant` | color | `{color.neutral.300}` | decorative · exempt, a divider or a card edge, never a sole control boundary · border only |
-| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary · bg only |
+| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | accent · provides primary · bg, border, outline only |
 | `--semantic-color-primary-container` | `semantic.color.primary-container` | color | `{color.teal.100}` | surface · provides primary-container · bg only |
 | `--semantic-color-primary-container-hover` | `semantic.color.primary-container-hover` | color | `{color.teal.200}` | surface · provides primary-container · bg only |
 | `--semantic-color-primary-container-pressed` | `semantic.color.primary-container-pressed` | color | `{color.teal.300}` | surface · provides primary-container · bg only |
@@ -371,6 +371,8 @@ its floor and the generator refuses a root placed against no Material 3 role.
 
 | Ink | Fill | Floor | Light | Dark |
 | --- | --- | --- | --- | --- |
+| `error` | `surface` | 3:1 | 7.33:1 | 7.88:1 |
+| `error` | `surface-lowest` | 3:1 | 8.01:1 | 7.13:1 |
 | `focus` | `surface` | 3:1 | 6.43:1 | 6.17:1 |
 | `focus` | `surface-lowest` | 3:1 | 7.03:1 | 5.58:1 |
 | `on-disabled` | `disabled` | 3:1 | 3.19:1 | 3.22:1 |
@@ -407,6 +409,8 @@ its floor and the generator refuses a root placed against no Material 3 role.
 | `on-warning-container` | `warning-container` | 4.5:1 | 5.48:1 | 9.50:1 |
 | `outline` | `surface` | 3:1 | 3.96:1 | 4.22:1 |
 | `outline` | `surface-lowest` | 3:1 | 4.33:1 | 3.82:1 |
+| `primary` | `surface` | 3:1 | 6.43:1 | 6.17:1 |
+| `primary` | `surface-lowest` | 3:1 | 7.03:1 | 5.58:1 |
 
 ## Type rules
 

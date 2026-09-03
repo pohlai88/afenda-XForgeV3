@@ -22,6 +22,11 @@ import { COLOR_ROLE_CONTRACTS } from './color.mjs'
  * `error.container`) are the layer above.
  */
 export const COLOR_PAIRS = deepFreeze({
+  error: {
+    fills: ['surface', 'surface-lowest'],
+    floor: 3,
+    why: "the invalid field's outline (M3 outlined text field, error state) against the surfaces fields sit on (WCAG 1.4.11)",
+  },
   focus: {
     fills: ['surface', 'surface-lowest'],
     floor: 3,
@@ -97,6 +102,11 @@ export const COLOR_PAIRS = deepFreeze({
     fills: ['surface', 'surface-lowest'],
     floor: 3,
     why: "M3 'outline': the boundary of a text field must be seen against the surface it sits on (WCAG 1.4.11, non-text 3:1)",
+  },
+  primary: {
+    fills: ['surface', 'surface-lowest'],
+    floor: 3,
+    why: "the focused field's outline (M3 outlined text field, focused state) against the surfaces fields sit on (WCAG 1.4.11)",
   },
 })
 
