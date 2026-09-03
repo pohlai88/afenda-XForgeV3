@@ -1252,3 +1252,93 @@ describe('the motion policy', () => {
     expect(foundations.motionFailures(absurd)).toEqual([])
   })
 })
+
+/**
+ * ADR-034 Decision 2: every colour role root is declared with its companions, and a
+ * designed absence is written as NONE rather than left out. The suffix on a token's name
+ * stops being the model and becomes the thing the model is checked against.
+ *
+ * WRITTEN BEFORE THE TABLE EXISTED (ADR-034 Migration step 2), and the first run was red
+ * on every case because `assertColorRoleContracts` did not exist. The shipped-table case
+ * is then expected to stay red until step 3 answers `destructive`.
+ */
+describe('colour role contracts (ADR-034)', () => {
+  const tokens = flatten(source)
+  const { COLOR_ROLE_CONTRACTS, NONE } = foundations
+
+  /** A copy of the shipped table with one root replaced. */
+  const withRoot = (root: string, contract: Record<string, unknown>) => ({
+    ...COLOR_ROLE_CONTRACTS,
+    [root]: contract,
+  })
+
+  it('has a table to hold to, with every one of the 26 roots', () => {
+    expect(Object.keys(COLOR_ROLE_CONTRACTS)).toHaveLength(26)
+    expect(NONE).toBeTypeOf('symbol')
+  })
+
+  it('the shipped table owns every shipped token and every reference resolves', () => {
+    expect(() => foundations.assertColorRoleContracts(tokens)).not.toThrow()
+  })
+
+  it('refuses a semantic colour token owned by no declared root', () => {
+    const withStray = new Map(tokens)
+    withStray.set('semantic.color.brand', { type: 'color', value: '#123456' })
+    expect(() => foundations.assertColorRoleContracts(withStray)).toThrow(
+      /'semantic\.color\.brand' is owned by no declared root/,
+    )
+  })
+
+  it('refuses a companion slot that is neither a reference nor NONE', () => {
+    const { pressed: _dropped, ...withoutPressed } = COLOR_ROLE_CONTRACTS.card
+    expect(() =>
+      foundations.assertColorRoleContracts(tokens, withRoot('card', withoutPressed)),
+    ).toThrow(/root 'card' leaves 'pressed' undeclared/)
+    expect(() =>
+      foundations.assertColorRoleContracts(
+        tokens,
+        withRoot('card', { ...withoutPressed, pressed: null }),
+      ),
+    ).toThrow(/root 'card' declares 'pressed' as null/)
+  })
+
+  it('refuses a token whose name carries a companion suffix it is not declared as', () => {
+    // The table says card has no foreground; the token file says card-foreground exists.
+    // Before this table the suffix WAS the model, so nothing could have disagreed with it.
+    expect(() =>
+      foundations.assertColorRoleContracts(
+        tokens,
+        withRoot('card', { ...COLOR_ROLE_CONTRACTS.card, foreground: NONE }),
+      ),
+    ).toThrow(/'semantic\.color\.card-foreground' carries the companion suffix 'foreground'/)
+  })
+
+  it('refuses a reference that does not resolve, when the root is present', () => {
+    expect(() =>
+      foundations.assertColorRoleContracts(
+        tokens,
+        withRoot('card', { ...COLOR_ROLE_CONTRACTS.card, hover: 'semantic.color.card-hover' }),
+      ),
+    ).toThrow(/root 'card' names hover 'semantic\.color\.card-hover', which does not exist/)
+  })
+
+  it('skips a root whose base the source does not declare, and still owns its companions', () => {
+    // The synthetic source in `base()` declares background and foreground only, and other
+    // refusal tests add `disabled-foreground` without `disabled` -- the companion is owned
+    // by its declared root even when the base is absent, and the absent base is not a
+    // defect of that source.
+    const s = base()
+    set(s, 'semantic.color.disabled-foreground', { $value: '#333333' })
+    expect(() => generate(s)).not.toThrow()
+  })
+
+  it('runs inside generate(): a root present without a declared companion is refused', () => {
+    // `info` rather than `card`: a second surface at the paper value trips the
+    // distinctness policy first, and the message under test is this one.
+    const s = base()
+    set(s, 'semantic.color.info', { $value: '#dbeafe' })
+    expect(() => generate(s)).toThrow(
+      /root 'info' names foreground 'semantic\.color\.info-foreground', which does not exist/,
+    )
+  })
+})

@@ -82,6 +82,7 @@ import { pathToFileURL } from 'node:url'
 import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
+  assertColorRoleContracts,
   assertColorRoleRegistry,
   assertDensityAxis,
   assertExclusionsAreCurrent,
@@ -631,6 +632,10 @@ function assertColorPolicies(tokens, byColourMode) {
       )
     }
   }
+
+  // Which tokens are ONE ROLE (ADR-034 Decision 2). After the policy check so that a role
+  // nobody declared fails as "no policy" first, which is the older and better-known message.
+  assertColorRoleContracts(tokens)
 
   const failures = []
   for (const [label, resolved] of byColourMode) {

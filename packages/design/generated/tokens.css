@@ -133,6 +133,7 @@
   --semantic-color-destructive: var(--color-red-700);
   --semantic-color-destructive-foreground: var(--color-neutral-0);
   --semantic-color-destructive-hover: var(--color-red-800);
+  --semantic-color-destructive-pressed: var(--color-red-950);
   --semantic-color-disabled: var(--color-neutral-200);
   --semantic-color-disabled-foreground: var(--color-neutral-500);
   --semantic-color-error: var(--color-red-100);
@@ -296,6 +297,7 @@
   --semantic-color-destructive: var(--color-red-300);
   --semantic-color-destructive-foreground: var(--color-ink-950);
   --semantic-color-destructive-hover: var(--color-red-200);
+  --semantic-color-destructive-pressed: var(--color-red-100);
   --semantic-color-disabled: var(--color-ink-750);
   --semantic-color-disabled-foreground: var(--color-ink-400);
   --semantic-color-error: var(--color-red-950);

@@ -831,6 +831,15 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     providesContexts: ['destructive'],
     reason: 'the hovered fill of a destructive control, proved through destructive-foreground',
   },
+  // Minted 2026-09-03 (ADR-034 step 3) because COLOR_ROLE_CONTRACTS declared it and the
+  // assertion refused the file until it existed. The step below hover, as primary's is:
+  // red.950 on light where primary goes to teal.950, red.100 on dark where primary goes
+  // to teal.300 -- the deepest and the lightest step the red family has.
+  'color.destructive-pressed': {
+    kind: 'surface',
+    providesContexts: ['destructive'],
+    reason: 'the pressed fill of a destructive control, proved through destructive-foreground',
+  },
   'color.disabled': {
     kind: 'surface',
     providesContexts: ['disabled'],
@@ -1650,4 +1659,106 @@ export function colorRootOf(name) {
     }
   }
   return { companion: null, root: name }
+}
+
+const SEMANTIC_COLOR = 'semantic.color.'
+
+/**
+ * The contract table against the tokens that exist (ADR-034 Verification, cases 1-3).
+ *
+ * DRIVEN BY THE TOKENS THAT EXIST, like the colour policy and the typography roles: a
+ * root whose base the source does not declare is skipped, because a synthetic source
+ * that declares two colours is not defective for lacking twenty-four roots. What is
+ * refused is a token nothing owns, a slot nobody decided, a suffix the table disagrees
+ * with, and a reference from a PRESENT root to a token that does not exist -- which is
+ * how `destructive-pressed` was demanded before it was minted.
+ */
+export function assertColorRoleContracts(tokens, contracts = COLOR_ROLE_CONTRACTS) {
+  if (!(tokens instanceof Map)) {
+    throw new TypeError('colour role contracts are checked against a Map<tokenPath, token>')
+  }
+  const owners = new Map()
+  const claim = (path, root, slot) => {
+    const prior = owners.get(path)
+    if (prior && prior.root !== root) {
+      throw new Error(
+        `'${path}' is claimed by root '${prior.root}' as ${prior.slot} and by root '${root}' as ` +
+          `${slot} -- a token is one role, never two`,
+      )
+    }
+    owners.set(path, { root, slot })
+  }
+
+  for (const [root, contract] of Object.entries(contracts)) {
+    if (contract === null || typeof contract !== 'object' || Array.isArray(contract)) {
+      throw new TypeError(`colour root '${root}' must be an object`)
+    }
+    if (typeof contract.base !== 'string' || !contract.base.startsWith(SEMANTIC_COLOR)) {
+      throw new Error(`colour root '${root}' must name its base as a semantic.color.* token`)
+    }
+    for (const key of Object.keys(contract)) {
+      if (key !== 'base' && !COLOR_COMPANIONS.includes(key)) {
+        throw new Error(
+          `colour root '${root}' declares '${key}', which is not a companion ` +
+            `(${COLOR_COMPANIONS.join(', ')})`,
+        )
+      }
+    }
+    for (const companion of COLOR_COMPANIONS) {
+      if (!(companion in contract)) {
+        throw new Error(
+          `colour root '${root}' leaves '${companion}' undeclared -- write a token reference ` +
+            'or NONE, so an absence is a decision and not a gap',
+        )
+      }
+      const value = contract[companion]
+      if (value !== NONE && (typeof value !== 'string' || !value.startsWith(SEMANTIC_COLOR))) {
+        throw new Error(
+          `colour root '${root}' declares '${companion}' as ${String(value)} -- a companion is a ` +
+            'semantic.color.* reference or NONE',
+        )
+      }
+    }
+
+    const present = tokens.has(contract.base)
+    if (present) {
+      claim(contract.base, root, 'base')
+    }
+    for (const companion of COLOR_COMPANIONS) {
+      const value = contract[companion]
+      if (value === NONE) {
+        continue
+      }
+      if (tokens.has(value)) {
+        claim(value, root, companion)
+      } else if (present) {
+        throw new Error(
+          `colour root '${root}' names ${companion} '${value}', which does not exist -- mint ` +
+            'the token or declare the absence as NONE',
+        )
+      }
+    }
+  }
+
+  for (const [path, token] of tokens) {
+    if (!path.startsWith(SEMANTIC_COLOR) || token.type !== 'color') {
+      continue
+    }
+    // The suffix rule first: a token nobody owns BECAUSE the table disagrees with its
+    // name gets the message that names the disagreement, not the generic one.
+    const { companion, root } = colorRootOf(path.slice(SEMANTIC_COLOR.length))
+    if (companion !== null && contracts[root]?.[companion] !== path) {
+      throw new Error(
+        `'${path}' carries the companion suffix '${companion}' but root '${root}' does not ` +
+          `declare it as its ${companion} -- the name is checked against the table, not the ` +
+          'table against the name',
+      )
+    }
+    if (!owners.has(path)) {
+      throw new Error(
+        `'${path}' is owned by no declared root -- every semantic colour token is one role's ` +
+          'base or one of its companions (COLOR_ROLE_CONTRACTS)',
+      )
+    }
+  }
 }

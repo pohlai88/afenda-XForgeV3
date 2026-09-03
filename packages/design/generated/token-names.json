@@ -91,6 +91,7 @@
   "--semantic-color-destructive",
   "--semantic-color-destructive-foreground",
   "--semantic-color-destructive-hover",
+  "--semantic-color-destructive-pressed",
   "--semantic-color-disabled",
   "--semantic-color-disabled-foreground",
   "--semantic-color-error",

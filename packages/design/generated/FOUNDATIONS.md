@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 241 custom properties: 119 primitive, 122 semantic, 0 component (ceiling 12).
+- 242 custom properties: 119 primitive, 123 semantic, 0 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -165,6 +165,7 @@ elevation domains.
 | `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive |
 | `--semantic-color-destructive-foreground` | `semantic.color.destructive-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against destructive |
 | `--semantic-color-destructive-hover` | `semantic.color.destructive-hover` | color | `{color.red.800}` | surface · provides destructive |
+| `--semantic-color-destructive-pressed` | `semantic.color.destructive-pressed` | color | `{color.red.950}` | surface · provides destructive |
 | `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled |
 | `--semantic-color-disabled-foreground` | `semantic.color.disabled-foreground` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled |
 | `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error |
@@ -321,7 +322,7 @@ Selector `:root[data-density='compact']`, 11 rebound.
 
 ### `theme=dark`
 
-Selector `:root[data-theme='dark']`, 47 rebound.
+Selector `:root[data-theme='dark']`, 48 rebound.
 
 | Custom property | Value in this mode |
 | --- | --- |
@@ -336,6 +337,7 @@ Selector `:root[data-theme='dark']`, 47 rebound.
 | `--semantic-color-destructive` | `{color.red.300}` |
 | `--semantic-color-destructive-foreground` | `{color.ink.950}` |
 | `--semantic-color-destructive-hover` | `{color.red.200}` |
+| `--semantic-color-destructive-pressed` | `{color.red.100}` |
 | `--semantic-color-disabled` | `{color.ink.750}` |
 | `--semantic-color-disabled-foreground` | `{color.ink.400}` |
 | `--semantic-color-error` | `{color.red.950}` |

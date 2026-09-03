@@ -25,7 +25,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 108 roles projected.
+ * 109 roles projected.
  */
 :root {
   --accent: var(--semantic-color-accent);
@@ -39,6 +39,7 @@
   --destructive: var(--semantic-color-destructive);
   --destructive-foreground: var(--semantic-color-destructive-foreground);
   --destructive-hover: var(--semantic-color-destructive-hover);
+  --destructive-pressed: var(--semantic-color-destructive-pressed);
   --disabled: var(--semantic-color-disabled);
   --disabled-foreground: var(--semantic-color-disabled-foreground);
   --error: var(--semantic-color-error);
@@ -208,6 +209,7 @@
   --color-destructive: var(--semantic-color-destructive);
   --color-destructive-foreground: var(--semantic-color-destructive-foreground);
   --color-destructive-hover: var(--semantic-color-destructive-hover);
+  --color-destructive-pressed: var(--semantic-color-destructive-pressed);
   --color-disabled: var(--semantic-color-disabled);
   --color-disabled-foreground: var(--semantic-color-disabled-foreground);
   --color-error: var(--semantic-color-error);
