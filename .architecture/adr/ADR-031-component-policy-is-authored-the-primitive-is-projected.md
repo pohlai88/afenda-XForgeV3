@@ -144,8 +144,8 @@ repository already does it: `text.tsx` and `stack.tsx` carry cva recipes.
 
 **Compile-to-framework.** Mitosis ("Write components once, compile to every framework";
 Deutsche Bahn's DB UX ships React/Angular/Vue/Web Components from one source — its
-`packages/components/package.json` depends on Mitosis and the tree holds several hundred
-`.lite.tsx` sources; the README prose does not say so) and Stencil ("Stencil is a compiler that generates Web
+`packages/components/package.json` depends on Mitosis and its component sources are
+`.lite.tsx` files; the README prose does not say so) and Stencil ("Stencil is a compiler that generates Web
 Components"; "Stencil's primary objective is providing amazing tools for design systems and
 component libraries"; Ionic; `@stencil/react-output-target` "Generate[s] React functional
 component wrappers with JSX bindings") are real production compilers. Both compile from a **component source** and both are justified by
@@ -761,9 +761,10 @@ component's header when it is made.
 provenance header. A recipe or a contract only where the component owns the decision:
 Alert owns a contract (`ALERT_TONE`); Text and Stack carry cva recipes; Button carries a
 two-row mapping table; Switch and Combobox own no axis; nothing else does. Five component
-tests (`alert`, `button`, `card`, `switch`, `combobox`), one composition test in the app,
-one schema check for the layer, and one JSX-runtime line in `vitest.config.ts` that the
-first component test made necessary.
+tests (`alert`, `button`, `card`, `switch`, `combobox`), two browser tests (`switch`,
+`combobox`) with one setup file, one composition test in the app, one schema check for the
+layer, and in `vitest.config.ts` one JSX-runtime line and one `browser` project over a
+provider added through the catalog.
 
 **What this does NOT change.** Laws 6 and 16 (what the UI and a module may import by
 content), ADR-033 (how anything is imported), the token kernel and its generator (law 27).
@@ -952,3 +953,14 @@ the unmeasured NORMALIZE cost. Non-blocking corrections: exit C reworded to the 
 its check, stale first-draft line numbers marked as such, thirteen → fifteen, 53 → 61 cases,
 the Zag and Panda rows, the Mitosis file count dropped, and the composition test's slice
 anchor made deliberate.
+
+A third pass after the browser suite landed (HEAD `842c2f6`): every previous finding
+confirmed fixed in text and in the tree; Verification 6's files, config, catalog entry and
+headers confirmed; three URL rows spot-checked verbatim. Nothing blocking. Three residues,
+cleared in the following commit: a softened Mitosis file count with no row behind it
+(dropped); "What this costs today" one commit stale (updated); and ten failure screenshots
+that the red browser runs had written into the checkout and `git add -A` had committed —
+removed, their paths ignored, and `screenshotFailures` turned off so a red run leaves the
+tree as it found it (law 33). The reviewer also noted, correctly, that the browser proof is
+one headless Chromium on one machine and that Switch's adopted form words (`name`, `value`,
+`required`, `readOnly`) are forwarded but not exercised by a browser case.

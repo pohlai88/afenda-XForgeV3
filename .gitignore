@@ -35,3 +35,9 @@ storybook-static/
 next-env.d.ts
 
 tests/harness/dist/
+
+# Vitest browser mode writes failure screenshots into the checkout; a red run must
+# not change the tree (law 33). screenshotFailures is off in vitest.config.ts and
+# these paths are ignored in case a future provider writes them anyway.
+.vitest-attachments/
+**/__screenshots__/

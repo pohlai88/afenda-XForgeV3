@@ -97,6 +97,12 @@ export default defineConfig({
             headless: true,
             instances: [{ browser: 'chromium' }],
             provider: playwright(),
+            // A red run must leave the checkout as it found it (law 33). The
+            // default wrote ten PNGs under .vitest-attachments/ and
+            // tests/__screenshots__/ on the first failures, and `git add -A`
+            // committed them. The failure message names the element and the
+            // state; the picture added nothing a reviewer could use.
+            screenshotFailures: false,
           },
           exclude: NOT_THIS_CHECKOUT,
           include: ['**/tests/**/*.browser.test.tsx'],
