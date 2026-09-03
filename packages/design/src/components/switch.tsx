@@ -81,7 +81,7 @@ export function Switch({ onCheckedChange, ...props }: SwitchProps) {
         className={cn(
           'block rounded-full',
           STYLE.component.switch.thumb,
-          STYLE.surface.page.background,
+          STYLE.surface.default.background,
         )}
         data-slot="switch-thumb"
       />

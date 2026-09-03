@@ -46,7 +46,7 @@ function WriteProblem({ outcome }: { outcome: WriteOutcome }) {
         {/*
           NOT `tone="muted"` ON A TINT. It was, and axe found the contrast
           failure the moment the scan was wired back up: `muted-foreground` is
-          measured against the page and the card, never against `bg-warning`,
+          measured against the page and the card, never against `bg-warning-container`,
           so the invariant that governs every colour role had nothing to say
           about this pairing.
 

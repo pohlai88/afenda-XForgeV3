@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 162 symbols. Roles without one, and why:
+ * 147 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -17,34 +17,20 @@
  *   semantic.motion.duration.pulse -- a looping duration drives a keyframe, not a transition
  */
 export const STYLE = {
-  action: {
-    accent: {
-      background: 'bg-accent',
-      foreground: 'text-accent-foreground',
-      hover: 'hover:bg-accent-hover',
-      hoverForeground: 'hover:text-accent-foreground',
-      pressed: 'active:bg-accent-pressed',
-    },
-    danger: {
-      background: 'bg-destructive',
-      foreground: 'text-destructive-foreground',
-      hover: 'hover:bg-destructive-hover',
-      hoverForeground: 'hover:text-destructive-foreground',
-      pressed: 'active:bg-destructive-pressed',
-    },
+  accent: {
     primary: {
       background: 'bg-primary',
-      foreground: 'text-primary-foreground',
+      foreground: 'text-on-primary',
       hover: 'hover:bg-primary-hover',
-      hoverForeground: 'hover:text-primary-foreground',
+      hoverForeground: 'hover:text-on-primary',
       pressed: 'active:bg-primary-pressed',
     },
-    secondary: {
-      background: 'bg-secondary',
-      foreground: 'text-secondary-foreground',
-      hover: 'hover:bg-secondary-hover',
-      hoverForeground: 'hover:text-secondary-foreground',
-      pressed: 'active:bg-secondary-pressed',
+    primaryContainer: {
+      background: 'bg-primary-container',
+      foreground: 'text-on-primary-container',
+      hover: 'hover:bg-primary-container-hover',
+      hoverForeground: 'hover:text-on-primary-container',
+      pressed: 'active:bg-primary-container-pressed',
     },
   },
   component: {
@@ -65,36 +51,52 @@ export const STYLE = {
     base: 'shadow-flat',
     panel: 'shadow-flat',
   },
+  error: {
+    container: {
+      background: 'bg-error-container',
+      foreground: 'text-on-error-container',
+    },
+    default: {
+      background: 'bg-error',
+      foreground: 'text-on-error',
+      hover: 'hover:bg-error-hover',
+      hoverForeground: 'hover:text-on-error',
+      pressed: 'active:bg-error-pressed',
+    },
+  },
   family: {
     mono: 'font-mono',
     sans: 'font-sans',
   },
   field: {
-    placeholder: 'placeholder:text-muted-foreground',
+    placeholder: 'placeholder:text-on-surface-variant',
   },
   focus: {
     ring: 'focus-visible:focus-ring',
   },
   ink: {
-    default: {
-      text: 'text-foreground',
+    onSurface: {
+      text: 'text-on-surface',
+    },
+    onSurfaceVariant: {
+      text: 'text-on-surface-variant',
     },
   },
   interaction: {
     checked: {
       background: 'data-checked:not-data-disabled:bg-primary',
-      foreground: 'data-checked:not-data-disabled:text-primary-foreground',
+      foreground: 'data-checked:not-data-disabled:text-on-primary',
     },
     disabled: {
       background: 'data-disabled:bg-disabled',
-      foreground: 'data-disabled:text-disabled-foreground',
+      foreground: 'data-disabled:text-on-disabled',
     },
     highlighted: {
-      background: 'data-highlighted:not-data-disabled:bg-accent',
-      foreground: 'data-highlighted:not-data-disabled:text-accent-foreground',
+      background: 'data-highlighted:not-data-disabled:bg-primary-container',
+      foreground: 'data-highlighted:not-data-disabled:text-on-primary-container',
     },
     unchecked: {
-      background: 'data-unchecked:not-data-disabled:bg-field',
+      background: 'data-unchecked:not-data-disabled:bg-surface-lowest',
     },
   },
   layer: {
@@ -106,6 +108,21 @@ export const STYLE = {
     overlay: 'duration-overlay',
     press: 'duration-press',
     state: 'duration-state',
+  },
+  outline: {
+    default: {
+      border: 'border-outline',
+      outline: 'outline-outline',
+      ring: 'ring-outline',
+    },
+    focus: {
+      border: 'border-focus',
+      outline: 'outline-focus',
+      ring: 'ring-focus',
+    },
+    variant: {
+      border: 'border-outline-variant',
+    },
   },
   shape: {
     container: 'rounded-container',
@@ -211,81 +228,41 @@ export const STYLE = {
   state: {
     disabled: {
       background: 'disabled:bg-disabled',
-      foreground: 'disabled:text-disabled-foreground',
+      foreground: 'disabled:text-on-disabled',
     },
   },
   status: {
-    danger: {
-      background: 'bg-error',
-      foreground: 'text-error-foreground',
-    },
     info: {
-      background: 'bg-info',
-      foreground: 'text-info-foreground',
+      background: 'bg-info-container',
+      foreground: 'text-on-info-container',
     },
     statutory: {
-      background: 'bg-statutory',
-      foreground: 'text-statutory-foreground',
+      background: 'bg-statutory-container',
+      foreground: 'text-on-statutory-container',
     },
     success: {
-      background: 'bg-success',
-      foreground: 'text-success-foreground',
+      background: 'bg-success-container',
+      foreground: 'text-on-success-container',
     },
     warning: {
-      background: 'bg-warning',
-      foreground: 'text-warning-foreground',
+      background: 'bg-warning-container',
+      foreground: 'text-on-warning-container',
     },
   },
   stroke: {
-    border: {
-      border: 'border-border',
-    },
-    field: {
-      border: 'border-input',
-      outline: 'outline-input',
-      ring: 'ring-input',
-    },
-    focus: {
-      border: 'border-ring',
-      outline: 'outline-ring',
-      ring: 'ring-ring',
-    },
-    rail: {
-      border: 'border-sidebar-border',
-    },
-    railFocus: {
-      border: 'border-sidebar-ring',
-      outline: 'outline-sidebar-ring',
-      ring: 'ring-sidebar-ring',
-    },
     width: 'border-stroke',
   },
   surface: {
-    card: {
-      background: 'bg-card',
-      foreground: 'text-card-foreground',
+    container: {
+      background: 'bg-surface-container',
     },
-    field: {
-      background: 'bg-field',
+    default: {
+      background: 'bg-surface',
     },
-    muted: {
-      background: 'bg-muted',
-      foreground: 'text-muted-foreground',
-    },
-    page: {
-      background: 'bg-background',
-    },
-    popover: {
-      background: 'bg-popover',
-      foreground: 'text-popover-foreground',
-    },
-    rail: {
-      background: 'bg-sidebar',
-      foreground: 'text-sidebar-foreground',
-    },
-    railAccent: {
-      background: 'bg-sidebar-accent',
-      foreground: 'text-sidebar-accent-foreground',
+    lowest: {
+      background: 'bg-surface-lowest',
+      hover: 'hover:bg-surface-lowest-hover',
+      pressed: 'active:bg-surface-lowest-pressed',
     },
   },
   typography: {

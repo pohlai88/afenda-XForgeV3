@@ -27,124 +27,64 @@
     }
   ],
   "symbols": {
-    "action.accent.background": {
-      "class": "bg-accent",
-      "tokens": [
-        "semantic.color.accent"
-      ]
-    },
-    "action.accent.foreground": {
-      "class": "text-accent-foreground",
-      "tokens": [
-        "semantic.color.accent-foreground"
-      ]
-    },
-    "action.accent.hover": {
-      "class": "hover:bg-accent-hover",
-      "tokens": [
-        "semantic.color.accent-hover"
-      ]
-    },
-    "action.accent.hoverForeground": {
-      "class": "hover:text-accent-foreground",
-      "tokens": [
-        "semantic.color.accent-foreground"
-      ]
-    },
-    "action.accent.pressed": {
-      "class": "active:bg-accent-pressed",
-      "tokens": [
-        "semantic.color.accent-pressed"
-      ]
-    },
-    "action.danger.background": {
-      "class": "bg-destructive",
-      "tokens": [
-        "semantic.color.destructive"
-      ]
-    },
-    "action.danger.foreground": {
-      "class": "text-destructive-foreground",
-      "tokens": [
-        "semantic.color.destructive-foreground"
-      ]
-    },
-    "action.danger.hover": {
-      "class": "hover:bg-destructive-hover",
-      "tokens": [
-        "semantic.color.destructive-hover"
-      ]
-    },
-    "action.danger.hoverForeground": {
-      "class": "hover:text-destructive-foreground",
-      "tokens": [
-        "semantic.color.destructive-foreground"
-      ]
-    },
-    "action.danger.pressed": {
-      "class": "active:bg-destructive-pressed",
-      "tokens": [
-        "semantic.color.destructive-pressed"
-      ]
-    },
-    "action.primary.background": {
+    "accent.primary.background": {
       "class": "bg-primary",
       "tokens": [
         "semantic.color.primary"
       ]
     },
-    "action.primary.foreground": {
-      "class": "text-primary-foreground",
+    "accent.primary.foreground": {
+      "class": "text-on-primary",
       "tokens": [
-        "semantic.color.primary-foreground"
+        "semantic.color.on-primary"
       ]
     },
-    "action.primary.hover": {
+    "accent.primary.hover": {
       "class": "hover:bg-primary-hover",
       "tokens": [
         "semantic.color.primary-hover"
       ]
     },
-    "action.primary.hoverForeground": {
-      "class": "hover:text-primary-foreground",
+    "accent.primary.hoverForeground": {
+      "class": "hover:text-on-primary",
       "tokens": [
-        "semantic.color.primary-foreground"
+        "semantic.color.on-primary"
       ]
     },
-    "action.primary.pressed": {
+    "accent.primary.pressed": {
       "class": "active:bg-primary-pressed",
       "tokens": [
         "semantic.color.primary-pressed"
       ]
     },
-    "action.secondary.background": {
-      "class": "bg-secondary",
+    "accent.primaryContainer.background": {
+      "class": "bg-primary-container",
       "tokens": [
-        "semantic.color.secondary"
+        "semantic.color.primary-container"
       ]
     },
-    "action.secondary.foreground": {
-      "class": "text-secondary-foreground",
+    "accent.primaryContainer.foreground": {
+      "class": "text-on-primary-container",
       "tokens": [
-        "semantic.color.secondary-foreground"
+        "semantic.color.on-primary-container"
       ]
     },
-    "action.secondary.hover": {
-      "class": "hover:bg-secondary-hover",
+    "accent.primaryContainer.hover": {
+      "class": "hover:bg-primary-container-hover",
       "tokens": [
-        "semantic.color.secondary-hover"
+        "semantic.color.primary-container-hover"
       ]
     },
-    "action.secondary.hoverForeground": {
-      "class": "hover:text-secondary-foreground",
+    "accent.primaryContainer.hoverForeground": {
+      "class": "hover:text-on-primary-container",
       "tokens": [
-        "semantic.color.secondary-foreground"
+        "semantic.color.on-primary-container"
       ]
     },
-    "action.secondary.pressed": {
-      "class": "active:bg-secondary-pressed",
+    "accent.primaryContainer.pressed": {
+      "class": "active:bg-primary-container-pressed",
       "tokens": [
-        "semantic.color.secondary-pressed"
+        "semantic.color.primary-container-pressed"
       ]
     },
     "component.switch.inset": {
@@ -207,6 +147,48 @@
         "semantic.elevation.flat"
       ]
     },
+    "error.container.background": {
+      "class": "bg-error-container",
+      "tokens": [
+        "semantic.color.error-container"
+      ]
+    },
+    "error.container.foreground": {
+      "class": "text-on-error-container",
+      "tokens": [
+        "semantic.color.on-error-container"
+      ]
+    },
+    "error.default.background": {
+      "class": "bg-error",
+      "tokens": [
+        "semantic.color.error"
+      ]
+    },
+    "error.default.foreground": {
+      "class": "text-on-error",
+      "tokens": [
+        "semantic.color.on-error"
+      ]
+    },
+    "error.default.hover": {
+      "class": "hover:bg-error-hover",
+      "tokens": [
+        "semantic.color.error-hover"
+      ]
+    },
+    "error.default.hoverForeground": {
+      "class": "hover:text-on-error",
+      "tokens": [
+        "semantic.color.on-error"
+      ]
+    },
+    "error.default.pressed": {
+      "class": "active:bg-error-pressed",
+      "tokens": [
+        "semantic.color.error-pressed"
+      ]
+    },
     "family.mono": {
       "class": "font-mono",
       "tokens": [
@@ -220,22 +202,28 @@
       ]
     },
     "field.placeholder": {
-      "class": "placeholder:text-muted-foreground",
+      "class": "placeholder:text-on-surface-variant",
       "tokens": [
-        "semantic.color.muted-foreground"
+        "semantic.color.on-surface-variant"
       ]
     },
     "focus.ring": {
       "class": "focus-visible:focus-ring",
       "tokens": [
         "semantic.size.ring",
-        "semantic.color.ring"
+        "semantic.color.focus"
       ]
     },
-    "ink.default.text": {
-      "class": "text-foreground",
+    "ink.onSurface.text": {
+      "class": "text-on-surface",
       "tokens": [
-        "semantic.color.foreground"
+        "semantic.color.on-surface"
+      ]
+    },
+    "ink.onSurfaceVariant.text": {
+      "class": "text-on-surface-variant",
+      "tokens": [
+        "semantic.color.on-surface-variant"
       ]
     },
     "interaction.checked.background": {
@@ -245,9 +233,9 @@
       ]
     },
     "interaction.checked.foreground": {
-      "class": "data-checked:not-data-disabled:text-primary-foreground",
+      "class": "data-checked:not-data-disabled:text-on-primary",
       "tokens": [
-        "semantic.color.primary-foreground"
+        "semantic.color.on-primary"
       ]
     },
     "interaction.disabled.background": {
@@ -257,27 +245,27 @@
       ]
     },
     "interaction.disabled.foreground": {
-      "class": "data-disabled:text-disabled-foreground",
+      "class": "data-disabled:text-on-disabled",
       "tokens": [
-        "semantic.color.disabled-foreground"
+        "semantic.color.on-disabled"
       ]
     },
     "interaction.highlighted.background": {
-      "class": "data-highlighted:not-data-disabled:bg-accent",
+      "class": "data-highlighted:not-data-disabled:bg-primary-container",
       "tokens": [
-        "semantic.color.accent"
+        "semantic.color.primary-container"
       ]
     },
     "interaction.highlighted.foreground": {
-      "class": "data-highlighted:not-data-disabled:text-accent-foreground",
+      "class": "data-highlighted:not-data-disabled:text-on-primary-container",
       "tokens": [
-        "semantic.color.accent-foreground"
+        "semantic.color.on-primary-container"
       ]
     },
     "interaction.unchecked.background": {
-      "class": "data-unchecked:not-data-disabled:bg-field",
+      "class": "data-unchecked:not-data-disabled:bg-surface-lowest",
       "tokens": [
-        "semantic.color.field"
+        "semantic.color.surface-lowest"
       ]
     },
     "layer.local": {
@@ -314,6 +302,48 @@
       "class": "duration-state",
       "tokens": [
         "semantic.motion.duration.state"
+      ]
+    },
+    "outline.default.border": {
+      "class": "border-outline",
+      "tokens": [
+        "semantic.color.outline"
+      ]
+    },
+    "outline.default.outline": {
+      "class": "outline-outline",
+      "tokens": [
+        "semantic.color.outline"
+      ]
+    },
+    "outline.default.ring": {
+      "class": "ring-outline",
+      "tokens": [
+        "semantic.color.outline"
+      ]
+    },
+    "outline.focus.border": {
+      "class": "border-focus",
+      "tokens": [
+        "semantic.color.focus"
+      ]
+    },
+    "outline.focus.outline": {
+      "class": "outline-focus",
+      "tokens": [
+        "semantic.color.focus"
+      ]
+    },
+    "outline.focus.ring": {
+      "class": "ring-focus",
+      "tokens": [
+        "semantic.color.focus"
+      ]
+    },
+    "outline.variant.border": {
+      "class": "border-outline-variant",
+      "tokens": [
+        "semantic.color.outline-variant"
       ]
     },
     "shape.container": {
@@ -738,135 +768,57 @@
       ]
     },
     "state.disabled.foreground": {
-      "class": "disabled:text-disabled-foreground",
+      "class": "disabled:text-on-disabled",
       "tokens": [
-        "semantic.color.disabled-foreground"
-      ]
-    },
-    "status.danger.background": {
-      "class": "bg-error",
-      "tokens": [
-        "semantic.color.error"
-      ]
-    },
-    "status.danger.foreground": {
-      "class": "text-error-foreground",
-      "tokens": [
-        "semantic.color.error-foreground"
+        "semantic.color.on-disabled"
       ]
     },
     "status.info.background": {
-      "class": "bg-info",
+      "class": "bg-info-container",
       "tokens": [
-        "semantic.color.info"
+        "semantic.color.info-container"
       ]
     },
     "status.info.foreground": {
-      "class": "text-info-foreground",
+      "class": "text-on-info-container",
       "tokens": [
-        "semantic.color.info-foreground"
+        "semantic.color.on-info-container"
       ]
     },
     "status.statutory.background": {
-      "class": "bg-statutory",
+      "class": "bg-statutory-container",
       "tokens": [
-        "semantic.color.statutory"
+        "semantic.color.statutory-container"
       ]
     },
     "status.statutory.foreground": {
-      "class": "text-statutory-foreground",
+      "class": "text-on-statutory-container",
       "tokens": [
-        "semantic.color.statutory-foreground"
+        "semantic.color.on-statutory-container"
       ]
     },
     "status.success.background": {
-      "class": "bg-success",
+      "class": "bg-success-container",
       "tokens": [
-        "semantic.color.success"
+        "semantic.color.success-container"
       ]
     },
     "status.success.foreground": {
-      "class": "text-success-foreground",
+      "class": "text-on-success-container",
       "tokens": [
-        "semantic.color.success-foreground"
+        "semantic.color.on-success-container"
       ]
     },
     "status.warning.background": {
-      "class": "bg-warning",
+      "class": "bg-warning-container",
       "tokens": [
-        "semantic.color.warning"
+        "semantic.color.warning-container"
       ]
     },
     "status.warning.foreground": {
-      "class": "text-warning-foreground",
+      "class": "text-on-warning-container",
       "tokens": [
-        "semantic.color.warning-foreground"
-      ]
-    },
-    "stroke.border.border": {
-      "class": "border-border",
-      "tokens": [
-        "semantic.color.border"
-      ]
-    },
-    "stroke.field.border": {
-      "class": "border-input",
-      "tokens": [
-        "semantic.color.input"
-      ]
-    },
-    "stroke.field.outline": {
-      "class": "outline-input",
-      "tokens": [
-        "semantic.color.input"
-      ]
-    },
-    "stroke.field.ring": {
-      "class": "ring-input",
-      "tokens": [
-        "semantic.color.input"
-      ]
-    },
-    "stroke.focus.border": {
-      "class": "border-ring",
-      "tokens": [
-        "semantic.color.ring"
-      ]
-    },
-    "stroke.focus.outline": {
-      "class": "outline-ring",
-      "tokens": [
-        "semantic.color.ring"
-      ]
-    },
-    "stroke.focus.ring": {
-      "class": "ring-ring",
-      "tokens": [
-        "semantic.color.ring"
-      ]
-    },
-    "stroke.rail.border": {
-      "class": "border-sidebar-border",
-      "tokens": [
-        "semantic.color.sidebar-border"
-      ]
-    },
-    "stroke.railFocus.border": {
-      "class": "border-sidebar-ring",
-      "tokens": [
-        "semantic.color.sidebar-ring"
-      ]
-    },
-    "stroke.railFocus.outline": {
-      "class": "outline-sidebar-ring",
-      "tokens": [
-        "semantic.color.sidebar-ring"
-      ]
-    },
-    "stroke.railFocus.ring": {
-      "class": "ring-sidebar-ring",
-      "tokens": [
-        "semantic.color.sidebar-ring"
+        "semantic.color.on-warning-container"
       ]
     },
     "stroke.width": {
@@ -875,76 +827,34 @@
         "semantic.size.stroke"
       ]
     },
-    "surface.card.background": {
-      "class": "bg-card",
+    "surface.container.background": {
+      "class": "bg-surface-container",
       "tokens": [
-        "semantic.color.card"
+        "semantic.color.surface-container"
       ]
     },
-    "surface.card.foreground": {
-      "class": "text-card-foreground",
+    "surface.default.background": {
+      "class": "bg-surface",
       "tokens": [
-        "semantic.color.card-foreground"
+        "semantic.color.surface"
       ]
     },
-    "surface.field.background": {
-      "class": "bg-field",
+    "surface.lowest.background": {
+      "class": "bg-surface-lowest",
       "tokens": [
-        "semantic.color.field"
+        "semantic.color.surface-lowest"
       ]
     },
-    "surface.muted.background": {
-      "class": "bg-muted",
+    "surface.lowest.hover": {
+      "class": "hover:bg-surface-lowest-hover",
       "tokens": [
-        "semantic.color.muted"
+        "semantic.color.surface-lowest-hover"
       ]
     },
-    "surface.muted.foreground": {
-      "class": "text-muted-foreground",
+    "surface.lowest.pressed": {
+      "class": "active:bg-surface-lowest-pressed",
       "tokens": [
-        "semantic.color.muted-foreground"
-      ]
-    },
-    "surface.page.background": {
-      "class": "bg-background",
-      "tokens": [
-        "semantic.color.background"
-      ]
-    },
-    "surface.popover.background": {
-      "class": "bg-popover",
-      "tokens": [
-        "semantic.color.popover"
-      ]
-    },
-    "surface.popover.foreground": {
-      "class": "text-popover-foreground",
-      "tokens": [
-        "semantic.color.popover-foreground"
-      ]
-    },
-    "surface.rail.background": {
-      "class": "bg-sidebar",
-      "tokens": [
-        "semantic.color.sidebar"
-      ]
-    },
-    "surface.rail.foreground": {
-      "class": "text-sidebar-foreground",
-      "tokens": [
-        "semantic.color.sidebar-foreground"
-      ]
-    },
-    "surface.railAccent.background": {
-      "class": "bg-sidebar-accent",
-      "tokens": [
-        "semantic.color.sidebar-accent"
-      ]
-    },
-    "surface.railAccent.foreground": {
-      "class": "text-sidebar-accent-foreground",
-      "tokens": [
-        "semantic.color.sidebar-accent-foreground"
+        "semantic.color.surface-lowest-pressed"
       ]
     },
     "typography.body": {

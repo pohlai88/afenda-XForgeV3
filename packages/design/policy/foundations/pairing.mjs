@@ -18,111 +18,86 @@ import { COLOR_ROLE_CONTRACTS } from './color.mjs'
  * WCAG exempts and M3 draws at 38% opacity. M3 builds its own pairs to a 3:1 minimum and
  * relies on the text inside a target for 4.5; ours are held to 4.5 wherever the ink is text.
  *
- * NAMES ARE THE TOKEN ROOTS (`muted-foreground`, `error`), because that is what the token
- * file and the theme overrides are keyed by. The dictionary words (`surface.muted`) are the
- * next layer up and are being renamed against M3 separately.
+ * NAMES ARE THE TOKEN ROOTS (`on-surface-variant`, `error-container`), because that is what
+ * the token file and the theme overrides are keyed by; the dictionary words (`ink.onSurfaceVariant`,
+ * `error.container`) are the layer above.
  */
 export const COLOR_PAIRS = deepFreeze({
-  'accent-foreground': {
-    fills: ['accent', 'accent-hover', 'accent-pressed'],
-    floor: 4.5,
-    why: "M3 'on primary container': text on the primary tint through its hover and pressed layers",
+  focus: {
+    fills: ['surface', 'surface-lowest'],
+    floor: 3,
+    why: 'the focus indicator must be seen against the surfaces controls sit on (WCAG 1.4.11)',
   },
-  'card-foreground': { fills: ['card'], floor: 4.5, why: 'on surface, against the card rung' },
-  'destructive-foreground': {
-    fills: ['destructive', 'destructive-hover', 'destructive-pressed'],
-    floor: 4.5,
-    why: "M3 'on error': text on the high-emphasis error fill through its hover and pressed layers",
-  },
-  'disabled-foreground': {
+  'on-disabled': {
     fills: ['disabled'],
     floor: 3,
     why: 'disabled text is exempt from AA (WCAG 1.4.3) and M3 draws it at 38% opacity; held to the 3:1 minimum M3 builds its pairs to',
   },
-  'error-foreground': {
-    fills: ['error'],
+  'on-error': {
+    fills: ['error', 'error-hover', 'error-pressed'],
     floor: 4.5,
-    why: "M3 'on error container': the danger ink on the danger tint",
+    why: "M3 'on error': text on the high-emphasis error fill through its hover and pressed fills",
   },
-  foreground: {
-    fills: [
-      'background',
-      'card',
-      'popover',
-      'field',
-      'secondary',
-      'secondary-hover',
-      'secondary-pressed',
-      'sidebar',
-      'muted',
-      'error',
-      'info',
-      'success',
-      'warning',
-      'statutory',
-    ],
+  'on-error-container': {
+    fills: ['error-container', 'surface', 'surface-lowest'],
     floor: 4.5,
-    why: "M3 'on surface': the default ink, against every surface and, as an Alert's body text, against the status tints",
+    why: "M3 'on error container': the danger ink on its tint, and as Text's trend tone on the page and the lowest surface",
   },
-  'info-foreground': {
-    fills: ['info'],
+  'on-info-container': {
+    fills: ['info-container'],
     floor: 4.5,
     why: 'a custom status container and its on-colour',
   },
-  input: {
-    fills: ['field', 'background', 'card'],
-    floor: 3,
-    why: "M3 'outline': the boundary of a text field must be seen against the surface it sits on (WCAG 1.4.11, non-text 3:1)",
+  'on-primary': {
+    fills: ['primary', 'primary-hover', 'primary-pressed'],
+    floor: 4.5,
+    why: "M3 'on primary': text on the primary fill through its hover and pressed fills",
   },
-  'muted-foreground': {
-    fills: ['background', 'card', 'popover', 'field', 'secondary', 'sidebar', 'muted'],
+  'on-primary-container': {
+    fills: ['primary-container', 'primary-container-hover', 'primary-container-pressed'],
+    floor: 4.5,
+    why: "M3 'on primary container': text on the primary tint through its hover and pressed fills",
+  },
+  'on-statutory-container': {
+    fills: ['statutory-container'],
+    floor: 4.5,
+    why: 'a custom status container and its on-colour',
+  },
+  'on-success-container': {
+    fills: ['success-container', 'surface', 'surface-lowest'],
+    floor: 4.5,
+    why: "a custom status container and its on-colour, also Text's trend tone on the page and the lowest surface",
+  },
+  'on-surface': {
+    fills: [
+      'surface',
+      'surface-lowest',
+      'surface-lowest-hover',
+      'surface-lowest-pressed',
+      'surface-container',
+      'error-container',
+      'info-container',
+      'success-container',
+      'warning-container',
+      'statutory-container',
+    ],
+    floor: 4.5,
+    why: "M3 'on surface': the default ink, against every surface rung and, as an Alert's body text, against the status containers",
+  },
+  'on-surface-variant': {
+    fills: ['surface', 'surface-lowest', 'surface-container'],
     floor: 4.5,
     why: "M3 'on surface variant': the lower-emphasis ink against SURFACES ONLY -- never a status or action tint, which is where it fell to 4.31:1",
   },
-  'popover-foreground': {
-    fills: ['popover'],
+  'on-warning-container': {
+    fills: ['warning-container'],
     floor: 4.5,
-    why: 'on surface, against the popover rung',
+    why: 'a custom status container and its on-colour',
   },
-  'primary-foreground': {
-    fills: ['primary', 'primary-hover', 'primary-pressed'],
-    floor: 4.5,
-    why: "M3 'on primary': text on the primary fill through its hover and pressed layers",
-  },
-  ring: {
-    fills: ['background', 'card'],
+  outline: {
+    fills: ['surface', 'surface-lowest'],
     floor: 3,
-    why: 'the focus indicator must be seen against the surfaces controls sit on (WCAG 1.4.11)',
-  },
-  'secondary-foreground': {
-    fills: ['secondary', 'secondary-hover', 'secondary-pressed'],
-    floor: 4.5,
-    why: 'the default ink on the neutral fill (M3: surface container lowest) through its hover and pressed layers',
-  },
-  'sidebar-accent-foreground': {
-    fills: ['sidebar-accent'],
-    floor: 4.5,
-    why: "M3 'on secondary container': text on the navigation indicator",
-  },
-  'sidebar-foreground': {
-    fills: ['sidebar'],
-    floor: 4.5,
-    why: 'on surface, against the navigation region (M3: surface container)',
-  },
-  'statutory-foreground': {
-    fills: ['statutory'],
-    floor: 4.5,
-    why: 'a custom status container and its on-colour',
-  },
-  'success-foreground': {
-    fills: ['success'],
-    floor: 4.5,
-    why: 'a custom status container and its on-colour',
-  },
-  'warning-foreground': {
-    fills: ['warning'],
-    floor: 4.5,
-    why: 'a custom status container and its on-colour',
+    why: "M3 'outline': the boundary of a text field must be seen against the surface it sits on (WCAG 1.4.11, non-text 3:1)",
   },
 })
 
@@ -179,10 +154,17 @@ export function pairsBelowFloor(tokens, pairs = COLOR_PAIRS) {
 
 /** Every pairing row names an ink that is a contract root or a root's foreground. */
 export function assertPairsNameRoots(pairs = COLOR_PAIRS, contracts = COLOR_ROLE_CONTRACTS) {
+  const declaredInks = new Set(
+    Object.values(contracts)
+      .map((c) => c.foreground)
+      .filter((f) => typeof f === 'string')
+      .map((f) => f.slice('semantic.color.'.length)),
+  )
   for (const [ink, { fills }] of Object.entries(pairs)) {
-    const inkRoot = ink.replace(/-foreground$/, '')
-    if (!(inkRoot in contracts)) {
-      throw new Error(`COLOR_PAIRS names ink '${ink}', which is no contract root`)
+    if (!(ink in contracts || declaredInks.has(ink))) {
+      throw new Error(
+        `COLOR_PAIRS names ink '${ink}', which is neither a root nor a declared on-colour`,
+      )
     }
     for (const fill of fills) {
       if (!(fill.replace(/-(hover|pressed)$/, '') in contracts)) {

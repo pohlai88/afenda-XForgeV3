@@ -84,14 +84,14 @@ export const ELEVATION_LAYERS = deepFreeze({
     rank: 2,
     reason: 'a menu, sheet or dialog, which reads as interrupting the page rather than joining it',
     separatedBy: ['scrim', 'shadow', 'surface'],
-    surface: 'color.popover',
+    surface: 'color.surface-container',
   },
   base: {
     elevation: 'semantic.elevation.flat',
     rank: 0,
     reason: 'the page itself, which nothing sits beneath',
     separatedBy: [],
-    surface: 'color.background',
+    surface: 'color.surface',
   },
 
   panel: {
@@ -99,7 +99,7 @@ export const ELEVATION_LAYERS = deepFreeze({
     rank: 1,
     reason: 'a card or panel, which groups content without leaving the page',
     separatedBy: ['boundary', 'surface'],
-    surface: 'color.card',
+    surface: 'color.surface-lowest',
   },
 })
 

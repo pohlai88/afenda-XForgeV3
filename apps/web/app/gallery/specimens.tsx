@@ -544,10 +544,10 @@ export const GALLERY: readonly Group[] = [
         name: 'A fill with its ink, a fill without one, a stroke',
         node: (
           <Stack direction="row" gap="normal">
-            <Swatch colour="action.primary" />
-            <Swatch colour="status.danger" />
-            <Swatch colour="surface.page" />
-            <Swatch colour="stroke.border" />
+            <Swatch colour="accent.primary" />
+            <Swatch colour="error.container" />
+            <Swatch colour="surface.default" />
+            <Swatch colour="outline.variant" />
           </Stack>
         ),
       },

@@ -30,7 +30,11 @@ export function Status({ children, ...props }: StatusProps) {
     <p
       aria-busy="true"
       aria-live="polite"
-      className={cn(STYLE.space.none.margin, STYLE.typography.body, STYLE.surface.muted.foreground)}
+      className={cn(
+        STYLE.space.none.margin,
+        STYLE.typography.body,
+        STYLE.ink.onSurfaceVariant.text,
+      )}
       data-slot="status"
       /**
        * THE ROLE, WHICH WAS MISSING. `aria-live="polite"` alone does announce,

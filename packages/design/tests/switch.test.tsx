@@ -36,7 +36,7 @@ describe('Switch keeps the primitive behaviour and exposes only Xforge words', (
     const html = render({ checked: true, onCheckedChange: () => {} })
     expect(html).toContain('aria-checked="true"')
     // Attribute form, not substring: the class list legitimately contains
-    // `data-unchecked:bg-input` as a Tailwind variant, which is not the state.
+    // `data-unchecked:bg-outline` as a Tailwind variant, which is not the state.
     expect(html).toContain('data-checked=""')
     expect(html).not.toContain('data-unchecked=""')
   })
@@ -68,7 +68,7 @@ describe('Switch keeps the primitive behaviour and exposes only Xforge words', (
       'w-switch-track-width',
       'h-switch-track-height',
       // At rest excludes disabled: a disabled control shows no other interaction state.
-      'data-unchecked:not-data-disabled:bg-field',
+      'data-unchecked:not-data-disabled:bg-surface-lowest',
       'data-checked:not-data-disabled:bg-primary',
       'data-disabled:bg-disabled',
     ]) {

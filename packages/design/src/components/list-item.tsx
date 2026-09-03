@@ -25,8 +25,8 @@ export function ListItem({ children, ...props }: NativeProps<'li'>) {
         STYLE.space.tight.gap,
         STYLE.shape.control,
         STYLE.stroke.width,
-        STYLE.stroke.border.border,
-        STYLE.surface.card.background,
+        STYLE.outline.variant.border,
+        STYLE.surface.lowest.background,
         // A row's padding is the row role on both axes; it borrowed the control's
         // vertical padding until the space plate showed rowY worn by nothing.
         STYLE.space.rowX.paddingX,

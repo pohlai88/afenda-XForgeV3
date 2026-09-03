@@ -16,10 +16,10 @@ const render = (colour: SwatchRole) => renderToStaticMarkup(createElement(Swatch
 describe('the roles a swatch can show are derived from the STYLE tree', () => {
   it('is a population: fills and strokes at rest', () => {
     const names = Object.keys(SWATCH_ROLES)
-    expect(names.length).toBeGreaterThan(15)
-    expect(names).toContain('action.primary')
-    expect(names).toContain('surface.page')
-    expect(names).toContain('stroke.border')
+    expect(names.length).toBeGreaterThan(10)
+    expect(names).toContain('accent.primary')
+    expect(names).toContain('surface.default')
+    expect(names).toContain('outline.variant')
   })
 
   it('leaves out fills that exist only under a state, which the components that own them show', () => {
@@ -36,24 +36,24 @@ describe('the roles a swatch can show are derived from the STYLE tree', () => {
 
 describe('Swatch shows a role as itself', () => {
   it('a fill with a companion ink: the fill, the ink, a sample glyph, stamped as data', () => {
-    const html = render('action.primary')
+    const html = render('accent.primary')
     expect(html).toContain('data-slot="swatch"')
-    expect(html).toContain('data-colour="action.primary"')
+    expect(html).toContain('data-colour="accent.primary"')
     expect(html).toMatch(/class="[^"]*\bbg-primary\b/)
-    expect(html).toMatch(/class="[^"]*\btext-primary-foreground\b/)
+    expect(html).toMatch(/class="[^"]*\btext-on-primary\b/)
     expect(html).toContain('Aa')
   })
 
   it('a fill with no companion ink wears the page ink, which is what text on it will wear', () => {
-    const html = render('surface.page')
-    expect(html).toMatch(/class="[^"]*\bbg-background\b/)
-    expect(html).toMatch(/class="[^"]*\btext-foreground\b/)
+    const html = render('surface.default')
+    expect(html).toMatch(/class="[^"]*\bbg-surface\b/)
+    expect(html).toMatch(/class="[^"]*\btext-on-surface\b/)
   })
 
   it('a stroke is drawn round the page ground, in its own colour', () => {
-    const html = render('stroke.border')
-    expect(html).toMatch(/class="[^"]*\bborder-border\b/)
-    expect(html).toMatch(/class="[^"]*\bbg-background\b/)
+    const html = render('outline.variant')
+    expect(html).toMatch(/class="[^"]*\bborder-outline-variant\b/)
+    expect(html).toMatch(/class="[^"]*\bbg-surface\b/)
     expect(html).toMatch(/class="[^"]*\bborder-stroke\b/)
   })
 
@@ -65,7 +65,7 @@ describe('Swatch shows a role as itself', () => {
     const nonsense: SwatchProps = { colour: 'brand.blue' }
     expect(nonsense).toBeTypeOf('object')
     // @ts-expect-error -- className is not a prop of the Target (ADR-031 Decision 12)
-    const illegal: SwatchProps = { className: 'bg-red-500', colour: 'action.primary' }
+    const illegal: SwatchProps = { className: 'bg-red-500', colour: 'accent.primary' }
     expect(illegal).toBeTypeOf('object')
   })
 })

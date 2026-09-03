@@ -48,7 +48,7 @@ describe('symbolsOn: a symbol is worn only when every class it names is present'
   // `font-heading text-heading`. Looking classes up one at a time credited every heading
   // with `title` because both share `font-heading`. Found on the type plate, 2026-09-04.
   const symbols = {
-    'surface.card.background': { class: 'bg-card' },
+    'surface.lowest.background': { class: 'bg-surface-lowest' },
     'typography.heading': { class: 'font-heading text-heading' },
     'typography.title': { class: 'font-heading text-title' },
   }
@@ -60,8 +60,8 @@ describe('symbolsOn: a symbol is worn only when every class it names is present'
   })
 
   it('credits several symbols when several are fully present', () => {
-    expect(symbolsOn(['bg-card', 'font-heading', 'text-title'], symbols)).toEqual([
-      'surface.card.background',
+    expect(symbolsOn(['bg-surface-lowest', 'font-heading', 'text-title'], symbols)).toEqual([
+      'surface.lowest.background',
       'typography.title',
     ])
   })

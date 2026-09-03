@@ -189,7 +189,7 @@ const INTERACTION_EXPRESSION_CHANNELS = deepFreeze([
  */
 export const STATE_COLOR_ROLES = deepFreeze({
   destructive: {
-    hover: 'semantic.color.destructive-hover',
+    hover: 'semantic.color.error-hover',
     /**
      * NO PRESSED ROLE, and it is declared rather than missing.
      *
@@ -208,7 +208,7 @@ export const STATE_COLOR_ROLES = deepFreeze({
      * hover and no press, so its pair is surface and foreground rather than
      * rest and pressed.
      */
-    foreground: 'semantic.color.disabled-foreground',
+    foreground: 'semantic.color.on-disabled',
     surface: 'semantic.color.disabled',
   },
   primary: {
@@ -216,20 +216,20 @@ export const STATE_COLOR_ROLES = deepFreeze({
     pressed: 'semantic.color.primary-pressed',
   },
   secondary: {
-    hover: 'semantic.color.secondary-hover',
-    pressed: 'semantic.color.secondary-pressed',
+    hover: 'semantic.color.surface-lowest-hover',
+    pressed: 'semantic.color.surface-lowest-pressed',
   },
   /**
    * SELECTION, AND IT IS `accent` RATHER THAN A ROLE OF ITS OWN.
    *
    * `accent` is, in its own policy's words, "a subtle tint behind a hovered or
-   * selected row", which is what every `bg-muted/50` on a row was reaching for.
+   * selected row", which is what every `bg-surface-container/50` on a row was reaching for.
    * Recorded here so that the next person to want a selected-row colour finds
    * the existing role instead of minting a fifty-second one.
    */
   selection: {
-    foreground: 'semantic.color.accent-foreground',
-    surface: 'semantic.color.accent',
+    foreground: 'semantic.color.on-primary-container',
+    surface: 'semantic.color.primary-container',
   },
 })
 

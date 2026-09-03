@@ -48,9 +48,9 @@ export const ALERT_TONE = {
   // `destructive` is a saturated action fill, not a backdrop somebody reads.
   danger: {
     classes: cn(
-      STYLE.status.danger.background,
-      STYLE.status.danger.foreground,
-      STYLE.stroke.border.border,
+      STYLE.error.container.background,
+      STYLE.error.container.foreground,
+      STYLE.outline.variant.border,
     ),
     Icon: CircleX,
     role: 'alert',
@@ -59,7 +59,7 @@ export const ALERT_TONE = {
     classes: cn(
       STYLE.status.info.background,
       STYLE.status.info.foreground,
-      STYLE.stroke.border.border,
+      STYLE.outline.variant.border,
     ),
     Icon: Info,
     role: 'status',
@@ -70,7 +70,7 @@ export const ALERT_TONE = {
     classes: cn(
       STYLE.status.success.background,
       STYLE.status.success.foreground,
-      STYLE.stroke.border.border,
+      STYLE.outline.variant.border,
     ),
     Icon: CircleCheck,
     role: 'status',
@@ -79,7 +79,7 @@ export const ALERT_TONE = {
     classes: cn(
       STYLE.status.warning.background,
       STYLE.status.warning.foreground,
-      STYLE.stroke.border.border,
+      STYLE.outline.variant.border,
     ),
     Icon: TriangleAlert,
     role: 'alert',

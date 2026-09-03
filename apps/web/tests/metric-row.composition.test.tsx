@@ -128,7 +128,7 @@ describe('a studio statistics block reduces to Xforge components', () => {
     // Colour is redundant to the sign (rule 7). Each trend-toned paragraph must open with
     // a signed delta; a metric without a delta must not be trend-toned at all.
     const toned = [
-      ...html.matchAll(/<p class="[^"]*text-(?:success|error)-foreground[^"]*"[^>]*>([^<]*)</g),
+      ...html.matchAll(/<p class="[^"]*text-on-(?:success|error)-container[^"]*"[^>]*>([^<]*)</g),
     ]
     expect(toned).toHaveLength(sample.filter((m) => m.delta?.trend).length)
     for (const [, content] of toned) {

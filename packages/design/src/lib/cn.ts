@@ -24,7 +24,7 @@ import { TWMERGE_CLASS_GROUPS } from '../../generated/twmerge'
  * by recognising Tailwind's own names. It recognises none of this system's. In
  * Tailwind `text-` is ambiguous -- `text-sm` is a size, `text-white` is a colour
  * -- so an unrecognised `text-body-compact` was filed as a COLOUR, put in the same
- * group as `text-accent-foreground`, and DELETED from the string as the loser.
+ * group as `text-on-primary-container`, and DELETED from the string as the loser.
  *
  * The nav rail is where it surfaced: items at 16px beneath a 14px group heading,
  * with `text-body-compact` written in the source and absent from the rendered

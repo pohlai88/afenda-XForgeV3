@@ -62,7 +62,7 @@ describe('ResourceBoundary, failed, in Chromium', () => {
     const texts = [...alert.querySelectorAll('[data-slot="text"]')]
     expect(texts.length).toBeGreaterThan(1)
     for (const text of texts) {
-      expect([...text.classList], text.textContent ?? '').not.toContain('text-muted-foreground')
+      expect([...text.classList], text.textContent ?? '').not.toContain('text-on-surface-variant')
     }
   })
 })

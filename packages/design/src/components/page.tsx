@@ -22,10 +22,10 @@ export function Page({ children, ...props }: NativeProps<'div'>) {
     <div
       className={cn(
         'min-h-screen',
-        STYLE.surface.page.background,
+        STYLE.surface.default.background,
         STYLE.family.sans,
         STYLE.typography.body,
-        STYLE.ink.default.text,
+        STYLE.ink.onSurface.text,
       )}
       data-slot="page"
       {...props}

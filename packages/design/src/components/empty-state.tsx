@@ -34,14 +34,16 @@ export function EmptyState({
         STYLE.space.tight.gap,
         STYLE.shape.control,
         STYLE.stroke.width,
-        STYLE.stroke.border.border,
+        STYLE.outline.variant.border,
         STYLE.space.rowX.paddingX,
         STYLE.space.section.paddingY,
       )}
       data-slot="empty-state"
       {...props}
     >
-      <p className={cn(STYLE.space.none.margin, STYLE.typography.emphasis, STYLE.ink.default.text)}>
+      <p
+        className={cn(STYLE.space.none.margin, STYLE.typography.emphasis, STYLE.ink.onSurface.text)}
+      >
         {title}
       </p>
       {description ? (
@@ -49,7 +51,7 @@ export function EmptyState({
           className={cn(
             STYLE.space.none.margin,
             STYLE.typography.body,
-            STYLE.surface.muted.foreground,
+            STYLE.ink.onSurfaceVariant.text,
           )}
         >
           {description}

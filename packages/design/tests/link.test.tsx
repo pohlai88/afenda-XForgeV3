@@ -30,7 +30,7 @@ describe('Link is an anchor, distinguishable without colour', () => {
   it('carries the one focus ring and the default ink from the STYLE tree', () => {
     const html = render({ href: '#a' })
     expect(html).toMatch(/class="[^"]*\bfocus-visible:focus-ring\b/)
-    expect(html).toMatch(/class="[^"]*\btext-foreground\b/)
+    expect(html).toMatch(/class="[^"]*\btext-on-surface\b/)
   })
 
   it('current marks the anchor for assistive technology and by weight, not by colour', () => {

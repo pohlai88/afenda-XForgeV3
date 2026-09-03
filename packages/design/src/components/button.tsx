@@ -21,11 +21,11 @@ import type { NativeProps } from '#lib/props'
  * WHAT NORMALIZE DECIDED, upstream word by upstream word. `h-8` -> the control floor
  * (`size.control`, 40px, density-bound). `px-2.5` / `gap-1.5` -> `space.controlX` and
  * `space.tight`. `rounded-lg` -> `shape.control`. `text-sm font-medium` -> the `label`
- * type role. `focus-visible:ring-3 ring-ring/50` -> the system's one focus ring. `border
+ * type role. `focus-visible:ring-3 ring-focus/50` -> the system's one focus ring. `border
  * border-transparent` stays as geometry so the outline variant does not shift a pixel.
  * `disabled:opacity-50` -> the declared disabled role, not a fade. `transition-all` ->
  * colour only, at the press duration. Upstream's `default` is `primary`; its `outline`
- * hover (`bg-muted`) is expressed through the neutral ACTION fill, `secondary`, which has
+ * hover (`bg-surface-container`) is expressed through the neutral ACTION fill, `secondary`, which has
  * the hover and pressed companions a pressable surface needs and `muted` does not.
  * `size`, `ghost`, `link`, `secondary`, `destructive` and the icon sizes are not adopted --
  * nothing asks for them (Decision 4). The 1px press nudge is dropped: the pressed colour
@@ -35,22 +35,21 @@ import type { NativeProps } from '#lib/props'
 /** Section 1 — STYLE SELECTION. The axis Xforge owns, each value a set of symbols. */
 export const BUTTON_VARIANT = {
   outline: [
-    STYLE.stroke.border.border,
-    STYLE.surface.page.background,
-    STYLE.ink.default.text,
-    STYLE.action.secondary.hover,
-    STYLE.action.secondary.hoverForeground,
-    STYLE.action.secondary.pressed,
+    STYLE.outline.variant.border,
+    STYLE.surface.default.background,
+    STYLE.ink.onSurface.text,
+    STYLE.surface.lowest.hover,
+    STYLE.surface.lowest.pressed,
   ].join(' '),
   primary: [
     // The stroke width is in the base for every button; the colour is the variant's. Primary
     // paints none, and it says so here rather than in the base, where a second border colour
     // from another variant would only win by stylesheet order.
     'border-transparent',
-    STYLE.action.primary.background,
-    STYLE.action.primary.foreground,
-    STYLE.action.primary.hover,
-    STYLE.action.primary.pressed,
+    STYLE.accent.primary.background,
+    STYLE.accent.primary.foreground,
+    STYLE.accent.primary.hover,
+    STYLE.accent.primary.pressed,
   ].join(' '),
 } as const
 

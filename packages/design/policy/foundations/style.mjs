@@ -40,32 +40,26 @@ import { TYPE_ROLES } from './typography.mjs'
  * Two roots share a group and get distinct words; no word appears twice (asserted).
  */
 export const STYLE_NAMES = deepFreeze({
-  accent: ['action', 'accent'],
-  background: ['surface', 'page'],
-  border: ['stroke', 'border'],
-  card: ['surface', 'card'],
-  destructive: ['action', 'danger'],
   disabled: ['state', 'disabled'],
-  error: ['status', 'danger'],
-  field: ['surface', 'field'],
-  foreground: ['ink', 'default'],
-  info: ['status', 'info'],
-  input: ['stroke', 'field'],
-  muted: ['surface', 'muted'],
-  popover: ['surface', 'popover'],
-  primary: ['action', 'primary'],
-  ring: ['stroke', 'focus'],
+  error: ['error', 'default'],
+  'error-container': ['error', 'container'],
+  focus: ['outline', 'focus'],
+  'info-container': ['status', 'info'],
+  'on-surface': ['ink', 'onSurface'],
+  'on-surface-variant': ['ink', 'onSurfaceVariant'],
+  outline: ['outline', 'default'],
+  'outline-variant': ['outline', 'variant'],
+  primary: ['accent', 'primary'],
+  'primary-container': ['accent', 'primaryContainer'],
   scrim: { omit: 'compositing: declares no CSS channel until an overlay Adapter needs one' },
-  secondary: ['action', 'secondary'],
   'shadow-ambient': { omit: 'consumed by the elevation tokens through var(), never a class' },
   'shadow-key': { omit: 'consumed by the elevation tokens through var(), never a class' },
-  sidebar: ['surface', 'rail'],
-  'sidebar-accent': ['surface', 'railAccent'],
-  'sidebar-border': ['stroke', 'rail'],
-  'sidebar-ring': ['stroke', 'railFocus'],
-  statutory: ['status', 'statutory'],
-  success: ['status', 'success'],
-  warning: ['status', 'warning'],
+  'statutory-container': ['status', 'statutory'],
+  'success-container': ['status', 'success'],
+  surface: ['surface', 'default'],
+  'surface-container': ['surface', 'container'],
+  'surface-lowest': ['surface', 'lowest'],
+  'warning-container': ['status', 'warning'],
 })
 
 /** A channel's key inside a colour symbol: the thing a component means by it. */
@@ -97,8 +91,8 @@ const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
  * BASE UI'S STATE VOCABULARY, EACH STATE SELECTING A DECLARED ROLE (ADR-031 Decision 12: a
  * state may select a state role and may not introduce styling of its own). The adaptee
  * exposes `data-checked`, `data-unchecked`, `data-highlighted`, `data-disabled`; which
- * colour each means is Xforge's decision, made here once: checked is the primary action
- * fill, unchecked is the field surface, highlighted is the accent fill, disabled is the
+ * colour each means is Xforge's decision, made here once: checked is the primary fill,
+ * unchecked is the lowest surface, highlighted is the primary container, disabled is the
  * disabled role. A recipe writes `STYLE.interaction.checked.background` and never assembles
  * `data-checked:` by hand.
  *
@@ -112,8 +106,8 @@ const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
 export const INTERACTION_STATES = deepFreeze({
   checked: { root: 'primary', selector: 'data-checked' },
   disabled: { root: 'disabled', selector: 'data-disabled' },
-  highlighted: { root: 'accent', selector: 'data-highlighted' },
-  unchecked: { root: 'field', selector: 'data-unchecked' },
+  highlighted: { root: 'primary-container', selector: 'data-highlighted' },
+  unchecked: { root: 'surface-lowest', selector: 'data-unchecked' },
 })
 
 /**
@@ -293,7 +287,7 @@ function geometrySymbols(tree, omitted) {
   set(
     tree,
     ['field', 'placeholder'],
-    symbol('placeholder:text-muted-foreground', ['semantic.color.muted-foreground']),
+    symbol('placeholder:text-on-surface-variant', ['semantic.color.on-surface-variant']),
   )
   for (const [component, parts] of Object.entries(COMPONENT_GEOMETRY)) {
     for (const [part, [utility, token]] of Object.entries(parts)) {
@@ -323,7 +317,7 @@ function geometrySymbols(tree, omitted) {
   set(
     tree,
     ['focus', 'ring'],
-    symbol('focus-visible:focus-ring', ['semantic.size.ring', 'semantic.color.ring']),
+    symbol('focus-visible:focus-ring', ['semantic.size.ring', 'semantic.color.focus']),
   )
 }
 

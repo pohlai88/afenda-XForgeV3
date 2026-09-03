@@ -26,20 +26,27 @@ const contracts = COLOR_ROLE_CONTRACTS as Readonly<
 >
 
 describe('every ink is declared against the fills it may sit on', () => {
-  it('is a population: every root with a foreground has a pairing row, and so does the default ink', () => {
-    const inks = Object.entries(contracts)
-      .filter(([, c]) => typeof c.foreground === 'string')
-      .map(([root]) => `${root}-foreground`)
-    expect(inks.length).toBeGreaterThan(10)
-    for (const ink of [...inks, 'foreground']) {
+  it("is a population: every root's on-colour has a pairing row, and so do the standalone inks", () => {
+    const inks = Object.values(contracts)
+      .map((c) => c.foreground)
+      .filter((f): f is string => typeof f === 'string')
+      .map((f) => f.slice('semantic.color.'.length))
+    expect(inks.length).toBeGreaterThan(8)
+    for (const ink of [...inks, 'on-surface', 'on-surface-variant']) {
       expect(pairs, ink).toHaveProperty(ink)
     }
   })
 
   it('names only inks and fills that exist, with a floor and a reason', () => {
     const roots = new Set(Object.keys(contracts))
+    const onColours = new Set(
+      Object.values(contracts)
+        .map((c) => c.foreground)
+        .filter((f): f is string => typeof f === 'string')
+        .map((f) => f.slice('semantic.color.'.length)),
+    )
     for (const [ink, pair] of Object.entries(pairs)) {
-      expect(roots.has(ink.replace(/-foreground$/, '')), ink).toBe(true)
+      expect(roots.has(ink) || onColours.has(ink), ink).toBe(true)
       expect(pair.fills.length, ink).toBeGreaterThan(0)
       for (const fill of pair.fills) {
         expect(roots.has(fill.replace(/-(hover|pressed)$/, '')), `${ink} on ${fill}`).toBe(true)
@@ -49,17 +56,17 @@ describe('every ink is declared against the fills it may sit on', () => {
     }
   })
 
-  it('the muted ink is declared against surfaces only, never against a status or action tint', () => {
-    const { fills } = pairs['muted-foreground'] as Pair
+  it('the on-surface-variant ink is declared against surfaces only, never against a status or action fill', () => {
+    const { fills } = pairs['on-surface-variant'] as Pair
     for (const tint of [
-      'error',
-      'info',
-      'success',
-      'warning',
-      'statutory',
+      'error-container',
+      'info-container',
+      'success-container',
+      'warning-container',
+      'statutory-container',
       'primary',
-      'destructive',
-      'accent',
+      'primary-container',
+      'error',
     ]) {
       expect(fills, tint).not.toContain(tint)
     }
@@ -81,14 +88,16 @@ describe('every declared pair clears its floor in both themes, from the token fi
 
   it('measures something', () => {
     expect(Object.keys(pairs).length).toBeGreaterThan(10)
-    expect(contrastOfPair(tokens, 'primary-foreground', 'primary', 'light')).toBeGreaterThan(4.5)
+    expect(contrastOfPair(tokens, 'on-primary', 'primary', 'light')).toBeGreaterThan(4.5)
   })
 
   it('and refuses a pair under its floor', () => {
     expect(failures, failures.join('\n')).toEqual([])
   })
 
-  it('and would refuse the pair the browser found: the muted ink on the danger tint', () => {
-    expect(contrastOfPair(tokens, 'muted-foreground', 'error', 'light')).toBeLessThan(4.5)
+  it('and would refuse the pair the browser found: the variant ink on the error container', () => {
+    expect(contrastOfPair(tokens, 'on-surface-variant', 'error-container', 'light')).toBeLessThan(
+      4.5,
+    )
   })
 })

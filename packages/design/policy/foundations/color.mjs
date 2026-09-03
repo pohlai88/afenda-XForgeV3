@@ -637,38 +637,20 @@ export function minimumFor(kind) {
  * a different role. An unknown context is now refused where it is written.
  */
 export const COMPOSITION_CONTEXTS = deepFreeze([
-  'accent',
-  'danger',
+  // ONE CONTEXT PER FILL, NAMED FOR THE FILL (Material 3's "on" grammar, adopted 2026-09-04):
+  // an ink declares the fills it is measured against, and a fill provides itself.
   'disabled',
-  'info',
-  'neutral',
-  'success',
-  'warning',
-  // The superseding system's contexts. It names one per surface rather than one
-  // per intent, which is what lets a role and its `-foreground` state their own
-  // pair -- `card` provides `card`, and `card-foreground` is measured on it.
-  // `danger` and `neutral` above belong to the system being replaced and go with
-  // it; `destructive` and `page` are their counterparts here.
-  'card',
-  'destructive',
-  // THE STATUS TINT FOR FAILURE. `destructive` is the ACTION fill -- a button
-  // somebody presses -- and until this existed the tint family had success,
-  // warning, info and statutory and nothing for failure. Alert rendered `danger`
-  // with warning's classes because there was nothing else to reach for.
   'error',
-  'field',
-  'muted',
-  'page',
-  'popover',
+  'error-container',
+  'info-container',
   'primary',
-  'secondary',
-  // TWO CONTEXTS FOR THE RAIL, NOT ONE. The frame and the selected item inside
-  // it are different backdrops, and a single 'sidebar' context would measure
-  // sidebar-accent-foreground against the rail it does not sit on -- the same
-  // error `color.ring` avoids by citing the surfaces a focused control touches.
-  'sidebar',
-  'sidebar-accent',
-  'statutory',
+  'primary-container',
+  'statutory-container',
+  'success-container',
+  'surface',
+  'surface-container',
+  'surface-lowest',
+  'warning-container',
 ])
 
 /**
@@ -729,31 +711,22 @@ export const DISTINCT_MINIMUM_DELTA_E = 3.0
  * Adding a pair here is a claim that nothing else separates them.
  */
 export const DISTINCT_PAIRS = deepFreeze([
-  // A card is separated from the page by a boundary and a surface, and the
-  // boundary is `color.border` -- kind `decorative`, exempt, and measured by
-  // nothing. If the surface step is also invisible then the panel has no
-  // separation at all, which is what 1.8 CIEDE2000 meant.
   [
-    'color.background',
-    'color.card',
+    'color.surface',
+    'color.surface-lowest',
     'a panel on the page, whose only other means is an unmeasured border',
   ],
-  // The recessed well -- code blocks, skeletons -- sits ON a card, not on the page.
-  ['color.card', 'color.muted', 'a recessed well inside a panel'],
-  // THE FIVE STATUS TINTS, MUTUALLY. These carry meaning by colour, and while
-  // colour is never their only indicator, two obligations that look identical
-  // make the vocabulary a lie. `statutory` and `warning` were 1.3 apart in dark:
-  // fixed by law and be careful, rendering as one colour.
-  ['color.success', 'color.warning', 'a good outcome and a caution'],
-  ['color.success', 'color.error', 'a good outcome and a failure'],
-  ['color.success', 'color.info', 'a good outcome and a note'],
-  ['color.success', 'color.statutory', 'a good outcome and a legal fact'],
-  ['color.warning', 'color.error', 'a caution and a failure'],
-  ['color.warning', 'color.info', 'a caution and a note'],
-  ['color.warning', 'color.statutory', 'be careful, and fixed by law'],
-  ['color.error', 'color.info', 'a failure and a note'],
-  ['color.error', 'color.statutory', 'a failure and a legal fact'],
-  ['color.info', 'color.statutory', 'a note and a legal fact'],
+  ['color.surface-lowest', 'color.surface-container', 'a recessed well inside a panel'],
+  ['color.success-container', 'color.warning-container', 'a good outcome and a caution'],
+  ['color.success-container', 'color.error-container', 'a good outcome and a failure'],
+  ['color.success-container', 'color.info-container', 'a good outcome and a note'],
+  ['color.success-container', 'color.statutory-container', 'a good outcome and a legal fact'],
+  ['color.warning-container', 'color.error-container', 'a caution and a failure'],
+  ['color.warning-container', 'color.info-container', 'a caution and a note'],
+  ['color.warning-container', 'color.statutory-container', 'be careful, and fixed by law'],
+  ['color.error-container', 'color.info-container', 'a failure and a note'],
+  ['color.error-container', 'color.statutory-container', 'a failure and a legal fact'],
+  ['color.info-container', 'color.statutory-container', 'a note and a legal fact'],
 ])
 
 /**
@@ -887,169 +860,127 @@ export function distinctnessFailures(
 }
 
 export const COLOR_ROLE_POLICIES = deepFreeze({
-  // THREE ROLES RATHER THAN ONE OPACITY, and the reason is that CSS `opacity`
-  // composites: it produces colours that exist only after render, so the pair the
-  // token graph can see stays green while the pixels do not. `text.default` on
-  // `surface.raised` reports 17.85:1 and rendered 4.74:1 through `opacity: 0.6`.
-  // As explicit roles it is an ordinary pair the contrast invariant already covers.
   /* ---------------------------------------------------------------------
-   * `color.*` -- the superseding design system.
-   *
-   * FLAT AND PAIRED BY STEM. Every surface provides a context named after
-   * itself, and its `-foreground` is measured against exactly that context. The
-   * pairing is therefore visible in the names: nothing has to know that `card`
-   * and `card-foreground` belong together, because they say so.
+   * `color.*` -- Material 3's role grammar, adopted 2026-09-04 against
+   * m3.material.io/styles/color/roles (ADR-034). SURFACE is a background;
+   * a CONTAINER is a fill for a foreground element; ON-<fill> is the one ink
+   * paired with that fill; VARIANT is the lower-emphasis alternative. An ink
+   * declares the fills it is measured against; a fill provides itself.
    * ------------------------------------------------------------------- */
-
-  'color.accent': {
-    kind: 'surface',
-    providesContexts: ['accent'],
-    reason: 'a subtle tint behind a hovered or selected row, proved through accent-foreground',
-  },
-  'color.accent-foreground': { againstContexts: ['accent'], kind: 'text' },
-  // TONAL STATES, AND THEY ARE FILLS RATHER THAN OVERLAYS. Material 3 expresses
-  // these as a state layer -- the 'on' colour composited over the container at
-  // 8% and 10%. That is refused here for the reason 'color.primary-pressed'
-  // already states and 'button.tsx' records at its destructive variant: an
-  // opacity composite means the pair the token graph measures is not the pair a
-  // reader sees, which once reported 5.17:1 for a label rendering at 2.56:1.
-  // A third fill is measurable; a translucent overlay is not.
-  'color.accent-hover': {
-    kind: 'surface',
-    providesContexts: ['accent'],
-    reason: 'the hovered fill of a tonal control, proved through accent-foreground',
-  },
-  'color.accent-pressed': {
-    kind: 'surface',
-    providesContexts: ['accent'],
-    reason: 'the pressed fill of a tonal control, proved through accent-foreground',
-  },
-  'color.background': {
-    kind: 'surface',
-    providesContexts: ['page'],
-    reason: 'the page itself, proved through foreground',
-  },
-  // A divider, never a sole control boundary -- the same exemption the system
-  // being replaced granted `border.default`, for the same reason. `color.input`
-  // below is the one that must be findable, and it measures.
-  'color.border': { kind: 'decorative', reason: 'a divider, never a sole control boundary' },
-  'color.card': {
-    kind: 'surface',
-    providesContexts: ['card'],
-    reason: 'a grouped surface, proved through card-foreground',
-  },
-  'color.card-foreground': { againstContexts: ['card'], kind: 'text' },
-  'color.destructive': {
-    kind: 'surface',
-    providesContexts: ['destructive'],
-    reason: 'a status backdrop, proved through destructive-foreground',
-  },
-  'color.destructive-foreground': { againstContexts: ['destructive'], kind: 'text' },
-  'color.destructive-hover': {
-    kind: 'surface',
-    providesContexts: ['destructive'],
-    reason: 'the hovered fill of a destructive control, proved through destructive-foreground',
-  },
-  // Minted 2026-09-03 (ADR-034 step 3) because COLOR_ROLE_CONTRACTS declared it and the
-  // assertion refused the file until it existed. The step below hover, as primary's is:
-  // red.950 on light where primary goes to teal.950, red.100 on dark where primary goes
-  // to teal.300 -- the deepest and the lightest step the red family has.
-  'color.destructive-pressed': {
-    kind: 'surface',
-    providesContexts: ['destructive'],
-    reason: 'the pressed fill of a destructive control, proved through destructive-foreground',
-  },
   'color.disabled': {
     kind: 'surface',
     providesContexts: ['disabled'],
-    reason: 'the fill of a control that cannot be operated, proved through disabled-foreground',
+    reason: 'the fill of a control that cannot be operated, proved through on-disabled',
   },
-  // Dimmed, never hidden. `inactive` carries a lower floor than `text` because a
-  // disabled control is not being read for content -- but it still has one,
-  // because a control whose label cannot be read is one whose absence cannot be
-  // understood.
-  'color.disabled-foreground': { againstContexts: ['disabled'], kind: 'inactive' },
   'color.error': {
     kind: 'surface',
     providesContexts: ['error'],
-    reason: 'a status backdrop for failure, proved through error-foreground',
+    reason: "M3 'error': the high-emphasis fill of a destructive action, proved through on-error",
   },
-  // READ ON THE PAGE AS WELL AS ON ITS TINT. Text's trend tone sets a delta in
-  // this ink directly on a card or the page, with no `error` backdrop under it,
-  // so those surfaces are declared here and measured -- the pairing is the
-  // claim, and the generator refuses the token file if the ink stops clearing it.
-  'color.error-foreground': { againstContexts: ['card', 'error', 'page'], kind: 'text' },
-  'color.field': {
+  'color.error-container': {
     kind: 'surface',
-    providesContexts: ['field'],
-    reason: 'the surface of a text control, proved through foreground',
+    providesContexts: ['error-container'],
+    reason: "M3 'error container': the tint behind a failure, proved through on-error-container",
   },
-  'color.foreground': { againstContexts: ['field', 'page'], kind: 'text' },
-  'color.info': {
+  'color.error-hover': {
     kind: 'surface',
-    providesContexts: ['info'],
-    reason: 'a status backdrop, proved through info-foreground',
+    providesContexts: ['error'],
+    reason: 'the hovered fill of a destructive action, proved through on-error',
   },
-  'color.info-foreground': { againstContexts: ['info'], kind: 'text' },
-  // The boundary of a control a person must find and aim at, so it measures at
-  // the `ui` floor against every surface a field can sit on.
-  'color.input': { againstContexts: ['card', 'page'], kind: 'ui' },
-  'color.muted': {
+  'color.error-pressed': {
     kind: 'surface',
-    providesContexts: ['muted'],
-    reason: 'a recessed fill, proved through muted-foreground',
+    providesContexts: ['error'],
+    reason: 'the pressed fill of a destructive action, proved through on-error',
   },
-  // Secondary text sits on the page and on cards as well as on `muted`, so it is
-  // measured against all three rather than against the one it is named for.
-  'color.muted-foreground': { againstContexts: ['card', 'muted', 'page'], kind: 'text' },
-  'color.popover': {
+  'color.focus': { againstContexts: ['surface', 'surface-lowest'], kind: 'ui' },
+  'color.info-container': {
     kind: 'surface',
-    providesContexts: ['popover'],
-    reason: 'a floating surface, proved through popover-foreground',
+    providesContexts: ['info-container'],
+    reason: 'a custom status container (M3 custom colours): the tint behind a note',
   },
-  'color.popover-foreground': { againstContexts: ['popover'], kind: 'text' },
+  // Dimmed, never hidden: a lower floor than text, because a disabled control is not read
+  // for content, but a floor, because a label that cannot be read cannot be missed either.
+  'color.on-disabled': { againstContexts: ['disabled'], kind: 'inactive' },
+  'color.on-error': { againstContexts: ['error'], kind: 'text' },
+  // Read on the page and the lowest surface as well as on its tint: Text's trend tone.
+  'color.on-error-container': {
+    againstContexts: ['error-container', 'surface', 'surface-lowest'],
+    kind: 'text',
+  },
+  'color.on-info-container': { againstContexts: ['info-container'], kind: 'text' },
+  'color.on-primary': { againstContexts: ['primary'], kind: 'text' },
+  'color.on-primary-container': { againstContexts: ['primary-container'], kind: 'text' },
+  'color.on-statutory-container': { againstContexts: ['statutory-container'], kind: 'text' },
+  // The trend tone again: read on the page and the lowest surface as well as on its tint.
+  'color.on-success-container': {
+    againstContexts: ['success-container', 'surface', 'surface-lowest'],
+    kind: 'text',
+  },
+  // M3 'on surface': ONE ink against every surface rung, and, as an Alert's body text,
+  // against the status containers. One token, one role; the fills it sits on are declared
+  // here and in COLOR_PAIRS, not by a copy per surface.
+  'color.on-surface': {
+    againstContexts: [
+      'surface',
+      'surface-lowest',
+      'surface-container',
+      'error-container',
+      'info-container',
+      'success-container',
+      'warning-container',
+      'statutory-container',
+    ],
+    kind: 'text',
+  },
+  // M3 'on surface variant': the lower-emphasis ink, against SURFACES ONLY -- never a
+  // status or action tint, which is where it fell to 4.31:1 on 2026-09-04.
+  'color.on-surface-variant': {
+    againstContexts: ['surface', 'surface-lowest', 'surface-container'],
+    kind: 'text',
+  },
+  'color.on-warning-container': { againstContexts: ['warning-container'], kind: 'text' },
+  // M3 'outline': the boundary a person must find and aim at, measured at the ui floor.
+  'color.outline': { againstContexts: ['surface', 'surface-lowest'], kind: 'ui' },
+  // M3 'outline variant': dividers and the edges of cards, decorative by definition, and
+  // the edge of a target only where the contents inside it carry the contrast.
+  'color.outline-variant': {
+    kind: 'decorative',
+    reason: 'a divider or a card edge, never a sole control boundary',
+  },
   'color.primary': {
     kind: 'surface',
     providesContexts: ['primary'],
-    reason: 'a filled control, proved through primary-foreground',
+    reason: "M3 'primary': the fill of the most prominent action, proved through on-primary",
   },
-  'color.primary-foreground': { againstContexts: ['primary'], kind: 'text' },
+  'color.primary-container': {
+    kind: 'surface',
+    providesContexts: ['primary-container'],
+    reason:
+      "M3 'primary container': the low-emphasis tint of the primary hue -- a selected row, the rail's current item -- proved through on-primary-container",
+  },
+  'color.primary-container-hover': {
+    kind: 'surface',
+    providesContexts: ['primary-container'],
+    reason: 'the hovered primary tint, proved through on-primary-container',
+  },
+  'color.primary-container-pressed': {
+    kind: 'surface',
+    providesContexts: ['primary-container'],
+    reason: 'the pressed primary tint, proved through on-primary-container',
+  },
+  // Hover and pressed are FILLS, not M3 state layers: an opacity composite is a pair the
+  // token graph cannot measure, and one once reported 5.17:1 for a label rendering at 2.56:1.
   'color.primary-hover': {
     kind: 'surface',
     providesContexts: ['primary'],
-    reason: 'the hovered fill of a filled control, proved through primary-foreground',
+    reason: 'the hovered fill of the primary action, proved through on-primary',
   },
-  // A pressed fill is a third fill, not a hover at another opacity. Both provide
-  // `primary`, so `primary-foreground` is measured on them the day they land
-  // rather than the day somebody remembers.
   'color.primary-pressed': {
     kind: 'surface',
     providesContexts: ['primary'],
-    reason: 'the pressed fill of a filled control, proved through primary-foreground',
+    reason: 'the pressed fill of the primary action, proved through on-primary',
   },
-  'color.ring': { againstContexts: ['card', 'page'], kind: 'ui' },
   'color.scrim': { kind: 'compositing', reason: 'an alpha layer, not a foreground pair' },
-  'color.secondary': {
-    kind: 'surface',
-    providesContexts: ['secondary'],
-    reason: 'an outlined control, proved through secondary-foreground',
-  },
-  'color.secondary-foreground': { againstContexts: ['secondary'], kind: 'text' },
-  'color.secondary-hover': {
-    kind: 'surface',
-    providesContexts: ['secondary'],
-    reason: 'the hovered fill of an outlined control, proved through secondary-foreground',
-  },
-  'color.secondary-pressed': {
-    kind: 'surface',
-    providesContexts: ['secondary'],
-    reason: 'the pressed fill of an outlined control, proved through secondary-foreground',
-  },
-  // THE INK A SHADOW IS DRAWN IN, and it is exempt for the same reason the
-  // scrim is: what it composites over is decided at render, so the pair the
-  // token graph can see is not the pair the eye gets. What DOES have to hold
-  // -- that a surface stays distinguishable from the one beneath it -- is a
-  // property of the surfaces, and those are measured.
   'color.shadow-ambient': {
     kind: 'compositing',
     reason: 'the wide, faint layer of a shadow; composited, not a pair',
@@ -1058,114 +989,49 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     kind: 'compositing',
     reason: 'the tight, nearer layer of a shadow; composited, not a pair',
   },
-  // THE RAIL IS SET INTO THE PAGE, NOT LIFTED OFF IT. `card` is shallower than
-  // the page and `sidebar` is deeper -- neutral.100 under a neutral.50 page in
-  // light, ink.900 over an ink.950 page in dark. Making them one surface was the
-  // alternative and it fails in both directions: a rail matching the card stops
-  // reading as frame, and a card matching the rail stops reading as content.
-  // `semantic.shell` already says this in its own words -- "the persistent frame,
-  // which is a different system from the workspace inside it" -- and owns that
-  // frame's DIMENSIONS. These are the same frame's colours, and the two families
-  // are deliberately not merged: a width and a fill are different facts.
-  'color.sidebar': {
+  'color.statutory-container': {
     kind: 'surface',
-    providesContexts: ['sidebar'],
-    reason: 'the persistent navigation frame, proved through sidebar-foreground',
+    providesContexts: ['statutory-container'],
+    reason:
+      'a custom status container: the tint behind a regulatory fact -- EPF, SOCSO, EIS, PCB are law, not advice, and do not borrow info',
   },
-  'color.sidebar-accent': {
+  'color.success-container': {
     kind: 'surface',
-    providesContexts: ['sidebar-accent'],
-    reason: 'the hovered or selected nav item fill, proved through sidebar-accent-foreground',
+    providesContexts: ['success-container'],
+    reason: 'a custom status container: the tint behind a good outcome',
   },
-  'color.sidebar-accent-foreground': { againstContexts: ['sidebar-accent'], kind: 'text' },
-  'color.sidebar-border': {
-    kind: 'decorative',
-    reason: 'a divider inside the rail, never a sole control boundary',
-  },
-  'color.sidebar-foreground': { againstContexts: ['sidebar'], kind: 'text' },
-  // MEASURED AGAINST THE RAIL AND NOT THE PAGE. `color.ring` cites 'card' and
-  // 'page' because that is where a focused control sits; a focused nav item sits
-  // on the sidebar, and a ring proved against the page would be proved against a
-  // surface it never touches.
-  'color.sidebar-ring': { againstContexts: ['sidebar'], kind: 'ui' },
-  // STATUTORY. EPF, SOCSO, EIS and PCB rates are law, not advice and not a
-  // warning. It measures like any other text pair; what it does not do is borrow
-  // `info`, which would read as guidance a reader could choose to ignore.
-  'color.statutory': {
+  'color.surface': {
     kind: 'surface',
-    providesContexts: ['statutory'],
-    reason: 'the backdrop of a regulatory fact, proved through statutory-foreground',
+    providesContexts: ['surface'],
+    reason: "M3 'surface': the page itself, proved through on-surface",
   },
-  'color.statutory-foreground': { againstContexts: ['statutory'], kind: 'text' },
-  'color.success': {
+  'color.surface-container': {
     kind: 'surface',
-    providesContexts: ['success'],
-    reason: 'a status backdrop, proved through success-foreground',
+    providesContexts: ['surface-container'],
+    reason:
+      "M3 'surface container': the recessed well, the navigation frame and the floating menu -- one rung, where three names carried it before",
   },
-  // Same declaration as `error-foreground`, for the same reason: the trend tone.
-  'color.success-foreground': { againstContexts: ['card', 'page', 'success'], kind: 'text' },
-  'color.warning': {
+  'color.surface-lowest': {
     kind: 'surface',
-    providesContexts: ['warning'],
-    reason: 'a status backdrop, proved through warning-foreground',
+    providesContexts: ['surface-lowest'],
+    reason:
+      "M3 'surface container lowest': the card, the field and the neutral control fill, one rung above the page -- white in light, ink.900 in dark",
   },
-  'color.warning-foreground': { againstContexts: ['warning'], kind: 'text' },
-  // WAS `accent.default` AND `accent.hover`. They were the last intent-first
-  // names in the semantic colour tier -- danger and warning were normalised to
-  // property-first for v2 and these were not, which left one accent surface named
-  // for its property (`accent-subtle`, immediately below) and two named for their
-  // intent, in the same family. `kind: 'ui'` because a filled accent control is a
-  // boundary that must clear 3:1 against the page, and it provides the `accent`
-  // context that `text.on-accent` is measured against.
-  // A PRESSED FILL IS A THIRD FILL, not a hover with a different opacity, and it
-  // is here rather than in the stylesheet for the reason the comment above gives:
-  // it provides `accent`, so `text.on-accent` is measured on it the day it lands
-  // instead of the day somebody remembers. That is the whole return on contexts.
-  // SUCCESS AND INFO COMPLETE THE STATE SET, and they were missing rather than
-  // deferred. The document palette already enumerates the states this product
-  // ships -- draft, submitted, pending, partial, approved, paid, posted,
-  // rejected, overdue, cancelled -- across FIVE families, and only three of them
-  // had roles here. `approved`, `paid` and `posted` had nowhere to go.
-  //
-  // NEITHER EXISTING COLOUR COULD TAKE THEM. Neutral would make `approved`
-  // identical to `draft`, which are the two states an approver most needs to
-  // separate. Teal is worse: teal means AGENCY -- a thing you can press -- so
-  // reusing it for a status makes a state indistinguishable from a control.
-  //
-  // SUCCESS IS FOREST, NOT EMERALD, and that is the load-bearing part. At 144
-  // degrees it sits 34 from the teal's 178; an emerald would have been a
-  // neighbour of the action colour and the distinction would rest on chroma
-  // alone. Colour is still never the whole signal -- the document palette makes
-  // the glyph mandatory, because success and danger are exactly the pair that
-  // red/green deficiency collapses.
-  // A SEPARATE ROLE FROM `raised`, though it currently resolves to the same
-  // primitive in both themes. `ELEVATION_LAYERS` already distinguishes the two
-  // layers -- `raised` is a card, `overlay` is a dialog interrupting the page --
-  // and both named `surface.raised`, so the model said they were different and
-  // the tokens said they were the same. A card and a modal have different
-  // responsibilities and will diverge; sharing one token means the day they do,
-  // every card changes with them.
-  // THE POINTER STATES OF THE NEUTRAL CONTROL, and they were previously borrowed.
-  // A secondary button hovered to `surface.sunken` -- the recessed-container role
-  // -- so a hovered button and an inset well were one token, and neither could
-  // move without the other. It is the collision `surface.info` had with the accent
-  // tint, in the tier below where it is harder to see: nothing looked wrong,
-  // because on paper a hover and a well happen to want the same grey.
-  //
-  // They are `surface` rather than `ui`: content sits on a hovered button, so the
-  // measured obligation is the text on it, not an edge against the page. The
-  // control's own boundary is `border.strong` and is measured separately.
-  // A SEPARATE ROLE FROM `default`, and the reason is that it changes hue between
-  // themes rather than lightness. In light it is executive navy -- the colour
-  // that carries authority in a heading or a total, and the one the printed
-  // documents already use. On the dark ground that same navy measures 1.40:1, so
-  // there the role resolves to near-white and the authority is carried by weight.
-  // Binding a heading to `text.default` would have lost that distinction in both
-  // directions at once.
-  // Consumes `accent` and nothing else. Under the old model this was the single
-  // enumerated exception, because deriving it against every backdrop demanded
-  // white text clear 4.5 on a white page. A context says the same thing without
-  // naming a partner, so a new accent fill is covered the day it lands.
+  'color.surface-lowest-hover': {
+    kind: 'surface',
+    providesContexts: ['surface-lowest'],
+    reason: 'the hovered neutral fill (the outline Button), proved through on-surface',
+  },
+  'color.surface-lowest-pressed': {
+    kind: 'surface',
+    providesContexts: ['surface-lowest'],
+    reason: 'the pressed neutral fill, proved through on-surface',
+  },
+  'color.warning-container': {
+    kind: 'surface',
+    providesContexts: ['warning-container'],
+    reason: 'a custom status container: the tint behind a caution',
+  },
 })
 
 /** What a measuring role is checked against, derived from the contexts it consumes. */
@@ -1595,111 +1461,80 @@ export const COLOR_COMPANIONS = deepFreeze(['foreground', 'hover', 'pressed'])
  * Text sets it on both.
  */
 export const COLOR_ROLE_CONTRACTS = deepFreeze({
-  accent: {
-    base: 'semantic.color.accent',
-    foreground: 'semantic.color.accent-foreground',
-    hover: 'semantic.color.accent-hover',
-    pressed: 'semantic.color.accent-pressed',
-  },
-  background: {
-    base: 'semantic.color.background',
-    foreground: NONE,
-    hover: NONE,
-    pressed: NONE,
-  },
-  border: {
-    base: 'semantic.color.border',
-    foreground: NONE,
-    hover: NONE,
-    pressed: NONE,
-  },
-  card: {
-    base: 'semantic.color.card',
-    foreground: 'semantic.color.card-foreground',
-    hover: NONE,
-    pressed: NONE,
-  },
-  // An ACTION fill, like primary, secondary and accent -- each of which has a pressed
-  // state. destructive had a hover and no pressed, and nothing here could say whether
-  // that was a decision or an omission. It was an omission: this row is the decision,
-  // and the token it names was minted in ADR-034 Migration step 3.
-  destructive: {
-    base: 'semantic.color.destructive',
-    foreground: 'semantic.color.destructive-foreground',
-    hover: 'semantic.color.destructive-hover',
-    pressed: 'semantic.color.destructive-pressed',
-  },
   disabled: {
     base: 'semantic.color.disabled',
-    foreground: 'semantic.color.disabled-foreground',
+    foreground: 'semantic.color.on-disabled',
     hover: NONE,
     pressed: NONE,
   },
   error: {
     base: 'semantic.color.error',
-    foreground: 'semantic.color.error-foreground',
+    foreground: 'semantic.color.on-error',
+    hover: 'semantic.color.error-hover',
+    pressed: 'semantic.color.error-pressed',
+  },
+  'error-container': {
+    base: 'semantic.color.error-container',
+    foreground: 'semantic.color.on-error-container',
     hover: NONE,
     pressed: NONE,
   },
-  field: {
-    base: 'semantic.color.field',
+  focus: {
+    base: 'semantic.color.focus',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  foreground: {
-    base: 'semantic.color.foreground',
+  'info-container': {
+    base: 'semantic.color.info-container',
+    foreground: 'semantic.color.on-info-container',
+    hover: NONE,
+    pressed: NONE,
+  },
+  // M3 'on surface': one ink against every surface rung. A ROOT OF ITS OWN, not a
+  // companion, because a token is one role -- three surfaces sharing one foreground would
+  // have to claim it three times. The fills it sits on are COLOR_PAIRS' to declare.
+  'on-surface': {
+    base: 'semantic.color.on-surface',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  info: {
-    base: 'semantic.color.info',
-    foreground: 'semantic.color.info-foreground',
-    hover: NONE,
-    pressed: NONE,
-  },
-  input: {
-    base: 'semantic.color.input',
+  'on-surface-variant': {
+    base: 'semantic.color.on-surface-variant',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  muted: {
-    base: 'semantic.color.muted',
-    foreground: 'semantic.color.muted-foreground',
+  outline: {
+    base: 'semantic.color.outline',
+    foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  popover: {
-    base: 'semantic.color.popover',
-    foreground: 'semantic.color.popover-foreground',
+  'outline-variant': {
+    base: 'semantic.color.outline-variant',
+    foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
   primary: {
     base: 'semantic.color.primary',
-    foreground: 'semantic.color.primary-foreground',
+    foreground: 'semantic.color.on-primary',
     hover: 'semantic.color.primary-hover',
     pressed: 'semantic.color.primary-pressed',
   },
-  ring: {
-    base: 'semantic.color.ring',
-    foreground: NONE,
-    hover: NONE,
-    pressed: NONE,
+  'primary-container': {
+    base: 'semantic.color.primary-container',
+    foreground: 'semantic.color.on-primary-container',
+    hover: 'semantic.color.primary-container-hover',
+    pressed: 'semantic.color.primary-container-pressed',
   },
   scrim: {
     base: 'semantic.color.scrim',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
-  },
-  secondary: {
-    base: 'semantic.color.secondary',
-    foreground: 'semantic.color.secondary-foreground',
-    hover: 'semantic.color.secondary-hover',
-    pressed: 'semantic.color.secondary-pressed',
   },
   'shadow-ambient': {
     base: 'semantic.color.shadow-ambient',
@@ -1713,45 +1548,39 @@ export const COLOR_ROLE_CONTRACTS = deepFreeze({
     hover: NONE,
     pressed: NONE,
   },
-  sidebar: {
-    base: 'semantic.color.sidebar',
-    foreground: 'semantic.color.sidebar-foreground',
+  'statutory-container': {
+    base: 'semantic.color.statutory-container',
+    foreground: 'semantic.color.on-statutory-container',
     hover: NONE,
     pressed: NONE,
   },
-  'sidebar-accent': {
-    base: 'semantic.color.sidebar-accent',
-    foreground: 'semantic.color.sidebar-accent-foreground',
+  'success-container': {
+    base: 'semantic.color.success-container',
+    foreground: 'semantic.color.on-success-container',
     hover: NONE,
     pressed: NONE,
   },
-  'sidebar-border': {
-    base: 'semantic.color.sidebar-border',
+  surface: {
+    base: 'semantic.color.surface',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  'sidebar-ring': {
-    base: 'semantic.color.sidebar-ring',
+  'surface-container': {
+    base: 'semantic.color.surface-container',
     foreground: NONE,
     hover: NONE,
     pressed: NONE,
   },
-  statutory: {
-    base: 'semantic.color.statutory',
-    foreground: 'semantic.color.statutory-foreground',
-    hover: NONE,
-    pressed: NONE,
+  'surface-lowest': {
+    base: 'semantic.color.surface-lowest',
+    foreground: NONE,
+    hover: 'semantic.color.surface-lowest-hover',
+    pressed: 'semantic.color.surface-lowest-pressed',
   },
-  success: {
-    base: 'semantic.color.success',
-    foreground: 'semantic.color.success-foreground',
-    hover: NONE,
-    pressed: NONE,
-  },
-  warning: {
-    base: 'semantic.color.warning',
-    foreground: 'semantic.color.warning-foreground',
+  'warning-container': {
+    base: 'semantic.color.warning-container',
+    foreground: 'semantic.color.on-warning-container',
     hover: NONE,
     pressed: NONE,
   },

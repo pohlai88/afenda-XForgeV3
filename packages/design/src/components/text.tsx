@@ -53,9 +53,9 @@ import type { NativeProps } from '#lib/props'
  * status tint.
  */
 export const TEXT_TONE = {
-  danger: STYLE.status.danger.foreground,
-  default: STYLE.ink.default.text,
-  muted: STYLE.surface.muted.foreground,
+  danger: STYLE.error.container.foreground,
+  default: STYLE.ink.onSurface.text,
+  muted: STYLE.ink.onSurfaceVariant.text,
   success: STYLE.status.success.foreground,
 } as const
 

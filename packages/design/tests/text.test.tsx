@@ -48,11 +48,11 @@ describe('Text renders the role and tone it is asked for', () => {
   })
 
   it.each([
-    ['default', 'text-foreground'],
-    ['muted', 'text-muted-foreground'],
+    ['default', 'text-on-surface'],
+    ['muted', 'text-on-surface-variant'],
     // Trend tones name MEANING, not direction: fewer overtime hours is `success`.
-    ['success', 'text-success-foreground'],
-    ['danger', 'text-error-foreground'],
+    ['success', 'text-on-success-container'],
+    ['danger', 'text-on-error-container'],
   ] as const)('tone %s sets its ink', (tone, cls) => {
     expect(render({ tone })).toContain(cls)
   })
@@ -60,6 +60,6 @@ describe('Text renders the role and tone it is asked for', () => {
   it('a tone never replaces the role: display keeps its size under a trend ink', () => {
     const html = render({ tone: 'danger', variant: 'display' })
     expect(html).toContain('text-display')
-    expect(html).toContain('text-error-foreground')
+    expect(html).toContain('text-on-error-container')
   })
 })

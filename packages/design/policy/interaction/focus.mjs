@@ -160,7 +160,7 @@ export const FOCUS_INDICATOR = deepFreeze({
   minimumChangeContrast: 3,
   minimumThicknessPx: 2,
   tokens: {
-    colour: 'semantic.color.ring',
+    colour: 'semantic.color.focus',
     offset: 'semantic.size.ring-offset',
     thickness: 'semantic.size.ring',
   },

@@ -76,14 +76,14 @@ export const SWATCH_ROLES: Readonly<Record<SwatchRole, RoleRecipe>> = (() => {
       if (atRest(background)) {
         roles[`${group}.${root}`] = {
           fill: background,
-          ink: atRest(foreground) ? foreground : STYLE.ink.default.text,
+          ink: atRest(foreground) ? foreground : STYLE.ink.onSurface.text,
           kind: 'fill',
           stroke: undefined,
         }
       } else if (background === undefined && atRest(border)) {
         roles[`${group}.${root}`] = {
-          fill: STYLE.surface.page.background,
-          ink: STYLE.ink.default.text,
+          fill: STYLE.surface.default.background,
+          ink: STYLE.ink.onSurface.text,
           kind: 'stroke',
           stroke: border,
         }
@@ -104,7 +104,7 @@ export function Swatch({ colour, ...props }: SwatchProps) {
         STYLE.space.controlX.paddingX,
         STYLE.shape.control,
         STYLE.stroke.width,
-        recipe.stroke ?? STYLE.stroke.border.border,
+        recipe.stroke ?? STYLE.outline.variant.border,
         recipe.fill,
         recipe.ink,
         STYLE.typography.emphasis,

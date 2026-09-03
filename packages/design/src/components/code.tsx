@@ -20,11 +20,11 @@ export function Code({ children, ...props }: NativeProps<'code'>) {
     <code
       className={cn(
         STYLE.shape.precise,
-        STYLE.surface.muted.background,
+        STYLE.surface.container.background,
         STYLE.space.related.paddingX,
         STYLE.family.mono,
         STYLE.typography.bodyCompact,
-        STYLE.ink.default.text,
+        STYLE.ink.onSurface.text,
         'tabular-nums',
       )}
       data-slot="code"

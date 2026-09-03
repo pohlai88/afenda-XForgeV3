@@ -51,16 +51,16 @@ describe('Button adapts Xforge vocabulary onto the primitive', () => {
     // is the page surface with the border stroke. Neither word is upstream's.
     const primary = renderToStaticMarkup(createElement(Button, { variant: 'primary' }, 'Go'))
     expect(primary).toMatch(/class="[^"]*\bbg-primary\b/)
-    expect(primary).toMatch(/class="[^"]*\btext-primary-foreground\b/)
+    expect(primary).toMatch(/class="[^"]*\btext-on-primary\b/)
     const outline = renderToStaticMarkup(createElement(Button, { variant: 'outline' }, 'Go'))
-    expect(outline).toMatch(/class="[^"]*\bborder-border\b/)
-    expect(outline).toMatch(/class="[^"]*\bbg-background\b/)
+    expect(outline).toMatch(/class="[^"]*\bborder-outline-variant\b/)
+    expect(outline).toMatch(/class="[^"]*\bbg-surface\b/)
     expect(outline).not.toMatch(/class="[^"]*\bbg-primary\b/)
   })
 
   it('a variant carries one border colour, so the stroke it selects is the stroke drawn', () => {
     // The base recipe said `border-transparent` for every button and the outline variant
-    // added `border-border` after it. Nothing merged the two -- the recipe is not passed
+    // added `border-outline-variant` after it. Nothing merged the two -- the recipe is not passed
     // through cn() -- so the stylesheet's order decided, and the outline button drew no
     // stroke at all. Found by the gallery proof, 2026-09-04: rendered border colour
     // rgba(0,0,0,0) against the border token. Red before `border-transparent` moved into

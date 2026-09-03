@@ -37,8 +37,8 @@ export interface SpecimenProps extends NativeProps<'figure'> {
 }
 
 const STAGE_SURFACE = {
-  card: [STYLE.surface.card.background, STYLE.surface.card.foreground].join(' '),
-  page: STYLE.surface.page.background,
+  card: [STYLE.surface.lowest.background, STYLE.ink.onSurface.text].join(' '),
+  page: STYLE.surface.default.background,
 } as const
 
 /** Section 4 — the Adapter. */
@@ -53,7 +53,7 @@ export function Specimen({ children, footer, label, surface = 'page', ...props }
       <figcaption
         className={cn(
           STYLE.typography.caption,
-          STYLE.surface.muted.foreground,
+          STYLE.ink.onSurfaceVariant.text,
           STYLE.space.none.margin,
         )}
       >
@@ -64,7 +64,7 @@ export function Specimen({ children, footer, label, surface = 'page', ...props }
           STAGE_SURFACE[surface],
           STYLE.shape.control,
           STYLE.stroke.width,
-          STYLE.stroke.border.border,
+          STYLE.outline.variant.border,
           STYLE.space.normal.padding,
         )}
         data-slot="specimen-stage"
@@ -73,7 +73,7 @@ export function Specimen({ children, footer, label, surface = 'page', ...props }
       </div>
       {footer ? (
         <div
-          className={cn(STYLE.typography.bodyCompact, STYLE.surface.muted.foreground)}
+          className={cn(STYLE.typography.bodyCompact, STYLE.ink.onSurfaceVariant.text)}
           data-slot="specimen-footer"
         >
           {footer}

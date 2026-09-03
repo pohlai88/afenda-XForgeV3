@@ -34,7 +34,12 @@ describe('ListItem is a row', () => {
 
   it('keeps the row surface and stroke from the language', () => {
     const classes = /class="([^"]*)"/.exec(render({}, 'x'))?.[1] ?? ''
-    for (const word of ['bg-card', 'border-stroke', 'border-border', 'rounded-control']) {
+    for (const word of [
+      'bg-surface-lowest',
+      'border-stroke',
+      'border-outline-variant',
+      'rounded-control',
+    ]) {
       expect(classes, word).toContain(word)
     }
   })

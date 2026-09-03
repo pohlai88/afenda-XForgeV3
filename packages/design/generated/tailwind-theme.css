@@ -23,58 +23,46 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 67 roles projected; 52 colour utilities emitted per channel.
+ * 67 roles projected; 38 colour utilities emitted per channel.
  */
 :root {
-  --accent: var(--semantic-color-accent);
-  --accent-foreground: var(--semantic-color-accent-foreground);
-  --accent-hover: var(--semantic-color-accent-hover);
-  --accent-pressed: var(--semantic-color-accent-pressed);
-  --background: var(--semantic-color-background);
-  --border: var(--semantic-color-border);
-  --card: var(--semantic-color-card);
-  --card-foreground: var(--semantic-color-card-foreground);
-  --destructive: var(--semantic-color-destructive);
-  --destructive-foreground: var(--semantic-color-destructive-foreground);
-  --destructive-hover: var(--semantic-color-destructive-hover);
-  --destructive-pressed: var(--semantic-color-destructive-pressed);
   --disabled: var(--semantic-color-disabled);
-  --disabled-foreground: var(--semantic-color-disabled-foreground);
   --error: var(--semantic-color-error);
-  --error-foreground: var(--semantic-color-error-foreground);
-  --field: var(--semantic-color-field);
-  --foreground: var(--semantic-color-foreground);
-  --info: var(--semantic-color-info);
-  --info-foreground: var(--semantic-color-info-foreground);
-  --input: var(--semantic-color-input);
-  --muted: var(--semantic-color-muted);
-  --muted-foreground: var(--semantic-color-muted-foreground);
-  --popover: var(--semantic-color-popover);
-  --popover-foreground: var(--semantic-color-popover-foreground);
+  --error-container: var(--semantic-color-error-container);
+  --error-hover: var(--semantic-color-error-hover);
+  --error-pressed: var(--semantic-color-error-pressed);
+  --focus: var(--semantic-color-focus);
+  --info-container: var(--semantic-color-info-container);
+  --on-disabled: var(--semantic-color-on-disabled);
+  --on-error: var(--semantic-color-on-error);
+  --on-error-container: var(--semantic-color-on-error-container);
+  --on-info-container: var(--semantic-color-on-info-container);
+  --on-primary: var(--semantic-color-on-primary);
+  --on-primary-container: var(--semantic-color-on-primary-container);
+  --on-statutory-container: var(--semantic-color-on-statutory-container);
+  --on-success-container: var(--semantic-color-on-success-container);
+  --on-surface: var(--semantic-color-on-surface);
+  --on-surface-variant: var(--semantic-color-on-surface-variant);
+  --on-warning-container: var(--semantic-color-on-warning-container);
+  --outline: var(--semantic-color-outline);
+  --outline-variant: var(--semantic-color-outline-variant);
   --primary: var(--semantic-color-primary);
-  --primary-foreground: var(--semantic-color-primary-foreground);
+  --primary-container: var(--semantic-color-primary-container);
+  --primary-container-hover: var(--semantic-color-primary-container-hover);
+  --primary-container-pressed: var(--semantic-color-primary-container-pressed);
   --primary-hover: var(--semantic-color-primary-hover);
   --primary-pressed: var(--semantic-color-primary-pressed);
-  --ring: var(--semantic-color-ring);
   --scrim: var(--semantic-color-scrim);
-  --secondary: var(--semantic-color-secondary);
-  --secondary-foreground: var(--semantic-color-secondary-foreground);
-  --secondary-hover: var(--semantic-color-secondary-hover);
-  --secondary-pressed: var(--semantic-color-secondary-pressed);
   --shadow-ambient: var(--semantic-color-shadow-ambient);
   --shadow-key: var(--semantic-color-shadow-key);
-  --sidebar: var(--semantic-color-sidebar);
-  --sidebar-accent: var(--semantic-color-sidebar-accent);
-  --sidebar-accent-foreground: var(--semantic-color-sidebar-accent-foreground);
-  --sidebar-border: var(--semantic-color-sidebar-border);
-  --sidebar-foreground: var(--semantic-color-sidebar-foreground);
-  --sidebar-ring: var(--semantic-color-sidebar-ring);
-  --statutory: var(--semantic-color-statutory);
-  --statutory-foreground: var(--semantic-color-statutory-foreground);
-  --success: var(--semantic-color-success);
-  --success-foreground: var(--semantic-color-success-foreground);
-  --warning: var(--semantic-color-warning);
-  --warning-foreground: var(--semantic-color-warning-foreground);
+  --statutory-container: var(--semantic-color-statutory-container);
+  --success-container: var(--semantic-color-success-container);
+  --surface: var(--semantic-color-surface);
+  --surface-container: var(--semantic-color-surface-container);
+  --surface-lowest: var(--semantic-color-surface-lowest);
+  --surface-lowest-hover: var(--semantic-color-surface-lowest-hover);
+  --surface-lowest-pressed: var(--semantic-color-surface-lowest-pressed);
+  --warning-container: var(--semantic-color-warning-container);
 }
 
 @theme inline {
@@ -298,50 +286,35 @@
  * takes no opacity modifier. A role still in the namespace above is kept there by a
  * vendored shim (COLOR_CHANNEL_SHIMS) until the Adapter above that file owns the styling.
  */
-@utility bg-accent {
-  background-color: var(--semantic-color-accent);
-}
-@utility bg-accent-hover {
-  background-color: var(--semantic-color-accent-hover);
-}
-@utility bg-accent-pressed {
-  background-color: var(--semantic-color-accent-pressed);
-}
-@utility bg-background {
-  background-color: var(--semantic-color-background);
-}
-@utility bg-card {
-  background-color: var(--semantic-color-card);
-}
-@utility bg-destructive {
-  background-color: var(--semantic-color-destructive);
-}
-@utility bg-destructive-hover {
-  background-color: var(--semantic-color-destructive-hover);
-}
-@utility bg-destructive-pressed {
-  background-color: var(--semantic-color-destructive-pressed);
-}
 @utility bg-disabled {
   background-color: var(--semantic-color-disabled);
 }
 @utility bg-error {
   background-color: var(--semantic-color-error);
 }
-@utility bg-field {
-  background-color: var(--semantic-color-field);
+@utility bg-error-container {
+  background-color: var(--semantic-color-error-container);
 }
-@utility bg-info {
-  background-color: var(--semantic-color-info);
+@utility bg-error-hover {
+  background-color: var(--semantic-color-error-hover);
 }
-@utility bg-muted {
-  background-color: var(--semantic-color-muted);
+@utility bg-error-pressed {
+  background-color: var(--semantic-color-error-pressed);
 }
-@utility bg-popover {
-  background-color: var(--semantic-color-popover);
+@utility bg-info-container {
+  background-color: var(--semantic-color-info-container);
 }
 @utility bg-primary {
   background-color: var(--semantic-color-primary);
+}
+@utility bg-primary-container {
+  background-color: var(--semantic-color-primary-container);
+}
+@utility bg-primary-container-hover {
+  background-color: var(--semantic-color-primary-container-hover);
+}
+@utility bg-primary-container-pressed {
+  background-color: var(--semantic-color-primary-container-pressed);
 }
 @utility bg-primary-hover {
   background-color: var(--semantic-color-primary-hover);
@@ -349,110 +322,83 @@
 @utility bg-primary-pressed {
   background-color: var(--semantic-color-primary-pressed);
 }
-@utility bg-secondary {
-  background-color: var(--semantic-color-secondary);
+@utility bg-statutory-container {
+  background-color: var(--semantic-color-statutory-container);
 }
-@utility bg-secondary-hover {
-  background-color: var(--semantic-color-secondary-hover);
+@utility bg-success-container {
+  background-color: var(--semantic-color-success-container);
 }
-@utility bg-secondary-pressed {
-  background-color: var(--semantic-color-secondary-pressed);
+@utility bg-surface {
+  background-color: var(--semantic-color-surface);
 }
-@utility bg-sidebar {
-  background-color: var(--semantic-color-sidebar);
+@utility bg-surface-container {
+  background-color: var(--semantic-color-surface-container);
 }
-@utility bg-sidebar-accent {
-  background-color: var(--semantic-color-sidebar-accent);
+@utility bg-surface-lowest {
+  background-color: var(--semantic-color-surface-lowest);
 }
-@utility bg-statutory {
-  background-color: var(--semantic-color-statutory);
+@utility bg-surface-lowest-hover {
+  background-color: var(--semantic-color-surface-lowest-hover);
 }
-@utility bg-success {
-  background-color: var(--semantic-color-success);
+@utility bg-surface-lowest-pressed {
+  background-color: var(--semantic-color-surface-lowest-pressed);
 }
-@utility bg-warning {
-  background-color: var(--semantic-color-warning);
+@utility bg-warning-container {
+  background-color: var(--semantic-color-warning-container);
 }
-@utility border-border {
-  border-color: var(--semantic-color-border);
+@utility border-focus {
+  border-color: var(--semantic-color-focus);
 }
-@utility border-input {
-  border-color: var(--semantic-color-input);
+@utility border-outline {
+  border-color: var(--semantic-color-outline);
 }
-@utility border-ring {
-  border-color: var(--semantic-color-ring);
+@utility border-outline-variant {
+  border-color: var(--semantic-color-outline-variant);
 }
-@utility border-sidebar-border {
-  border-color: var(--semantic-color-sidebar-border);
+@utility outline-focus {
+  outline-color: var(--semantic-color-focus);
 }
-@utility border-sidebar-ring {
-  border-color: var(--semantic-color-sidebar-ring);
+@utility outline-outline {
+  outline-color: var(--semantic-color-outline);
 }
-@utility outline-input {
-  outline-color: var(--semantic-color-input);
+@utility ring-focus {
+  --tw-ring-color: var(--semantic-color-focus);
 }
-@utility outline-ring {
-  outline-color: var(--semantic-color-ring);
+@utility ring-outline {
+  --tw-ring-color: var(--semantic-color-outline);
 }
-@utility outline-sidebar-ring {
-  outline-color: var(--semantic-color-sidebar-ring);
+@utility text-on-disabled {
+  color: var(--semantic-color-on-disabled);
 }
-@utility ring-input {
-  --tw-ring-color: var(--semantic-color-input);
+@utility text-on-error {
+  color: var(--semantic-color-on-error);
 }
-@utility ring-ring {
-  --tw-ring-color: var(--semantic-color-ring);
+@utility text-on-error-container {
+  color: var(--semantic-color-on-error-container);
 }
-@utility ring-sidebar-ring {
-  --tw-ring-color: var(--semantic-color-sidebar-ring);
+@utility text-on-info-container {
+  color: var(--semantic-color-on-info-container);
 }
-@utility text-accent-foreground {
-  color: var(--semantic-color-accent-foreground);
+@utility text-on-primary {
+  color: var(--semantic-color-on-primary);
 }
-@utility text-card-foreground {
-  color: var(--semantic-color-card-foreground);
+@utility text-on-primary-container {
+  color: var(--semantic-color-on-primary-container);
 }
-@utility text-destructive-foreground {
-  color: var(--semantic-color-destructive-foreground);
+@utility text-on-statutory-container {
+  color: var(--semantic-color-on-statutory-container);
 }
-@utility text-disabled-foreground {
-  color: var(--semantic-color-disabled-foreground);
+@utility text-on-success-container {
+  color: var(--semantic-color-on-success-container);
 }
-@utility text-error-foreground {
-  color: var(--semantic-color-error-foreground);
+@utility text-on-surface {
+  color: var(--semantic-color-on-surface);
 }
-@utility text-foreground {
-  color: var(--semantic-color-foreground);
+@utility text-on-surface-variant {
+  color: var(--semantic-color-on-surface-variant);
 }
-@utility text-info-foreground {
-  color: var(--semantic-color-info-foreground);
-}
-@utility text-muted-foreground {
-  color: var(--semantic-color-muted-foreground);
-}
-@utility text-popover-foreground {
-  color: var(--semantic-color-popover-foreground);
-}
-@utility text-primary-foreground {
-  color: var(--semantic-color-primary-foreground);
-}
-@utility text-secondary-foreground {
-  color: var(--semantic-color-secondary-foreground);
-}
-@utility text-sidebar-accent-foreground {
-  color: var(--semantic-color-sidebar-accent-foreground);
-}
-@utility text-sidebar-foreground {
-  color: var(--semantic-color-sidebar-foreground);
-}
-@utility text-statutory-foreground {
-  color: var(--semantic-color-statutory-foreground);
-}
-@utility text-success-foreground {
-  color: var(--semantic-color-success-foreground);
-}
-@utility text-warning-foreground {
-  color: var(--semantic-color-warning-foreground);
+@utility text-on-warning-container {
+  color: var(--semantic-color-on-warning-container);
 }
 
 /*

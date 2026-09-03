@@ -35,7 +35,7 @@ export function Link({ children, current = false, ...props }: LinkProps) {
       aria-current={current ? 'page' : undefined}
       className={cn(
         'underline outline-none',
-        STYLE.ink.default.text,
+        STYLE.ink.onSurface.text,
         STYLE.focus.ring,
         current && STYLE.typography.emphasis,
       )}

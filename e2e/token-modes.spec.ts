@@ -55,7 +55,7 @@ async function computed(
  * below would have compared a constant with itself and passed. `space.loose`
  * is rebound by all three modes, which is what these tests are actually about.
  */
-const COLOUR = '--semantic-color-background'
+const COLOUR = '--semantic-color-surface'
 const GEOMETRY = '--semantic-space-loose'
 
 /**
@@ -126,15 +126,17 @@ test.describe('theme and density compose in a real browser', () => {
    */
   test('a theme rebinds colour and leaves geometry untouched', async ({ page }) => {
     await page.goto(PAGE)
-    const names = [GEOMETRY, '--semantic-color-card']
+    const names = [GEOMETRY, '--semantic-color-surface-lowest']
     const light = await computed(page, read({}, names))
     const dark = await computed(page, read({ theme: 'dark' }, names))
 
     // Both are read, so neither half can pass by being absent.
-    expect(light['--semantic-color-card']).not.toBe('')
+    expect(light['--semantic-color-surface-lowest']).not.toBe('')
     expect(light[GEOMETRY]).not.toBe('')
 
-    expect(dark['--semantic-color-card']).not.toBe(light['--semantic-color-card'])
+    expect(dark['--semantic-color-surface-lowest']).not.toBe(
+      light['--semantic-color-surface-lowest'],
+    )
     expect(dark[GEOMETRY]).toBe(light[GEOMETRY])
   })
 
@@ -152,7 +154,7 @@ test.describe('theme and density compose in a real browser', () => {
       const el = document.createElement('div')
       el.setAttribute('data-theme', 'dark')
       document.body.appendChild(el)
-      const value = getComputedStyle(el).getPropertyValue('--semantic-color-background').trim()
+      const value = getComputedStyle(el).getPropertyValue('--semantic-color-surface').trim()
       el.remove()
       return value
     })

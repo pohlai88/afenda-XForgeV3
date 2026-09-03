@@ -78,7 +78,7 @@ const base = (): TokenTree => ({
       $axis: 'color',
       dark: {
         semantic: {
-          color: { background: { $value: '#000000' }, foreground: { $value: '#ffffff' } },
+          color: { 'on-surface': { $value: '#ffffff' }, surface: { $value: '#000000' } },
         },
       },
     },
@@ -90,8 +90,8 @@ const base = (): TokenTree => ({
   semantic: {
     color: {
       $type: 'color',
-      background: { $value: '{color.paper}' },
-      foreground: { $value: '{color.ink}' },
+      'on-surface': { $value: '{color.ink}' },
+      surface: { $value: '{color.paper}' },
     },
     // The ergonomic control size and the accessibility floor are two facts, and
     // the generator holds the first to the second in every mode -- so a source
@@ -178,12 +178,12 @@ describe('the generated stylesheet', () => {
   /**
    * The change that makes a theme possible at all.
    *
-   * Resolving aliases to literals emitted `--semantic-color-card: #ffffff`
+   * Resolving aliases to literals emitted `--semantic-color-surface-lowest: #ffffff`
    * and, for every token aliasing it, `#ffffff` again -- so rebinding the role
    * would change the role and nothing downstream of it.
    */
   it('preserves aliases as var() references rather than resolving them', () => {
-    expect(css).toContain('--semantic-color-card: var(--color-neutral-0);')
+    expect(css).toContain('--semantic-color-surface-lowest: var(--color-neutral-0);')
     expect(css).toContain('--semantic-type-emphasis: var(--size-text-md);')
   })
 
@@ -226,7 +226,7 @@ describe('the two axes compose', () => {
    * either axis stopped rebinding anything, every comparison would pass by
    * comparing a value to itself.
    */
-  const colourIn = (modes = {}) => computed(css, modes).get('--semantic-color-background')
+  const colourIn = (modes = {}) => computed(css, modes).get('--semantic-color-surface')
   // NOT `space.section`, WHICH IS THE POINT OF THE CHANGE. Density packs
   // information inside productive components; it does not reflow the page
   // frame, so `section` and `container` are invariant and a probe reading one of
@@ -385,7 +385,7 @@ describe('what the generator refuses', () => {
   it('a density mode reaching into colour', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.density.compact.semantic.color', { foreground: { $value: '#123456' } })
+        set(s, '$modes.density.compact.semantic.color', { 'on-surface': { $value: '#123456' } })
       }),
     ).toThrow(/axis owns/)
   })
@@ -448,7 +448,7 @@ describe('what the generator refuses', () => {
     expect(
       withSource((s) => {
         set(s, '$modes.theme.dark.semantic.color', {
-          foreground: { $value: { colorSpace: 'srgb', components: [0, 0, 0] } },
+          'on-surface': { $value: { colorSpace: 'srgb', components: [0, 0, 0] } },
         })
       }),
     ).toThrow(/not a 6- or 8-digit hex string/)
@@ -457,7 +457,7 @@ describe('what the generator refuses', () => {
   it('a mode override whose value is a malformed hex', () => {
     expect(
       withSource((s) => {
-        set(s, '$modes.theme.dark.semantic.color', { foreground: { $value: '#gggggg' } })
+        set(s, '$modes.theme.dark.semantic.color', { 'on-surface': { $value: '#gggggg' } })
       }),
     ).toThrow(/not a 6- or 8-digit hex string/)
   })
@@ -466,7 +466,7 @@ describe('what the generator refuses', () => {
     expect(
       withSource((s) => {
         set(s, '$modes.theme.dark.semantic.color', {
-          foreground: { $type: 'dimension', $value: '#000000' },
+          'on-surface': { $type: 'dimension', $value: '#000000' },
         })
       }),
     ).toThrow(/rebinds a role's VALUE, never its type/)
@@ -519,7 +519,7 @@ describe('what the generator refuses', () => {
       withSource((s) => {
         set(s, '$modes.contrast', {
           $axis: 'color',
-          more: { semantic: { color: { foreground: { $value: '#111111' } } } },
+          more: { semantic: { color: { 'on-surface': { $value: '#111111' } } } },
         })
       }),
     ).toThrow(/rebound by both/)
@@ -586,7 +586,7 @@ describe('the disabled state is measured rather than composited', () => {
         // this test depend on that step continuing to exist, and it stopped
         // existing when the palette was rebuilt, so the case failed on a
         // dangling alias instead of on the contrast rule it exists to prove.
-        set(s, 'semantic.color.disabled-foreground', { $value: '#c3ccd5' })
+        set(s, 'semantic.color.on-disabled', { $value: '#c3ccd5' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -594,7 +594,7 @@ describe('the disabled state is measured rather than composited', () => {
   it('refuses alpha on a disabled role, which would composite the same way again', () => {
     expect(
       withReal((s) => {
-        set(s, 'semantic.color.disabled-foreground', { $value: '#64748b99' })
+        set(s, 'semantic.color.on-disabled', { $value: '#64748b99' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -607,7 +607,7 @@ describe('the disabled state is measured rather than composited', () => {
         // asserts would then be provable by any of them -- a test passing for a
         // reason it does not name.
         // A literal, for the reason given in the light case above.
-        set(s, '$modes.theme.dark.semantic.color.disabled-foreground', { $value: '#2f3b43' })
+        set(s, '$modes.theme.dark.semantic.color.on-disabled', { $value: '#2f3b43' })
       }),
     ).toThrow(/contrast policy violated/)
   })
@@ -862,14 +862,14 @@ describe('the elevation model', () => {
     rank: 0,
     reason: 'the page',
     separatedBy: [],
-    surface: 'color.background',
+    surface: 'color.surface',
   }
   const card = {
     elevation: 'semantic.elevation.flat',
     rank: 1,
     reason: 'a card',
     separatedBy: ['surface'],
-    surface: 'color.card',
+    surface: 'color.surface-lowest',
   }
 
   it('refuses to prove itself over zero layers', () => {
@@ -1349,8 +1349,10 @@ describe('colour role contracts (ADR-034)', () => {
     [root]: contract,
   })
 
-  it('has a table to hold to, with every one of the 26 roots', () => {
-    expect(Object.keys(COLOR_ROLE_CONTRACTS)).toHaveLength(26)
+  it('has a table to hold to, with every one of the 20 roots', () => {
+    // 26 until 2026-09-04; the M3 rename merged card/field/secondary into surface-lowest,
+    // popover/muted/sidebar into surface-container, and retired the sidebar duplicates.
+    expect(Object.keys(COLOR_ROLE_CONTRACTS)).toHaveLength(20)
     expect(NONE).toBeTypeOf('symbol')
   })
 
@@ -1367,16 +1369,16 @@ describe('colour role contracts (ADR-034)', () => {
   })
 
   it('refuses a companion slot that is neither a reference nor NONE', () => {
-    const { pressed: _dropped, ...withoutPressed } = COLOR_ROLE_CONTRACTS.card
+    const { pressed: _dropped, ...withoutPressed } = COLOR_ROLE_CONTRACTS['surface-lowest']
     expect(() =>
-      foundations.assertColorRoleContracts(tokens, withRoot('card', withoutPressed)),
-    ).toThrow(/root 'card' leaves 'pressed' undeclared/)
+      foundations.assertColorRoleContracts(tokens, withRoot('surface-lowest', withoutPressed)),
+    ).toThrow(/root 'surface-lowest' leaves 'pressed' undeclared/)
     expect(() =>
       foundations.assertColorRoleContracts(
         tokens,
-        withRoot('card', { ...withoutPressed, pressed: null }),
+        withRoot('surface-lowest', { ...withoutPressed, pressed: null }),
       ),
-    ).toThrow(/root 'card' declares 'pressed' as null/)
+    ).toThrow(/root 'surface-lowest' declares 'pressed' as null/)
   })
 
   it('refuses a token whose name carries a companion suffix it is not declared as', () => {
@@ -1385,18 +1387,23 @@ describe('colour role contracts (ADR-034)', () => {
     expect(() =>
       foundations.assertColorRoleContracts(
         tokens,
-        withRoot('card', { ...COLOR_ROLE_CONTRACTS.card, foreground: NONE }),
+        withRoot('surface-lowest', { ...COLOR_ROLE_CONTRACTS['surface-lowest'], hover: NONE }),
       ),
-    ).toThrow(/'semantic\.color\.card-foreground' carries the companion suffix 'foreground'/)
+    ).toThrow(/'semantic\.color\.surface-lowest-hover' carries the companion suffix 'hover'/)
   })
 
   it('refuses a reference that does not resolve, when the root is present', () => {
     expect(() =>
       foundations.assertColorRoleContracts(
         tokens,
-        withRoot('card', { ...COLOR_ROLE_CONTRACTS.card, hover: 'semantic.color.card-hover' }),
+        withRoot('surface-lowest', {
+          ...COLOR_ROLE_CONTRACTS['surface-lowest'],
+          hover: 'semantic.color.surface-lowest-lift',
+        }),
       ),
-    ).toThrow(/root 'card' names hover 'semantic\.color\.card-hover', which does not exist/)
+    ).toThrow(
+      /root 'surface-lowest' names hover 'semantic\.color\.surface-lowest-lift', which does not exist/,
+    )
   })
 
   it('skips a root whose base the source does not declare, and still owns its companions', () => {
@@ -1405,7 +1412,7 @@ describe('colour role contracts (ADR-034)', () => {
     // by its declared root even when the base is absent, and the absent base is not a
     // defect of that source.
     const s = base()
-    set(s, 'semantic.color.disabled-foreground', { $value: '#333333' })
+    set(s, 'semantic.color.on-disabled', { $value: '#333333' })
     expect(() => generate(s)).not.toThrow()
   })
 
@@ -1413,9 +1420,9 @@ describe('colour role contracts (ADR-034)', () => {
     // `info` rather than `card`: a second surface at the paper value trips the
     // distinctness policy first, and the message under test is this one.
     const s = base()
-    set(s, 'semantic.color.info', { $value: '#dbeafe' })
+    set(s, 'semantic.color.info-container', { $value: '#dbeafe' })
     expect(() => generate(s)).toThrow(
-      /root 'info' names foreground 'semantic\.color\.info-foreground', which does not exist/,
+      /root 'info-container' names foreground 'semantic\.color\.on-info-container', which does not exist/,
     )
   })
 })
@@ -1470,11 +1477,11 @@ describe('colour channels (ADR-034)', () => {
   })
 
   it('a role without a shim is emitted as utilities on its natural channels only', () => {
-    expect(foundations.colorChannelsOf('color.error-foreground')).toEqual({
+    expect(foundations.colorChannelsOf('color.on-error-container')).toEqual({
       channels: ['text'],
       projection: 'utility',
     })
-    expect(foundations.colorChannelsOf('color.error')).toEqual({
+    expect(foundations.colorChannelsOf('color.error-container')).toEqual({
       channels: ['bg'],
       projection: 'utility',
     })
@@ -1487,13 +1494,13 @@ describe('colour channels (ADR-034)', () => {
   it('a role with a shim stays in the namespace; today no role has one', () => {
     // The mechanism, on a synthetic shim: a listed role is projected whole.
     expect(
-      foundations.colorChannelsOf('color.destructive', COLOR_ROLE_POLICIES, {
-        'color.destructive': ['text'],
+      foundations.colorChannelsOf('color.error', COLOR_ROLE_POLICIES, {
+        'color.error': ['text'],
       }).projection,
     ).toBe('namespace')
     // The shipped table is empty since ADR-034 step 8: nothing vendored is reachable.
     expect(Object.keys(COLOR_CHANNEL_SHIMS)).toEqual([])
-    expect(foundations.colorChannelsOf('color.destructive').projection).toBe('utility')
+    expect(foundations.colorChannelsOf('color.error').projection).toBe('utility')
   })
 
   it('refuses a shim for a role that does not exist, or naming a channel that does not', () => {
@@ -1520,17 +1527,17 @@ describe('colour channels (ADR-034)', () => {
       closes: pkg.closes,
       typeRoles: foundations.typeRolesFor(pkg.typeRoles),
     })
-    expect(theme).toContain('@utility bg-error {')
-    expect(theme).toContain('@utility text-error-foreground {')
+    expect(theme).toContain('@utility bg-error-container {')
+    expect(theme).toContain('@utility text-on-error-container {')
     expect(theme).not.toContain('--color-error:')
-    expect(theme).not.toContain('@utility text-error {')
+    expect(theme).not.toContain('@utility text-error-container {')
     // With the shim table empty, no colour role is projected into --color-* at all.
     expect(theme).not.toMatch(/--color-[a-z-]+: var\(/)
-    expect(theme).toContain('@utility bg-destructive {')
-    // twMerge learns the colour channels, so `text-foreground text-muted-foreground` still
+    expect(theme).toContain('@utility bg-error {')
+    // twMerge learns the colour channels, so `text-on-surface text-on-surface-variant` still
     // resolves to the last one once both are @utility blocks it would not otherwise know.
-    expect(mergeGroups).toMatch(/'text-color': \[\{ text: \[[^\]]*'muted-foreground'/)
-    expect(mergeGroups).toMatch(/'bg-color': \[\{ bg: \[[^\]]*'destructive'/)
+    expect(mergeGroups).toMatch(/'text-color': \[\{ text: \[[^\]]*'on-surface-variant'/)
+    expect(mergeGroups).toMatch(/'bg-color': \[\{ bg: \[[^\]]*'error'/)
   })
 
   /**
@@ -1611,7 +1618,7 @@ describe('colour channels (ADR-034)', () => {
 
 /**
  * ADR-034 Decision 4 / ADR-031 Decision 12: the style contract. A component selects
- * `STYLE.action.danger.background`; the class it resolves to is `bg-destructive`. The symbol
+ * `STYLE.error.default.background`; the class it resolves to is `bg-error`. The symbol
  * is Xforge's word, the class is the role's, and `STYLE_NAMES` is the one place they meet.
  * Written before `style.mjs` and the emitter existed; red on every case.
  */
@@ -1625,28 +1632,27 @@ describe('the style contract (ADR-034 Decision 4)', () => {
   )
 
   it('names colour by meaning and resolves it to the role class', () => {
-    expect(leaves.get('action.danger.background')?.class).toBe('bg-destructive')
-    expect(leaves.get('action.danger.foreground')?.class).toBe('text-destructive-foreground')
-    expect(leaves.get('status.danger.background')?.class).toBe('bg-error')
-    expect(leaves.get('status.danger.foreground')?.class).toBe('text-error-foreground')
-    expect(leaves.get('surface.page.background')?.class).toBe('bg-background')
-    expect(leaves.get('ink.default.text')?.class).toBe('text-foreground')
-    expect(leaves.get('stroke.focus.ring')?.class).toBe('ring-ring')
+    expect(leaves.get('error.default.background')?.class).toBe('bg-error')
+    expect(leaves.get('error.default.foreground')?.class).toBe('text-on-error')
+    expect(leaves.get('error.container.background')?.class).toBe('bg-error-container')
+    expect(leaves.get('error.container.foreground')?.class).toBe('text-on-error-container')
+    expect(leaves.get('surface.default.background')?.class).toBe('bg-surface')
+    expect(leaves.get('ink.onSurface.text')?.class).toBe('text-on-surface')
+    expect(leaves.get('outline.focus.ring')?.class).toBe('ring-focus')
   })
 
   it('expresses an interaction companion with its variant, once, in the language', () => {
-    expect(leaves.get('action.primary.hover')?.class).toBe('hover:bg-primary-hover')
-    expect(leaves.get('action.primary.pressed')?.class).toBe('active:bg-primary-pressed')
-    expect(leaves.get('action.danger.pressed')?.class).toBe('active:bg-destructive-pressed')
-    expect(leaves.has('surface.card.hover')).toBe(false)
-    // A pressable surface changes its ink with its fill, so a hover has a hover foreground.
-    expect(leaves.get('action.secondary.hoverForeground')?.class).toBe(
-      'hover:text-secondary-foreground',
-    )
-    expect(leaves.has('surface.card.hoverForeground')).toBe(false)
+    expect(leaves.get('accent.primary.hover')?.class).toBe('hover:bg-primary-hover')
+    expect(leaves.get('accent.primary.pressed')?.class).toBe('active:bg-primary-pressed')
+    expect(leaves.get('error.default.pressed')?.class).toBe('active:bg-error-pressed')
+    expect(leaves.get('surface.lowest.hover')?.class).toBe('hover:bg-surface-lowest-hover')
+    // A pressable fill with its own on-colour changes its ink with its fill, so it has a
+    // hover foreground; the lowest surface's ink is on-surface, a root of its own, so it has none.
+    expect(leaves.get('accent.primary.hoverForeground')?.class).toBe('hover:text-on-primary')
+    expect(leaves.has('surface.lowest.hoverForeground')).toBe(false)
     // A state role selects through its own variant, decided once in the language.
     expect(leaves.get('state.disabled.background')?.class).toBe('disabled:bg-disabled')
-    expect(leaves.get('state.disabled.foreground')?.class).toBe('disabled:text-disabled-foreground')
+    expect(leaves.get('state.disabled.foreground')?.class).toBe('disabled:text-on-disabled')
     // Base UI's data-state vocabulary selects declared roles, one table (ADR-034 step 8).
     // Every state at rest excludes disabled, so disabled dominates by selector, never by the
     // order the rules happen to come out in (the gallery proof caught the order winning).
@@ -1654,13 +1660,13 @@ describe('the style contract (ADR-034 Decision 4)', () => {
       'data-checked:not-data-disabled:bg-primary',
     )
     expect(leaves.get('interaction.unchecked.background')?.class).toBe(
-      'data-unchecked:not-data-disabled:bg-field',
+      'data-unchecked:not-data-disabled:bg-surface-lowest',
     )
     expect(leaves.get('interaction.highlighted.foreground')?.class).toBe(
-      'data-highlighted:not-data-disabled:text-accent-foreground',
+      'data-highlighted:not-data-disabled:text-on-primary-container',
     )
     expect(leaves.get('interaction.disabled.background')?.class).toBe('data-disabled:bg-disabled')
-    expect(leaves.get('field.placeholder')?.class).toBe('placeholder:text-muted-foreground')
+    expect(leaves.get('field.placeholder')?.class).toBe('placeholder:text-on-surface-variant')
     // Component-tier geometry, each aliasing a semantic role, projected into spacing.
     expect(leaves.get('component.switch.trackWidth')?.class).toBe('w-switch-track-width')
     expect(leaves.get('component.switch.thumb')?.class).toBe('size-switch-thumb')
@@ -1712,15 +1718,15 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     expect(() =>
       foundations.assertStyleNames({
         ...foundations.STYLE_NAMES,
-        secondary: ['action', 'primary'],
+        'surface-lowest': ['accent', 'primary'],
       }),
-    ).toThrow(/gives 'action\.primary' to both/)
+    ).toThrow(/gives 'accent\.primary' to both/)
   })
 
   it('the generator emits style.ts and the manifest from the same call, and they agree', () => {
     const { style, styleManifest } = generate(source)
     expect(style).toContain('export const STYLE = {')
-    expect(style).toContain("background: 'bg-destructive'")
+    expect(style).toContain("background: 'bg-error'")
     const manifest = JSON.parse(styleManifest) as {
       contract: string
       omitted: { role: string }[]
@@ -1728,7 +1734,7 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     }
     expect(manifest.contract).toBe(policy.TOKEN_CONTRACT_VERSION)
     expect(Object.keys(manifest.symbols).length).toBe(leaves.size)
-    expect(manifest.symbols['action.danger.background']).toMatchObject({ class: 'bg-destructive' })
+    expect(manifest.symbols['error.default.background']).toMatchObject({ class: 'bg-error' })
     expect(manifest.omitted.length).toBe(omitted.length)
   })
 })

@@ -9,14 +9,14 @@
  * Tailwind bridge, so this is not part of the vocabulary -- it is all of it.
  */
 export const TWMERGE_CLASS_GROUPS = {
-  'bg-color': [{ bg: ['accent', 'accent-hover', 'accent-pressed', 'background', 'card', 'destructive', 'destructive-hover', 'destructive-pressed', 'disabled', 'error', 'field', 'info', 'muted', 'popover', 'primary', 'primary-hover', 'primary-pressed', 'secondary', 'secondary-hover', 'secondary-pressed', 'sidebar', 'sidebar-accent', 'statutory', 'success', 'warning'] }],
-  'border-color': [{ border: ['border', 'input', 'ring', 'sidebar-border', 'sidebar-ring'] }],
+  'bg-color': [{ bg: ['disabled', 'error', 'error-container', 'error-hover', 'error-pressed', 'info-container', 'primary', 'primary-container', 'primary-container-hover', 'primary-container-pressed', 'primary-hover', 'primary-pressed', 'statutory-container', 'success-container', 'surface', 'surface-container', 'surface-lowest', 'surface-lowest-hover', 'surface-lowest-pressed', 'warning-container'] }],
+  'border-color': [{ border: ['focus', 'outline', 'outline-variant'] }],
   'font-family': [{ font: ['mono', 'sans'] }],
   'font-size': [{ text: ['body', 'body-compact', 'caption', 'display', 'emphasis', 'heading', 'label', 'subheading', 'title'] }],
   'font-weight': [{ font: ['body', 'body-compact', 'caption', 'emphasis', 'heading', 'label'] }],
   'leading': [{ leading: ['body', 'body-compact', 'caption', 'display', 'heading', 'label', 'subheading', 'title'] }],
-  'outline-color': [{ outline: ['input', 'ring', 'sidebar-ring'] }],
-  'ring-color': [{ ring: ['input', 'ring', 'sidebar-ring'] }],
-  'text-color': [{ text: ['accent-foreground', 'card-foreground', 'destructive-foreground', 'disabled-foreground', 'error-foreground', 'foreground', 'info-foreground', 'muted-foreground', 'popover-foreground', 'primary-foreground', 'secondary-foreground', 'sidebar-accent-foreground', 'sidebar-foreground', 'statutory-foreground', 'success-foreground', 'warning-foreground'] }],
+  'outline-color': [{ outline: ['focus', 'outline'] }],
+  'ring-color': [{ ring: ['focus', 'outline'] }],
+  'text-color': [{ text: ['on-disabled', 'on-error', 'on-error-container', 'on-info-container', 'on-primary', 'on-primary-container', 'on-statutory-container', 'on-success-container', 'on-surface', 'on-surface-variant', 'on-warning-container'] }],
   'tracking': [{ tracking: ['body'] }],
 } as const

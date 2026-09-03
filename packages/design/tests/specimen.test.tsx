@@ -29,9 +29,9 @@ describe('Specimen frames one state', () => {
     const classes = /class="([^"]*)" data-slot="specimen-stage"/.exec(html)?.[1] ?? ''
     expect(classes).not.toBe('')
     for (const word of [
-      'bg-background',
+      'bg-surface',
       'border-stroke',
-      'border-border',
+      'border-outline-variant',
       'rounded-control',
       'p-normal',
     ]) {
@@ -46,22 +46,26 @@ describe('Specimen frames one state', () => {
       /class="([^"]*)" data-slot="specimen-stage"/.exec(
         render({ label: 'x', surface: 'card' }),
       )?.[1] ?? ''
-    expect(onCard).toContain('bg-card')
-    expect(onCard).toContain('text-card-foreground')
-    expect(onCard).not.toContain('bg-background')
+    expect(onCard).toContain('bg-surface-lowest')
+    expect(onCard).toContain('text-on-surface')
+    expect(onCard).not.toMatch(/\bbg-surface(?![\w-])/)
     const onPage =
       /class="([^"]*)" data-slot="specimen-stage"/.exec(render({ label: 'x' }))?.[1] ?? ''
-    expect(onPage).toContain('bg-background')
-    expect(onPage).not.toContain('bg-card')
+    expect(onPage).toMatch(/\bbg-surface(?![\w-])/)
+    expect(onPage).not.toContain('bg-surface-lowest')
   })
 
   it('renders the footer only when given one', () => {
     expect(render({ label: 'x' })).not.toContain('data-slot="specimen-footer"')
     const html = renderToStaticMarkup(
-      createElement(Specimen, { footer: createElement('span', null, 'bg-card'), label: 'x' }, 'y'),
+      createElement(
+        Specimen,
+        { footer: createElement('span', null, 'bg-surface-lowest'), label: 'x' },
+        'y',
+      ),
     )
     expect(html).toContain('data-slot="specimen-footer"')
-    expect(html).toContain('bg-card')
+    expect(html).toContain('bg-surface-lowest')
   })
 
   it('forwards native attributes and admits no className', () => {

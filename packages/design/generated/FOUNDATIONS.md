@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 248 custom properties: 120 primitive, 124 semantic, 4 component (ceiling 12).
+- 236 custom properties: 120 primitive, 112 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -155,55 +155,43 @@ elevation domains.
 | `--semantic-breakpoint-extra-large` | `semantic.breakpoint.extra-large` | dimension | `{breakpoint.extra-large}` | -- |
 | `--semantic-breakpoint-large` | `semantic.breakpoint.large` | dimension | `{breakpoint.large}` | -- |
 | `--semantic-breakpoint-medium` | `semantic.breakpoint.medium` | dimension | `{breakpoint.medium}` | -- |
-| `--semantic-color-accent` | `semantic.color.accent` | color | `{color.teal.100}` | surface · provides accent · bg only |
-| `--semantic-color-accent-foreground` | `semantic.color.accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against accent · text only |
-| `--semantic-color-accent-hover` | `semantic.color.accent-hover` | color | `{color.teal.200}` | surface · provides accent · bg only |
-| `--semantic-color-accent-pressed` | `semantic.color.accent-pressed` | color | `{color.teal.300}` | surface · provides accent · bg only |
-| `--semantic-color-background` | `semantic.color.background` | color | `{color.neutral.50}` | surface · provides page · bg only |
-| `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary · border only |
-| `--semantic-color-card` | `semantic.color.card` | color | `{color.neutral.0}` | surface · provides card · bg only |
-| `--semantic-color-card-foreground` | `semantic.color.card-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against card · text only |
-| `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive · bg only |
-| `--semantic-color-destructive-foreground` | `semantic.color.destructive-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against destructive · text only |
-| `--semantic-color-destructive-hover` | `semantic.color.destructive-hover` | color | `{color.red.800}` | surface · provides destructive · bg only |
-| `--semantic-color-destructive-pressed` | `semantic.color.destructive-pressed` | color | `{color.red.950}` | surface · provides destructive · bg only |
 | `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled · bg only |
-| `--semantic-color-disabled-foreground` | `semantic.color.disabled-foreground` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled · text only |
-| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error · bg only |
-| `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against card, error, page · text only |
-| `--semantic-color-field` | `semantic.color.field` | color | `{color.neutral.0}` | surface · provides field · bg only |
-| `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page · text only |
-| `--semantic-color-info` | `semantic.color.info` | color | `{color.sky.100}` | surface · provides info · bg only |
-| `--semantic-color-info-foreground` | `semantic.color.info-foreground` | color | `{color.sky.700}` | text · ≥4.5:1 against info · text only |
-| `--semantic-color-input` | `semantic.color.input` | color | `{color.neutral.500}` | ui · ≥3:1 against card, page · border, outline, ring only |
-| `--semantic-color-muted` | `semantic.color.muted` | color | `{color.neutral.100}` | surface · provides muted · bg only |
-| `--semantic-color-muted-foreground` | `semantic.color.muted-foreground` | color | `{color.neutral.600}` | text · ≥4.5:1 against card, muted, page · text only |
-| `--semantic-color-popover` | `semantic.color.popover` | color | `{color.neutral.0}` | surface · provides popover · bg only |
-| `--semantic-color-popover-foreground` | `semantic.color.popover-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against popover · text only |
+| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.700}` | surface · provides error · bg only |
+| `--semantic-color-error-container` | `semantic.color.error-container` | color | `{color.red.100}` | surface · provides error-container · bg only |
+| `--semantic-color-error-hover` | `semantic.color.error-hover` | color | `{color.red.800}` | surface · provides error · bg only |
+| `--semantic-color-error-pressed` | `semantic.color.error-pressed` | color | `{color.red.950}` | surface · provides error · bg only |
+| `--semantic-color-focus` | `semantic.color.focus` | color | `{color.teal.700}` | ui · ≥3:1 against surface, surface-lowest · border, outline, ring only |
+| `--semantic-color-info-container` | `semantic.color.info-container` | color | `{color.sky.100}` | surface · provides info-container · bg only |
+| `--semantic-color-on-disabled` | `semantic.color.on-disabled` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled · text only |
+| `--semantic-color-on-error` | `semantic.color.on-error` | color | `{color.neutral.0}` | text · ≥4.5:1 against error · text only |
+| `--semantic-color-on-error-container` | `semantic.color.on-error-container` | color | `{color.red.700}` | text · ≥4.5:1 against error-container, surface, surface-lowest · text only |
+| `--semantic-color-on-info-container` | `semantic.color.on-info-container` | color | `{color.sky.700}` | text · ≥4.5:1 against info-container · text only |
+| `--semantic-color-on-primary` | `semantic.color.on-primary` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary · text only |
+| `--semantic-color-on-primary-container` | `semantic.color.on-primary-container` | color | `{color.teal.800}` | text · ≥4.5:1 against primary-container · text only |
+| `--semantic-color-on-statutory-container` | `semantic.color.on-statutory-container` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory-container · text only |
+| `--semantic-color-on-success-container` | `semantic.color.on-success-container` | color | `{color.green.700}` | text · ≥4.5:1 against success-container, surface, surface-lowest · text only |
+| `--semantic-color-on-surface` | `semantic.color.on-surface` | color | `{color.neutral.900}` | text · ≥4.5:1 against surface, surface-lowest, surface-container, error-container, info-container, success-container, warning-container, statutory-container · text only |
+| `--semantic-color-on-surface-variant` | `semantic.color.on-surface-variant` | color | `{color.neutral.600}` | text · ≥4.5:1 against surface, surface-lowest, surface-container · text only |
+| `--semantic-color-on-warning-container` | `semantic.color.on-warning-container` | color | `{color.amber.800}` | text · ≥4.5:1 against warning-container · text only |
+| `--semantic-color-outline` | `semantic.color.outline` | color | `{color.neutral.500}` | ui · ≥3:1 against surface, surface-lowest · border, outline, ring only |
+| `--semantic-color-outline-variant` | `semantic.color.outline-variant` | color | `{color.neutral.300}` | decorative · exempt, a divider or a card edge, never a sole control boundary · border only |
 | `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary · bg only |
-| `--semantic-color-primary-foreground` | `semantic.color.primary-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary · text only |
+| `--semantic-color-primary-container` | `semantic.color.primary-container` | color | `{color.teal.100}` | surface · provides primary-container · bg only |
+| `--semantic-color-primary-container-hover` | `semantic.color.primary-container-hover` | color | `{color.teal.200}` | surface · provides primary-container · bg only |
+| `--semantic-color-primary-container-pressed` | `semantic.color.primary-container-pressed` | color | `{color.teal.300}` | surface · provides primary-container · bg only |
 | `--semantic-color-primary-hover` | `semantic.color.primary-hover` | color | `{color.teal.800}` | surface · provides primary · bg only |
 | `--semantic-color-primary-pressed` | `semantic.color.primary-pressed` | color | `{color.teal.950}` | surface · provides primary · bg only |
-| `--semantic-color-ring` | `semantic.color.ring` | color | `{color.teal.700}` | ui · ≥3:1 against card, page · border, outline, ring only |
 | `--semantic-color-scrim` | `semantic.color.scrim` | color | `{color.scrim}` | compositing · exempt, an alpha layer, not a foreground pair · no utility |
-| `--semantic-color-secondary` | `semantic.color.secondary` | color | `{color.neutral.0}` | surface · provides secondary · bg only |
-| `--semantic-color-secondary-foreground` | `semantic.color.secondary-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against secondary · text only |
-| `--semantic-color-secondary-hover` | `semantic.color.secondary-hover` | color | `{color.neutral.50}` | surface · provides secondary · bg only |
-| `--semantic-color-secondary-pressed` | `semantic.color.secondary-pressed` | color | `{color.neutral.100}` | surface · provides secondary · bg only |
 | `--semantic-color-shadow-ambient` | `semantic.color.shadow-ambient` | color | `{color.shadow.ambient}` | compositing · exempt, the wide, faint layer of a shadow; composited, not a pair · no utility |
 | `--semantic-color-shadow-key` | `semantic.color.shadow-key` | color | `{color.shadow.key}` | compositing · exempt, the tight, nearer layer of a shadow; composited, not a pair · no utility |
-| `--semantic-color-sidebar` | `semantic.color.sidebar` | color | `{color.neutral.100}` | surface · provides sidebar · bg only |
-| `--semantic-color-sidebar-accent` | `semantic.color.sidebar-accent` | color | `{color.teal.100}` | surface · provides sidebar-accent · bg only |
-| `--semantic-color-sidebar-accent-foreground` | `semantic.color.sidebar-accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against sidebar-accent · text only |
-| `--semantic-color-sidebar-border` | `semantic.color.sidebar-border` | color | `{color.neutral.300}` | decorative · exempt, a divider inside the rail, never a sole control boundary · border only |
-| `--semantic-color-sidebar-foreground` | `semantic.color.sidebar-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against sidebar · text only |
-| `--semantic-color-sidebar-ring` | `semantic.color.sidebar-ring` | color | `{color.teal.700}` | ui · ≥3:1 against sidebar · border, outline, ring only |
-| `--semantic-color-statutory` | `semantic.color.statutory` | color | `{color.brass.100}` | surface · provides statutory · bg only |
-| `--semantic-color-statutory-foreground` | `semantic.color.statutory-foreground` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory · text only |
-| `--semantic-color-success` | `semantic.color.success` | color | `{color.green.100}` | surface · provides success · bg only |
-| `--semantic-color-success-foreground` | `semantic.color.success-foreground` | color | `{color.green.700}` | text · ≥4.5:1 against card, page, success · text only |
-| `--semantic-color-warning` | `semantic.color.warning` | color | `{color.amber.100}` | surface · provides warning · bg only |
-| `--semantic-color-warning-foreground` | `semantic.color.warning-foreground` | color | `{color.amber.800}` | text · ≥4.5:1 against warning · text only |
+| `--semantic-color-statutory-container` | `semantic.color.statutory-container` | color | `{color.brass.100}` | surface · provides statutory-container · bg only |
+| `--semantic-color-success-container` | `semantic.color.success-container` | color | `{color.green.100}` | surface · provides success-container · bg only |
+| `--semantic-color-surface` | `semantic.color.surface` | color | `{color.neutral.50}` | surface · provides surface · bg only |
+| `--semantic-color-surface-container` | `semantic.color.surface-container` | color | `{color.neutral.100}` | surface · provides surface-container · bg only |
+| `--semantic-color-surface-lowest` | `semantic.color.surface-lowest` | color | `{color.neutral.0}` | surface · provides surface-lowest · bg only |
+| `--semantic-color-surface-lowest-hover` | `semantic.color.surface-lowest-hover` | color | `{color.neutral.50}` | surface · provides surface-lowest · bg only |
+| `--semantic-color-surface-lowest-pressed` | `semantic.color.surface-lowest-pressed` | color | `{color.neutral.100}` | surface · provides surface-lowest · bg only |
+| `--semantic-color-warning-container` | `semantic.color.warning-container` | color | `{color.amber.100}` | surface · provides warning-container · bg only |
 | `--semantic-content-dialog` | `semantic.content.dialog` | dimension | `{size.content-dialog}` | -- |
 | `--semantic-content-form` | `semantic.content.form` | dimension | `{size.content-form}` | -- |
 | `--semantic-content-prose` | `semantic.content.prose` | dimension | `{size.content-prose}` | -- |
@@ -329,55 +317,43 @@ Selector `:root[data-density='compact']`, 11 rebound.
 
 ### `theme=dark`
 
-Selector `:root[data-theme='dark']`, 48 rebound.
+Selector `:root[data-theme='dark']`, 36 rebound.
 
 | Custom property | Value in this mode |
 | --- | --- |
-| `--semantic-color-accent` | `{color.teal.950}` |
-| `--semantic-color-accent-foreground` | `{color.teal.300}` |
-| `--semantic-color-accent-hover` | `{color.teal.900}` |
-| `--semantic-color-accent-pressed` | `{color.teal.800}` |
-| `--semantic-color-background` | `{color.ink.950}` |
-| `--semantic-color-border` | `{color.ink.600}` |
-| `--semantic-color-card` | `{color.ink.850}` |
-| `--semantic-color-card-foreground` | `{color.ink.100}` |
-| `--semantic-color-destructive` | `{color.red.300}` |
-| `--semantic-color-destructive-foreground` | `{color.ink.950}` |
-| `--semantic-color-destructive-hover` | `{color.red.200}` |
-| `--semantic-color-destructive-pressed` | `{color.red.100}` |
 | `--semantic-color-disabled` | `{color.ink.750}` |
-| `--semantic-color-disabled-foreground` | `{color.ink.400}` |
-| `--semantic-color-error` | `{color.red.950}` |
-| `--semantic-color-error-foreground` | `{color.red.300}` |
-| `--semantic-color-field` | `{color.ink.900}` |
-| `--semantic-color-foreground` | `{color.ink.100}` |
-| `--semantic-color-info` | `{color.sky.950}` |
-| `--semantic-color-info-foreground` | `{color.sky.300}` |
-| `--semantic-color-input` | `{color.ink.400}` |
-| `--semantic-color-muted` | `{color.ink.1000}` |
-| `--semantic-color-muted-foreground` | `{color.ink.300}` |
-| `--semantic-color-popover` | `{color.ink.800}` |
-| `--semantic-color-popover-foreground` | `{color.ink.100}` |
+| `--semantic-color-error` | `{color.red.300}` |
+| `--semantic-color-error-container` | `{color.red.950}` |
+| `--semantic-color-error-hover` | `{color.red.200}` |
+| `--semantic-color-error-pressed` | `{color.red.100}` |
+| `--semantic-color-focus` | `{color.teal.500}` |
+| `--semantic-color-info-container` | `{color.sky.950}` |
+| `--semantic-color-on-disabled` | `{color.ink.400}` |
+| `--semantic-color-on-error` | `{color.ink.950}` |
+| `--semantic-color-on-error-container` | `{color.red.300}` |
+| `--semantic-color-on-info-container` | `{color.sky.300}` |
+| `--semantic-color-on-primary` | `{color.ink.950}` |
+| `--semantic-color-on-primary-container` | `{color.teal.300}` |
+| `--semantic-color-on-statutory-container` | `{color.brass.300}` |
+| `--semantic-color-on-success-container` | `{color.green.300}` |
+| `--semantic-color-on-surface` | `{color.ink.100}` |
+| `--semantic-color-on-surface-variant` | `{color.ink.300}` |
+| `--semantic-color-on-warning-container` | `{color.amber.300}` |
+| `--semantic-color-outline` | `{color.ink.400}` |
+| `--semantic-color-outline-variant` | `{color.ink.600}` |
 | `--semantic-color-primary` | `{color.teal.500}` |
-| `--semantic-color-primary-foreground` | `{color.ink.950}` |
+| `--semantic-color-primary-container` | `{color.teal.950}` |
+| `--semantic-color-primary-container-hover` | `{color.teal.900}` |
+| `--semantic-color-primary-container-pressed` | `{color.teal.800}` |
 | `--semantic-color-primary-hover` | `{color.teal.400}` |
 | `--semantic-color-primary-pressed` | `{color.teal.300}` |
-| `--semantic-color-ring` | `{color.teal.500}` |
-| `--semantic-color-secondary` | `{color.ink.900}` |
-| `--semantic-color-secondary-foreground` | `{color.ink.100}` |
-| `--semantic-color-secondary-hover` | `{color.ink.850}` |
-| `--semantic-color-secondary-pressed` | `{color.ink.800}` |
 | `--semantic-color-shadow-ambient` | `{color.shadow.ambient-dark}` |
 | `--semantic-color-shadow-key` | `{color.shadow.key-dark}` |
-| `--semantic-color-sidebar` | `{color.ink.900}` |
-| `--semantic-color-sidebar-accent` | `{color.teal.950}` |
-| `--semantic-color-sidebar-accent-foreground` | `{color.teal.300}` |
-| `--semantic-color-sidebar-border` | `{color.ink.600}` |
-| `--semantic-color-sidebar-foreground` | `{color.ink.100}` |
-| `--semantic-color-sidebar-ring` | `{color.teal.500}` |
-| `--semantic-color-statutory` | `{color.brass.950}` |
-| `--semantic-color-statutory-foreground` | `{color.brass.300}` |
-| `--semantic-color-success` | `{color.green.950}` |
-| `--semantic-color-success-foreground` | `{color.green.300}` |
-| `--semantic-color-warning` | `{color.amber.950}` |
-| `--semantic-color-warning-foreground` | `{color.amber.300}` |
+| `--semantic-color-statutory-container` | `{color.brass.950}` |
+| `--semantic-color-success-container` | `{color.green.950}` |
+| `--semantic-color-surface` | `{color.ink.950}` |
+| `--semantic-color-surface-container` | `{color.ink.750}` |
+| `--semantic-color-surface-lowest` | `{color.ink.850}` |
+| `--semantic-color-surface-lowest-hover` | `{color.ink.850}` |
+| `--semantic-color-surface-lowest-pressed` | `{color.ink.800}` |
+| `--semantic-color-warning-container` | `{color.amber.950}` |

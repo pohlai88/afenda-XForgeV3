@@ -86,7 +86,7 @@
 @utility focus-ring {
   outline-width: var(--semantic-size-ring);
   outline-style: solid;
-  outline-color: var(--semantic-color-ring);
+  outline-color: var(--semantic-color-focus);
   outline-offset: var(--semantic-size-ring-offset);
   border-radius: var(--semantic-radius-precise);
 }
@@ -226,9 +226,9 @@
   inset-block-start: 0;
   z-index: var(--semantic-layer-local);
   block-size: var(--semantic-shell-header);
-  background-color: var(--semantic-color-background);
+  background-color: var(--semantic-color-surface);
   border-block-end: var(--semantic-size-stroke) solid
-    var(--semantic-color-border);
+    var(--semantic-color-outline-variant);
 }
 
 @utility shell-nav {
@@ -238,7 +238,7 @@
   max-block-size: calc(100vh - var(--semantic-shell-header));
   overflow-y: auto;
   border-inline-end: var(--semantic-size-stroke) solid
-    var(--semantic-color-border);
+    var(--semantic-color-outline-variant);
 }
 
 @utility grid-shell {

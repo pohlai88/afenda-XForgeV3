@@ -13,10 +13,10 @@ import { Stack, Swatch } from '@xforge/design'
 /** The action fills, side by side. */
 export const Actions = () => (
   <Stack direction="row" gap="normal">
-    <Swatch colour="action.primary" />
-    <Swatch colour="action.secondary" />
-    <Swatch colour="action.accent" />
-    <Swatch colour="action.danger" />
+    <Swatch colour="accent.primary" />
+    <Swatch colour="surface.lowest" />
+    <Swatch colour="accent.primaryContainer" />
+    <Swatch colour="error.default" />
   </Stack>
 )
 
@@ -26,16 +26,16 @@ export const Statuses = () => (
     <Swatch colour="status.info" />
     <Swatch colour="status.success" />
     <Swatch colour="status.warning" />
-    <Swatch colour="status.danger" />
+    <Swatch colour="error.container" />
   </Stack>
 )
 
 /** Surfaces and a stroke: the ground, the card on it, and the hairline between them. */
 export const Surfaces = () => (
   <Stack direction="row" gap="normal">
-    <Swatch colour="surface.page" />
-    <Swatch colour="surface.card" />
-    <Swatch colour="surface.muted" />
-    <Swatch colour="stroke.border" />
+    <Swatch colour="surface.default" />
+    <Swatch colour="surface.lowest" />
+    <Swatch colour="surface.container" />
+    <Swatch colour="outline.variant" />
   </Stack>
 )

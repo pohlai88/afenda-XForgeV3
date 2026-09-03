@@ -98,9 +98,9 @@ const FIELD = cn(
   STYLE.space.controlX.paddingX,
   STYLE.shape.control,
   STYLE.stroke.width,
-  STYLE.stroke.field.border,
-  STYLE.surface.field.background,
-  STYLE.ink.default.text,
+  STYLE.outline.default.border,
+  STYLE.surface.lowest.background,
+  STYLE.ink.onSurface.text,
   STYLE.typography.body,
   STYLE.field.placeholder,
   STYLE.focus.ring,
@@ -110,11 +110,11 @@ const FIELD = cn(
 
 const POPUP = cn(
   'group/popup max-h-(--available-height) w-(--anchor-width) overflow-hidden',
-  STYLE.surface.popover.background,
-  STYLE.surface.popover.foreground,
+  STYLE.surface.container.background,
+  STYLE.ink.onSurface.text,
   STYLE.shape.container,
   STYLE.stroke.width,
-  STYLE.stroke.border.border,
+  STYLE.outline.variant.border,
   STYLE.elevation.above,
 )
 
@@ -174,7 +174,7 @@ export function Combobox({
                 'hidden w-full justify-center text-center group-data-empty/popup:flex',
                 STYLE.space.tight.paddingY,
                 STYLE.typography.bodyCompact,
-                STYLE.surface.muted.foreground,
+                STYLE.ink.onSurfaceVariant.text,
               )}
               data-slot="combobox-empty"
             >
