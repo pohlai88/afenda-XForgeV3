@@ -488,6 +488,36 @@ const probe = async (tab) =>
           word,
         }
       })
+      // Ink on a tint: every Text inside an Alert must clear the AA floor against the fill it
+      // sits on. The muted ink on the danger tint was 4.31:1 until 2026-09-04, and only axe
+      // saw it; now the proof does, in every mode.
+      const luminance = (css) => {
+        const m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(css)
+        if (!m) {
+          return null
+        }
+        const [r, g, b] = [m[1], m[2], m[3]].map((c) => {
+          const s = Number(c) / 255
+          return s <= 0.039_28 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+      }
+      const inkFailures = []
+      for (const alert of document.querySelectorAll('[data-slot=alert]')) {
+        const fill = luminance(getComputedStyle(alert).backgroundColor)
+        for (const text of alert.querySelectorAll('[data-slot=text]')) {
+          const ink = luminance(getComputedStyle(text).color)
+          if (fill === null || ink === null) {
+            continue
+          }
+          const ratio = (Math.max(fill, ink) + 0.05) / (Math.min(fill, ink) + 0.05)
+          if (ratio < 4.5) {
+            inkFailures.push(
+              `${alert.dataset.tone}: "${(text.textContent ?? '').slice(0, 40)}" ${ratio.toFixed(2)}:1`,
+            )
+          }
+        }
+      }
       // The index: every in-page link must land on an element that exists.
       const anchors = [...document.querySelectorAll('a[href^="#"]')].map(
         (el) => el.getAttribute('href') ?? '',
@@ -498,6 +528,7 @@ const probe = async (tab) =>
         background: root.getPropertyValue('--semantic-color-background').trim(),
         controlMinSize: root.getPropertyValue('--semantic-control-min-size').trim(),
         density: document.documentElement.dataset.density ?? '(none)',
+        inkFailures,
         missingAnchors,
         spaceNormal: root.getPropertyValue('--semantic-space-normal').trim(),
         theme: document.documentElement.dataset.theme ?? '(none)',
@@ -591,6 +622,14 @@ writeFileSync(join(OUT, 'gallery-proof.md'), lines.join('\n'))
 writeFileSync(join(OUT, 'gallery-proof.json'), JSON.stringify(results, null, 2))
 const summary = Object.entries(results).map(([m, r]) => {
   const bad = [...r.rows, ...r.attrs].filter((x) => !x.ok)
+  for (const failure of r.mode.inkFailures) {
+    bad.push({
+      component: 'alert',
+      expected: 'at least 4.5:1',
+      rendered: failure,
+      word: 'ink on tint',
+    })
+  }
   for (const href of r.mode.missingAnchors) {
     bad.push({
       component: 'index',

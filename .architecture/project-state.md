@@ -624,3 +624,13 @@ same reason, which is why the `Window` augmentation in `tests/harness/mount.tsx`
 was invisible to the spec that reads it. Both are in the program now, and the
 a11y tables are keyed on the state unions precisely because that is finally
 enforceable rather than aspirational.
+
+**A check over the stylesheet is real only if it compiles the stylesheet the way the
+application does.** The unit test that "proved" every STYLE class compiled fed the
+compiler the manifest as candidates and let Tailwind's automatic detection start from the
+test's own working directory — the repository root, which contains the manifest. `next
+dev` runs from `apps/web` and found none of it: 154 of the contract's classes compiled to
+nothing and the employee page rendered unstyled while the suite was green (2026-09-03).
+The test now builds `globals.css` from `apps/web` with nothing injected, and the gallery at
+`/gallery` (development only) with `pnpm gallery:proof` exists because a green suite and a
+styled screen are different facts with different owners.

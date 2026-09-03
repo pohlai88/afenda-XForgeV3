@@ -1402,3 +1402,28 @@ seven-question inventory is marked as unexercised as RECONCILE, since every answ
 command is named as `pnpm run fix` / `ultracite fix`; "two form-word cases" no longer
 counts `readOnly` as one; the morning's evidence row says which tree it measured; and the
 exit-B sentence about toast and questionnaire says step 6 deleted them.
+
+A fifth pass, 2026-09-04, by building rather than reviewing. The owner asked for a gallery —
+"every authored component, in every word it owns", live against the stylesheet the
+application builds — and refused the deleted Vite gallery and any restatement of style in
+the app. Building it under Decision 12 meant that whenever the page needed a word the
+language lacked, the word went into the language: **Grid** (columns as a count, gap as a
+role), **Specimen** (a figure with a caption, a stage on the page ground or the card, a
+footnote), **Link** (underlined at rest, `current` by weight), **Swatch** (a colour role
+as itself, the roles derived from the STYLE tree) and **Shell** (docked header, docked
+rail, content inset by the container role; geometry in three utilities beside
+`h-control`). Each carries the schema header, went red on a missing module first, and has
+a second consumer named — the employee page is the Shell's. The gallery's own check,
+`tooling/gallery/proof.mjs`, resolves every rendered value against the token the manifest
+names for the symbol the component selected, in light, dark and compact, and it found what
+no structural check could: 154 contract classes never reaching the application stylesheet
+(the scan did not include the manifest); the outline Button drawing its stroke
+transparent; the disabled Switch showing the field fill by stylesheet order (now
+`not-data-disabled:` on every at-rest state, ADR-034); ListItem as a column; three type
+roles credited as `title` because they share `font-heading`; and, through the owner's
+Storybook axe scan, the muted ink on the danger tint at 4.31:1. **Rule, recorded here so it
+stops being rediscovered: the muted ink is measured against the page and the card, never
+against a status tint.** The proof now holds every Text inside an Alert to 4.5:1 in every
+mode. Roles the gallery found worn by nothing — `typography.caption`, `space.rowY`,
+`space.container` — are worn now (Specimen's caption, ListItem's row padding, Shell's
+inset); `space.snug` still is not, and says so on the page.
