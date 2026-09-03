@@ -843,7 +843,9 @@ Rules the schema encodes, each with the check that sees it:
   --- added by Decision 12, none of these has a check yet ---
   no public `className`, no public `style`                 Verification 5, EXTENSION OWED
   STYLE SELECTION holds symbols, not literal classes       Verification 5, EXTENSION OWED
-  every STYLE symbol resolves to an emitted class          style-contract test, NOT WRITTEN
+  every STYLE symbol resolves to an emitted class          design-system-classes.test.ts, WRITTEN
+                                                            (ADR-034 step 6: every manifest
+                                                            class compiles, variants included)
   no foreign class survives the adaptee undeclared         NOT WRITTEN — see below
 ```
 

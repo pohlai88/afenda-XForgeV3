@@ -64,7 +64,8 @@ them, so an edit is not merely wrong — it is reverted and reported.
 ```
   packages/design/generated/tokens.css           <- pnpm gen:tokens
   packages/design/generated/tailwind-theme.css   <- pnpm gen:tokens
-  packages/design/generated/token-names.json     <- pnpm gen:tokens
+  packages/design/generated/style.ts             <- pnpm gen:tokens (the STYLE symbols)
+  packages/design/generated/style-manifest.json  <- pnpm gen:tokens (the same, for tools)
   packages/design/generated/twmerge.ts           <- pnpm gen:tokens
   packages/design/generated/FOUNDATIONS.md       <- pnpm gen:tokens
 ```
@@ -100,7 +101,7 @@ lint, guards and the token tests all passed — "adding tokens is safe, renaming
 was the standing advice, with a manual grep as the only defence.
 
 `tokens-referenced-are-tokens-that-exist` closes it: every `var()` in the token namespace
-must resolve to `packages/design/generated/token-names.json`, fallbacks included, since
+must resolve to a class in `packages/design/generated/style-manifest.json`, fallbacks included, since
 `var(--semantic-gone, 4px)` hides the same rename behind a plausible value. Regenerate
 before trusting it — the guard reads the manifest, so a stale manifest describes a stale
 vocabulary. **A semantic rename is now a mechanical change rather than a risky one**, which

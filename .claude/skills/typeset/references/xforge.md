@@ -137,7 +137,7 @@ This is verified, not proposed. A stylesheet in this shape —
 
 — passes every governing guard, measured with
 `probe-guards.mjs --clean` at `packages/design/src/` (2026-09-02). All five token
-names exist in `generated/token-names.json`. The same file one directory up
+names exist in `generated/style-manifest.json` (as the classes its symbols resolve to). The same file one directory up
 passes too, and that is the trap: `--clean` refuses it as **ungoverned** rather
 than certifying it, because no design-system guard reaches outside
 `packages/design/src/`.

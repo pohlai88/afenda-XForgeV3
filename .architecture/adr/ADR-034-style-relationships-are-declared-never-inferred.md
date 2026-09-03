@@ -1,10 +1,11 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **Migration steps 1–5 are built** (commits `88dceb6`,
+**Status:** Proposed · 2026-09-03 · **Migration steps 1–6 are built** (commits `88dceb6`,
 `04199cc`, `d4f31dc`, `164bc22`, and step 5 the same day): the colour and typography contracts
 exist, their refusals are tested RED-first, and per-channel colour capability is enforced by
 emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
-shims. Steps 6–10 are not started. No section is FROZEN and none may be: law 34
+shims; `generated/style.ts` and `style-manifest.json` carry 124 semantic symbols and replace
+`token-names.json`. Steps 7–10 are not started. No section is FROZEN and none may be: law 34
 gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
 external claims retrieved once.
 
@@ -82,8 +83,9 @@ A design arrived proposing an *Adaptive Schema Engine*: a five-stage compiler em
 top. It named a real gap and assumed a repository that does not exist here. Its motivation
 was four generators diverging. There is one: `packages/design/policy/generators/tokens.mjs`
 (1,462 lines) runs `flatten` → `resolve` → `readMode` → the `assert*` family → `emit` and
-writes five artefacts from one resolved graph — `tokens.css`, `tailwind-theme.css`,
-`token-names.json`, `twmerge.ts`, `FOUNDATIONS.md`.
+writes its artefacts from one resolved graph — `tokens.css`, `tailwind-theme.css`,
+`twmerge.ts`, `FOUNDATIONS.md`, and since step 6 `style.ts` and `style-manifest.json` in
+place of `token-names.json`.
 
 Three of the proposal's five stages are already enforced with tests that go red:
 
@@ -421,7 +423,14 @@ moves, the step is wrong.
                                                             a test holds every shim to that
                                                             file. 40 utilities, 8 namespaced
    6  emit style-manifest.json and style.ts from the same generate(); delete
-      token-names.json in the same commit
+      token-names.json in the same commit                    DONE: STYLE_NAMES in
+                                                            foundations/style.mjs names the
+                                                            26 colour roots semantically
+                                                            (action.danger = destructive);
+                                                            the other groups project from
+                                                            their role tables; 124 symbols,
+                                                            6 omissions with reasons; every
+                                                            class compiles (test)
    7  move authored recipes onto STYLE.* symbols, replacing the lexical class check in
       the same commit                       (ADR-031 Decision 12 governs the recipe side)
    8  per component, move the Adapter's spacing onto role names, then @source not the
