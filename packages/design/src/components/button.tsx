@@ -43,6 +43,10 @@ export const BUTTON_VARIANT = {
     STYLE.action.secondary.pressed,
   ].join(' '),
   primary: [
+    // The stroke width is in the base for every button; the colour is the variant's. Primary
+    // paints none, and it says so here rather than in the base, where a second border colour
+    // from another variant would only win by stylesheet order.
+    'border-transparent',
     STYLE.action.primary.background,
     STYLE.action.primary.foreground,
     STYLE.action.primary.hover,
@@ -53,7 +57,7 @@ export const BUTTON_VARIANT = {
 const buttonRecipe = cva(
   [
     'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap',
-    'border-transparent outline-none transition-colors disabled:cursor-not-allowed',
+    'outline-none transition-colors disabled:cursor-not-allowed',
     STYLE.size.control,
     STYLE.space.controlX.paddingX,
     STYLE.space.tight.gap,

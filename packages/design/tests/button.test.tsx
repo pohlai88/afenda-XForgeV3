@@ -58,6 +58,21 @@ describe('Button adapts Xforge vocabulary onto the primitive', () => {
     expect(outline).not.toMatch(/class="[^"]*\bbg-primary\b/)
   })
 
+  it('a variant carries one border colour, so the stroke it selects is the stroke drawn', () => {
+    // The base recipe said `border-transparent` for every button and the outline variant
+    // added `border-border` after it. Nothing merged the two -- the recipe is not passed
+    // through cn() -- so the stylesheet's order decided, and the outline button drew no
+    // stroke at all. Found by the gallery proof, 2026-09-04: rendered border colour
+    // rgba(0,0,0,0) against the border token. Red before `border-transparent` moved into
+    // the primary variant, where no second border colour can follow it.
+    for (const variant of variants) {
+      const html = renderToStaticMarkup(createElement(Button, { variant }, 'Go'))
+      const classes = (/class="([^"]*)"/.exec(html)?.[1] ?? '').split(' ')
+      const borderColours = classes.filter((c) => c.startsWith('border-') && c !== 'border-stroke')
+      expect(borderColours, `${variant}: ${borderColours.join(' ')}`).toHaveLength(1)
+    }
+  })
+
   it('does not expose the adaptee size axis', () => {
     // @ts-expect-error -- the Target has no size axis (Decision 4)
     renderToStaticMarkup(createElement(Button, { size: 'sm' }, 'Go'))
