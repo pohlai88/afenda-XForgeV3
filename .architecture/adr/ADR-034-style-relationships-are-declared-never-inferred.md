@@ -229,8 +229,8 @@ the two DTCG rows filed on 2 September as E22–E23 collided with it and are **E
 the collision was resolved on 3 September; the four sources below are **E32–E35** (the first
 evidence pass found them filed as E28–E31, colliding with the 31 August E28). Grades: E29 is a
 published standard (S); the three Tailwind pages and the Figma reference are
-vendor documentation (V). The primary-sources table carries no grade column, so E29's grade
-is stated here and nowhere else.
+vendor documentation (V). The primary-sources table carries no grade column; the register's
+decision row grades the DTCG pair S, and this table says so beside the rows.
 
 | Source | Supports |
 |---|---|
@@ -613,5 +613,20 @@ ADR-031's "Deleted" paragraph credited the literal check with refusing `shadow-m
 `tracking-widest`, which the namespace closures refuse and the check did not see — the check
 now covers both prefixes; the `inactive` kind added to Decision 3's list; Decision 2's work
 items marked discharged; Example 37's five sub-properties taken from the spec source, since
-the rendered page truncates before §9.8; E22's grade stated. Not folded: the closure proof is
+the rendered page truncates before §9.8; E22's grade stated (then E22, now E29). Not folded: the closure proof is
 a Tailwind compile on one machine, which the last "does NOT prove" bullet already says.
+
+Third pass, after the register renumbering (HEAD `e98a001`): all six sources re-fetched and
+found; the renumbering complete and consistent; every second-pass correction holding; the tree
+unmoved (52 utilities, no colour role in `--color-*`, 159 symbols, 248 custom properties);
+unit 407 green; `gen:tokens` byte-identical. Two blocking findings, both in the register and
+both folded in: E24 was two sources — the 31 August RLS post and a shadcn prior-art section
+filed on 2 September — under a note that said a number is never reused, so the shadcn section
+is E36 and its citations in ADR-028, ADR-029, two history files and `.mcp.json` carry the old
+number beside the new; and the register's Xforge-proof column for this ADR still said "all
+unwritten" against six written, green cases. Non-blocking, folded in: the numbering note now
+says what is true — a number carries one source at a time and every move is recorded — since
+E29 and E30 were themselves reissued; the 3 September block's intro regained its actual
+rationale; two grade sentences corrected. Recorded without action: a unit run launched beside
+`gen:tokens` timed out once on the `#generated/*` existence check while the generator was
+rewriting the files, and passed alone — contention, not a defect.

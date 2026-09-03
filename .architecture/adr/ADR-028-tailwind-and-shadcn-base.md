@@ -34,10 +34,10 @@ counted rather than recalled:
 
 ### Approaches reviewed
 
-**Evidence-register E24 (2026-09-02) rejected the shadcn stack** on three
+**Evidence-register E36 (filed as E36 until 3 September 2026) (2026-09-02) rejected the shadcn stack** on three
 grounds: Radix beside Base UI (law 30), Tailwind utilities at call sites, and
 `className` variants against `no-bespoke-styling`. This ADR reverses one of those
-three and answers the other two rather than overruling them. E24's own closing
+three and answers the other two rather than overruling them. E36's own closing
 line — "`npx shadcn@latest add` would have installed the first of those
 silently" — proved correct within hours, and is the reason the registry choice
 below is stated as a requirement rather than a preference.
@@ -79,7 +79,7 @@ whether *this* projection of 71 roles into nine namespaces is injective, complet
 or sensibly named — only `assertTailwindProjection` and its unit tests speak to
 that, and only `e2e/token-modes.spec.ts` can show a browser agreeing.
 
-**It transfers no accessibility assurance.** E24 already recorded that shadcn
+**It transfers no accessibility assurance.** E36 already recorded that shadcn
 documents no ARIA of its own and defers to Base UI. That is unchanged here. The
 A11y-3 debt — Combobox, CommandPalette, DataGrid, Dialog, Toolbar owed a recorded
 screen-reader session — is neither reduced nor discharged by anything in this

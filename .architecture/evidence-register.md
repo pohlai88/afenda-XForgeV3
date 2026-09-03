@@ -54,18 +54,21 @@ Xforge tests answer: *"Did we implement the pattern correctly here?"*
 | Open-code UI primitives | E18 | V | design-system, a11y, ERP-primitive tests | REVERSIBLE |
 | Auth behind a facade | E19, E21 | V | business topology stays outside the provider | STABLE / provider REVERSIBLE |
 | Durable executor behind the outbox | E20 — *executor capability, not the source of durable business intent* | V | AQS-013 | REVERSIBLE |
-| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E29 (declare, never infer), E33–E35 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E32 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | ADR-034 Verification, all unwritten | PROPOSED |
+| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E29 (declare, never infer), E33–E35 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E32 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | `tokens.test.ts` contract refusals and `design-system-classes.test.ts` closure checks, written RED-first, green locally 2026-09-03; no external run | PROPOSED |
 | DTCG-shaped token document, pinned at 2025.10 | E29, E30 — the version is real and its value shapes are normative. **What it does not prove:** that `tokens.json` conforms. It does not, deliberately and in writing — colour is a hex string where E30 requires `{colorSpace, components}`, dimension is a CSS length string where E29 requires `{value, unit}`, and `$modes` is a root property the schema does not enumerate. Precedent qualifies the TARGET, not the current document | S | `tokens.test.ts` value-shape suite, `assertContractVersions` | STABLE / migration tracked |
 
 ---
 
 ## Primary sources
 
-**Numbering.** One sequence across the whole register. E01–E21 are the original entries;
-E22–E28 belong to the 31 August block below, which was numbered first; the two DTCG rows
-filed on 2 September reused E22 and E23 and collided with it, and are E29 and E30 since
-3 September; the 3 September block is E32–E35 (E31 was skipped and stays unused). A number,
-once issued, is never reused for a different source.
+**Numbering.** One sequence across the whole register, and a number carries one source at a
+time; every move is recorded on the row it left and the row it reached. E01–E21 are the
+original entries. E22–E28 belong to the 31 August block below, which was numbered first
+(E22–E26 verified, E27–E28 backfilled). Two later filings collided with it and moved: the DTCG
+rows filed on 2 September as E22–E23 are E29–E30, and the shadcn prior-art section filed on
+2 September as E24 is E36. The 3 September block is E32–E35; its first filing was E28–E31, so
+E31 stays dark to keep the two filings apart, while E29 and E30 were reissued to the DTCG rows
+with that history on each.
 
 Every entry carries a URL. Entries without a verifiable retrieval are marked **UNVERIFIED** and must not be relied on until confirmed.
 
@@ -1671,7 +1674,12 @@ changed nothing — which is a claim about the migration being safe, not about t
 choices being correct.
 
 
-## E24 — shadcn/ui as prior art for stage 6 and the stage 3 remainder
+## E36 — shadcn/ui as prior art for stage 6 and the stage 3 remainder
+
+**Renumbered E36 on 3 September 2026.** Filed as E24, a number the 31 August block had already
+issued to the queryplane RLS post; the block numbered first keeps it. ADR-028, ADR-029, two
+history files and `.mcp.json` cite this section and were updated with the old number beside
+the new.
 
 **Retrieved 2 September 2026.** Consulted because `architecture-final.md` already
 cites shadcn's Base UI registry, and because law 34 asks for the search before
@@ -1727,9 +1735,9 @@ no upstream backing of any kind.
 ## Verified 3 September 2026
 
 Retrieved by the author of ADR-034's first draft and re-fetched for the ADR's revision; quoted there. Numbered
-from E32 because the 31 August table had spent E22–E28 and the primary table's DTCG rows,
-then filed as E22–E23, were about to become E29–E30 (the first filing numbered these E28–E31 and collided
-with the 31 August E28); reusing a number would send a reader to the wrong claim.
+from E32 because the 31 August table had spent E22–E28 and this block's first filing, E28–E31,
+collided with its E28; E31 stays dark for that reason, and E29–E30 were later reissued to the
+DTCG rows, each carrying its history.
 
 | # | Source | Retrieved | Grade | Supports | Outcome |
 |---|---|---|---|---|---|

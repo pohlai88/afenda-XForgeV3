@@ -34,7 +34,7 @@
     "                  on a second primitive library beside Base UI,",
     "                  `09-xforge.md` on Tailwind, and the `no-bespoke-styling`",
     "                  guard on className. Read it for anatomy and API shape; never",
-    "                  run `shadcn add` in this repository. Recorded as E24 in the",
+    "                  run `shadcn add` in this repository. Recorded as E36 (E24 until 3 September 2026) in the",
     "                  evidence register.",
     "  shadcn-studio   third-party, and the only entry here that is not published",
     "                  by the tool it serves. It needs SHADCN_STUDIO_API_KEY and",

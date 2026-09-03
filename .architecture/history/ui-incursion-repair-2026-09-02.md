@@ -1,5 +1,9 @@
 # The shadcn incursion, and its repair — 2026-09-02
 
+> Register note, 2026-09-03: the shadcn prior-art entry this record cites as E24 was renumbered
+> E36; E24 belongs to the 31 August block (PostgreSQL RLS in practice). The text below is left
+> as written.
+
 ## What was wrong
 
 The working tree carried a second UI system. `npx shadcn@latest add` had been run

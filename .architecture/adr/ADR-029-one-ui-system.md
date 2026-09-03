@@ -1,7 +1,7 @@
 # ADR-029 — One UI system: Tailwind and shadcn on Base UI, decided at the token, not discovered by debugging
 
 **Status:** Accepted · 2026-09-02
-**Supersedes:** evidence-register E24's REJECT of the shadcn stack.
+**Supersedes:** evidence-register E36 (filed as E36 until 3 September 2026)'s REJECT of the shadcn stack.
 **Amends:** ADR-028, which staged this as an incremental migration. This decides the destination and the method; ADR-028's mechanics still hold where they do not conflict.
 
 ## Context
@@ -55,12 +55,12 @@ And the method, which is the part that supersedes rather than repeats ADR-028:
 
 ### Approaches reviewed
 
-**E24 (2026-09-02) rejected the shadcn stack** on three grounds. One has since
+**E36 (2026-09-02) rejected the shadcn stack** on three grounds. One has since
 been shown false on the facts — shadcn-studio emits Base UI, the same primitive
 library `packages/ui` already pins, so there is no second primitive library and
 law 30 is not engaged. The other two — Tailwind utilities and `className`
 variants — are answered by scope rather than by exemption: utilities live inside
-`packages/ui`, which `no-bespoke-styling` already exempts. E24's REJECT is
+`packages/ui`, which `no-bespoke-styling` already exempts. E36's REJECT is
 superseded; its reasoning is not discarded, and its warning that
 `npx shadcn@latest add` would install Radix silently was correct and is why the
 registry is named rather than assumed.

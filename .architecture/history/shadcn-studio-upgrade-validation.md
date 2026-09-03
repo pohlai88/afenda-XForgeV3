@@ -1,5 +1,9 @@
 # Validating the shadcn-studio + Tailwind v4 upgrade — 2026-09-02
 
+> Register note, 2026-09-03: the shadcn prior-art entry this record cites as E24 was renumbered
+> E36; E24 belongs to the 31 August block (PostgreSQL RLS in practice). The text below is left
+> as written.
+
 Requested: validate upgrading to shadcn-studio (paid) + Tailwind v4 for
 development speed. This is a REVERSAL of evidence-register E24, so law 34 wants
 the search before the decision, and CLAUDE.md wants a reversal to arrive as an
