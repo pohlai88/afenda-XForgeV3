@@ -18,6 +18,13 @@ import { cn } from '#lib/cn'
  * scale grew its fourth step -- an h1 and an h2 that were pixel-identical, so
  * the outline had no visual counterpart at all.
  *
+ * AND THEN h2 AND h3 WERE, one level down, until 2026-09-03: both mapped to
+ * `text-heading`. The design-sync preview showed it; no check here could have,
+ * because the kernel proves adjacent TYPE ROLES differ and nothing proved this
+ * table used different ones. Level 3 is now `text-body` at the heading weight
+ * -- 16px/600, apart from h2 by size, from `emphasis` by weight, from body by
+ * both -- and `heading.test.tsx` holds every level to its own role.
+ *
  * A TABLE RATHER THAN `cva`, WHICH THE REST OF THE SYSTEM USES. `level` does not
  * only choose an appearance: it chooses the ELEMENT, and `cva` emits class
  * strings. Converting this would move the size into a variant and leave the tag
@@ -28,7 +35,7 @@ import { cn } from '#lib/cn'
 const ROLE = {
   1: 'text-title',
   2: 'text-heading',
-  3: 'text-heading',
+  3: 'text-body',
 } as const
 
 export function Heading({
