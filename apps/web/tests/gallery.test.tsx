@@ -103,6 +103,8 @@ describe('the rendered page carries every word', () => {
     }
     // The dictionaries are indexed too.
     expect(hrefs).toContain('gallery-colour')
+    expect(hrefs).toContain('gallery-type')
+    expect(hrefs).toContain('gallery-space')
     // The way back sits beside every group heading (a specimen may add one more).
     expect(hrefs.filter((href) => href === 'gallery-top').length).toBeGreaterThanOrEqual(
       GALLERY.length,

@@ -369,7 +369,7 @@ const CHECKS = [
   [
     'empty-state',
     'description ink',
-    '[data-slot=empty-state] p:last-child',
+    '[aria-labelledby="gallery-empty-state"] [data-slot=empty-state] p:last-child',
     'color',
     'surface.muted.foreground',
   ],

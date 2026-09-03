@@ -8,39 +8,29 @@ import { Text } from '@xforge/design/components/text'
 import manifest from '@xforge/design/style-manifest.json' with { type: 'json' }
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import type { State } from './specimens'
-import { partition } from './words'
+import { partition, symbolsOn } from './words'
 
 /**
  * One group's plates: its recipe printed once, and under each frame only the words that
  * frame adds.
  *
- * After the states render, every class on every element inside each stage is looked up in
- * the style manifest -- the closed list of what a component may say -- and the symbols
- * found are partitioned: what every frame shares is the group's recipe, read once at the
- * top; what a frame alone carries is its footnote. That is the proof on the screen: not
- * what the source claims to select, but what the browser was handed, with the noise
- * subtracted. A class the manifest does not know is not shown, because the manifest is
- * the whole vocabulary; the unit checks refuse anything else at the source.
+ * After the states render, every element inside each stage is asked which symbols of the
+ * style manifest -- the closed list of what a component may say -- it wears in full, and
+ * the symbols found are partitioned: what every frame shares is the group's recipe, read
+ * once at the top; what a frame alone carries is its footnote. That is the proof on the
+ * screen: not what the source claims to select, but what the browser was handed, with the
+ * noise subtracted. A class the manifest does not know is not shown, because the manifest
+ * is the whole vocabulary; the unit checks refuse anything else at the source.
  */
-
-const SYMBOL_OF = new Map<string, string>()
-for (const [symbol, entry] of Object.entries(manifest.symbols)) {
-  for (const cls of entry.class.split(' ')) {
-    SYMBOL_OF.set(cls, symbol)
-  }
-}
 
 const symbolsIn = (root: HTMLElement | null): Set<string> => {
   const seen = new Set<string>()
   if (!root) {
     return seen
   }
-  for (const el of root.querySelectorAll('[class]')) {
-    for (const cls of el.classList) {
-      const symbol = SYMBOL_OF.get(cls)
-      if (symbol) {
-        seen.add(symbol)
-      }
+  for (const el of [root, ...root.querySelectorAll('[class]')]) {
+    for (const symbol of symbolsOn(el.classList, manifest.symbols)) {
+      seen.add(symbol)
     }
   }
   return seen

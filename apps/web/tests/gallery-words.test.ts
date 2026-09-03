@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { partition } from '../app/gallery/words'
+import { partition, symbolsOn } from '../app/gallery/words'
 
 describe('partition: recipe once, differences per frame', () => {
   it('the recipe is what every frame shares; each footnote is what that frame adds', () => {
@@ -40,5 +40,33 @@ describe('partition: recipe once, differences per frame', () => {
     const { footnotes, recipe } = partition([new Set(['z', 'm', 'a']), new Set(['m', 'a', 'k'])])
     expect(recipe).toEqual(['a', 'm'])
     expect(footnotes).toEqual([['z'], ['k']])
+  })
+})
+
+describe('symbolsOn: a symbol is worn only when every class it names is present', () => {
+  // `typography.title` is `font-heading text-title` and `typography.heading` is
+  // `font-heading text-heading`. Looking classes up one at a time credited every heading
+  // with `title` because both share `font-heading`. Found on the type plate, 2026-09-04.
+  const symbols = {
+    'surface.card.background': { class: 'bg-card' },
+    'typography.heading': { class: 'font-heading text-heading' },
+    'typography.title': { class: 'font-heading text-title' },
+  }
+
+  it('credits the symbol whose whole class set is present, not one sharing a class', () => {
+    expect(symbolsOn(['font-heading', 'text-heading', 'p-normal'], symbols)).toEqual([
+      'typography.heading',
+    ])
+  })
+
+  it('credits several symbols when several are fully present', () => {
+    expect(symbolsOn(['bg-card', 'font-heading', 'text-title'], symbols)).toEqual([
+      'surface.card.background',
+      'typography.title',
+    ])
+  })
+
+  it('credits nothing for a shared class alone', () => {
+    expect(symbolsOn(['font-heading'], symbols)).toEqual([])
   })
 })

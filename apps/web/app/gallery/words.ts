@@ -21,3 +21,22 @@ export function partition(frames: readonly ReadonlySet<string>[]): {
     recipe: [...shared].sort(byName),
   }
 }
+
+/**
+ * Which symbols an element wears, given its classes.
+ *
+ * A symbol is worn only when EVERY class it names is present. `typography.title` is
+ * `font-heading text-title` and `typography.heading` is `font-heading text-heading`;
+ * looking classes up one at a time credited every heading with `title` because both share
+ * `font-heading`. Sorted, for the same reason as above.
+ */
+export function symbolsOn(
+  classes: Iterable<string>,
+  symbols: Readonly<Record<string, { readonly class: string }>>,
+): readonly string[] {
+  const present = new Set(classes)
+  return Object.entries(symbols)
+    .filter(([, entry]) => entry.class.split(' ').every((cls) => present.has(cls)))
+    .map(([symbol]) => symbol)
+    .sort((a, b) => a.localeCompare(b))
+}

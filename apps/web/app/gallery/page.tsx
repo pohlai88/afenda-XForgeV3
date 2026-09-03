@@ -6,6 +6,8 @@ import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
 import { ColourPlate } from './colour'
+import { SPACE_SAMPLES, TYPE_SAMPLES } from './foundations'
+import { MeasurePlate } from './measure'
 import { Modes } from './modes'
 import { Plates } from './plates'
 import { GALLERY } from './specimens'
@@ -37,7 +39,11 @@ export const titleOf = (component: string): string =>
 const anchorOf = (component: string): string => `gallery-${component}`
 
 /** The dictionaries come first in the index: the words, then the components that say them. */
-const FOUNDATIONS = [{ id: 'gallery-colour', title: 'Colour' }] as const
+const FOUNDATIONS = [
+  { id: 'gallery-colour', title: 'Colour' },
+  { id: 'gallery-type', title: 'Type' },
+  { id: 'gallery-space', title: 'Space' },
+] as const
 
 export default function GalleryPage() {
   if (process.env.NODE_ENV === 'production') {
@@ -84,6 +90,36 @@ export default function GalleryPage() {
             them.
           </Text>
           <ColourPlate />
+        </Stack>
+      </Card>
+      <Card aria-labelledby="gallery-type">
+        <Stack gap="normal">
+          <Stack direction="row" gap="normal">
+            <Heading id="gallery-type" level={2}>
+              Type
+            </Heading>
+            <Link href="#gallery-top">Top</Link>
+          </Stack>
+          <Text tone="muted">
+            Every type role, through the component that wears it. Beneath each: the symbol it drew
+            and its size, weight and leading as computed.
+          </Text>
+          <MeasurePlate columns={2} family="typography" samples={TYPE_SAMPLES} />
+        </Stack>
+      </Card>
+      <Card aria-labelledby="gallery-space">
+        <Stack gap="normal">
+          <Stack direction="row" gap="normal">
+            <Heading id="gallery-space" level={2}>
+              Space
+            </Heading>
+            <Link href="#gallery-top">Top</Link>
+          </Stack>
+          <Text tone="muted">
+            Every spacing role, through the layout that owns it. Beneath each: the symbol and the
+            gap or padding in pixels, in the active density.
+          </Text>
+          <MeasurePlate columns={3} family="space" samples={SPACE_SAMPLES} />
         </Stack>
       </Card>
       {GALLERY.map((group) => (
