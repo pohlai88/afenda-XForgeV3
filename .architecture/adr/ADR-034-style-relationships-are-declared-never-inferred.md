@@ -242,6 +242,7 @@ decision row grades the DTCG pair S, and this table says so beside the rows.
 | Tailwind v4 *Margin* — `m-<number>` → `margin: calc(var(--spacing) * <number>)`; the utilities "are driven by the `--spacing` theme variable" (**E34**) | That the numeric scale is derived from a multiplier, not enumerated. Unboundedness follows from the formula and is inferred, not quoted |
 | Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E35**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
 | Figma REST API *Variables* — "Setting scopes for a variable does not prevent that variable from being bound in other scopes… This only limits the variables that are shown in pickers within the Figma UI." (**E32**) | That a shipped tool modelled per-variable scope, and that its scopes are advisory |
+| Material Design 3 *Color roles* — "There are 26 standard color roles organized into six groups"; surface / primary–secondary–tertiary / container / on / variant as the words every role is built from; "apply colors only in the intended pairs or layering orders"; outline for "important boundaries, such as a text field outline", outline variant for "decorative elements, such as dividers" (**E37**, read 2026-09-04) | The colour-role grammar and the pairing law the tokens now follow: `surface`, `surface-lowest`, `surface-container`, `on-surface`, `on-surface-variant`, `primary` / `on-primary` / `primary-container`, `error` / `error-container`, `outline` / `outline-variant`, and `COLOR_PAIRS`. ADAPT: hover and pressed stay explicit fills where M3 uses state layers, and the status containers follow M3's custom-colour pattern with no high-emphasis fill |
 
 For the relationship layer itself:
 
@@ -270,10 +271,16 @@ For the relationship layer itself:
   for normative scopes reads it backwards.
 - **A DTCG typography composite is not precedent for migrating to one.** It has no field for
   a floor, a rank, or a per-mode hierarchy assertion.
-- **Material 3 proves nothing here**, because it was not retrieved.
+- **Material 3 (E37) proves the grammar, not our values.** Its roles were retrieved on
+  2026-09-04 and the colour roots were renamed and merged to its shape the same day. What it
+  says nothing about is whether our 20 roots are the right rungs for a payroll product, whether
+  ink.850 and ink.750 are the right dark surfaces, or whether keeping hover and pressed as fills
+  rather than state layers costs anything; only `color-pairs.test.ts`, the distinctness check
+  and the gallery proof say anything about those, and only on this tree.
 - **Nothing external supports the words this ADR minted while building.** The semantic
-  taxonomy in `STYLE_NAMES` (`error` → `status.danger`, `destructive` → `action.danger`,
-  `sidebar` → `surface.rail`, `ring` → `stroke.focus`); the `INTERACTION_STATES` mapping of Base
+  taxonomy in `STYLE_NAMES` was minted without a benchmark and renamed against Material 3 on
+  2026-09-04 (`surface.default`, `ink.onSurface`, `accent.primaryContainer`, `error.container`,
+  `outline.variant`); the `INTERACTION_STATES` mapping of Base
   UI's data attributes to roles (checked → primary, unchecked → field, highlighted → accent), and
   the rule that every state at rest excludes disabled so disabled wins by selector rather than
   by stylesheet order (added 2026-09-04 after the gallery proof measured the order winning);
@@ -633,3 +640,20 @@ E29 and E30 were themselves reissued; the 3 September block's intro regained its
 rationale; two grade sentences corrected. Recorded without action: a unit run launched beside
 `gen:tokens` timed out once on the `#generated/*` existence check while the generator was
 rewriting the files, and passed alone — contention, not a defect.
+
+Fourth pass, by the owner's instruction rather than a reviewer's (HEAD `07cf465`, 2026-09-04):
+the colour roles compared one by one against Material 3's twenty-six (E37, retrieved at last —
+the third pass had recorded it as never retrieved) and renamed to its grammar. Three words
+lied: `action.secondary` was a white neutral, `action.accent` was the primary container,
+`surface.muted.foreground` was the on-surface-variant ink paired in the contract with a fill
+it rarely sat on. Four colours carried two names through shadcn's sidebar block. The dark muted
+fill was pure black below the page. Twenty-six roots became twenty; ten tokens retired as
+duplicates; light values unchanged; dark `surface-lowest` ink.850 and `surface-container`
+ink.750, the first because ink.900 was 1.9 dE from the page and the distinctness check refused
+it. The pairing law (`COLOR_PAIRS`, `color-pairs.test.ts`) is M3's first colour law made
+mechanical, computed from the token file in both themes; every declared pair clears its floor,
+the tightest at 4.52. `on-surface` and `on-surface-variant` are roots of their own because a
+token is one role and three surfaces would have to claim one ink. Not decided: a tertiary
+group, a secondary container as a tonal fill, the deeper surface ladder, inverse roles and the
+fixed roles, each absent because nothing here has asked; and a coincidence to know, that
+ink.750 is both the dark container and the dark disabled fill.
