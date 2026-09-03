@@ -49,6 +49,17 @@ export const deepFreeze = (value) => {
 export const COMPONENT_TOKEN_CEILING = 12
 
 /**
+ * A DESIGNED ABSENCE, as distinct from a field nobody wrote (ADR-034 Decision 2).
+ *
+ * `scrim` has no foreground because nothing is set in text on a scrim; `caption` has no
+ * tracking because none was chosen. Those are facts about the design and are written as
+ * one value, so that "no separate pressed colour exists" and "nobody decided" can never
+ * read the same. A slot that is simply missing is refused by the table that owns it.
+ * Shared by every role table, defined once.
+ */
+export const NONE = Symbol.for('xforge.design.none')
+
+/**
  * EVERY top-level group, classified explicitly.
  *
  * This was `{ component, semantic }` with `?? 'primitive'`, which meant a typo --

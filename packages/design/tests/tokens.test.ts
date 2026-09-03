@@ -1072,9 +1072,83 @@ describe('the typography policy names tokens that exist', () => {
    * was untouched. A rule and an instance of it are different things to
    * assert.
    */
-  it('permits a role that omits a part on purpose', () => {
-    const minimal = { minimal: { minimumPx: 12, rank: 0, size: 'semantic.type.label' } }
+  it('permits a designed absence written as NONE, and resolves nothing for it', () => {
+    const { NONE } = policy
+    const minimal = {
+      minimal: {
+        font: NONE,
+        leading: NONE,
+        minimumPx: 12,
+        rank: 0,
+        size: 'semantic.type.label',
+        tracking: NONE,
+        weight: NONE,
+      },
+    }
     expect(() => foundations.assertTypographyTokens(tokens, minimal)).not.toThrow()
+    expect(() => foundations.assertTypographyRoles(minimal)).not.toThrow()
+  })
+})
+
+/**
+ * ADR-034 Decision 2, the typography half: every role declares all five fields -- a
+ * reference, an explicit reuse, or NONE -- and every typography token is named by a role
+ * or listed as a vendor shim with its reason. Written before the fields existed; the first
+ * run was red on the shipped table and on the omission case.
+ */
+describe('typography role contracts (ADR-034)', () => {
+  const tokens = flatten(source)
+  const { NONE } = policy
+
+  it('every shipped role declares all five fields', () => {
+    expect([...foundations.TYPE_ROLE_FIELDS]).toEqual([
+      'font',
+      'size',
+      'weight',
+      'leading',
+      'tracking',
+    ])
+    for (const [name, role] of Object.entries(foundations.TYPE_ROLES)) {
+      for (const field of foundations.TYPE_ROLE_FIELDS) {
+        expect(field in role, `${name} omits ${field}`).toBe(true)
+      }
+    }
+  })
+
+  it('refuses a role that omits a field, so absence cannot be silence', () => {
+    const { font: _font, ...withoutFont } = foundations.TYPE_ROLES.body
+    expect(() => foundations.assertTypographyRoles({ body: withoutFont })).toThrow(
+      /type role 'body' omits 'font' -- write a token path or NONE/,
+    )
+  })
+
+  it('refuses NONE as a size, because a role with no size is not a role', () => {
+    expect(() =>
+      foundations.assertTypographyRoles({ body: { ...foundations.TYPE_ROLES.body, size: NONE } }),
+    ).toThrow(/names no size token/)
+  })
+
+  it('the shipped tokens are all named by a role or listed as a shim', () => {
+    expect(() => foundations.assertTypographyCoverage(tokens)).not.toThrow()
+    expect(Object.keys(foundations.TYPE_TOKEN_SHIMS)).toContain('semantic.weight.medium')
+  })
+
+  it('refuses a typography token no role names and no shim lists', () => {
+    const stray = new Map(tokens)
+    stray.set('semantic.weight.heavy', { type: 'fontWeight', value: 800 })
+    expect(() => foundations.assertTypographyCoverage(stray)).toThrow(
+      /'semantic\.weight\.heavy' is named by no type role and listed as no shim/,
+    )
+  })
+
+  it('refuses a shim a role also names, because the list would be stale', () => {
+    const roles = {
+      ...foundations.TYPE_ROLES,
+      body: { ...foundations.TYPE_ROLES.body, weight: 'semantic.weight.medium' },
+    }
+    expect(() => foundations.assertTypographyCoverage(tokens, roles)).toThrow(
+      /'semantic\.weight\.medium' is listed as a shim and named by type role 'body'/,
+    )
   })
 })
 
@@ -1264,7 +1338,8 @@ describe('the motion policy', () => {
  */
 describe('colour role contracts (ADR-034)', () => {
   const tokens = flatten(source)
-  const { COLOR_ROLE_CONTRACTS, NONE } = foundations
+  const { COLOR_ROLE_CONTRACTS } = foundations
+  const { NONE } = policy
 
   /** A copy of the shipped table with one root replaced. */
   const withRoot = (root: string, contract: Record<string, unknown>) => ({

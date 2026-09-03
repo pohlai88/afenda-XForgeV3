@@ -89,6 +89,7 @@ import {
   assertNoUtilityShadowing,
   assertTailwindProjection,
   assertTargetMinimum,
+  assertTypographyCoverage,
   assertTypographyTokens,
   assertUniqueCssNames,
   COLOR_ROLE_POLICIES,
@@ -799,6 +800,11 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
   // the declaration first is what makes the per-package vocabulary a claim rather
   // than a wish.
   assertTypographyTokens(tokens, typeRoles)
+  // Only when a package selected roles: a synthetic source with no roles has nothing to
+  // cover, and the real package always names its eight (ADR-034 Decision 2).
+  if (Object.keys(typeRoles).length > 0) {
+    assertTypographyCoverage(tokens, typeRoles)
+  }
   const typography = typographyFailures(byMode, typeRoles)
   if (typography.length > 0) {
     throw new Error(`typography policy violated:\n${typography.join('\n')}`)

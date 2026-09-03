@@ -42,7 +42,7 @@
 
 import { definePolicy } from '../define-policy.mjs'
 import { ACCESSIBILITY_POLICY } from '../interaction/accessibility.mjs'
-import { assertLifecycle, assertTokenPath, deepFreeze, HEX } from '../vocabulary.mjs'
+import { assertLifecycle, assertTokenPath, deepFreeze, HEX, NONE } from '../vocabulary.mjs'
 
 export const REFERENCE_TONES = deepFreeze([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100])
 
@@ -1450,16 +1450,6 @@ export const colorPolicy = definePolicy({
 })
 
 /* ------------------------------------------------------- role contracts -- */
-
-/**
- * A DESIGNED ABSENCE, as distinct from a field nobody wrote (ADR-034 Decision 2).
- *
- * `scrim` has no foreground because nothing is set in text on a scrim; that is a fact
- * about the design, and it is written down as one. A slot that is simply missing is a
- * defect, refused below, so that "no separate pressed colour exists" and "nobody
- * decided" can never read the same.
- */
-export const NONE = Symbol.for('xforge.design.none')
 
 /** The companions a colour root may declare, and the suffix each one wears in a token name. */
 export const COLOR_COMPANIONS = deepFreeze(['foreground', 'hover', 'pressed'])

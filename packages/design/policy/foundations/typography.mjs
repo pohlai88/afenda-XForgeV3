@@ -55,7 +55,7 @@
  */
 
 import { definePolicy } from '../define-policy.mjs'
-import { deepFreeze, toPixels } from '../vocabulary.mjs'
+import { deepFreeze, NONE, toPixels } from '../vocabulary.mjs'
 import { ASSUMED_ROOT_PX, GRID_PX } from './spacing.mjs'
 
 /* ------------------------------------------------------------------ roles -- */
@@ -93,11 +93,13 @@ export const TYPE_ROLES = deepFreeze({
    * it is the one that makes the user's adjustment a no-op rather than a rescue.
    */
   body: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.body',
     minimumLeading: 1.5,
     minimumPx: 14,
     rank: 2,
     size: 'semantic.type.body',
+    tracking: 'semantic.tracking.body',
     weight: 'semantic.weight.body',
   },
 
@@ -114,11 +116,13 @@ export const TYPE_ROLES = deepFreeze({
    * infers.
    */
   'body-compact': {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.compact',
     minimumLeading: 1.4,
     minimumPx: 14,
     rank: 1,
     size: 'semantic.type.body-compact',
+    tracking: NONE,
     weight: 'semantic.weight.body-compact',
   },
 
@@ -137,11 +141,13 @@ export const TYPE_ROLES = deepFreeze({
    * footing instead -- 12px in every mode, at the floor, for supporting text.
    */
   caption: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.caption',
     minimumLeading: 1.33,
     minimumPx: 12,
     rank: 0,
     size: 'semantic.type.caption',
+    tracking: NONE,
     weight: 'semantic.weight.caption',
   },
 
@@ -160,11 +166,13 @@ export const TYPE_ROLES = deepFreeze({
    * by six points of size over `title`, so a heavier cut would add nothing.
    */
   display: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.display',
     minimumLeading: 1.15,
     minimumPx: 24,
     rank: 5,
     size: 'semantic.type.display',
+    tracking: NONE,
     weight: 'semantic.weight.heading',
   },
 
@@ -177,22 +185,26 @@ export const TYPE_ROLES = deepFreeze({
    * size, and a dense grid loses more to a fifth step than it gains.
    */
   emphasis: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.body',
     minimumLeading: 1.5,
     minimumPx: 14,
     rank: 2,
     size: 'semantic.type.emphasis',
+    tracking: NONE,
     weight: 'semantic.weight.emphasis',
   },
 
   heading: {
     // Headings are set tighter on purpose: at larger sizes the same ratio reads
     // as loose. The floor is where ascenders and descenders begin to collide.
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.heading',
     minimumLeading: 1.15,
     minimumPx: 16,
     rank: 3,
     size: 'semantic.type.heading',
+    tracking: NONE,
     weight: 'semantic.weight.heading',
   },
 
@@ -202,11 +214,13 @@ export const TYPE_ROLES = deepFreeze({
    * another size step, carries the semantic distinction.
    */
   label: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.label',
     minimumLeading: 1.4,
     minimumPx: 12,
     rank: 1,
     size: 'semantic.type.label',
+    tracking: NONE,
     weight: 'semantic.weight.label',
   },
 
@@ -214,11 +228,13 @@ export const TYPE_ROLES = deepFreeze({
   // same 20px/600 in every mode -- an h1 and an h2 pixel-identical, so the
   // document outline a screen reader announces had no visual counterpart.
   title: {
+    font: 'semantic.font.sans',
     leading: 'semantic.leading.title',
     minimumLeading: 1.15,
     minimumPx: 18,
     rank: 4,
     size: 'semantic.type.title',
+    tracking: NONE,
     weight: 'semantic.weight.heading',
   },
 })
@@ -231,10 +247,33 @@ export const TYPE_ROLES = deepFreeze({
  * ungoverned rather than silently unchecked.
  */
 const ROLE_TOKEN_TYPES = deepFreeze({
+  font: 'fontFamily',
   leading: 'number',
   size: 'dimension',
   tracking: 'dimension',
   weight: 'fontWeight',
+})
+
+/**
+ * THE FIVE FIELDS EVERY ROLE DECLARES (ADR-034 Decision 2). A reference, an explicit reuse
+ * of another role's token, or NONE. Omission is refused, so "no tracking was chosen" and
+ * "nobody looked" can never read the same. `size` may not be NONE: a role with no size is
+ * not a role.
+ */
+export const TYPE_ROLE_FIELDS = deepFreeze(['font', 'size', 'weight', 'leading', 'tracking'])
+
+/**
+ * TYPOGRAPHY TOKENS NO ROLE NAMES, each with the reason it still exists. A token here is a
+ * shim for the sealed vendored tree (ADR-031 Decision 12): shadcn writes `font-medium` and
+ * `tracking-widest`, and until ADR-034 Decision 3 closes the namespaces above those files,
+ * the classes must resolve to something. Listed so the coverage check can refuse the third
+ * orphan, and refuse a shim the moment a role adopts it -- a stale entry is a copy of a
+ * fact that moved.
+ */
+export const TYPE_TOKEN_SHIMS = deepFreeze({
+  'semantic.tracking.shortcut': 'SCALE_ALIASES projects it as tracking-widest for vendored kbd',
+  'semantic.weight.medium':
+    'vendored shadcn writes font-medium; retire with the Decision 3 closure',
 })
 
 /** The dimensions a reader perceives as rank. Leading and tracking are not among them. */
@@ -248,7 +287,13 @@ export const HIERARCHY_DIMENSIONS = deepFreeze(['size', 'weight'])
  * drop-in depend on new tokens. Once a package adds a tracking token to a role,
  * token existence/type checks and mode invariance apply automatically.
  */
-export const MODE_INVARIANT_DIMENSIONS = deepFreeze(['size', 'weight', 'leading', 'tracking'])
+export const MODE_INVARIANT_DIMENSIONS = deepFreeze([
+  'font',
+  'size',
+  'weight',
+  'leading',
+  'tracking',
+])
 
 /* ----------------------------------------------------------- the premises -- */
 
@@ -403,8 +448,8 @@ export function assertTypographyTokens(tokens, roles = TYPE_ROLES) {
   for (const [role, policy] of Object.entries(roles)) {
     for (const [field, expected] of Object.entries(ROLE_TOKEN_TYPES)) {
       const path = policy[field]
-      // A role may legitimately omit a field. Absent is not mistyped.
-      if (path === undefined) {
+      // A designed absence names no token. Absent is not mistyped.
+      if (path === NONE || path === undefined) {
         continue
       }
       const token = tokens.get(path)
@@ -421,6 +466,59 @@ export function assertTypographyTokens(tokens, roles = TYPE_ROLES) {
             `must be a ${expected} -- a ${field} of the wrong type is measured by the wrong rule`,
         )
       }
+    }
+  }
+}
+
+const TYPE_NAMESPACES = deepFreeze([
+  'semantic.type.',
+  'semantic.weight.',
+  'semantic.leading.',
+  'semantic.tracking.',
+])
+
+/**
+ * EVERY TYPOGRAPHY TOKEN IS NAMED BY A ROLE OR LISTED AS A SHIM (ADR-034 Decision 2).
+ *
+ * `semantic.weight.medium` belonged to no role for a month and nothing said so; it was a
+ * vendor shim wearing a role's namespace. This refuses the next one, and refuses a shim
+ * the moment a role names it, because a list that still calls an adopted token a shim is
+ * the two-sources defect in miniature. `semantic.font.*` is not covered: `mono` is Code's
+ * face and Code is not a type role, which is a fact about Code rather than an orphan.
+ */
+export function assertTypographyCoverage(tokens, roles = TYPE_ROLES, shims = TYPE_TOKEN_SHIMS) {
+  if (!(tokens instanceof Map)) {
+    throw new TypeError('typography coverage is checked against a Map<tokenPath, token>')
+  }
+  const named = new Map()
+  for (const [role, policy] of Object.entries(roles)) {
+    for (const field of TYPE_ROLE_FIELDS) {
+      const path = policy[field]
+      if (typeof path === 'string' && !named.has(path)) {
+        named.set(path, role)
+      }
+    }
+  }
+  for (const [path, reason] of Object.entries(shims)) {
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new Error(`typography shim '${path}' must state why it still exists`)
+    }
+    if (named.has(path)) {
+      throw new Error(
+        `'${path}' is listed as a shim and named by type role '${named.get(path)}' -- a shim a ` +
+          'role adopted is no longer a shim; delete the entry',
+      )
+    }
+  }
+  for (const path of tokens.keys()) {
+    if (!TYPE_NAMESPACES.some((ns) => path.startsWith(ns))) {
+      continue
+    }
+    if (!named.has(path) && !(path in shims)) {
+      throw new Error(
+        `'${path}' is named by no type role and listed as no shim -- a typography token is a ` +
+          "role's field or a vendor shim with a reason (TYPE_TOKEN_SHIMS)",
+      )
     }
   }
 }
@@ -442,6 +540,14 @@ export function assertTypographyRoles(roles = TYPE_ROLES) {
     if (policy === null || typeof policy !== 'object' || Array.isArray(policy)) {
       throw new TypeError(`type role '${role}' must be an object`)
     }
+    for (const field of TYPE_ROLE_FIELDS) {
+      if (!(field in policy)) {
+        throw new Error(
+          `type role '${role}' omits '${field}' -- write a token path or NONE, so an absence is a ` +
+            'decision and not a gap (ADR-034)',
+        )
+      }
+    }
     if (typeof policy.size !== 'string' || policy.size.length === 0) {
       throw new Error(`type role '${role}' names no size token, so nothing about it is checkable`)
     }
@@ -454,10 +560,10 @@ export function assertTypographyRoles(roles = TYPE_ROLES) {
 
     for (const field of Object.keys(ROLE_TOKEN_TYPES)) {
       if (
-        policy[field] !== undefined &&
+        policy[field] !== NONE &&
         (typeof policy[field] !== 'string' || policy[field].length === 0)
       ) {
-        throw new Error(`type role '${role}' ${field} token must be a non-empty token path`)
+        throw new Error(`type role '${role}' ${field} must be a non-empty token path or NONE`)
       }
     }
 
@@ -493,12 +599,12 @@ export function assertTypographyRoles(roles = TYPE_ROLES) {
     }
 
     if (
-      policy.leading !== undefined &&
+      policy.leading !== NONE &&
       (!Number.isFinite(policy.minimumLeading) || policy.minimumLeading <= 0)
     ) {
       throw new Error(`type role '${role}' has a leading token but no positive finite floor for it`)
     }
-    if (policy.leading === undefined && policy.minimumLeading !== undefined) {
+    if (policy.leading === NONE && policy.minimumLeading !== undefined) {
       throw new Error(
         `type role '${role}' states a leading floor but names no leading token -- a threshold ` +
           'over a value that does not exist is never applied',
@@ -570,7 +676,8 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
     return [`typography root must be a positive finite pixel size, received ${String(rootPx)}`]
   }
 
-  const read = (resolved, token) => (token === undefined ? undefined : resolved.get(token))
+  const read = (resolved, token) =>
+    token === undefined || token === NONE ? undefined : resolved.get(token)
 
   // Density and appearance may change layout and colour, but not the typographic
   // contract. The first resolved value for each role/field is the baseline; every
@@ -588,7 +695,7 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
     for (const [role, policy] of Object.entries(roles)) {
       for (const dimension of MODE_INVARIANT_DIMENSIONS) {
         const token = policy[dimension]
-        if (token === undefined) {
+        if (token === undefined || token === NONE) {
           continue
         }
 
@@ -639,7 +746,7 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
         )
       }
 
-      if (policy.leading !== undefined && read(resolved, policy.leading) !== undefined) {
+      if (policy.leading !== NONE && read(resolved, policy.leading) !== undefined) {
         const leading = Number(read(resolved, policy.leading))
         if (!Number.isFinite(leading)) {
           failures.push(`${label}: ${role} leading is not a number`)
@@ -679,7 +786,7 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
       // do not need a migration, but once declared it must resolve to a measurable
       // dimension. No ordering rule is attached to it: Material-style positive
       // tracking at small sizes and tighter tracking at display sizes are both legal.
-      if (policy.tracking !== undefined && read(resolved, policy.tracking) !== undefined) {
+      if (policy.tracking !== NONE && read(resolved, policy.tracking) !== undefined) {
         const tracking = pixelSize(read(resolved, policy.tracking), rootPx)
         if (tracking.px === null) {
           failures.push(`${label}: ${role} tracking ${tracking.why}`)
