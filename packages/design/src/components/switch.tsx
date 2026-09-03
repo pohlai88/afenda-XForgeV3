@@ -23,9 +23,10 @@ import { Switch as Primitive } from '#components/ui/switch'
  * adaptee's type. Upstream's `size` axis is NOT adopted (Decision 4: no speculative
  * axis), and its `className` is not exposed: a screen does not style a switch.
  *
- * `onCheckedChange` receives the new value only. Base UI also passes an event-details
- * object; a screen has never needed it, and passing it through would make the Target's
- * signature Base UI's.
+ * `onCheckedChange` receives the new value only. Base UI calls its handler with a second
+ * argument, an event-details object, and a callback passed straight through would
+ * receive it whatever `SwitchProps` declares. The one-line wrapper below is what keeps
+ * the call's arity to the Target's; a screen has never needed the details.
  */
 
 /** Section 3 — the Target. Each adopted word is listed; nothing arrives by inheritance. */
