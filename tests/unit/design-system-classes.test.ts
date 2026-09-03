@@ -30,7 +30,7 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = join(import.meta.dirname, '../..')
 const PKG = join(ROOT, 'packages/design')
-const ENTRY = join(PKG, 'policy/design.css')
+const ENTRY = join(ROOT, 'apps/web/app/globals.css')
 const BRIDGE = join(PKG, 'generated/tailwind-theme.css')
 
 /**
@@ -177,7 +177,7 @@ describe('the design system vocabulary compiles', () => {
    * The custom utilities, which the bridge cannot describe.
    *
    * Tailwind has no border-width or outline-width namespace, so these are
-   * `@utility` blocks in `design.css` rather than theme variables — and an
+   * `@utility` blocks in the app stylesheet rather than theme variables — and an
    * at-rule Tailwind never processes is one the browser silently discards.
    */
   it('and the custom width utilities compile', async () => {

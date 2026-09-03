@@ -19,7 +19,7 @@
  *   semantic.layer.local -- z-index has no Tailwind theme namespace; reached through the `layer-local` @utility
  *   semantic.layer.overlay -- z-index has no Tailwind theme namespace; reached through the `layer-overlay` @utility
  *   semantic.motion.duration.base -- no --duration-* theme namespace; reached through the `duration-base` @utility
- *   semantic.motion.duration.none -- consumed by the prefers-reduced-motion block in design.css, not by a utility
+ *   semantic.motion.duration.none -- consumed by the prefers-reduced-motion block in the app stylesheet, not by a utility
  *   semantic.motion.duration.overlay -- no --duration-* theme namespace; reached through the `duration-overlay` @utility
  *   semantic.motion.duration.press -- no --duration-* theme namespace; reached through the `duration-press` @utility
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility

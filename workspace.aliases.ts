@@ -22,7 +22,7 @@ import type { Alias } from 'vite'
  * WHY DERIVED, AND NOT MERELY SHARED. The hand-written list was itself a second
  * source: every entry restated an `exports` key from a package.json, and the
  * copy had already gone lossy -- seven declared exports (@xforge/db/schema,
- * @xforge/design/design.css, @xforge/hr/contract, @xforge/hr/manifest,
+ * @xforge/hr/contract, @xforge/hr/manifest,
  * @xforge/design/tokens.css, @xforge/design/tokens.json) existed in the workspace
  * and in no alias table. `vite.harness.config.ts` then hand-copied four entries
  * out of THIS file and diverged in both directions, which is how it was found.

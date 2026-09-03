@@ -127,7 +127,7 @@
         "different instrument and does not exist yet; see the metric note."
       ]
     },
-    "packages/design/policy/design.css": {
+    "apps/web/app/globals.css": {
       "status": "explicit",
       "cssDeclarationsGzipBytes": 900,
       "reason": "An entry point and two custom utilities, not a stylesheet. Tighter than the 2400 B default because every design value is supposed to arrive through the generated bridge, and a budget it cannot grow into is what keeps that true.",

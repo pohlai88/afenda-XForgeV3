@@ -1,23 +1,189 @@
 /*
- * The application's stylesheet. It holds NO design values, and it holds almost
- * nothing else either.
+ * The application's stylesheet, and the only one. It holds NO design values.
  *
- * ONE IMPORT, AND THAT IS THE DESIGN. `@xforge/design/design.css` is itself the
- * Tailwind entry: it pulls in `tailwindcss`, then the generated token bridge,
- * then declares the dark variant and the two `@utility` blocks, and points
- * `@source` at its own `src`. Repeating any of that here would not add anything
- * -- it would create a second place where the order of those imports is decided,
- * and the order is what puts the density axis in charge of spacing.
+ * `tailwindcss` first, then the generated theme bridge, so the token namespaces
+ * override Tailwind's defaults rather than the other way round -- that ordering
+ * is what puts the density axis in charge of spacing.
  *
- * This file previously imported Tailwind, a token bridge and a component
- * stylesheet in a particular sequence, with a long note explaining why unlayered
- * CSS beats layered CSS and which half-migrated component that could break. None
- * of it applies now: the design system has no stylesheet of plain rules to win
- * against a utility. There is nothing left to sequence.
+ * `tokens.css` declares the custom properties and the bridge references them,
+ * so it is imported between the two. `layout.tsx` imports this file and nothing
+ * else -- an entry point in two places is two places to get the order wrong.
  *
- * BUSINESS SCREENS ARE DELIBERATELY NOT SCANNED. They carry no `className` --
- * `no-bespoke-styling` fails them if they do -- so there is nothing there for
- * Tailwind to find, and adding the path would quietly make it possible.
+ * There was a `design.css` in the design package that did this and was imported
+ * here in one line. It was deleted, and rather than restore an indirection that
+ * only forwarded four at-rules, the entry lives here.
+ *
+ * BUSINESS SCREENS ARE DELIBERATELY NOT SCANNED. They carry no `className`, so
+ * there is nothing there for Tailwind to find, and adding the path would quietly
+ * make it possible.
  */
 
-@import "@xforge/design/design.css";
+@import "tailwindcss";
+@import "@xforge/design/tokens.css";
+@import "@xforge/design/tailwind-theme.css";
+
+/*
+ * Most components need no `dark:` at all -- `bg-card` already rebinds itself.
+ * This is for the cases a pasted block arrives carrying.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Where Tailwind looks for class names: the design package's source only. */
+@source "../../../packages/design/src/";
+/*
+ * CUSTOM UTILITIES — the widths Tailwind has no namespace for.
+ *
+ * There is no border-width or outline-width theme namespace in v4: `border` is
+ * a literal 1px and `outline-2` a literal 2px. Writing either would bind a
+ * design value to a number and take it out of the token file, which is the one
+ * thing the token package exists to prevent.
+ *
+ * They live HERE rather than in the app's entry stylesheet because this file is
+ * inside `packages/design`, where the CSS guards read: a literal is refused, a
+ * primitive reference is refused, and a `var()` naming a token the generator
+ * does not emit is refused. A custom utility is exactly the kind of thing that
+ * should be governed by those.
+ */
+
+@utility border-stroke {
+  border-width: var(--semantic-size-stroke);
+}
+
+/*
+ * ONE focus style, defined once.
+ *
+ * A ring assembled per component from four utilities is a ring that eventually
+ * gets partly removed from one of them, and keyboard users lose that control
+ * silently. Applied as `focus-visible:focus-ring`, so the variant stays visible
+ * at the call site while the treatment does not.
+ */
+@utility focus-ring {
+  outline-width: var(--semantic-size-ring);
+  outline-style: solid;
+  outline-color: var(--semantic-color-ring);
+  outline-offset: var(--semantic-size-ring-offset);
+  border-radius: var(--semantic-radius-precise);
+}
+
+/*
+ * STACKING, WHICH IS NOT ELEVATION. One is rendering order, the other is visual
+ * depth, and conflating them is how a product ends up with `z-index: 99999`.
+ *
+ * Reached through @utility rather than a theme namespace because Tailwind's
+ * `z-<number>` is computed from a number, not from a `--z-*` variable -- there
+ * is nothing to project into and nothing to clear. What keeps a bare `z-50` out
+ * is the `no-raw-stacking-value` guard.
+ *
+ * TWO VALUES, BECAUSE TWO ARE IN USE. The policy that used to sit in
+ * `ELEVATION_LAYERS` argued stacking should come from DOM order and named its
+ * own expiry: "a second portalled layer is what ends it". There are now five --
+ * Dialog, DropdownMenu, Select, Sheet, Tooltip -- and every one was `z-50`, so
+ * the order among them was mount order, which nobody chose.
+ *
+ * An eight-step ladder is still not built. The third value arrives with the
+ * first component that genuinely has to sit above a portalled surface.
+ */
+@utility layer-local {
+  z-index: var(--semantic-layer-local);
+}
+
+@utility layer-overlay {
+  z-index: var(--semantic-layer-overlay);
+}
+
+/*
+ * THE CONTROL FLOOR, WHICH NOTHING WAS READING.
+ *
+ * `semantic.control.min-size` has been rebound by density and held to the WCAG
+ * 2.5.8 target floor in every mode since this package was scaffolded, and no
+ * component read it: buttons were `h-6` through `h-10`, straight from Tailwind's
+ * numbers, with `h-6` sitting exactly on the 24px minimum and not moving in
+ * compact because nothing about it was a token.
+ *
+ * A proven floor over zero pixels is the same shape as an elevation layer
+ * painting with a surface that does not exist -- and worse, because this one is
+ * an accessibility floor.
+ *
+ * `min-block-size` rather than `height`: a control that has to grow for its
+ * content should, and a floor that clips is not a floor.
+ */
+@utility h-control {
+  min-block-size: var(--semantic-control-min-size);
+}
+
+/*
+ * And the icon that goes inside it. Forty-two icons were sized from Tailwind
+ * numbers and stayed 16px in every density -- the same defect as the control,
+ * one level down.
+ */
+@utility size-icon {
+  inline-size: var(--semantic-icon-size);
+  block-size: var(--semantic-icon-size);
+}
+
+/*
+ * DURATION, which has no Tailwind namespace to project into. `duration-150` is
+ * computed from the number exactly as `z-50` is, so there is nothing to clear --
+ * these are @utility blocks and `no-raw-motion-value` is what keeps a bare
+ * number out. The EASING roles do project, so those are closed by construction.
+ */
+@utility duration-press {
+  transition-duration: var(--semantic-motion-duration-press);
+}
+
+@utility duration-state {
+  transition-duration: var(--semantic-motion-duration-state);
+}
+
+@utility duration-base {
+  transition-duration: var(--semantic-motion-duration-base);
+}
+
+@utility duration-overlay {
+  transition-duration: var(--semantic-motion-duration-overlay);
+}
+
+/*
+ * THE LOADING SHIMMER, and the only loop in the system. It is defined here rather
+ * than taken from Tailwind's `animate-pulse` so that its duration is a token the
+ * motion policy governs -- `MOTION_ROLES` declares it `loops: true` and therefore
+ * `reducedMotion: 'removed'`, because WCAG 2.2.2 wants motion past five seconds
+ * to be stoppable and a loop never stops on its own. A faster loop is still a loop.
+ */
+@keyframes shimmer {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@utility animate-shimmer {
+  animation: shimmer var(--semantic-motion-duration-pulse)
+    var(--semantic-ease-standard) infinite;
+}
+
+/*
+ * REDUCED MOTION, RESTORED. The system this replaces had a
+ * `prefers-reduced-motion` block; the cutover dropped it, and the policy that
+ * would have noticed was governing a token that no longer existed. The only
+ * evidence it had ever been there was a compiled artefact under .next.
+ *
+ * THE RULE THAT SURVIVES IT: removing the animation must never remove the state.
+ * A skeleton that stops pulsing is still a skeleton, and a dialog that appears
+ * without a fade is still a dialog. Every declaration below shortens or removes
+ * MOTION; not one of them changes what is on screen when the motion is over.
+ *
+ * The neutralised duration is a TOKEN rather than a literal, and the reason
+ * lives with it: `duration.none` is 0.01ms and not zero, because a zero-duration
+ * transition does not fire `transitionend` and a component waiting for that event
+ * would hang for exactly the people who asked for less motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--semantic-motion-duration-none) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--semantic-motion-duration-none) !important;
+    scroll-behavior: auto !important;
+  }
+}

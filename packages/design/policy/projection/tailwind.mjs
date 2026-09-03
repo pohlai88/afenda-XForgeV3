@@ -191,7 +191,7 @@ export const UNPROJECTED = deepFreeze({
    * closure could remove -- the same shape as `leading-none` surviving when
    * `--leading-*` was cleared.
    *
-   * Both reach components through `@utility` blocks in `design.css`, and what
+   * Both reach components through `@utility` blocks in the app stylesheet, and what
    * keeps a bare number out is a GUARD rather than construction. The EASING
    * roles do project -- `--ease-*` is a real namespace -- so those are closed
    * the ordinary way and only duration needs the guard.
@@ -218,7 +218,7 @@ export const UNPROJECTED = deepFreeze({
   'semantic.motion.duration.base':
     'no --duration-* theme namespace; reached through the `duration-base` @utility',
   'semantic.motion.duration.none':
-    'consumed by the prefers-reduced-motion block in design.css, not by a utility',
+    'consumed by the prefers-reduced-motion block in the app stylesheet, not by a utility',
   'semantic.motion.duration.overlay':
     'no --duration-* theme namespace; reached through the `duration-overlay` @utility',
   'semantic.motion.duration.press':
