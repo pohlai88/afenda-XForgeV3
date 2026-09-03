@@ -1,13 +1,16 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **Migration steps 1–8 are built** (commits `88dceb6`,
+**Status:** Proposed · 2026-09-03 · **All ten migration steps are built** (commits `88dceb6`,
 `04199cc`, `d4f31dc`, `164bc22`, and step 5 the same day): the colour and typography contracts
 exist, their refusals are tested RED-first, and per-channel colour capability is enforced by
 emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
 shims; `generated/style.ts` and `style-manifest.json` carry 124 semantic symbols and replace
 `token-names.json`; every authored recipe selects those symbols and no Target exposes
 `className` or `style`; no Adapter imports a vendored file and the app no longer scans that
-tree for classes. Steps 9–10 are not started, and step 9 is now cost-free for the app. No section is FROZEN and none may be: law 34
+tree for classes; the numeric spacing scale is closed and the zero is a role; arbitrary bracket
+values are refused on any prefix. What remains is the freeze question, which law 34 answers with
+evidence this ADR does not yet have: the qualification tests are written and green, and nothing
+external has run them. No section is FROZEN and none may be: law 34
 gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
 external claims retrieved once.
 
@@ -453,7 +456,14 @@ moves, the step is wrong.
                                                             tier gains its first four
                                                             tokens (the switch track)
    9  close --spacing-* once step 8 covers the reachable vendored files
+                                                            DONE: `--spacing: initial` (the
+                                                            multiplier, not a namespace);
+                                                            space.none minted for the zero
+                                                            resets it takes with it
   10  refuse arbitrary [...] design values in authored code (cost today: zero)
+                                                            DONE: any prefix, values only;
+                                                            predicate proved on upstream's
+                                                            words; zero offenders
 ```
 
 Steps 1–4 land alone and roll back by deleting the tables and assertions; nothing else
@@ -489,7 +499,7 @@ green generator cannot tell you:
 
 ```
   text-error compiles to no rule           DONE (step 5) — and border-scrim, bg-shadow-key
-  p-13 compiles to no rule                 (after step 9)
+  p-13 compiles to no rule                 DONE (step 9) — and m-0, p-0, gap-2; p-none, m-none compile
   bg-error still compiles to a rule        DONE — the check fails in both directions
 ```
 
