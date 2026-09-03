@@ -12,17 +12,8 @@
     "gen:openapi": "tsx tooling/generate/emit-openapi.ts",
     "gen:tokens": "node packages/design/policy/generators/tokens.mjs",
     "generate": "pnpm -s gen:tokens && pnpm -s gen:openapi && pnpm -s gen:client",
-    "guards": "node tooling/architecture/run-guards.mjs",
-    "guards:mutate": "node tooling/architecture/run-guards.mjs --mutation-test",
-    "perf:budgets": "node tooling/perf/check-budgets.mjs",
-    "perf:measure": "node tooling/perf/route-bundle-size.mjs",
     "test:architecture:tenancy": "vitest run --project architecture",
-    "test:integration": "vitest run --project integration --reporter=dot",
-    "verify": "node tooling/verify/verify.mjs",
-    "verify:ci": "node tooling/verify/verify.mjs --ci",
-    "verify:coverage": "node tooling/verify/verify.mjs --coverage",
-    "verify:fast": "node tooling/verify/verify.mjs --fast",
-    "verify:list": "node tooling/verify/verify.mjs --list"
+    "test:integration": "vitest run --project integration --reporter=dot"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

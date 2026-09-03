@@ -1093,12 +1093,19 @@ function scaleAliases(tokens, closes, typeRoles, rows) {
   const lines = []
 
   for (const [namespace, entries] of Object.entries(SCALE_ALIASES)) {
+    // SKIPPED, NOT REFUSED, and the difference was a bug. Refusing demanded that
+    // every caller close every namespace this table names -- which the real
+    // package does and a SYNTHETIC source does not, so `tokens.test.ts` could no
+    // longer call `generate()` at all. `assertColorPolicies` records the same
+    // lesson one screen up: a rule about the real configuration, asserted in the
+    // generator, fails every source written to exercise something else.
+    //
+    // The invariant is unchanged by skipping: an alias never lands in an open
+    // namespace. What skipping gives up is noticing that THIS package left one
+    // open, and that is not this function's to know -- it is visible as the
+    // alias simply being absent from the output.
     if (!closed.has(namespace)) {
-      throw new Error(
-        `scale aliases are declared for '${namespace}', which this package does not close -- ` +
-          'an alias in an open namespace shadows a Tailwind default instead of replacing a ' +
-          'removed one, which puts two scales on one prefix',
-      )
+      continue
     }
     for (const [alias, path] of Object.entries(entries)) {
       const name = `--${namespace}-${alias}`

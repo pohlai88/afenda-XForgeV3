@@ -12,7 +12,7 @@
     "./policy": "./policy/index.mjs",
     "./tailwind-theme.css": "./generated/tailwind-theme.css",
     "./tokens.css": "./generated/tokens.css",
-    "./tokens.json": "./tokens.json"
+    "./tokens.json": "./policy/tokens.json"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

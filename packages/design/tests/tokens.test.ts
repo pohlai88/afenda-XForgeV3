@@ -28,7 +28,7 @@ import { flatten, generate } from '../policy/generators/tokens.mjs'
 import * as policy from '../policy/index.mjs'
 
 const ROOT = join(import.meta.dirname, '../../..')
-const source = JSON.parse(readFileSync(join(ROOT, 'packages/design/tokens.json'), 'utf8'))
+const source = JSON.parse(readFileSync(join(ROOT, 'packages/design/policy/tokens.json'), 'utf8'))
 
 /**
  * A token document, typed loosely on purpose: each refusal test perturbs one
