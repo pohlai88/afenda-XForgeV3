@@ -7,9 +7,9 @@ import { TWMERGE_CLASS_GROUPS } from '../../generated/twmerge'
  *
  * INTERNAL TO THE DESIGN SYSTEM. It is not in the package's `exports` map, and
  * that absence is the decision: a screen that could import `cn` could compose
- * classes, and `no-bespoke-styling` would then be catching the symptom -- a
- * `className` attribute -- while the capability sat one import away. Components
- * style; screens compose components.
+ * classes, and the capability would sit one import away from every `className`
+ * a review would otherwise have to catch by eye. Components style; screens
+ * compose components.
  *
  * WHY twMerge AND NOT JUST clsx. Tailwind utilities collide at equal
  * specificity, so `"p-normal p-loose"` is decided by which rule the stylesheet
@@ -30,7 +30,7 @@ import { TWMERGE_CLASS_GROUPS } from '../../generated/twmerge'
  * with `text-body-compact` written in the source and absent from the rendered
  * `className`. Typecheck, lint and the class-compile test all passed, because
  * the class is real and compiles -- it simply never arrived. Nothing in this
- * repository could have reported it; the gallery is what showed it.
+ * repository could have reported it; a person looking at the rendered rail did.
  *
  * The groups are GENERATED from the token projection rather than listed here,
  * because a list would be a second home for "which roles are sizes" (law 7),
