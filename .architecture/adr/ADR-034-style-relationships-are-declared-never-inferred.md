@@ -1,12 +1,13 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **Migration steps 1–7 are built** (commits `88dceb6`,
+**Status:** Proposed · 2026-09-03 · **Migration steps 1–8 are built** (commits `88dceb6`,
 `04199cc`, `d4f31dc`, `164bc22`, and step 5 the same day): the colour and typography contracts
 exist, their refusals are tested RED-first, and per-channel colour capability is enforced by
 emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
 shims; `generated/style.ts` and `style-manifest.json` carry 124 semantic symbols and replace
 `token-names.json`; every authored recipe selects those symbols and no Target exposes
-`className` or `style`. Step 8 is in progress (Button done); steps 9–10 are not started. No section is FROZEN and none may be: law 34
+`className` or `style`; no Adapter imports a vendored file and the app no longer scans that
+tree for classes. Steps 9–10 are not started, and step 9 is now cost-free for the app. No section is FROZEN and none may be: law 34
 gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
 external claims retrieved once.
 
@@ -441,17 +442,16 @@ moves, the step is wrong.
                                                             became "no design-bearing
                                                             literal" (46 red before, 0 after)
    8  per component, move the Adapter's spacing onto role names, then @source not the
-      vendored file it wraps                                  IN PROGRESS: Button DONE --
-                                                            the Adapter owns the whole
-                                                            recipe over Base UI's Button;
-                                                            the vendored button.tsx stays
-                                                            reachable only through the
-                                                            vendored combobox.tsx, so no
-                                                            @source not yet. Remaining
-                                                            reachable: card, combobox,
-                                                            input, input-group, switch,
-                                                            textarea -- one at a time,
-                                                            with the owner's eye on each
+      vendored file it wraps                                  DONE: Button, Card, Switch,
+                                                            Combobox each sit on Base UI or
+                                                            the element and own the recipe;
+                                                            no Adapter imports a vendored
+                                                            file, the shim table is empty,
+                                                            every colour role is @utility,
+                                                            and globals.css @source-nots
+                                                            components/ui. The component
+                                                            tier gains its first four
+                                                            tokens (the switch track)
    9  close --spacing-* once step 8 covers the reachable vendored files
   10  refuse arbitrary [...] design values in authored code (cost today: zero)
 ```

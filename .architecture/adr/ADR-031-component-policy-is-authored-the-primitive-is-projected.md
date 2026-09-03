@@ -1238,6 +1238,23 @@ In this order, each its own commit, rollback `git revert`:
     label role's own size token, and Code, which carries body-compact's weight explicitly.
     The two Decision 12 rules and the replaced lexical check are recorded in Verification 5.
 
+12. **Card, Switch and Combobox own their recipes; the vendored tree is unreachable —
+    2026-09-03**, ADR-034 step 8 completed. Each Adapter now sits on Base UI or the element
+    itself: Card is a `div` with the card recipe; Switch is Base UI Root + Thumb with a track
+    sized by the component tier's first four tokens (each an alias of a semantic role, so
+    density rebinds it) and a thumb that travels by flex alignment; Combobox assembles nine
+    Base UI parts behind the same Target, with the field recipe, the popover surface at the
+    floating elevation and a highlighted option in the accent fill. Base UI's data-state
+    vocabulary selects declared roles through one table (`INTERACTION_STATES`), per
+    Decision 12. No authored file imports `#components/ui/*`; the shim table of ADR-034
+    Decision 3 is empty, and the app excludes the vendored tree from class detection. The
+    vendored files stay on disk as the reference the maintenance loop diffs against (step
+    6), and their adaptee records are unchanged. Decision 7 stands: the tree is still never
+    edited — it is now also never rendered. What changes for the beta record: exit question
+    B's "an upstream overwrite without editing a vendored file" is now trivially true, and
+    RECONCILE's real test is whether a Base UI API change reaches a Target — the same
+    question, one layer down.
+
 ## Verification
 
 Replaces the first draft's four conditions and mutation fixtures A–F, which were fixtures
