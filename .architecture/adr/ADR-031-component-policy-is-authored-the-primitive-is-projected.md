@@ -1,9 +1,10 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–2
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–5
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
-revisit triggers. §Beta, the Xforge Component Adaptation Protocol, is provisional; its
-Adapter file schema is normative and enforced; its core freezes on the beta exit questions.
+revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **core FROZEN** on four
+yeses to the exit questions (Migration step 5); TRANSLATE, the Integration Adapter class and
+the registry future remain provisional. The Adapter file schema is normative and enforced.
 Verification 1 and 5 exist, were observed RED first, and are green.
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
@@ -722,12 +723,13 @@ Decision 2's trigger. Recipe and contract are optional, so their presence is a j
 per component rather than a rule a check can enforce; the judgement is written into the
 component's header when it is made.
 
-**What this costs today.** An Adapter per component: thirteen, every one carrying the
+**What this costs today.** An Adapter per component: fifteen, every one carrying the
 provenance header. A recipe or a contract only where the component owns the decision:
 Alert owns a contract (`ALERT_TONE`); Text and Stack carry cva recipes; Button carries a
-two-row mapping table; nothing else does. Three component tests (`alert`, `button`,
-`card`), one schema check for the layer, and one JSX-runtime line in `vitest.config.ts`
-that the first component test made necessary.
+two-row mapping table; Switch and Combobox own no axis; nothing else does. Five component
+tests (`alert`, `button`, `card`, `switch`, `combobox`), one composition test in the app,
+one schema check for the layer, and one JSX-runtime line in `vitest.config.ts` that the
+first component test made necessary.
 
 **What this does NOT change.** Laws 6 and 16 (what the UI and a module may import by
 content), ADR-033 (how anything is imported), the token kernel and its generator (law 27).
@@ -780,8 +782,53 @@ In this order, each its own commit, rollback `git revert`:
      vocabulary; the three deleted guards replaced by the two tests and the manifest
      null-block that hold the boundary now; no gate, so the authorship loop is named.
    - ADR-029:45 — annotated as no longer true, superseded by ADR-031 Decision 1.
-5. The beta slice: Switch, Combobox, one studio block, through the protocol (Card is
-   already through it, as the Tier-1 case).
+5. **The beta slice — DONE 2026-09-03.** Four cases through ACQUIRE → DIGEST → NORMALIZE →
+   ADAPT → PROVE, and the four exit questions answered.
+
+   - **Card** (Primitive, Tier 1) — step 2 above.
+   - **Switch** (Primitive with behaviour) — `src/components/switch.tsx`. NORMALIZE adopted
+     Base UI's own words for a switch, one by one (`checked`, `defaultChecked`,
+     `onCheckedChange`, `disabled`, `readOnly`, `required`, `name`, `value`) in an
+     Xforge-owned interface; did NOT adopt upstream's `size` axis or `className`; narrowed
+     `onCheckedChange` to the boolean. PROVE: role, `aria-checked` and Base UI's
+     `data-checked`/`data-unchecked`/`data-disabled` reach the DOM, controlled and
+     uncontrolled; five cases; mutation (props no longer spread) → four red.
+   - **Combobox** (Compound) — `src/components/combobox.tsx`. Six of upstream's sixteen parts
+     assembled once behind `options` + `value` (a string id, mapped both ways) +
+     `onValueChange` + `placeholder` + `disabled` + `emptyMessage` + a label. Chips, groups,
+     separators, multiple selection and custom filters not adopted. PROVE: one input with
+     `role="combobox"`, closed, placeholder and label present, options absent while closed,
+     selected id resolves to its label; four cases; mutations: placeholder dropped → red;
+     `disabled` dropped from the input → still green, because Base UI propagates the
+     root's, so the duplicate was deleted and `disabled` dropped from the root → red.
+   - **A studio block** (INSPIRE composition) — `apps/web/tests/metric-row.composition.test.tsx`.
+     ACQUIRE: shadcn-studio `statistics-component`, fetched as data. DIGEST: six variants of
+     one recipe (a grid of 4–6 cards, a value, a label, a comparison in words; thin
+     accessibility). NORMALIZE kept the idea — a number never shown without its baseline —
+     and recorded two gaps the system has no word for: a display-size type role, and a
+     trend tone on Text. Neither was invented (Decision 4). ADAPT: none; it is a
+     composition of `Card`, `Stack`, `Heading`, `Text`, defined in the test because no
+     screen has asked for it, and it moves beside the first screen that does. PROVE: one
+     labelled region, a real heading, one tile per metric, every value with its baseline,
+     and the composition's own source read back: no `className`, no `#components/ui`, no
+     studio import, every Xforge import a public component entry.
+
+   **Exit questions.**
+   - **A — one method, no special-case architecture?** YES. Three adapters and a
+     composition, no new mechanism; the only infrastructure change in the whole beta was
+     one JSX-runtime line in `vitest.config.ts`, needed by the first component test.
+   - **B — an upstream overwrite without editing a vendored file?** YES. No file under
+     `src/components/ui/` changed during the slice, and the refresh loop was exercised
+     earlier the same day when all 59 primitives were re-fetched with `--overwrite` while
+     the authored layer stayed green.
+   - **C — any adaptee vocabulary leaking through a public Target?** NO. `adapter-schema.test.ts`
+     is green over fifteen authored files; Switch's adopted words are Base UI's by explicit
+     decision, listed one by one, not inherited.
+   - **D — does the studio block reduce to Xforge primitives and compositions without an
+     adapter subsystem?** YES, with two vocabulary gaps recorded and nothing invented.
+
+   Four yeses freeze the core. **TRANSLATE, the Integration Adapter class and the registry
+   future stay provisional** — none was exercised.
 
 ## Verification
 
@@ -804,8 +851,8 @@ for machinery that is not built and are rejected with it.
    Verification 5's fifth rule.
 3. **The five e2e assertions stay untouched.** They are the DOM half; Verification 1 is
    the table half; agreement between them is the property, and it holds on this tree.
-4. **Beta exit questions A–D** are the protocol's verification and are future work; C is
-   now "yes" for Card.
+4. **Beta exit questions A–D** — answered 2026-09-03 in Migration step 5: yes, yes, no
+   leak, yes. The core of §Beta is frozen on that record.
 5. **`packages/design/tests/adapter-schema.test.ts`** — the Adapter file schema, the parts
    a check can see: no `export * from '#components/ui/…'`; no exported type built on
    `typeof <adaptee import>`; a file imports `#components/ui/<x>` only if it is `<x>`'s
