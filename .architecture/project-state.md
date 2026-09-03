@@ -375,7 +375,8 @@ seventeen contracts and none of the six still to come.
 
   live-region     the component exposes the intended role AND politeness. Role
                   alone is what 4C.2 already asserts; the polite/assertive split
-                  is a separate fact and is currently asserted nowhere.
+                  is a separate fact and is currently asserted nowhere
+                  -> ADR-031 Verification 1 (the tone table beside Alert).
 
   modal           the conformance harness is the authority. Not duplicated here.
 ```

@@ -314,8 +314,8 @@ boundary:
    offer: authored components (heading, stack, text, page, list, list-item,
    code, status, empty-state, resource-boundary, and the `tone`-based Alert),
    plus one-line facades (`button.tsx`, `card.tsx`) over the primitives the
-   application uses today — ADR-031's hand-authored control case, and the
-   place its projections land.
+   application uses today — ADR-031's authored layer: each file is the Adapter
+   over its primitive.
 
 3. **No `tsconfig` `paths` entry resolves workspace code — in ANY tsconfig,
    root or package.** `4ee9b16` established this for `@xforge/*`; it applies
