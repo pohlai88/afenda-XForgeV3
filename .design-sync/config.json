@@ -1,0 +1,37 @@
+{
+  "projectId": "b110589d-73b6-442e-a709-747e11b110bc",
+  "shape": "package",
+  "pkg": "@xforge/design",
+  "globalName": "XforgeDesign",
+  "cssEntry": "./utilities.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "tokensGlob": "../../packages/design/generated/*.css",
+  "extraFonts": [
+    "../../.ds-sync/node_modules/@fontsource/ibm-plex-sans/latin-400.css",
+    "../../.ds-sync/node_modules/@fontsource/ibm-plex-sans/latin-500.css",
+    "../../.ds-sync/node_modules/@fontsource/ibm-plex-sans/latin-600.css",
+    "../../.ds-sync/node_modules/@fontsource/ibm-plex-mono/latin-400.css"
+  ],
+  "componentSrcMap": {
+    "Alert": "../../packages/design/src/components/alert.tsx",
+    "Button": "../../packages/design/src/components/button.tsx",
+    "Card": "../../packages/design/src/components/card.tsx",
+    "Code": "../../packages/design/src/components/code.tsx",
+    "Combobox": "../../packages/design/src/components/combobox.tsx",
+    "EmptyState": "../../packages/design/src/components/empty-state.tsx",
+    "Heading": "../../packages/design/src/components/heading.tsx",
+    "List": "../../packages/design/src/components/list.tsx",
+    "ListItem": "../../packages/design/src/components/list-item.tsx",
+    "Page": "../../packages/design/src/components/page.tsx",
+    "ResourceBoundary": "../../packages/design/src/components/resource-boundary.tsx",
+    "Stack": "../../packages/design/src/components/stack.tsx",
+    "Status": "../../packages/design/src/components/status.tsx",
+    "Switch": "../../packages/design/src/components/switch.tsx",
+    "Text": "../../packages/design/src/components/text.tsx"
+  },
+  "srcDir": "../../packages/design/src/components",
+  "dtsPropsFor": {
+    "Combobox": "'aria-label'?: string;\n  'aria-labelledby'?: string;\n  disabled?: boolean;\n  emptyMessage?: string;\n  id?: string;\n  name?: string;\n  /** Receives the selected option's `value` id, or null when cleared. */\n  onValueChange?: (value: string | null) => void;\n  options: readonly { readonly label: string; readonly value: string }[];\n  placeholder?: string;\n  /** undefined is uncontrolled, null is controlled-empty, a string must match an option's value. */\n  value?: string | null;",
+    "Switch": "id?: string;\n  'aria-label'?: string;\n  'aria-labelledby'?: string;\n  'aria-describedby'?: string;\n  checked?: boolean;\n  defaultChecked?: boolean;\n  disabled?: boolean;\n  name?: string;\n  onCheckedChange?: (checked: boolean) => void;\n  readOnly?: boolean;\n  required?: boolean;\n  value?: string;"
+  }
+}
