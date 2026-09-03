@@ -172,7 +172,18 @@ function importsInSource(): { file: string; specifier: string }[] {
   const { files } = trackedFiles()
   const out: { file: string; specifier: string }[] = []
   for (const file of files) {
-    if (!/\.(?:ts|tsx|mjs|js|css)$/.test(file) || file.startsWith('.agents/')) {
+    // `.design-sync/previews/*` import `@xforge/design`, the ROOT specifier ADR-033 leaves
+    // undeclared. They are not application code: the Claude Design converter compiles them
+    // against its own entry package (`.ds-sync/pkg`, gitignored), whose index restates the
+    // fifteen authored components under that name. tsc does not include them either. So
+    // they are outside this check's universe by the same reasoning as `.agents/` -- which
+    // says nothing about whether the sync's entry package agrees with the manifest; that
+    // copy is held by nothing here and NOTES.md says so.
+    if (
+      !/\.(?:ts|tsx|mjs|js|css)$/.test(file) ||
+      file.startsWith('.agents/') ||
+      file.startsWith('.design-sync/')
+    ) {
       continue
     }
     const source = readFileSync(join(ROOT, file), 'utf8')
