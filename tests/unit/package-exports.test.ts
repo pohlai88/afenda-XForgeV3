@@ -234,6 +234,11 @@ describe('workspace entry points (ADR-033)', () => {
         expect(targetExists(manifest.dir, t), `${manifest.name} "${key}" -> ${t}`).toBe(true)
       }
     },
+    // The existence check globs the filesystem; under I/O contention -- a dev server
+    // compiling, a Playwright run, a Storybook build -- the default 5s budget blew four
+    // times on 2026-09-04 with nothing wrong, and the case passed alone every time. A
+    // longer budget weakens nothing this case asserts.
+    30_000,
   )
 
   it('every @xforge/… import names a declared export of a workspace package', () => {
