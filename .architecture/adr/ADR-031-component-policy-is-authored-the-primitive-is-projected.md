@@ -5,9 +5,10 @@ landed the same day against the tree as measured. Decision 9 (generation) REJECT
 revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
 — the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
 Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. **The
-maintenance loop is NOT frozen**: no upstream change has arrived since an Adapter existed,
-so RECONCILE has never run. TRANSLATE, the Integration Adapter class and the registry future
-remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5 and
+maintenance loop ran once** (Migration step 6): PREVIEW, ASSESS and REFRESH are proved and
+frozen with the core; **RECONCILE is proved only in its null form** — no upstream change has
+reached an Adapter — and stays provisional. TRANSLATE, the Integration Adapter class and the
+registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5 and
 6 exist, were observed RED first, and were green on the author's run; behaviour survival for
 Switch and Combobox is proved in Chromium (Verification 6).
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
@@ -286,12 +287,15 @@ was nothing to normalise, and RECIPE and CONTRACT — sections 1 and 2 of the sc
 exercised only by Alert and Button, outside the slice. The cost is measured by the first
 adapter that owns an axis a screen asked for.
 
-**That the maintenance loop works.** PREVIEW → ASSESS → REFRESH → RECONCILE → PROVE has
-never run: the one `--overwrite` of the day (commit `bfbdc88`) predates the protocol, used
-no `shadcn view` or `--diff`, and landed on two `export *` facades that could not have gone
-red. Exit question B is "yes" for the half that says no vendored file is edited, and
-untested for the half that reconciles. The loop stays provisional until an upstream change
-arrives and is reconciled above the file.
+**That the maintenance loop reconciles a change that reaches an Adapter.** The loop has now
+run once end to end (Migration step 6): PREVIEW and ASSESS found no upstream content change
+since the morning's refresh, two items removed upstream, and a formatting drift in the
+vendored tree itself; REFRESH landed verbatim bytes and the two deletions; RECONCILE found
+nothing above the file to change; PROVE was green. What it did NOT exercise is the case the
+loop exists for — an upstream change to a primitive's API or DOM that an Adapter must absorb
+— because none has arrived. PREVIEW, ASSESS and REFRESH are proved by this run; RECONCILE is
+proved only in its null form and stays provisional until an upstream change reaches an
+Adapter's Target or a test.
 
 **That the axis vocabulary survives sixty components.** Thirteen are written. Hence the
 no-speculative-axis rule and the lifting rule in Decision 4.
@@ -390,7 +394,12 @@ four parts are decided differently:
    directly" — and the reason is local and observed: a hand-fix is reverted by the next
    `shadcn add --overwrite` without a report (`empty.tsx`, `tracking-tight`). A decision
    that differs from upstream is made in the Adapter above the file, never in the file.
-   No AST rewriting of upstream files.
+   No AST rewriting of upstream files — **and no formatting of them either.** The tree
+   holds the registry's bytes verbatim, double quotes and all, because the first
+   maintenance run (Migration step 6) found every one of 59 files "changed" when nothing
+   upstream had moved: the repository's fix hook had restyled the morning's copies before
+   the Biome exclusion took effect, and a PREVIEW that compares restyled bytes against
+   fetched bytes is noise. Verbatim is what makes `cmp` a PREVIEW.
 
 8. **Application code imports `@xforge/design/components/<name>` only.** The transitional
    clause of the first draft is closed by ADR-033: `./components/ui/*` is `null` in the
@@ -871,10 +880,38 @@ In this order, each its own commit, rollback `git revert`:
 
    Three clean yeses and one half: the **creation core** is frozen — five stages,
    No-Leakage, Adapter-versus-Composition, Primitive and Compound, ADOPT and INSPIRE.
-   **The maintenance loop stays provisional** (B's untested half), and so do TRANSLATE,
-   the Integration Adapter class and the registry future — none was exercised. Behaviour
-   survival for Switch and Combobox, owed at the time of the review, is proved in Chromium
-   (Verification 6).
+   **The maintenance loop stays provisional** (B's untested half at the time; see step 6
+   for the run that followed), and so do TRANSLATE, the Integration Adapter class and the
+   registry future — none was exercised. Behaviour survival for Switch and Combobox, owed
+   at the time of the review, is proved in Chromium (Verification 6).
+
+6. **The maintenance loop, run once — 2026-09-03.** Against the whole vendored tree, on
+   the same day it was refreshed.
+   - **PREVIEW.** `shadcn diff` in the scratch project: "No updates found." A fresh
+     `add --overwrite` of the 59 into scratch and `cmp` against the tree: **59 of 59
+     differ**. The two signals disagreed, so ASSESS had to say which was right.
+   - **ASSESS.** Normalised through the repository's own fix command
+     (`biome check --write --skip=correctness/noUnusedImports`), the fresh bytes match the
+     tree **59 of 59**: zero upstream content change. The tree was not the registry's bytes
+     — the `pnpm run fix` PostToolUse hook had restyled the morning's copies before the
+     Biome `!!` exclusion took effect (today the same command touches nothing under
+     `ui/`, measured). Two files in the tree no longer exist in the registry:
+     `toast.tsx` (upstream moved to sonner) and `questionnaire.tsx`; nothing imports
+     either. Seven-dimension inventory: no anatomy, behaviour, state, axis, style, a11y
+     or dependency change anywhere.
+   - **REFRESH.** The 59 landed as verbatim registry bytes (Decision 7, amended), and the
+     two removed items were deleted. 61 → 59 files under `ui/`.
+   - **RECONCILE.** Five authored files sit above refreshed primitives — `button`,
+     `card`, `switch`, `combobox`, `resource-boundary` (through Button). No Target, no
+     test, no header needed to change. A null reconcile, and recorded as one.
+   - **PROVE.** Unit, browser, `adapter-schema`, `package-exports`, `design-system-classes`,
+     tsc and Biome, all green on the author's run.
+
+   **What this run proved:** PREVIEW, ASSESS and REFRESH, and that the loop's first signal
+   must be the CLI's `diff`, not a byte compare against a restyled tree. **What it did not
+   prove:** RECONCILE against an upstream change that reaches an Adapter, because none has
+   arrived. That step stays provisional; the rest of the loop is frozen with the creation
+   core.
 
 ## Verification
 
