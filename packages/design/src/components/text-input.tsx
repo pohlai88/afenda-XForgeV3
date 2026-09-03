@@ -51,23 +51,20 @@ import type { NativeProps } from '#lib/props'
  * is the WCAG 2.5.8 target floor, the control padding, and `field.placeholder` — a symbol
  * that has been in the manifest since before any field existed, waiting for this.
  *
- * ONE STATE HAS NO STYLE, AND WHAT IS MISSING HAS NARROWED. An invalid input still draws
- * exactly like a valid one -- measured in Chromium, the border is rgb(111, 123, 133)
- * either way. The COLOUR now exists: `20507f7` added `STYLE.error.default.border`
- * (`border-error`) as part of the accent kind, with a measured 7.3:1 edge against the page.
- * What does not exist is a STATE-PREFIXED form of it. `interaction.checked.border` is
- * `data-checked:not-data-disabled:border-primary`; the sibling `interaction.invalid.border`
- * -- `data-invalid:border-error` -- has no entry, and the adaptee publishes exactly the
- * attribute it would key on: this control carries `data-invalid` when the Field is invalid
- * and not otherwise, verified in the browser.
+ * THE INVALID CUE, AND WHY IT ARRIVED AS A SYMBOL RATHER THAN A CLASS. An invalid input
+ * used to draw exactly like a valid one -- measured in Chromium, the border was
+ * rgb(111, 123, 133) either way -- because the manifest had the error COLOUR
+ * (`error.default.border`) and no state-prefixed form of it. Hand-typing
+ * `data-invalid:border-error` here is what `design-system-classes.test.ts` refuses, and
+ * correctly: `border-error` resolves through the closed `--color-*` namespace, and a
+ * component selects style rather than defining it (ADR-034; ADR-031 Decision 12).
  *
- * So the border is one symbol away, and hand-typing `data-invalid:border-error` here is
- * precisely what `design-system-classes.test.ts` refuses -- correctly, because `border-error`
- * resolves through the closed `--color-*` namespace and a component may not mint into it
- * (ADR-034; ADR-031 Decision 12 — components SELECT style, they do not DEFINE it).
- * Requested rather than worked around. Until then invalidity reaches the reader as
- * `aria-invalid` and as the error MESSAGE the Field renders in words, which is where rule 7
- * wanted it anyway; the redundant VISUAL cue is the part still owed.
+ * So it was requested, with the measurement, instead of worked around, and
+ * `interaction.invalid.border` now exists as the sibling of `interaction.checked.border`.
+ * The `not-data-disabled` half of it is the argument for the whole approach: a disabled
+ * invalid field must not shout, and deciding that is the style plane's job, not this
+ * file's. The gap being recorded in a comment for a few hours is what made it a request
+ * somebody could act on rather than a defect nobody could see.
  */
 
 /** Section 3 — the Target. Each adopted word is listed; nothing arrives by inheritance. */
@@ -103,6 +100,13 @@ export function TextInput({ onValueChange, type = 'text', ...props }: TextInputP
         STYLE.shape.control,
         STYLE.stroke.width,
         STYLE.outline.default.border,
+        // The redundant VISUAL cue, arriving after the border was recorded as owed:
+        // `data-invalid:not-data-disabled:border-error`. It keys off the attribute the
+        // adaptee already publishes -- this control carries `data-invalid` exactly when
+        // its Field is invalid -- and the `not-data-disabled` half is the reason it is a
+        // symbol rather than something a component composes: a disabled invalid field
+        // must not shout, and that judgement belongs to the style plane.
+        STYLE.interaction.invalid.border,
         STYLE.surface.lowest.background,
         STYLE.ink.onSurface.text,
         STYLE.typography.body,

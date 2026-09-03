@@ -19,16 +19,21 @@
  * their memberships, and says so. An employee is not a tenancy concept, and
  * folding it in would make one definition own unrelated concerns.
  *
- * NOT A SEEDED ROW, TODAY. There is no employee table -- the schema holds
- * emergency_contact, tenant, tenant_domain and tenant_membership and nothing
- * else -- so `seedTenancy` inserts nothing for this id and
- * `emergency_contact.employee_id` carries no foreign key. This is an identity
- * that requests are addressed to, and it is legal against today's schema rather
- * than slipping past a weakened one.
+ * NOT A SEEDED ROW, STILL. The employee table exists now: 0004_hr_core.sql
+ * creates legal_entity, person, employee and employment (law 14's spine, with
+ * composite tenant-scoped keys). Nothing seeds a row under this id -- no fixture
+ * inserts into person or employee -- and `emergency_contact.employee_id` still
+ * references nothing, because the migration deferred that key on purpose:
+ * adding it would reject every row the fixtures insert and take the tenancy
+ * attack suite (T01, T03, T07) and two integration files down with it. So this
+ * is an identity requests are addressed to, legal against today's schema by
+ * the absence of one constraint that is named, in the migration, as the next
+ * step.
  *
- * It becomes illegal the day law 14's person -> employee -> employment lands
- * with its foreign key, and on that day this is the one place that has to grow
- * a real seeded row. That is the point of it being one place: the change will
- * arrive in a phase where nobody is thinking about fixtures.
+ * When that key lands, this is the one place that has to grow a real seeded
+ * row: a legal_entity, a person, an employee under this id, inserted where
+ * `seedTenancy` seeds the tenants, by someone who can run the database-backed
+ * projects and watch them go green. That is the point of it being one place;
+ * the day it is needed, nobody will be thinking about fixtures.
  */
 export const EMPLOYEE = '33333333-3333-4333-8333-333333333333'

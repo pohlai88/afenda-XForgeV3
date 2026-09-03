@@ -91,6 +91,13 @@ export function DateInput({ onValueChange, ...props }: DateInputProps) {
         STYLE.shape.control,
         STYLE.stroke.width,
         STYLE.outline.default.border,
+        // The redundant VISUAL cue, arriving after the border was recorded as owed:
+        // `data-invalid:not-data-disabled:border-error`. It keys off the attribute the
+        // adaptee already publishes -- this control carries `data-invalid` exactly when
+        // its Field is invalid -- and the `not-data-disabled` half is the reason it is a
+        // symbol rather than something a component composes: a disabled invalid field
+        // must not shout, and that judgement belongs to the style plane.
+        STYLE.interaction.invalid.border,
         STYLE.surface.lowest.background,
         STYLE.ink.onSurface.text,
         STYLE.typography.body,

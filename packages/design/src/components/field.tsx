@@ -61,14 +61,12 @@ import type { NativeProps } from '#lib/props'
  * the component shows what it was told.
  *
  * -------------------------------------------------------------------------------------
- * NO STYLE ON THE INVALID STATE, DELIBERATELY
+ * THE INVALID STATE, NOW THAT IT HAS A SYMBOL
  * -------------------------------------------------------------------------------------
  * The error text takes `error.container.foreground`, which is the only error ink measured
- * against the page. The CONTROL still does not change. `STYLE.error.default.border` exists
- * as of `20507f7`, but only in its bare form; the state-prefixed
- * `interaction.invalid.border` that would key off the `data-invalid` this component already
- * sets on its control does not, and a component may not mint one. `text-input.tsx` carries
- * the measurement and the request.
+ * against the page, and the CONTROL now takes `interaction.invalid.border` off the
+ * `data-invalid` this component sets on it. Both are selections; neither was minted here.
+ * `text-input.tsx` carries the measurement that got the symbol built.
  */
 
 /**

@@ -629,6 +629,13 @@ weakened one. It becomes illegal the day an employee table and its foreign key
 land, and the fixture will then need to seed a real employee. Recorded because
 that failure will arrive in a phase where nobody is thinking about a UI harness.
 
+*Corrected 2026-09-04.* The employee table landed that day in `0004_hr_core.sql`
+(legal_entity, person, employee, employment). The foreign key did not: the
+migration defers it by name, because adding it would reject every fixture row
+and take T01, T03, T07 and two integration files down. The fixture's own comment
+now says so. The seeded row is owed the day the key lands, by whoever runs the
+database-backed projects.
+
 ### A named rule, after paying for it three times
 
 > **Do not assert on an instantaneous value when the property is about a settled
