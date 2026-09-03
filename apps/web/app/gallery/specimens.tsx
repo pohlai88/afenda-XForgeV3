@@ -4,11 +4,12 @@ import { Card } from '@xforge/design/components/card'
 import { Code } from '@xforge/design/components/code'
 import { Combobox } from '@xforge/design/components/combobox'
 import { EmptyState } from '@xforge/design/components/empty-state'
+import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
 import { List } from '@xforge/design/components/list'
 import { ListItem } from '@xforge/design/components/list-item'
-import { Page } from '@xforge/design/components/page'
 import { ResourceBoundary } from '@xforge/design/components/resource-boundary'
+import { Specimen } from '@xforge/design/components/specimen'
 import { Stack } from '@xforge/design/components/stack'
 import { Status } from '@xforge/design/components/status'
 import { Switch } from '@xforge/design/components/switch'
@@ -33,15 +34,25 @@ import type { ReactNode } from 'react'
  * Nothing in this file writes a class. The components' props do not admit one.
  */
 
-export interface Specimen {
+export interface State {
   readonly name: string
   readonly node: ReactNode
 }
 
 export interface Group {
+  /** How many frames sit side by side; wide states (a field, a list) take fewer. */
+  readonly columns?: 1 | 2 | 3 | 4
   /** The component's file name under `packages/design/src/components/`, without `.tsx`. */
   readonly component: string
-  readonly states: readonly Specimen[]
+  readonly states: readonly State[]
+}
+
+/**
+ * Authored components the gallery does not frame, each with the reason. The test holds
+ * the groups equal to the authored files less exactly these.
+ */
+export const NOT_SHOWN: Readonly<Record<string, string>> = {
+  page: 'the gallery renders on the Page the root layout provides; a Page inside a frame is a viewport-tall empty ground',
 }
 
 const RELATIONSHIPS = [
@@ -96,6 +107,7 @@ export const GALLERY: readonly Group[] = [
     ],
   },
   {
+    columns: 3,
     component: 'button',
     states: [
       {
@@ -266,6 +278,56 @@ export const GALLERY: readonly Group[] = [
     ],
   },
   {
+    columns: 1,
+    component: 'grid',
+    states: [
+      {
+        name: 'Three columns of tiles, normal gap',
+        node: (
+          <Grid columns={3}>
+            <Card>
+              <Text tone="muted" variant="label">
+                Malaysia
+              </Text>
+              <Text variant="display">642</Text>
+            </Card>
+            <Card>
+              <Text tone="muted" variant="label">
+                Singapore
+              </Text>
+              <Text variant="display">411</Text>
+            </Card>
+            <Card>
+              <Text tone="muted" variant="label">
+                Jakarta
+              </Text>
+              <Text variant="display">231</Text>
+            </Card>
+          </Grid>
+        ),
+      },
+      {
+        name: 'Two columns, tight gap',
+        node: (
+          <Grid columns={2} gap="tight">
+            <Card>
+              <Text>one</Text>
+            </Card>
+            <Card>
+              <Text>two</Text>
+            </Card>
+            <Card>
+              <Text>three</Text>
+            </Card>
+            <Card>
+              <Text>four</Text>
+            </Card>
+          </Grid>
+        ),
+      },
+    ],
+  },
+  {
     component: 'heading',
     states: [
       {
@@ -344,29 +406,7 @@ export const GALLERY: readonly Group[] = [
     ],
   },
   {
-    component: 'page',
-    states: [
-      {
-        name: 'The ground and a card on it: two surfaces',
-        node: (
-          <Page>
-            <Stack gap="normal">
-              <Text tone="muted">This paragraph sits directly on the page.</Text>
-              <Card>
-                <Stack gap="tight">
-                  <Text variant="emphasis">And this one sits on a card</Text>
-                  <Text tone="muted">
-                    The card is the lighter surface; the page is the ground behind it.
-                  </Text>
-                </Stack>
-              </Card>
-            </Stack>
-          </Page>
-        ),
-      },
-    ],
-  },
-  {
+    columns: 1,
     component: 'resource-boundary',
     states: [
       {
@@ -380,6 +420,20 @@ export const GALLERY: readonly Group[] = [
               </Stack>
             </Card>
           </ResourceBoundary>
+        ),
+      },
+    ],
+  },
+  {
+    columns: 1,
+    component: 'specimen',
+    states: [
+      {
+        name: 'A frame: caption, the state on the page ground, a footnote',
+        node: (
+          <Specimen footer={<Code>action.primary.background</Code>} label="Primary button">
+            <Button>Save</Button>
+          </Specimen>
         ),
       },
     ],
@@ -419,6 +473,7 @@ export const GALLERY: readonly Group[] = [
     ],
   },
   {
+    columns: 1,
     component: 'status',
     states: [
       {
@@ -428,6 +483,7 @@ export const GALLERY: readonly Group[] = [
     ],
   },
   {
+    columns: 1,
     component: 'switch',
     states: [
       {

@@ -16,6 +16,7 @@
     "./components/*": "./src/components/*.tsx",
     "./components/ui/*": null,
     "./policy": "./policy/index.mjs",
+    "./style-manifest.json": "./generated/style-manifest.json",
     "./tailwind-theme.css": "./generated/tailwind-theme.css",
     "./tokens.css": "./generated/tokens.css",
     "./tokens.json": "./policy/tokens.json"

@@ -1,8 +1,10 @@
 import { Card } from '@xforge/design/components/card'
+import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
+import { Framed } from './framed'
 import { Modes } from './modes'
 import { GALLERY } from './specimens'
 
@@ -21,7 +23,8 @@ import { GALLERY } from './specimens'
  *
  * It composes the design package and nothing else, and writes no class: the
  * components' props do not admit one, which is Decision 12 of ADR-031 as a type rather
- * than a rule.
+ * than a rule. When the gallery needed a word the language lacked -- a grid, a frame --
+ * the word was added to the language, not to this file.
  */
 export const metadata = { title: 'Gallery — Xforge' }
 
@@ -35,7 +38,7 @@ export default function GalleryPage() {
         <Heading level={1}>Gallery</Heading>
         <Text tone="muted">
           Every authored component, in every word it owns, against the stylesheet the application
-          builds. Development only.
+          builds. Beneath each frame: the STYLE symbols the state actually drew. Development only.
         </Text>
       </Stack>
       <Modes />
@@ -45,14 +48,13 @@ export default function GalleryPage() {
             <Heading id={`gallery-${group.component}`} level={2}>
               {group.component}
             </Heading>
-            {group.states.map((state) => (
-              <Stack gap="tight" key={state.name}>
-                <Text tone="muted" variant="label">
-                  {state.name}
-                </Text>
-                {state.node}
-              </Stack>
-            ))}
+            <Grid columns={group.columns}>
+              {group.states.map((state) => (
+                <Framed key={state.name} label={state.name}>
+                  {state.node}
+                </Framed>
+              ))}
+            </Grid>
           </Stack>
         </Card>
       ))}

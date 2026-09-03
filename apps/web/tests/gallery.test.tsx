@@ -2,9 +2,10 @@
  * The gallery is a check that can fail, or it is decoration.
  *
  * Three things it must hold, each derived from the tree rather than restated here:
- *   - its groups ARE the authored components: the two sets equal, both directions
+ *   - its groups ARE the authored components: the two sets equal, both directions, less
+ *     the ones it names as not shown, each with a reason
  *   - every word a component exports is on the page: each Alert tone, each Button
- *     variant, each Heading level, each component's slot
+ *     variant, each Heading level, each component's slot; and every state is framed
  *   - the modes it offers are the selectors `tokens.css` rebinds under; a mode the
  *     stylesheet does not know would flip a switch and change nothing
  * And the shape the page must keep: it composes `@xforge/design/components/*` and writes
@@ -20,7 +21,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DENSITIES, THEMES } from '../app/gallery/modes'
 import GalleryPage from '../app/gallery/page'
-import { GALLERY } from '../app/gallery/specimens'
+import { GALLERY, NOT_SHOWN } from '../app/gallery/specimens'
 
 const ROOT = join(import.meta.dirname, '../../..')
 const COMPONENTS = join(ROOT, 'packages/design/src/components')
@@ -31,6 +32,8 @@ const authored = readdirSync(COMPONENTS)
   .map((f) => f.slice(0, -'.tsx'.length))
   .sort()
 
+const shown = authored.filter((name) => !(name in NOT_SHOWN))
+
 describe('the gallery shows every authored component', () => {
   it('has a population', () => {
     expect(authored.length).toBeGreaterThan(10)
@@ -38,7 +41,14 @@ describe('the gallery shows every authored component', () => {
 
   it('one group per component file, and no group without a file', () => {
     const groups = GALLERY.map((g) => g.component).sort()
-    expect(groups).toEqual(authored)
+    expect(groups).toEqual(shown)
+  })
+
+  it('a component not shown is an authored file, and carries a reason', () => {
+    for (const [name, reason] of Object.entries(NOT_SHOWN)) {
+      expect(authored, name).toContain(name)
+      expect(reason.length, name).toBeGreaterThan(20)
+    }
   })
 
   it('every group has states with distinct names', () => {
@@ -71,14 +81,21 @@ describe('the rendered page carries every word', () => {
     }
   })
 
-  it("every component's own slot", () => {
-    for (const name of authored) {
+  it("every shown component's own slot", () => {
+    for (const name of shown) {
       const source = readFileSync(join(COMPONENTS, `${name}.tsx`), 'utf8')
       const slot = /data-slot="([a-z-]+)"/.exec(source)?.[1]
       if (slot) {
         expect(html, name).toContain(`data-slot="${slot}"`)
       }
     }
+  })
+
+  it('every state sits in a frame, inside a grid', () => {
+    const states = GALLERY.reduce((n, g) => n + g.states.length, 0)
+    const frames = html.match(/data-slot="specimen"/g)?.length ?? 0
+    expect(frames).toBeGreaterThanOrEqual(states)
+    expect(html.match(/data-slot="grid"/g)?.length ?? 0).toBeGreaterThanOrEqual(GALLERY.length)
   })
 })
 
@@ -117,8 +134,9 @@ describe('the gallery keeps its shape', () => {
     }
   })
 
-  it('imports the design package through its components, and nothing else of it', () => {
-    const allowed = /^(@xforge\/design\/components\/[a-z-]+|react|next\/navigation|\.\/[a-z-]+)$/
+  it('imports the design package through its components and its manifest, nothing else of it', () => {
+    const allowed =
+      /^(@xforge\/design\/components\/[a-z-]+|@xforge\/design\/style-manifest\.json|react|next\/navigation|\.\/[a-z-]+)$/
     for (const file of files) {
       const source = readFileSync(join(GALLERY_DIR, file), 'utf8')
       const specifiers = [...source.matchAll(/from '([^']+)'/g)].map((m) => m[1] ?? '')
