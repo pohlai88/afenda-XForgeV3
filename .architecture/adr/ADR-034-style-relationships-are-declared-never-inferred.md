@@ -1,9 +1,10 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **Migration steps 1–4 are built** (commits `88dceb6`,
-`04199cc`, `d4f31dc`, `164bc22`): the colour and typography contracts exist, their refusals
-are tested RED-first, and `generated/` moved only where step 3 minted a token. Steps 5–10,
-which change generated output, are not started. No section is FROZEN and none may be: law 34
+**Status:** Proposed · 2026-09-03 · **Migration steps 1–5 are built** (commits `88dceb6`,
+`04199cc`, `d4f31dc`, `164bc22`, and step 5 the same day): the colour and typography contracts
+exist, their refusals are tested RED-first, and per-channel colour capability is enforced by
+emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
+shims. Steps 6–10 are not started. No section is FROZEN and none may be: law 34
 gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
 external claims retrieved once.
 
@@ -413,6 +414,12 @@ moves, the step is wrong.
                                                             measurement it exposed
    5  declare css capabilities per role; emit narrow roles as @utility; withdraw them
       from --color-*                                     (generated output CHANGES here)
+                                                            DONE: channels per KIND, not per
+                                                            role; COLOR_CHANNEL_SHIMS keeps a
+                                                            role whole while a reachable
+                                                            vendored file still needs it, and
+                                                            a test holds every shim to that
+                                                            file. 40 utilities, 8 namespaced
    6  emit style-manifest.json and style.ts from the same generate(); delete
       token-names.json in the same commit
    7  move authored recipes onto STYLE.* symbols, replacing the lexical class check in
@@ -438,7 +445,11 @@ the table that satisfies it is written:
   a token whose name carries a companion suffix but is undeclared              WRITTEN, red first
   a typography role omitting any of its five fields                 WRITTEN, red first (d4f31dc)
   a typography token no role names and no shim lists                WRITTEN, red first (d4f31dc)
-  a role used through a CSS channel its capability set refuses                 step 5, unwritten
+  a role used through a CSS channel its capability set refuses    WRITTEN, red first (step 5):
+                                                                    text-error and
+                                                                    bg-error-foreground compile
+                                                                    to nothing, bg-error and
+                                                                    text-error-foreground do
 ```
 
 Two more landed with step 4 because the work exposed them: a shim a role also names is
@@ -451,11 +462,13 @@ Closure and emission, once step 5 lands — the check that a closed namespace is
 green generator cannot tell you:
 
 ```
-  text-scrim compiles to no rule           (compile test, existing mechanism)
+  text-error compiles to no rule           DONE (step 5) — and border-scrim, bg-shadow-key
   p-13 compiles to no rule                 (after step 9)
-  bg-scrim still compiles to a rule        — the check must fail in both directions, or
-                                             it only proves CSS is missing
+  bg-error still compiles to a rule        DONE — the check fails in both directions
 ```
+
+Scrim itself has no channel today: `compositing` declares none, and no authored or reachable
+file paints with it. The first overlay Adapter declares `bg` for it in NORMALIZE, not before.
 
 Determinism (laws 27 and 33) and the proof that steps 1–4 are declarative:
 
