@@ -37,6 +37,18 @@
  */
 @source "../../../packages/design/src/";
 /*
+ * AND THE STYLE CONTRACT. Since ADR-034 step 4 a component SELECTS a class through a
+ * STYLE symbol; the class literal lives in `generated/style.ts`, and the manifest beside
+ * it is the closed list of every class a component may say. Tailwind detects classes by
+ * reading text, and a directory of symbol selections contains no class text. Without
+ * this line the employee page rendered with no page ground, black ink, a 16px title and a
+ * button with no padding -- 154 of the contract's classes compiled to nothing, while the
+ * unit test that "proved" they compiled had scanned the whole repository from its own cwd
+ * (2026-09-03). `compileEntry` in design-system-classes.test.ts now builds this file the
+ * way `next dev` does, from apps/web, and refuses a manifest class the build does not emit.
+ */
+@source "../../../packages/design/generated/style-manifest.json";
+/*
  * AND NOT THE VENDORED TREE (ADR-034 step 8). No Adapter imports a file under
  * components/ui any more -- each sits on Base UI or the element itself and owns its
  * recipe -- so the classes those files write would be compiled for nothing that renders

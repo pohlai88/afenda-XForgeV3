@@ -151,11 +151,41 @@ const BUILT_IN = new Set([
   'dashed',
 ])
 
+/**
+ * Compile the application's stylesheet with extra candidates injected. This answers "CAN
+ * this class compile" -- is the role reachable, is the namespace closed -- and nothing
+ * about whether the application's own build ever sees the class. `compileEntry` answers
+ * that.
+ */
 const compile = async (candidates: string[]): Promise<string> => {
   const postcss = requireFromApp('postcss')
   const tailwind = requireFromApp('@tailwindcss/postcss')
   const css = `${readFileSync(ENTRY, 'utf8')}\n@source inline("${candidates.join(' ')}");\n`
   const out = await postcss([tailwind()]).process(css, { from: ENTRY })
+  return out.css
+}
+
+/**
+ * Compile the application's stylesheet EXACTLY as the application does: its own `@source`
+ * directives, no injected candidates. What this returns is what a screen receives.
+ *
+ * The distinction is the defect the employee page showed on 2026-09-03. Every STYLE class
+ * compiled through `compile()`, because the test handed the compiler the manifest; the
+ * page rendered with no background, black ink, a 16px title and a button with no padding,
+ * because the application's `@source` scanned `packages/design/src/` and the class
+ * literals had moved into `generated/style.ts` when the components started selecting
+ * symbols. A green test over a shape production does not use.
+ */
+const compileEntry = async (): Promise<string> => {
+  const postcss = requireFromApp('postcss')
+  const tailwind = requireFromApp('@tailwindcss/postcss')
+  // `base` is where Tailwind's automatic detection starts, and it defaults to the process
+  // cwd. Run from the repository root that is the whole repository -- manifest included --
+  // and every class is found by accident. `next dev` runs from apps/web; so does this.
+  const out = await postcss([tailwind({ base: join(ROOT, 'apps/web') })]).process(
+    readFileSync(ENTRY, 'utf8'),
+    { from: ENTRY },
+  )
   return out.css
 }
 
@@ -239,18 +269,22 @@ describe('the design system vocabulary compiles', () => {
    */
   /**
    * ADR-031 Decision 12 lists "every STYLE symbol resolves to an emitted class" as owed.
-   * This is it: every class the style manifest names compiles, variant prefixes included,
-   * against the same stylesheet the application builds. A symbol whose class Tailwind
-   * does not drive is a word a component could say that renders nothing.
+   * This is it: every class the style manifest names is present in the stylesheet the
+   * application actually builds -- its own `@source` directives, nothing injected. A symbol
+   * whose class the application's build does not emit is a word a component says that
+   * renders nothing, and that is invisible everywhere except on a screen.
    */
-  it('every STYLE symbol resolves to a class that compiles', async () => {
+  it('every STYLE symbol resolves to a class the application build emits', async () => {
     const manifest = JSON.parse(
       readFileSync(join(PKG, 'generated/style-manifest.json'), 'utf8'),
     ) as { symbols: Record<string, { class: string }> }
     const classes = [...new Set(Object.values(manifest.symbols).flatMap((s) => s.class.split(' ')))]
     expect(classes.length).toBeGreaterThan(60)
-    const css = await compile(classes)
-    expect(missingFrom(css, classes), 'STYLE symbols whose class compiles to nothing').toEqual([])
+    const css = await compileEntry()
+    expect(
+      missingFrom(css, classes),
+      'STYLE classes the application stylesheet does not emit',
+    ).toEqual([])
   }, 30_000)
 
   /**
