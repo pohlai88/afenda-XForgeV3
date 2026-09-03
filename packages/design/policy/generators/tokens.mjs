@@ -562,7 +562,7 @@ const channel = (c) => {
 }
 
 /** WCAG relative luminance. Alpha is ignored; alpha-bearing roles are exempt. */
-function luminance(hex) {
+export function luminance(hex) {
   const m = hex.replace('#', '').slice(0, 6)
   const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(m.slice(i, i + 2), 16))
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
