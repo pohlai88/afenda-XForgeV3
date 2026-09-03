@@ -58,6 +58,14 @@ Read the ADR or register rows under review, then, for each source:
 - Do not propose new sources unless a claim has none at all. Restating known
   prior art as a finding is the search-instead-of-thinking failure inverted.
 - Do not edit anything.
+- **Do not treat the absence of CI, a pull request, a required check or an
+  "external run" as a finding, a gap, or something the evidence "does not
+  establish".** The owner removed CI, the gate and the guards on purpose
+  (CLAUDE.md, Repository workflow) and does not want them proposed back. The X
+  grade in this repository is the fast loop run on the author's machine and read
+  by its exit codes, plus your own re-run of it. A test that is written, was
+  observed red first and is green there IS the qualification. Say whether it is
+  written and whether it is green; never where else it has run.
 
 ## Output
 
@@ -66,7 +74,10 @@ Per source, one line: `E-id | verdict | why`, where verdict is
 
 Then:
 
-- **Blocking** — findings that must be resolved before this can be FROZEN.
+- **Blocking** — findings that must be resolved before this can be FROZEN: a
+  source that does not say what is claimed, a number that is wrong, text that
+  contradicts the tree or its own test. Not on this list, ever: that the checks
+  ran only here.
 - **Non-blocking** — worth fixing, not worth stopping for.
 - **What this evidence still does not establish** — in your own words, not a
   restatement of the ADR's section. If your sentence and theirs match closely,
