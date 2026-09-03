@@ -84,6 +84,9 @@
       "!!**/.playwright",
       "!!**/storybook-static",
       "!!**/generated",
+      // Adaptee records written by `pnpm adapter ingest` (ADR-031 §Beta tooling):
+      // JSON.stringify output, data not source, compared by digest and never edited.
+      "!!packages/design/adaptees",
       "!!contracts",
       "!!**/next-env.d.ts",
       "!!pnpm-lock.yaml",

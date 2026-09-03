@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "adapter": "node tooling/adapter/adapter.mjs",
     "check": "biome ci .",
     "db:migrate": "node tooling/db/migrate.mjs",
     "e2e": "playwright test",

@@ -1,0 +1,118 @@
+{
+  "dependencies": [],
+  "digest": {
+    "anatomy": {
+      "parts": [
+        "Button",
+        "buttonVariants"
+      ],
+      "slots": [
+        "button"
+      ]
+    },
+    "behaviour": {
+      "clientBoundary": false,
+      "primitives": [
+        "@base-ui/react/button"
+      ]
+    },
+    "state": [
+      "aria-expanded",
+      "aria-invalid",
+      "data-icon"
+    ],
+    "axes": {
+      "size": [
+        "default",
+        "icon",
+        "icon-lg",
+        "icon-sm",
+        "icon-xs",
+        "lg",
+        "sm",
+        "xs"
+      ],
+      "variant": [
+        "default",
+        "destructive",
+        "ghost",
+        "link",
+        "outline",
+        "secondary"
+      ]
+    },
+    "style": {
+      "arbitraryValues": [
+        "[0.8rem]"
+      ],
+      "numericUtilities": [
+        "gap-1",
+        "gap-1.5",
+        "h-6",
+        "h-7",
+        "h-8",
+        "h-9",
+        "pl-1.5",
+        "pl-2",
+        "pr-1.5",
+        "pr-2",
+        "px-2",
+        "px-2.5",
+        "ring-3",
+        "size-3",
+        "size-3.5",
+        "size-4",
+        "size-6",
+        "size-7",
+        "size-8",
+        "size-9"
+      ],
+      "opacityModifiers": [
+        "bg-destructive/10",
+        "bg-destructive/20",
+        "bg-destructive/30",
+        "bg-input/30",
+        "bg-input/50",
+        "bg-muted/50",
+        "bg-primary/80",
+        "border-destructive/40",
+        "border-destructive/50",
+        "ring-destructive/20",
+        "ring-destructive/40",
+        "ring-ring/50"
+      ]
+    },
+    "accessibility": {
+      "aria": [],
+      "roles": []
+    },
+    "dependencies": {
+      "packages": [
+        "@base-ui/react/button",
+        "class-variance-authority"
+      ],
+      "registry": []
+    }
+  },
+  "files": [
+    {
+      "localizedSha256": "0f7b8a7c81074a8eed90eca7bd791fa34ed909fb7d8a99cfffc5bbbd9df4ab5f",
+      "name": "button.tsx",
+      "path": "registry/base-nova/ui/button.tsx",
+      "registrySha256": "93edbf2075d6104e1b20d263419d91a9587208d3d05efdd06dfafcfe4d0dfd65",
+      "type": "registry:ui"
+    }
+  ],
+  "item": "button",
+  "meta": {
+    "links": {
+      "docs": "https://ui.shadcn.com/docs/components/base/button",
+      "examples": "https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/button-example.tsx"
+    }
+  },
+  "registryDependencies": [],
+  "source": "shadcn",
+  "style": "base-nova",
+  "url": "https://ui.shadcn.com/r/styles/base-nova/button.json",
+  "fetchedAt": "2026-09-03T11:41:55.186Z"
+}

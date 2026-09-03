@@ -1,0 +1,82 @@
+{
+  "dependencies": [],
+  "digest": {
+    "anatomy": {
+      "parts": [
+        "Card",
+        "CardAction",
+        "CardContent",
+        "CardDescription",
+        "CardFooter",
+        "CardHeader",
+        "CardTitle"
+      ],
+      "slots": [
+        "card",
+        "card-action",
+        "card-content",
+        "card-description",
+        "card-footer",
+        "card-header",
+        "card-title"
+      ]
+    },
+    "behaviour": {
+      "clientBoundary": false,
+      "primitives": []
+    },
+    "state": [
+      "data-size"
+    ],
+    "axes": {
+      "size": [
+        "default",
+        "sm"
+      ]
+    },
+    "style": {
+      "arbitraryValues": [],
+      "numericUtilities": [
+        "gap-1",
+        "pb-0",
+        "pt-0",
+        "ring-1"
+      ],
+      "opacityModifiers": [
+        "bg-muted/50",
+        "ring-foreground/10"
+      ]
+    },
+    "accessibility": {
+      "aria": [],
+      "roles": []
+    },
+    "dependencies": {
+      "packages": [
+        "react"
+      ],
+      "registry": []
+    }
+  },
+  "files": [
+    {
+      "localizedSha256": "0ea76fd2c5c47d668e2a6e0ee578136207451f4fa5c825207e1506d83583fcf3",
+      "name": "card.tsx",
+      "path": "registry/base-nova/ui/card.tsx",
+      "registrySha256": "6d1b72fe49412cb8bfd63639f2cdb5f674fd32031ec97fa78913cd7ca54d1285",
+      "type": "registry:ui"
+    }
+  ],
+  "item": "card",
+  "meta": {
+    "links": {
+      "docs": "https://ui.shadcn.com/docs/components/base/card",
+      "examples": "https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/card-example.tsx"
+    }
+  },
+  "registryDependencies": [],
+  "source": "shadcn",
+  "style": "base-nova",
+  "url": "https://ui.shadcn.com/r/styles/base-nova/card.json",
+  "fetchedAt": "2026-09-03T11:41:57.048Z"
+}

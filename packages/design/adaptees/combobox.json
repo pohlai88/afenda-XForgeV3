@@ -1,0 +1,146 @@
+{
+  "dependencies": [
+    "@base-ui/react"
+  ],
+  "digest": {
+    "anatomy": {
+      "parts": [
+        "Combobox",
+        "ComboboxChip",
+        "ComboboxChips",
+        "ComboboxChipsInput",
+        "ComboboxCollection",
+        "ComboboxContent",
+        "ComboboxEmpty",
+        "ComboboxGroup",
+        "ComboboxInput",
+        "ComboboxItem",
+        "ComboboxLabel",
+        "ComboboxList",
+        "ComboboxSeparator",
+        "ComboboxTrigger",
+        "ComboboxValue",
+        "useComboboxAnchor"
+      ],
+      "slots": [
+        "combobox-chip",
+        "combobox-chip-input",
+        "combobox-chip-remove",
+        "combobox-chips",
+        "combobox-clear",
+        "combobox-collection",
+        "combobox-content",
+        "combobox-empty",
+        "combobox-group",
+        "combobox-item",
+        "combobox-label",
+        "combobox-list",
+        "combobox-separator",
+        "combobox-trigger",
+        "combobox-value",
+        "input-group-button"
+      ]
+    },
+    "behaviour": {
+      "clientBoundary": true,
+      "primitives": [
+        "@base-ui/react"
+      ]
+    },
+    "state": [
+      "data-chips",
+      "data-closed",
+      "data-disabled",
+      "data-empty",
+      "data-highlighted",
+      "data-open",
+      "data-pressed",
+      "data-side",
+      "data-variant"
+    ],
+    "axes": {},
+    "style": {
+      "arbitraryValues": [
+        "[calc(--spacing(5.25))]",
+        "[calc(var(--anchor-width)+--spacing(7))]"
+      ],
+      "numericUtilities": [
+        "-ml-1",
+        "-mx-1",
+        "gap-1",
+        "gap-2",
+        "h-8",
+        "m-1",
+        "mb-0",
+        "min-h-8",
+        "min-w-16",
+        "my-1",
+        "p-0",
+        "p-1",
+        "pl-1.5",
+        "pr-0",
+        "pr-8",
+        "px-1",
+        "px-1.5",
+        "px-2",
+        "px-2.5",
+        "py-1",
+        "py-1.5",
+        "py-2",
+        "right-2",
+        "ring-1",
+        "ring-3",
+        "size-4"
+      ],
+      "opacityModifiers": [
+        "bg-input/30",
+        "border-destructive/50",
+        "border-input/30",
+        "ring-destructive/20",
+        "ring-destructive/40",
+        "ring-foreground/10",
+        "ring-ring/50"
+      ]
+    },
+    "accessibility": {
+      "aria": [],
+      "roles": []
+    },
+    "dependencies": {
+      "packages": [
+        "@base-ui/react",
+        "lucide-react",
+        "react"
+      ],
+      "registry": [
+        "button",
+        "input-group"
+      ]
+    }
+  },
+  "files": [
+    {
+      "localizedSha256": "e55b4e263cfa24019c39ddd81fb0c4efb4735ac3eea1712532d88650c06790a1",
+      "name": "combobox.tsx",
+      "path": "registry/base-nova/ui/combobox.tsx",
+      "registrySha256": "3122d4c4d2219beee472a394490ee0934e46778a1ba4c2a97447d6871e7968d2",
+      "type": "registry:ui"
+    }
+  ],
+  "item": "combobox",
+  "meta": {
+    "links": {
+      "docs": "https://ui.shadcn.com/docs/components/base/combobox",
+      "examples": "https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/combobox-example.tsx",
+      "api": "https://base-ui.com/react/components/combobox.md"
+    }
+  },
+  "registryDependencies": [
+    "button",
+    "input-group"
+  ],
+  "source": "shadcn",
+  "style": "base-nova",
+  "url": "https://ui.shadcn.com/r/styles/base-nova/combobox.json",
+  "fetchedAt": "2026-09-03T11:48:43.810Z"
+}

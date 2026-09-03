@@ -1,0 +1,90 @@
+{
+  "dependencies": [],
+  "digest": {
+    "anatomy": {
+      "parts": [
+        "Switch"
+      ],
+      "slots": [
+        "switch",
+        "switch-thumb"
+      ]
+    },
+    "behaviour": {
+      "clientBoundary": true,
+      "primitives": [
+        "@base-ui/react/switch"
+      ]
+    },
+    "state": [
+      "aria-invalid",
+      "data-checked",
+      "data-disabled",
+      "data-size",
+      "data-unchecked"
+    ],
+    "axes": {
+      "size": [
+        "default",
+        "sm"
+      ]
+    },
+    "style": {
+      "arbitraryValues": [
+        "[14px]",
+        "[18.4px]",
+        "[24px]",
+        "[32px]",
+        "[calc(100%-2px)]"
+      ],
+      "numericUtilities": [
+        "-inset-x-3",
+        "-inset-y-2",
+        "ring-0",
+        "ring-3",
+        "size-3",
+        "size-4",
+        "translate-x-0"
+      ],
+      "opacityModifiers": [
+        "bg-input/80",
+        "border-destructive/50",
+        "ring-destructive/20",
+        "ring-destructive/40",
+        "ring-ring/50"
+      ]
+    },
+    "accessibility": {
+      "aria": [],
+      "roles": []
+    },
+    "dependencies": {
+      "packages": [
+        "@base-ui/react/switch"
+      ],
+      "registry": []
+    }
+  },
+  "files": [
+    {
+      "localizedSha256": "1de4b8188e4a53f66e21be5dd086b8508307c583a1889fb7c237871da89da32a",
+      "name": "switch.tsx",
+      "path": "registry/base-nova/ui/switch.tsx",
+      "registrySha256": "a496a7a58284e701cbe77e4fb5b3a585c9be9a921485bcd13f847f81fe6ca6d1",
+      "type": "registry:ui"
+    }
+  ],
+  "item": "switch",
+  "meta": {
+    "links": {
+      "docs": "https://ui.shadcn.com/docs/components/base/switch",
+      "examples": "https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/switch-example.tsx",
+      "api": "https://base-ui.com/react/components/switch.md"
+    }
+  },
+  "registryDependencies": [],
+  "source": "shadcn",
+  "style": "base-nova",
+  "url": "https://ui.shadcn.com/r/styles/base-nova/switch.json",
+  "fetchedAt": "2026-09-03T11:41:50.315Z"
+}
