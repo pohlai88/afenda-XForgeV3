@@ -1,11 +1,10 @@
 import { Card } from '@xforge/design/components/card'
-import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
-import { Framed } from './framed'
 import { Modes } from './modes'
+import { Plates } from './plates'
 import { GALLERY } from './specimens'
 
 /**
@@ -38,7 +37,8 @@ export default function GalleryPage() {
         <Heading level={1}>Gallery</Heading>
         <Text tone="muted">
           Every authored component, in every word it owns, against the stylesheet the application
-          builds. Beneath each frame: the STYLE symbols the state actually drew. Development only.
+          builds. Each group prints its recipe once; beneath each frame, only the words that state
+          adds. Development only.
         </Text>
       </Stack>
       <Modes />
@@ -48,13 +48,7 @@ export default function GalleryPage() {
             <Heading id={`gallery-${group.component}`} level={2}>
               {group.component}
             </Heading>
-            <Grid columns={group.columns}>
-              {group.states.map((state) => (
-                <Framed key={state.name} label={state.name}>
-                  {state.node}
-                </Framed>
-              ))}
-            </Grid>
+            <Plates columns={group.columns} states={group.states} />
           </Stack>
         </Card>
       ))}

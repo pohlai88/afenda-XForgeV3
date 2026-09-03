@@ -75,26 +75,39 @@ export const GALLERY: readonly Group[] = [
     component: 'alert',
     states: [
       {
-        name: 'The four tones, each with the copy it is for',
+        name: 'Info: a notice',
         node: (
-          <Stack gap="tight">
-            <Alert tone="info">
-              <Text>No emergency contacts yet. Add one so we know who to call.</Text>
-            </Alert>
-            <Alert tone="success">
-              <Text>Emergency contact saved.</Text>
-            </Alert>
-            <Alert tone="warning">
-              <Text>This record changed while you were editing.</Text>
-            </Alert>
-            <Alert tone="danger">
-              <Text>The contact could not be saved.</Text>
-            </Alert>
-          </Stack>
+          <Alert tone="info">
+            <Text>No emergency contacts yet. Add one so we know who to call.</Text>
+          </Alert>
         ),
       },
       {
-        name: 'A refused write: two lines, both at default tone',
+        name: 'Success: a write that landed',
+        node: (
+          <Alert tone="success">
+            <Text>Emergency contact saved.</Text>
+          </Alert>
+        ),
+      },
+      {
+        name: 'Warning: a refused write, nothing broken',
+        node: (
+          <Alert tone="warning">
+            <Text>This record changed while you were editing.</Text>
+          </Alert>
+        ),
+      },
+      {
+        name: 'Danger: a failed write',
+        node: (
+          <Alert tone="danger">
+            <Text>The contact could not be saved.</Text>
+          </Alert>
+        ),
+      },
+      {
+        name: 'Warning, two lines: both at default tone',
         node: (
           <Alert tone="warning">
             <Stack gap="tight">
