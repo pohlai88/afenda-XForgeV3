@@ -46,6 +46,23 @@ describe('Button adapts Xforge vocabulary onto the primitive', () => {
     expect(illegal).toBeTypeOf('object')
   })
 
+  it('each variant renders its own fill and ink from the STYLE tree', () => {
+    // The recipe is Xforge's (ADR-034 step 8): primary is the primary action fill, outline
+    // is the page surface with the border stroke. Neither word is upstream's.
+    const primary = renderToStaticMarkup(createElement(Button, { variant: 'primary' }, 'Go'))
+    expect(primary).toMatch(/class="[^"]*\bbg-primary\b/)
+    expect(primary).toMatch(/class="[^"]*\btext-primary-foreground\b/)
+    const outline = renderToStaticMarkup(createElement(Button, { variant: 'outline' }, 'Go'))
+    expect(outline).toMatch(/class="[^"]*\bborder-border\b/)
+    expect(outline).toMatch(/class="[^"]*\bbg-background\b/)
+    expect(outline).not.toMatch(/class="[^"]*\bbg-primary\b/)
+  })
+
+  it('does not expose the adaptee size axis', () => {
+    // @ts-expect-error -- the Target has no size axis (Decision 4)
+    renderToStaticMarkup(createElement(Button, { size: 'sm' }, 'Go'))
+  })
+
   it('defaults to primary and forwards native attributes', () => {
     const html = renderToStaticMarkup(
       createElement(Button, { disabled: true, type: 'submit' }, 'Go'),

@@ -1,64 +1,88 @@
-import type { ComponentProps } from 'react'
-import { Button as Primitive } from '#components/ui/button'
+import { Button as Primitive } from '@base-ui/react/button'
+import { cva } from 'class-variance-authority'
 import { STYLE } from '#generated/style'
 import type { NativeProps } from '#lib/props'
 
 /**
  * Button — the one control a person presses to make something happen.
  *
- * Adaptee   shadcn `button` (style base-nova) over Base UI Button
+ * Adaptee   Base UI Button (`@base-ui/react/button`), directly
  * Intent    ADOPT
- * Owns      variant (primary | outline)
- * Contract  inherited from the adaptee: a real `<button>`, Enter AND Space, focus ring
+ * Owns      variant (primary | outline), and the whole recipe
+ * Contract  inherited from the adaptee: a real `<button>`, Enter AND Space, disabled state
  *
- * WHAT NORMALIZE DECIDED. Upstream speaks `variant: default | destructive | ghost |
- * link | outline | secondary` and `size: xs | sm | default | lg | icon`. Two screens
- * exist and they need two words: the primary action, and the outlined secondary one
- * the error boundary offers. So the Target owns `variant` with exactly those two
- * values and maps each onto upstream's name (`BUTTON_VARIANT`). `size` is not
- * adopted — nothing asks for it — and `destructive` is not adopted because this
- * system says `tone` for meaning and has not needed a destructive action yet
- * (ADR-031 Decision 4: no speculative axis). Upstream's remaining vocabulary stays
- * behind the boundary; adding a value here is a one-line change and a decision.
+ * THE RECIPE IS XFORGE'S NOW (ADR-031 Decision 12; ADR-034 step 8). Until 2026-09-03 this
+ * file wrapped the vendored shadcn `button.tsx` and let upstream decide what `variant`
+ * looked like -- its own header said "until a token policy says otherwise". ADR-034 is that
+ * policy. The Adapter now sits on Base UI's Button, which owns the behaviour (a real
+ * button element, keyboard activation, the disabled state), and every class it renders is
+ * a STYLE symbol the kernel projects. The vendored file is no longer imported by anything.
  *
- * THE RECIPE IS UPSTREAM'S. The classes live in the vendored file and are its
- * business until a token policy says otherwise; what Xforge owns is the word a
- * screen writes and its translation. That is why section 1 here is a mapping
- * table and not a cva object.
- *
- * ONE CLASS IS XFORGE'S, AND IT IS A FLOOR, NOT A STYLE. `h-control` sets
- * `min-block-size` to the control minimum -- the WCAG 2.5.8 target floor the
- * density axis rebinds (40px, 48 comfortable, 32 compact). It was defined in
- * globals.css and consumed by nothing, so Tailwind never emitted it, and
- * upstream's `h-8` held every button at 32px beneath a 40px floor. The
- * design-sync preview found that on 2026-09-03. A button is the one control
- * an Adapter renders directly, so the floor is applied here, selected as
- * `STYLE.size.control`; a min-height wins over upstream's height without the
- * two classes colliding. The Target carries no `className` of its own
- * (Decision 12), so nothing a screen writes can argue with the floor.
+ * WHAT NORMALIZE DECIDED, upstream word by upstream word. `h-8` -> the control floor
+ * (`size.control`, 40px, density-bound). `px-2.5` / `gap-1.5` -> `space.controlX` and
+ * `space.tight`. `rounded-lg` -> `shape.control`. `text-sm font-medium` -> the `label`
+ * type role. `focus-visible:ring-3 ring-ring/50` -> the system's one focus ring. `border
+ * border-transparent` stays as geometry so the outline variant does not shift a pixel.
+ * `disabled:opacity-50` -> the declared disabled role, not a fade. `transition-all` ->
+ * colour only, at the press duration. Upstream's `default` is `primary`; its `outline`
+ * hover (`bg-muted`) is expressed through the neutral ACTION fill, `secondary`, which has
+ * the hover and pressed companions a pressable surface needs and `muted` does not.
+ * `size`, `ghost`, `link`, `secondary`, `destructive` and the icon sizes are not adopted --
+ * nothing asks for them (Decision 4). The 1px press nudge is dropped: the pressed colour
+ * carries the state, and a hand-typed length has no role.
  */
 
-/** Section 1 — the axis Xforge owns, translated to the adaptee's vocabulary. */
+/** Section 1 — STYLE SELECTION. The axis Xforge owns, each value a set of symbols. */
 export const BUTTON_VARIANT = {
-  outline: 'outline',
-  primary: 'default',
-} as const satisfies Record<string, NonNullable<PrimitiveProps['variant']>>
+  outline: [
+    STYLE.stroke.border.border,
+    STYLE.surface.page.background,
+    STYLE.ink.default.text,
+    STYLE.action.secondary.hover,
+    STYLE.action.secondary.hoverForeground,
+    STYLE.action.secondary.pressed,
+  ].join(' '),
+  primary: [
+    STYLE.action.primary.background,
+    STYLE.action.primary.foreground,
+    STYLE.action.primary.hover,
+    STYLE.action.primary.pressed,
+  ].join(' '),
+} as const
 
-/** Internal: the adaptee's own props, allowed inside the adapter and never exported. */
-type PrimitiveProps = ComponentProps<typeof Primitive>
+const buttonRecipe = cva(
+  [
+    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap',
+    'border-transparent outline-none transition-colors disabled:cursor-not-allowed',
+    STYLE.size.control,
+    STYLE.space.controlX.paddingX,
+    STYLE.space.tight.gap,
+    STYLE.shape.control,
+    STYLE.stroke.width,
+    STYLE.typography.label,
+    STYLE.focus.ring,
+    STYLE.motion.press,
+    STYLE.state.disabled.background,
+    STYLE.state.disabled.foreground,
+  ].join(' '),
+  {
+    defaultVariants: { variant: 'primary' },
+    variants: { variant: BUTTON_VARIANT },
+  },
+)
 
 /** Section 3 — the Target. Xforge vocabulary over the native button's attributes. */
 export interface ButtonProps extends NativeProps<'button'> {
   readonly variant?: keyof typeof BUTTON_VARIANT
 }
 
-/** Section 4 — the Adapter. Translation, and the control floor. */
+/** Section 4 — the Adapter. Behaviour from Base UI; every class a symbol. */
 export function Button({ variant = 'primary', ...props }: ButtonProps) {
   return (
     <Primitive
-      className={STYLE.size.control}
+      className={buttonRecipe({ variant })}
+      data-slot="button"
       data-variant={variant}
-      variant={BUTTON_VARIANT[variant]}
       {...props}
     />
   )

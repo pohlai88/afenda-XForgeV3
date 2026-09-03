@@ -85,6 +85,14 @@ const CHANNEL_KEY = deepFreeze({
  */
 const COMPANION_VARIANT = deepFreeze({ hover: 'hover', pressed: 'active' })
 
+/**
+ * A STATE root selects through its own variant: `disabled` is the `:disabled` pseudo-class
+ * on a real control. Decided here, once, so a recipe writes `STYLE.state.disabled.background`
+ * and never assembles `disabled:` itself (ADR-031 Decision 12: a state selects a declared
+ * state role and introduces no styling of its own).
+ */
+const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
+
 const roleOf = (path) => path.slice(path.lastIndexOf('.') + 1)
 
 export function assertStyleNames(names = STYLE_NAMES, contracts = COLOR_ROLE_CONTRACTS) {
@@ -136,18 +144,29 @@ function colourSymbols(tree, omitted) {
       continue
     }
     const node = {}
+    // A state root's classes carry the variant that selects the state (`disabled:`).
+    const prefix = entry[0] === 'state' ? `${STATE_VARIANT[entry[1]]}:` : ''
     const { channels } = colorChannelsOf(`color.${root}`)
     for (const channel of channels) {
-      node[CHANNEL_KEY[channel]] = symbol(`${channel}-${root}`, [contract.base])
+      node[CHANNEL_KEY[channel]] = symbol(`${prefix}${channel}-${root}`, [contract.base])
     }
     if (contract.foreground !== NONE) {
-      node.foreground = symbol(`text-${roleOf(contract.foreground)}`, [contract.foreground])
+      node.foreground = symbol(`${prefix}text-${roleOf(contract.foreground)}`, [
+        contract.foreground,
+      ])
     }
     for (const companion of ['hover', 'pressed']) {
       const token = contract[companion]
       if (token !== NONE) {
         node[companion] = symbol(`${COMPANION_VARIANT[companion]}:bg-${roleOf(token)}`, [token])
       }
+    }
+    // A pressable fill changes its ink with its surface: where a root has a hover fill and
+    // a foreground, the foreground has a hover form too, so a recipe never writes `hover:`.
+    if (contract.hover !== NONE && contract.foreground !== NONE) {
+      node.hoverForeground = symbol(`hover:text-${roleOf(contract.foreground)}`, [
+        contract.foreground,
+      ])
     }
     if (Object.keys(node).length === 0) {
       omitted.push({ reason: 'declares no CSS channel', role: contract.base })

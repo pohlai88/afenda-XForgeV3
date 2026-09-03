@@ -45,6 +45,12 @@
         "semantic.color.accent-hover"
       ]
     },
+    "action.accent.hoverForeground": {
+      "class": "hover:text-accent-foreground",
+      "tokens": [
+        "semantic.color.accent-foreground"
+      ]
+    },
     "action.accent.pressed": {
       "class": "active:bg-accent-pressed",
       "tokens": [
@@ -67,6 +73,12 @@
       "class": "hover:bg-destructive-hover",
       "tokens": [
         "semantic.color.destructive-hover"
+      ]
+    },
+    "action.danger.hoverForeground": {
+      "class": "hover:text-destructive-foreground",
+      "tokens": [
+        "semantic.color.destructive-foreground"
       ]
     },
     "action.danger.pressed": {
@@ -93,6 +105,12 @@
         "semantic.color.primary-hover"
       ]
     },
+    "action.primary.hoverForeground": {
+      "class": "hover:text-primary-foreground",
+      "tokens": [
+        "semantic.color.primary-foreground"
+      ]
+    },
     "action.primary.pressed": {
       "class": "active:bg-primary-pressed",
       "tokens": [
@@ -115,6 +133,12 @@
       "class": "hover:bg-secondary-hover",
       "tokens": [
         "semantic.color.secondary-hover"
+      ]
+    },
+    "action.secondary.hoverForeground": {
+      "class": "hover:text-secondary-foreground",
+      "tokens": [
+        "semantic.color.secondary-foreground"
       ]
     },
     "action.secondary.pressed": {
@@ -521,13 +545,13 @@
       ]
     },
     "state.disabled.background": {
-      "class": "bg-disabled",
+      "class": "disabled:bg-disabled",
       "tokens": [
         "semantic.color.disabled"
       ]
     },
     "state.disabled.foreground": {
-      "class": "text-disabled-foreground",
+      "class": "disabled:text-disabled-foreground",
       "tokens": [
         "semantic.color.disabled-foreground"
       ]

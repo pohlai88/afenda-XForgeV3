@@ -1624,6 +1624,14 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     expect(leaves.get('action.primary.pressed')?.class).toBe('active:bg-primary-pressed')
     expect(leaves.get('action.danger.pressed')?.class).toBe('active:bg-destructive-pressed')
     expect(leaves.has('surface.card.hover')).toBe(false)
+    // A pressable surface changes its ink with its fill, so a hover has a hover foreground.
+    expect(leaves.get('action.secondary.hoverForeground')?.class).toBe(
+      'hover:text-secondary-foreground',
+    )
+    expect(leaves.has('surface.card.hoverForeground')).toBe(false)
+    // A state role selects through its own variant, decided once in the language.
+    expect(leaves.get('state.disabled.background')?.class).toBe('disabled:bg-disabled')
+    expect(leaves.get('state.disabled.foreground')?.class).toBe('disabled:text-disabled-foreground')
   })
 
   it('projects the other role tables as their own words', () => {

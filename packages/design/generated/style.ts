@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 127 symbols. Roles without one, and why:
+ * 131 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -22,24 +22,28 @@ export const STYLE = {
       background: 'bg-accent',
       foreground: 'text-accent-foreground',
       hover: 'hover:bg-accent-hover',
+      hoverForeground: 'hover:text-accent-foreground',
       pressed: 'active:bg-accent-pressed',
     },
     danger: {
       background: 'bg-destructive',
       foreground: 'text-destructive-foreground',
       hover: 'hover:bg-destructive-hover',
+      hoverForeground: 'hover:text-destructive-foreground',
       pressed: 'active:bg-destructive-pressed',
     },
     primary: {
       background: 'bg-primary',
       foreground: 'text-primary-foreground',
       hover: 'hover:bg-primary-hover',
+      hoverForeground: 'hover:text-primary-foreground',
       pressed: 'active:bg-primary-pressed',
     },
     secondary: {
       background: 'bg-secondary',
       foreground: 'text-secondary-foreground',
       hover: 'hover:bg-secondary-hover',
+      hoverForeground: 'hover:text-secondary-foreground',
       pressed: 'active:bg-secondary-pressed',
     },
   },
@@ -155,8 +159,8 @@ export const STYLE = {
   },
   state: {
     disabled: {
-      background: 'bg-disabled',
-      foreground: 'text-disabled-foreground',
+      background: 'disabled:bg-disabled',
+      foreground: 'disabled:text-disabled-foreground',
     },
   },
   status: {
