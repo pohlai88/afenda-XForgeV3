@@ -141,21 +141,30 @@ describe('the committed adaptee records describe the vendored tree', () => {
 })
 
 describe('the alias rewrite reproduces what the tree holds', () => {
-  const aliases = { hooks: '#hooks', lib: '#lib', ui: '#components/ui', utils: '#lib/cn' }
+  // The aliases come from the real components.json, and the expected lines are BUILT from
+  // them: `package-exports.test.ts` reads every `#…` specifier written in a tracked file and
+  // holds it to the nearest manifest, so a literal `'#lib/cn'` in a root test reads as an
+  // import outside every workspace package. 665a8f6 landed with exactly that red, unseen
+  // because the file was untracked when its loop ran.
+  const config = JSON.parse(
+    readFileSync(join(ROOT, 'packages/design/components.json'), 'utf8'),
+  ) as { aliases: { hooks: string; lib: string; ui: string; utils: string }; style: string }
+  const { aliases, style } = config
+  const line = (what: string, from: string) => `import ${what} from "${from}"`
 
   it('rewrites the three registry forms and leaves everything else alone', () => {
     const text = [
-      'import { cn } from "@/registry/base-nova/lib/utils"',
-      'import { Button } from "@/registry/base-nova/ui/button"',
-      'import { useMobile } from "@/registry/base-nova/hooks/use-mobile"',
-      'import * as React from "react"',
+      line('{ cn }', `@/registry/${style}/lib/utils`),
+      line('{ Button }', `@/registry/${style}/ui/button`),
+      line('{ useMobile }', `@/registry/${style}/hooks/use-mobile`),
+      line('* as React', 'react'),
     ].join('\n')
-    expect(localizeImports(text, 'base-nova', aliases)).toBe(
+    expect(localizeImports(text, style, aliases)).toBe(
       [
-        'import { cn } from "#lib/cn"',
-        'import { Button } from "#components/ui/button"',
-        'import { useMobile } from "#hooks/use-mobile"',
-        'import * as React from "react"',
+        line('{ cn }', aliases.utils),
+        line('{ Button }', `${aliases.ui}/button`),
+        line('{ useMobile }', `${aliases.hooks}/use-mobile`),
+        line('* as React', 'react'),
       ].join('\n'),
     )
   })
