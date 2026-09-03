@@ -13,6 +13,7 @@ import { ResourceBoundary } from '@xforge/design/components/resource-boundary'
 import { Specimen } from '@xforge/design/components/specimen'
 import { Stack } from '@xforge/design/components/stack'
 import { Status } from '@xforge/design/components/status'
+import { Swatch } from '@xforge/design/components/swatch'
 import { Switch } from '@xforge/design/components/switch'
 import { Text } from '@xforge/design/components/text'
 import type { ReactNode } from 'react'
@@ -518,6 +519,23 @@ export const GALLERY: readonly Group[] = [
       {
         name: 'A polite live region, busy',
         node: <Status>Loading emergency contacts…</Status>,
+      },
+    ],
+  },
+  {
+    columns: 1,
+    component: 'swatch',
+    states: [
+      {
+        name: 'A fill with its ink, a fill without one, a stroke',
+        node: (
+          <Stack direction="row" gap="normal">
+            <Swatch colour="action.primary" />
+            <Swatch colour="status.danger" />
+            <Swatch colour="surface.page" />
+            <Swatch colour="stroke.border" />
+          </Stack>
+        ),
       },
     ],
   },

@@ -5,6 +5,7 @@ import { Link } from '@xforge/design/components/link'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
+import { ColourPlate } from './colour'
 import { Modes } from './modes'
 import { Plates } from './plates'
 import { GALLERY } from './specimens'
@@ -35,6 +36,9 @@ export const titleOf = (component: string): string =>
 
 const anchorOf = (component: string): string => `gallery-${component}`
 
+/** The dictionaries come first in the index: the words, then the components that say them. */
+const FOUNDATIONS = [{ id: 'gallery-colour', title: 'Colour' }] as const
+
 export default function GalleryPage() {
   if (process.env.NODE_ENV === 'production') {
     notFound()
@@ -54,6 +58,11 @@ export default function GalleryPage() {
       <Modes />
       <nav aria-label="Index">
         <Grid columns={4} gap="tight">
+          {FOUNDATIONS.map((f) => (
+            <Link href={`#${f.id}`} key={f.id}>
+              {f.title}
+            </Link>
+          ))}
           {GALLERY.map((group) => (
             <Link href={`#${anchorOf(group.component)}`} key={group.component}>
               {titleOf(group.component)}
@@ -61,6 +70,22 @@ export default function GalleryPage() {
           ))}
         </Grid>
       </nav>
+      <Card aria-labelledby="gallery-colour">
+        <Stack gap="normal">
+          <Stack direction="row" gap="normal">
+            <Heading id="gallery-colour" level={2}>
+              Colour
+            </Heading>
+            <Link href="#gallery-top">Top</Link>
+          </Stack>
+          <Text tone="muted">
+            Every role a swatch can show, in the active theme. Beneath each: the fill, the ink, and
+            their contrast. Fills that exist only under a state are shown by the components that own
+            them.
+          </Text>
+          <ColourPlate />
+        </Stack>
+      </Card>
       {GALLERY.map((group) => (
         <Card aria-labelledby={anchorOf(group.component)} key={group.component}>
           <Stack gap="normal">

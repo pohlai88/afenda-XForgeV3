@@ -101,6 +101,8 @@ describe('the rendered page carries every word', () => {
     for (const group of GALLERY) {
       expect(hrefs).toContain(`gallery-${group.component}`)
     }
+    // The dictionaries are indexed too.
+    expect(hrefs).toContain('gallery-colour')
     // The way back sits beside every group heading (a specimen may add one more).
     expect(hrefs.filter((href) => href === 'gallery-top').length).toBeGreaterThanOrEqual(
       GALLERY.length,
