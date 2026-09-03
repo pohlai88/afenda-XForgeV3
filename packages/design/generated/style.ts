@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 159 symbols. Roles without one, and why:
+ * 162 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -112,6 +112,11 @@ export const STYLE = {
     control: 'rounded-control',
     overlay: 'rounded-overlay',
     precise: 'rounded-precise',
+  },
+  shell: {
+    columns: 'grid-shell',
+    header: 'shell-header',
+    nav: 'shell-nav',
   },
   size: {
     control: 'h-control',

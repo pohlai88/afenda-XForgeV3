@@ -213,3 +213,35 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * THE SCREEN FRAME (Shell). Geometry and chrome live in the utility, one word per part,
+ * the same way `h-control` carries the control floor: the component selects
+ * `shell-header`, `shell-nav` and `grid-shell` and says nothing about pixels. The sticky
+ * offsets are written here because `top-0` died with the numeric spacing scale and a
+ * header height is a token, not a number a component may know.
+ */
+@utility shell-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--semantic-layer-local);
+  block-size: var(--semantic-shell-header);
+  background-color: var(--semantic-color-background);
+  border-block-end: var(--semantic-size-stroke) solid
+    var(--semantic-color-border);
+}
+
+@utility shell-nav {
+  position: sticky;
+  inset-block-start: var(--semantic-shell-header);
+  align-self: start;
+  max-block-size: calc(100vh - var(--semantic-shell-header));
+  overflow-y: auto;
+  border-inline-end: var(--semantic-size-stroke) solid
+    var(--semantic-color-border);
+}
+
+@utility grid-shell {
+  display: grid;
+  grid-template-columns: var(--semantic-shell-nav-expanded) minmax(0, 1fr);
+}

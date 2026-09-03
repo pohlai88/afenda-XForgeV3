@@ -298,6 +298,17 @@ function geometrySymbols(tree, omitted) {
   set(tree, ['family', 'mono'], symbol('font-mono', ['semantic.font.mono']))
   set(tree, ['size', 'control'], symbol('h-control', ['semantic.control.min-size']))
   set(tree, ['size', 'icon'], symbol('size-icon', ['semantic.icon.size']))
+  // The screen frame (Shell). Three utilities defined in the application stylesheet beside
+  // h-control, each reaching the shell tokens; the geometry, the sticky offsets and the
+  // hairlines live in the utility, so the component selects one word per part and says
+  // nothing about pixels.
+  set(tree, ['shell', 'header'], symbol('shell-header', ['semantic.shell.header']))
+  set(
+    tree,
+    ['shell', 'nav'],
+    symbol('shell-nav', ['semantic.shell.nav-expanded', 'semantic.shell.header']),
+  )
+  set(tree, ['shell', 'columns'], symbol('grid-shell', ['semantic.shell.nav-expanded']))
   set(tree, ['stroke', 'width'], symbol('border-stroke', ['semantic.size.stroke']))
   set(
     tree,

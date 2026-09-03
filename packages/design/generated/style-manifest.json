@@ -340,6 +340,25 @@
         "semantic.radius.precise"
       ]
     },
+    "shell.columns": {
+      "class": "grid-shell",
+      "tokens": [
+        "semantic.shell.nav-expanded"
+      ]
+    },
+    "shell.header": {
+      "class": "shell-header",
+      "tokens": [
+        "semantic.shell.header"
+      ]
+    },
+    "shell.nav": {
+      "class": "shell-nav",
+      "tokens": [
+        "semantic.shell.nav-expanded",
+        "semantic.shell.header"
+      ]
+    },
     "size.control": {
       "class": "h-control",
       "tokens": [

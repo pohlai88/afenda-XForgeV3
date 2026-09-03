@@ -26,6 +26,7 @@
     "ListItem": "../../packages/design/src/components/list-item.tsx",
     "Page": "../../packages/design/src/components/page.tsx",
     "ResourceBoundary": "../../packages/design/src/components/resource-boundary.tsx",
+    "Shell": "../../packages/design/src/components/shell.tsx",
     "Specimen": "../../packages/design/src/components/specimen.tsx",
     "Stack": "../../packages/design/src/components/stack.tsx",
     "Status": "../../packages/design/src/components/status.tsx",
