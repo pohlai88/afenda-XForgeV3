@@ -1,6 +1,6 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–9
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–10
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
 revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
 — the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
@@ -8,8 +8,8 @@ Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. 
 maintenance loop ran once** (Migration step 6): PREVIEW, ASSESS and REFRESH are proved and
 frozen with the core; **RECONCILE is proved only in its null form** — no upstream change has
 reached an Adapter — and stays provisional. TRANSLATE, the Integration Adapter class and the
-registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5, 6, 7 and
-8 exist, were observed RED first, and were green on the author's run; behaviour survival for
+registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5, 6, 7, 8 and
+9 exist, were observed RED first, and were green on the author's run; behaviour survival for
 Switch and Combobox is proved in Chromium (Verification 6).
 **Amended 2026-09-03 by Decision 12** — components SELECT style, they do not DEFINE it.
 ADR-034 makes the style plane a closed language, and this ADR stops being an authority for
@@ -1190,6 +1190,23 @@ In this order, each its own commit, rollback `git revert`:
      for coverage of every digested axis and part; a one-shot Adapter skeleton). They are
      the second wave, and each needs a first component to be built against.
 
+10. **Two defects found by the design-sync preview — 2026-09-03**, commits `62f18ae` and
+    `aee6612`. Neither check here could have seen them; a person looking at rendered cells did.
+    - **Heading levels 2 and 3 were pixel-identical**: both mapped to `text-heading`. The
+      kernel proves adjacent type roles differ (`typographyFailures`); nothing proved a
+      component's level table used different ones. Level 3 now renders `text-body` at the
+      heading weight — 16px/600, apart from h2 by size, from `emphasis` by weight, from body by
+      both — with no new role minted. `heading.test.tsx` (Verification 9) holds every level to
+      a distinct role and to its own element; red first on the shared role.
+    - **`h-control` governed nothing.** The utility that sets `min-block-size` to the control
+      minimum — the WCAG 2.5.8 target floor the density axis rebinds — had no consumer, so
+      Tailwind never emitted it and upstream's `h-8` held every button at 32px under a 40px
+      floor. The Button Adapter now carries the class, merged with a caller's `className`
+      through `cn`; `button.test.tsx` asserts it on both variants and under a merge, red first.
+      Under Decision 12 this is a floor Xforge SELECTS, not a style it defines.
+    - **Not fixed here:** the same table-versus-kernel gap exists for any other component
+      that maps an axis to roles; only Heading has a level table today.
+
 ## Verification
 
 Replaces the first draft's four conditions and mutation fixtures A–F, which were fixtures
@@ -1254,6 +1271,10 @@ for machinery that is not built and are rejected with it.
    `aria-live="polite"`, `aria-busy`) renders, forwarded props reach the element, and the
    three contract attributes are refused as props at compile time. Status owned this
    contract from the first commit and had no test until this one (Migration step 8).
+9. **`packages/design/tests/heading.test.tsx`** — every level renders its own element with the
+   slot and the heading weight; no two levels share a type role; rank falls with level
+   (`title`, `heading`, `body`). **Observed 2026-09-03:** two of six cases red on the shipped
+   table (levels 2 and 3 shared `text-heading`), green after level 3 moved (Migration step 10).
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person
