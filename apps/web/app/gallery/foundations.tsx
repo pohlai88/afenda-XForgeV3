@@ -6,6 +6,7 @@ import { EmptyState } from '@xforge/design/components/empty-state'
 import { Heading } from '@xforge/design/components/heading'
 import { List } from '@xforge/design/components/list'
 import { ListItem } from '@xforge/design/components/list-item'
+import { Specimen } from '@xforge/design/components/specimen'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import type { State } from './specimens'
@@ -32,6 +33,14 @@ export const TYPE_SAMPLES: readonly State[] = [
   { name: 'Text, body', node: <Text>{SAMPLE}</Text> },
   { name: 'Text, label', node: <Text variant="label">{SAMPLE}</Text> },
   { name: 'Code', node: <Code>EMP-004821</Code> },
+  {
+    name: 'Specimen caption',
+    node: (
+      <Specimen label="A caption wears the caption role">
+        <Text>{SAMPLE}</Text>
+      </Specimen>
+    ),
+  },
 ]
 
 const block = (label: string) => (

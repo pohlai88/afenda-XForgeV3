@@ -377,7 +377,7 @@ const CHECKS = [
   ['list', 'no indent', '[data-slot=list]', 'paddingLeft', 'space.none.padding'],
   ['list-item', 'surface', '[data-slot=list-item]', 'backgroundColor', 'surface.card.background'],
   ['list-item', 'shape', '[data-slot=list-item]', 'borderRadius', 'shape.control'],
-  ['list-item', 'padding y', '[data-slot=list-item]', 'paddingTop', 'space.controlY.paddingY'],
+  ['list-item', 'padding y', '[data-slot=list-item]', 'paddingTop', 'space.rowY.paddingY'],
   ['status', 'ink', '[data-slot=status]', 'color', 'surface.muted.foreground'],
   ['status', 'no margin', '[data-slot=status]', 'marginTop', 'space.none.margin'],
 ]

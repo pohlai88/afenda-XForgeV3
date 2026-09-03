@@ -1,5 +1,6 @@
 import { Heading } from '@xforge/design/components/heading'
 import { ResourceBoundary } from '@xforge/design/components/resource-boundary'
+import { Shell } from '@xforge/design/components/shell'
 import { EmergencyContacts } from './emergency-contacts'
 
 /**
@@ -8,6 +9,12 @@ import { EmergencyContacts } from './emergency-contacts'
  * It does not fetch business data (ADR-012): business reads go through the
  * generated client from a client component, so there is one transport, one
  * policy path, and one set of failure semantics.
+ *
+ * THE SHELL IS THE LANGUAGE'S, not this file's. Its docked header holds the
+ * title and its content is inset by the container role; before it, this screen
+ * wrote a bare `<main>` and its content touched the viewport edge. The rail slot
+ * is left empty until the product decides what an employee screen navigates
+ * between -- the Shell renders no rail when given none.
  */
 export default async function EmployeePage({
   params,
@@ -16,20 +23,12 @@ export default async function EmployeePage({
 }) {
   const { employeeId } = await params
   return (
-    <main>
-      {/* The PRIMITIVE, not a raw <h1>, and Tailwind's preflight is what made
-          the difference visible. Preflight sets `h1..h6 { font-size: inherit;
-          font-weight: inherit }`, so this rendered at 16px/400 while the
-          Heading primitive beside it rendered at its token size. Every xf-*
-          component sets its own size, weight and margin, so preflight changed
-          nothing about the design system -- it changed only the one element on
-          this screen that had gone around it.
-
-          Worth keeping in mind rather than treating as a one-off fix:
-          `no-bespoke-styling` catches a screen that writes className or style.
-          It cannot catch a screen that writes a bare element and accepts the
-          browser's defaults, because there is nothing there to match on. */}
-      <Heading level={1}>Employee</Heading>
+    // The PRIMITIVE in the header, not a raw <h1>: Tailwind's preflight sets
+    // `h1..h6 { font-size: inherit; font-weight: inherit }`, so a bare element
+    // rendered at 16px/400 beside components at their token sizes. A screen that
+    // writes a bare element and accepts the browser's defaults leaves nothing
+    // for a check to match on, which is why the Heading is used even here.
+    <Shell header={<Heading level={1}>Employee</Heading>}>
       {/* Contained HERE, not inside the component. The mapper refuses an
           unrecognised wire code and runs during render -- but it runs in the
           controller HOOK, before any JSX exists, so a boundary inside
@@ -38,6 +37,6 @@ export default async function EmployeePage({
       <ResourceBoundary data-testid="stale-client">
         <EmergencyContacts employeeId={employeeId} />
       </ResourceBoundary>
-    </main>
+    </Shell>
   )
 }
