@@ -31,7 +31,7 @@ describe('Text renders the role and tone it is asked for', () => {
     const html = render({})
     expect(html).toMatch(/^<p /)
     expect(html).toContain('data-slot="text"')
-    expect(html).toContain('m-0')
+    expect(html).toContain('m-none')
   })
 
   it.each([

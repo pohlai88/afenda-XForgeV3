@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 248 custom properties: 119 primitive, 125 semantic, 4 component (ceiling 12).
+- 250 custom properties: 120 primitive, 126 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -126,6 +126,7 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--size-text-sm` | `size.text-sm` | dimension | `0.875rem` |
 | `--size-text-xl` | `size.text-xl` | dimension | `1.5rem` |
 | `--size-text-xs` | `size.text-xs` | dimension | `0.75rem` |
+| `--space-0` | `space.0` | dimension | `0px` |
 | `--space-1` | `space.1` | dimension | `0.25rem` |
 | `--space-2` | `space.2` | dimension | `0.5rem` |
 | `--space-3` | `space.3` | dimension | `0.75rem` |
@@ -249,6 +250,7 @@ elevation domains.
 | `--semantic-space-control-x` | `semantic.space.control-x` | dimension | `{space.3}` | -- |
 | `--semantic-space-control-y` | `semantic.space.control-y` | dimension | `{space.2}` | -- |
 | `--semantic-space-loose` | `semantic.space.loose` | dimension | `{space.5}` | -- |
+| `--semantic-space-none` | `semantic.space.none` | dimension | `{space.0}` | -- |
 | `--semantic-space-normal` | `semantic.space.normal` | dimension | `{space.4}` | -- |
 | `--semantic-space-related` | `semantic.space.related` | dimension | `{space.1}` | -- |
 | `--semantic-space-row-x` | `semantic.space.row-x` | dimension | `{space.4}` | -- |

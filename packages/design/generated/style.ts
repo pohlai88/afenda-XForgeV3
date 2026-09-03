@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 143 symbols. Roles without one, and why:
+ * 159 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -120,66 +120,84 @@ export const STYLE = {
   space: {
     container: {
       gap: 'gap-container',
+      margin: 'm-container',
       padding: 'p-container',
       paddingX: 'px-container',
       paddingY: 'py-container',
     },
     controlX: {
       gap: 'gap-control-x',
+      margin: 'm-control-x',
       padding: 'p-control-x',
       paddingX: 'px-control-x',
       paddingY: 'py-control-x',
     },
     controlY: {
       gap: 'gap-control-y',
+      margin: 'm-control-y',
       padding: 'p-control-y',
       paddingX: 'px-control-y',
       paddingY: 'py-control-y',
     },
     loose: {
       gap: 'gap-loose',
+      margin: 'm-loose',
       padding: 'p-loose',
       paddingX: 'px-loose',
       paddingY: 'py-loose',
     },
+    none: {
+      gap: 'gap-none',
+      margin: 'm-none',
+      padding: 'p-none',
+      paddingX: 'px-none',
+      paddingY: 'py-none',
+    },
     normal: {
       gap: 'gap-normal',
+      margin: 'm-normal',
       padding: 'p-normal',
       paddingX: 'px-normal',
       paddingY: 'py-normal',
     },
     related: {
       gap: 'gap-related',
+      margin: 'm-related',
       padding: 'p-related',
       paddingX: 'px-related',
       paddingY: 'py-related',
     },
     rowX: {
       gap: 'gap-row-x',
+      margin: 'm-row-x',
       padding: 'p-row-x',
       paddingX: 'px-row-x',
       paddingY: 'py-row-x',
     },
     rowY: {
       gap: 'gap-row-y',
+      margin: 'm-row-y',
       padding: 'p-row-y',
       paddingX: 'px-row-y',
       paddingY: 'py-row-y',
     },
     section: {
       gap: 'gap-section',
+      margin: 'm-section',
       padding: 'p-section',
       paddingX: 'px-section',
       paddingY: 'py-section',
     },
     snug: {
       gap: 'gap-snug',
+      margin: 'm-snug',
       padding: 'p-snug',
       paddingX: 'px-snug',
       paddingY: 'py-snug',
     },
     tight: {
       gap: 'gap-tight',
+      margin: 'm-tight',
       padding: 'p-tight',
       paddingX: 'px-tight',
       paddingY: 'py-tight',

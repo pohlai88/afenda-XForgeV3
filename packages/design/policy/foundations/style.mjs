@@ -227,6 +227,7 @@ function geometrySymbols(tree, omitted) {
   for (const [role, policy] of Object.entries(SPACING_ROLES)) {
     set(tree, ['space', camel(role)], {
       gap: symbol(`gap-${role}`, [policy.token]),
+      margin: symbol(`m-${role}`, [policy.token]),
       padding: symbol(`p-${role}`, [policy.token]),
       paddingX: symbol(`px-${role}`, [policy.token]),
       paddingY: symbol(`py-${role}`, [policy.token]),

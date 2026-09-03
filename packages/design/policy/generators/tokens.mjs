@@ -171,6 +171,7 @@ export const TOKEN_PACKAGES = deepFreeze([
       'radius',
       'breakpoint',
       'container',
+      'spacing',
     ],
     // `cn()` needs to be told which of its classes are sizes and which are
     // colours; see `twMergeGroups`.
@@ -296,6 +297,22 @@ const CLOSURE_REASON = deepFreeze({
     'how blurry its edge is -- and shadow-flat being a real class that sets none is',
     'deliberate, because a card DECLARING it has no shadow is a decision where a',
     'card with no shadow class is an omission.',
+  ],
+  spacing: [
+    'THE TENTH NAMESPACE, and the one that is not a namespace. Numeric spacing --',
+    '`p-13`, `gap-2`, `m-0` -- is `calc(var(--spacing) * n)`: one multiplier, an',
+    'unbounded scale, and every value on it a length nobody here chose. Nine other',
+    'namespaces were closed for exactly that reason while this one stayed open,',
+    'with twenty role names projected INTO it, so `p-row-x` and `p-13` compiled',
+    'side by side -- the two-scales-on-one-prefix defect the radius closure had',
+    'removed, still live one namespace over (ADR-034 Decision 3).',
+    '',
+    'Clearing the multiplier closes the scale; the role names below are',
+    '`--spacing-<role>` custom properties and are not touched by it. The zero',
+    'resets went with the numbers, so the zero is a role: `m-none`, `p-none`.',
+    '',
+    'Cost when it landed: zero design values in authored code, zero in the',
+    'application; the vendored tree had already left class detection (step 8).',
   ],
   text: [
     'AND THE TYPE SCALE, which is the one that had actually gone wrong. Forty-',
@@ -1354,7 +1371,9 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
       '  /*',
       ...(CLOSURE_REASON[ns] ?? []).map((line) => (line === '' ? '   *' : `   * ${line}`)),
       '   */',
-      `  --${ns}-*: initial;`,
+      // `spacing` closes a MULTIPLIER, not a namespace: `--spacing-*` is where the role
+      // names live, and clearing it would remove them. The bare variable drives `p-13`.
+      ns === 'spacing' ? '  --spacing: initial;' : `  --${ns}-*: initial;`,
       '',
     ]),
     ...rows.map((row) => `  ${row.name}: var(${cssName(row.path)});`),

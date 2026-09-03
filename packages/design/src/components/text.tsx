@@ -46,7 +46,7 @@ import type { NativeProps } from '#lib/props'
  * naming inconsistency at once. Nothing is lost: `role` was never carrying the
  * policy's meaning to the DOM, only to a lookup table.
  */
-const textVariants = cva('m-0', {
+const textVariants = cva(STYLE.space.none.margin, {
   defaultVariants: {
     tone: 'default',
     variant: 'body',

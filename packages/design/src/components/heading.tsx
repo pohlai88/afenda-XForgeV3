@@ -47,7 +47,11 @@ export function Heading({
 }) {
   const Tag = `h${level}` as const
   return (
-    <Tag className={cn('m-0', STYLE.ink.default.text, ROLE[level])} data-slot="heading" {...props}>
+    <Tag
+      className={cn(STYLE.space.none.margin, STYLE.ink.default.text, ROLE[level])}
+      data-slot="heading"
+      {...props}
+    >
       {children}
     </Tag>
   )

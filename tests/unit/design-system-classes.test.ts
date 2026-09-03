@@ -265,6 +265,21 @@ describe('the design system vocabulary compiles', () => {
     expect(missingFrom(css, refused)).toEqual(refused)
   }, 30_000)
 
+  /**
+   * ADR-034 step 9: the numeric spacing scale does not exist. `--spacing` is Tailwind's
+   * multiplier, not a namespace -- `p-13` is `calc(var(--spacing) * 13)` -- so clearing it
+   * takes every numeric spacing utility with it, the zero resets included. The zero is a
+   * word now (`space.none`), and both directions are asserted: the numbers compile to
+   * nothing, the roles still compile.
+   */
+  it('the numeric spacing scale compiles to nothing; the roles still compile', async () => {
+    const numeric = ['p-13', 'p-4', 'gap-2', 'm-0', 'p-0', 'min-w-0']
+    const roleClasses = ['p-none', 'm-none', 'p-tight', 'gap-normal', 'px-row-x']
+    const css = await compile([...numeric, ...roleClasses])
+    expect(missingFrom(css, numeric)).toEqual(numeric)
+    expect(missingFrom(css, roleClasses)).toEqual([])
+  }, 30_000)
+
   it('and a class naming no role is reported missing', async () => {
     const css = await compile(['bg-card', 'bg-not-a-role'])
     expect(missingFrom(css, ['bg-card', 'bg-not-a-role'])).toEqual(['bg-not-a-role'])
@@ -284,18 +299,29 @@ describe('the design system vocabulary compiles', () => {
  * twelve files, `bg-error` to `text-body-compact`. Green once every one became a symbol.
  */
 describe('the authored layer selects style; it does not write it', () => {
-  // Zero resets and alignment keywords carry no token: `min-w-0` lets a flex child shrink,
-  // `text-center` chooses no size, colour or spacing.
-  const RESET = /^(m|p|mx|my|px|py|min-w|min-h)-0$/
+  // Alignment keywords carry no token: `text-center` chooses no size, colour or spacing.
+  // Zero resets are NOT exempt any more: since ADR-034 step 9 `m-0` compiles to nothing,
+  // and the zero is a word, `space.none`.
   const ALIGNMENT = /^text-(left|center|right|justify|start|end)$/
   const isThemed = (word: string): boolean => {
     const bare = word.slice(word.lastIndexOf(':') + 1)
     const prefix = THEMED.find((p) => bare.startsWith(p))
-    if (prefix === undefined || RESET.test(bare) || ALIGNMENT.test(bare)) {
+    if (prefix === undefined || ALIGNMENT.test(bare)) {
       return false
     }
     return !BUILT_IN.has(bare.slice(prefix.length))
   }
+
+  /**
+   * ADR-034 step 10: an arbitrary design value -- a length, a colour, a calc() typed inside
+   * square brackets -- is refused on ANY prefix, not only the themed ones: `w-[32px]` and
+   * `translate-x-[calc(100%-2px)]` name no token whichever property they set. Attribute
+   * selectors (`data-[size=sm]:`) and arbitrary variants (`[&_svg]:`) are not values and
+   * are left alone. Cost today: zero, and the predicate is proved on upstream's own words.
+   */
+  const ARBITRARY = /-\[(-?\d*\.?\d+(px|rem|em|s|ms|%|vh|vw|ch|deg)|#[0-9a-fA-F]{3,8}|calc\()/
+  const isArbitrary = (word: string): boolean =>
+    ARBITRARY.test(word.slice(word.lastIndexOf(':') + 1))
 
   // Comments are not literals: cn.ts explains a merge with `"p-normal p-loose"` in prose.
   const stripComments = (text: string) =>
@@ -309,6 +335,25 @@ describe('the authored layer selects style; it does not write it', () => {
 
   it('has authored source to hold to it', () => {
     expect(literals.length).toBeGreaterThan(20)
+  })
+
+  it('refuses an arbitrary design value on any prefix, and only a value', () => {
+    for (const word of [
+      'h-[18.4px]',
+      'w-[32px]',
+      'translate-x-[calc(100%-2px)]',
+      'text-[0.8rem]',
+      'bg-[#fff]',
+    ]) {
+      expect(isArbitrary(word), word).toBe(true)
+    }
+    for (const word of ['data-[size=sm]:h-4', '[&_svg]:size-4', 'w-(--anchor-width)', 'p-tight']) {
+      expect(isArbitrary(word), word).toBe(false)
+    }
+    const offenders = literals
+      .filter(({ word }) => isArbitrary(word))
+      .map(({ file, word }) => `${file}: ${word}`)
+    expect(offenders, 'hand-typed design values in authored source').toEqual([])
   })
 
   it('writes no design-bearing class literal', () => {

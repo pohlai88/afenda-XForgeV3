@@ -71,6 +71,7 @@
   --color-shadow-key: #26333d1f;
   --color-shadow-key-dark: #00000073;
   --color-shadow-none: #00000000;
+  --space-0: 0px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -185,6 +186,7 @@
   --semantic-space-row-x: var(--space-4);
   --semantic-space-container: var(--space-5);
   --semantic-space-related: var(--space-1);
+  --semantic-space-none: var(--space-0);
   --semantic-space-snug: var(--space-3);
   --semantic-size-stroke: var(--size-border);
   --semantic-size-ring: var(--size-focus-ring);

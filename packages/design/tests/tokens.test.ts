@@ -1668,6 +1668,10 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     expect(leaves.get('family.mono')?.class).toBe('font-mono')
     expect(leaves.get('shape.control')?.class).toBe('rounded-control')
     expect(leaves.get('space.tight.gap')?.class).toBe('gap-tight')
+    // The zero is a word: closing the numeric scale takes `m-0` with it (ADR-034 step 9).
+    expect(leaves.get('space.none.margin')?.class).toBe('m-none')
+    expect(leaves.get('space.none.padding')?.class).toBe('p-none')
+    expect(leaves.get('space.tight.margin')?.class).toBe('m-tight')
     expect(leaves.get('elevation.above')?.class).toBe('shadow-floating')
     expect(leaves.get('motion.press')?.class).toBe('duration-press')
     expect(leaves.get('size.control')?.class).toBe('h-control')

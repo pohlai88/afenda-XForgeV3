@@ -18,7 +18,7 @@ import type { NativeProps } from '#lib/props'
 export function List({ children, ...props }: NativeProps<'ul'>) {
   return (
     <ul
-      className={cn('flex list-none flex-col p-0', STYLE.space.tight.gap)}
+      className={cn('flex list-none flex-col', STYLE.space.none.padding, STYLE.space.tight.gap)}
       data-slot="list"
       {...props}
     >

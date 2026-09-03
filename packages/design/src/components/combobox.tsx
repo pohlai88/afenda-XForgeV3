@@ -93,7 +93,7 @@ function selectedOption(
 }
 
 const FIELD = cn(
-  'w-full min-w-0 outline-none transition-colors disabled:cursor-not-allowed',
+  'w-full outline-none transition-colors disabled:cursor-not-allowed',
   STYLE.size.control,
   STYLE.space.controlX.paddingX,
   STYLE.shape.control,

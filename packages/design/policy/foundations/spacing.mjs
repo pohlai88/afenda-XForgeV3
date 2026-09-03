@@ -83,19 +83,32 @@ export const SPACING_ROLES = deepFreeze({
 
   /** Between separate groups of components. */
   loose: {
-    rank: 4,
+    rank: 5,
     token: 'semantic.space.loose',
+  },
+
+  /** Parts of one thing: label + helper, icon + supporting metadata, etc. */
+  /**
+   * THE ZERO IS A WORD (ADR-034 step 9). Closing the numeric spacing scale -- Tailwind's
+   * `--spacing` multiplier -- takes `m-0` and `p-0` with `p-13`, because every one of them
+   * is `calc(var(--spacing) * n)`. A heading's margin reset and a list's padding reset are
+   * designed absences of space, and a design language that cannot say "none" cannot close
+   * its scale. Held still: zero is zero in every density.
+   */
+  none: {
+    heldStill: true,
+    rank: 0,
+    token: 'semantic.space.none',
   },
 
   /** Default separation between separate components. */
   normal: {
-    rank: 3,
+    rank: 4,
     token: 'semantic.space.normal',
   },
 
-  /** Parts of one thing: label + helper, icon + supporting metadata, etc. */
   related: {
-    rank: 0,
+    rank: 1,
     token: 'semantic.space.related',
   },
 
@@ -109,19 +122,19 @@ export const SPACING_ROLES = deepFreeze({
    */
   section: {
     heldStill: true,
-    rank: 5,
+    rank: 6,
     token: 'semantic.space.section',
   },
 
   /** Inside one compact component. */
   snug: {
-    rank: 2,
+    rank: 3,
     token: 'semantic.space.snug',
   },
 
   /** Strongly associated: icon + label, value + unit, etc. */
   tight: {
-    rank: 1,
+    rank: 2,
     token: 'semantic.space.tight',
   },
 })

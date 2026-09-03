@@ -41,9 +41,17 @@ export function EmptyState({
       data-slot="empty-state"
       {...props}
     >
-      <p className={cn('m-0', STYLE.typography.emphasis, STYLE.ink.default.text)}>{title}</p>
+      <p className={cn(STYLE.space.none.margin, STYLE.typography.emphasis, STYLE.ink.default.text)}>
+        {title}
+      </p>
       {description ? (
-        <p className={cn('m-0', STYLE.typography.body, STYLE.surface.muted.foreground)}>
+        <p
+          className={cn(
+            STYLE.space.none.margin,
+            STYLE.typography.body,
+            STYLE.surface.muted.foreground,
+          )}
+        >
           {description}
         </p>
       ) : null}

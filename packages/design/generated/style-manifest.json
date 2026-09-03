@@ -358,6 +358,12 @@
         "semantic.space.container"
       ]
     },
+    "space.container.margin": {
+      "class": "m-container",
+      "tokens": [
+        "semantic.space.container"
+      ]
+    },
     "space.container.padding": {
       "class": "p-container",
       "tokens": [
@@ -378,6 +384,12 @@
     },
     "space.controlX.gap": {
       "class": "gap-control-x",
+      "tokens": [
+        "semantic.space.control-x"
+      ]
+    },
+    "space.controlX.margin": {
+      "class": "m-control-x",
       "tokens": [
         "semantic.space.control-x"
       ]
@@ -406,6 +418,12 @@
         "semantic.space.control-y"
       ]
     },
+    "space.controlY.margin": {
+      "class": "m-control-y",
+      "tokens": [
+        "semantic.space.control-y"
+      ]
+    },
     "space.controlY.padding": {
       "class": "p-control-y",
       "tokens": [
@@ -430,6 +448,12 @@
         "semantic.space.loose"
       ]
     },
+    "space.loose.margin": {
+      "class": "m-loose",
+      "tokens": [
+        "semantic.space.loose"
+      ]
+    },
     "space.loose.padding": {
       "class": "p-loose",
       "tokens": [
@@ -448,8 +472,44 @@
         "semantic.space.loose"
       ]
     },
+    "space.none.gap": {
+      "class": "gap-none",
+      "tokens": [
+        "semantic.space.none"
+      ]
+    },
+    "space.none.margin": {
+      "class": "m-none",
+      "tokens": [
+        "semantic.space.none"
+      ]
+    },
+    "space.none.padding": {
+      "class": "p-none",
+      "tokens": [
+        "semantic.space.none"
+      ]
+    },
+    "space.none.paddingX": {
+      "class": "px-none",
+      "tokens": [
+        "semantic.space.none"
+      ]
+    },
+    "space.none.paddingY": {
+      "class": "py-none",
+      "tokens": [
+        "semantic.space.none"
+      ]
+    },
     "space.normal.gap": {
       "class": "gap-normal",
+      "tokens": [
+        "semantic.space.normal"
+      ]
+    },
+    "space.normal.margin": {
+      "class": "m-normal",
       "tokens": [
         "semantic.space.normal"
       ]
@@ -478,6 +538,12 @@
         "semantic.space.related"
       ]
     },
+    "space.related.margin": {
+      "class": "m-related",
+      "tokens": [
+        "semantic.space.related"
+      ]
+    },
     "space.related.padding": {
       "class": "p-related",
       "tokens": [
@@ -498,6 +564,12 @@
     },
     "space.rowX.gap": {
       "class": "gap-row-x",
+      "tokens": [
+        "semantic.space.row-x"
+      ]
+    },
+    "space.rowX.margin": {
+      "class": "m-row-x",
       "tokens": [
         "semantic.space.row-x"
       ]
@@ -526,6 +598,12 @@
         "semantic.space.row-y"
       ]
     },
+    "space.rowY.margin": {
+      "class": "m-row-y",
+      "tokens": [
+        "semantic.space.row-y"
+      ]
+    },
     "space.rowY.padding": {
       "class": "p-row-y",
       "tokens": [
@@ -546,6 +624,12 @@
     },
     "space.section.gap": {
       "class": "gap-section",
+      "tokens": [
+        "semantic.space.section"
+      ]
+    },
+    "space.section.margin": {
+      "class": "m-section",
       "tokens": [
         "semantic.space.section"
       ]
@@ -574,6 +658,12 @@
         "semantic.space.snug"
       ]
     },
+    "space.snug.margin": {
+      "class": "m-snug",
+      "tokens": [
+        "semantic.space.snug"
+      ]
+    },
     "space.snug.padding": {
       "class": "p-snug",
       "tokens": [
@@ -594,6 +684,12 @@
     },
     "space.tight.gap": {
       "class": "gap-tight",
+      "tokens": [
+        "semantic.space.tight"
+      ]
+    },
+    "space.tight.margin": {
+      "class": "m-tight",
       "tokens": [
         "semantic.space.tight"
       ]
