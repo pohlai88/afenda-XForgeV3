@@ -1430,12 +1430,13 @@ describe('the shipped package configuration', () => {
   it.each([...TOKEN_PACKAGES])(
     '$pkg generates, and the committed tokens.css is what it generates',
     (pkg) => {
-      const { css } = generate(source, {
+      const { css, style } = generate(source, {
         closes: pkg.closes,
         typeRoles: foundations.typeRolesFor(pkg.typeRoles),
       })
       const committed = readFileSync(join(ROOT, pkg.pkg, 'generated/tokens.css'), 'utf8')
       expect(css).toBe(committed)
+      expect(style).toBe(readFileSync(join(ROOT, pkg.pkg, 'generated/style.ts'), 'utf8'))
     },
   )
 })
@@ -1590,5 +1591,98 @@ describe('colour channels (ADR-034)', () => {
       }
     }
     expect(stale, 'shims no reachable file needs any more').toEqual([])
+  })
+})
+
+/**
+ * ADR-034 Decision 4 / ADR-031 Decision 12: the style contract. A component selects
+ * `STYLE.action.danger.background`; the class it resolves to is `bg-destructive`. The symbol
+ * is Xforge's word, the class is the role's, and `STYLE_NAMES` is the one place they meet.
+ * Written before `style.mjs` and the emitter existed; red on every case.
+ */
+describe('the style contract (ADR-034 Decision 4)', () => {
+  const { omitted, symbols } = foundations.styleTree() as {
+    omitted: { reason: string; role: string }[]
+    symbols: Record<string, unknown>
+  }
+  const leaves = new Map<string, { class: string; tokens: string[] }>(
+    foundations.styleLeaves(symbols),
+  )
+
+  it('names colour by meaning and resolves it to the role class', () => {
+    expect(leaves.get('action.danger.background')?.class).toBe('bg-destructive')
+    expect(leaves.get('action.danger.foreground')?.class).toBe('text-destructive-foreground')
+    expect(leaves.get('status.danger.background')?.class).toBe('bg-error')
+    expect(leaves.get('status.danger.foreground')?.class).toBe('text-error-foreground')
+    expect(leaves.get('surface.page.background')?.class).toBe('bg-background')
+    expect(leaves.get('ink.default.text')?.class).toBe('text-foreground')
+    expect(leaves.get('stroke.focus.ring')?.class).toBe('ring-ring')
+  })
+
+  it('expresses an interaction companion with its variant, once, in the language', () => {
+    expect(leaves.get('action.primary.hover')?.class).toBe('hover:bg-primary-hover')
+    expect(leaves.get('action.primary.pressed')?.class).toBe('active:bg-primary-pressed')
+    expect(leaves.get('action.danger.pressed')?.class).toBe('active:bg-destructive-pressed')
+    expect(leaves.has('surface.card.hover')).toBe(false)
+  })
+
+  it('projects the other role tables as their own words', () => {
+    expect(leaves.get('typography.body')?.class).toBe('font-body text-body tracking-body')
+    expect(leaves.get('typography.display')?.class).toBe('font-heading text-display')
+    expect(leaves.get('shape.control')?.class).toBe('rounded-control')
+    expect(leaves.get('space.tight.gap')?.class).toBe('gap-tight')
+    expect(leaves.get('elevation.above')?.class).toBe('shadow-floating')
+    expect(leaves.get('motion.press')?.class).toBe('duration-press')
+    expect(leaves.get('size.control')?.class).toBe('h-control')
+  })
+
+  it('every leaf names the tokens it resolves through, and every token exists', () => {
+    const tokens = flatten(source)
+    expect(leaves.size).toBeGreaterThan(60)
+    for (const [path, leaf] of leaves) {
+      expect(leaf.tokens.length, `${path} names no token`).toBeGreaterThan(0)
+      for (const token of leaf.tokens) {
+        expect(tokens.has(token), `${path} names '${token}', which does not exist`).toBe(true)
+      }
+    }
+  })
+
+  it('records every role without a symbol, with its reason', () => {
+    const roles = omitted.map((o) => o.role)
+    expect(roles).toContain('semantic.color.scrim')
+    expect(roles).toContain('semantic.color.shadow-key')
+    expect(roles).toContain('semantic.motion.duration.pulse')
+    for (const o of omitted) {
+      expect(o.reason.length).toBeGreaterThan(10)
+    }
+    expect(leaves.has('overlay.scrim.background')).toBe(false)
+  })
+
+  it('refuses a colour root without a word, and a word given twice', () => {
+    const { primary: _primary, ...withoutPrimary } = foundations.STYLE_NAMES
+    expect(() => foundations.assertStyleNames(withoutPrimary)).toThrow(
+      /colour root 'primary' has no word in STYLE_NAMES/,
+    )
+    expect(() =>
+      foundations.assertStyleNames({
+        ...foundations.STYLE_NAMES,
+        secondary: ['action', 'primary'],
+      }),
+    ).toThrow(/gives 'action\.primary' to both/)
+  })
+
+  it('the generator emits style.ts and the manifest from the same call, and they agree', () => {
+    const { style, styleManifest } = generate(source)
+    expect(style).toContain('export const STYLE = {')
+    expect(style).toContain("background: 'bg-destructive'")
+    const manifest = JSON.parse(styleManifest) as {
+      contract: string
+      omitted: { role: string }[]
+      symbols: Record<string, { class: string }>
+    }
+    expect(manifest.contract).toBe(policy.TOKEN_CONTRACT_VERSION)
+    expect(Object.keys(manifest.symbols).length).toBe(leaves.size)
+    expect(manifest.symbols['action.danger.background']).toMatchObject({ class: 'bg-destructive' })
+    expect(manifest.omitted.length).toBe(omitted.length)
   })
 })

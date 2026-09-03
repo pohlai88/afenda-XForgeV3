@@ -226,6 +226,22 @@ describe('the design system vocabulary compiles', () => {
    * error.
    */
   /**
+   * ADR-031 Decision 12 lists "every STYLE symbol resolves to an emitted class" as owed.
+   * This is it: every class the style manifest names compiles, variant prefixes included,
+   * against the same stylesheet the application builds. A symbol whose class Tailwind
+   * does not drive is a word a component could say that renders nothing.
+   */
+  it('every STYLE symbol resolves to a class that compiles', async () => {
+    const manifest = JSON.parse(
+      readFileSync(join(PKG, 'generated/style-manifest.json'), 'utf8'),
+    ) as { symbols: Record<string, { class: string }> }
+    const classes = [...new Set(Object.values(manifest.symbols).flatMap((s) => s.class.split(' ')))]
+    expect(classes.length).toBeGreaterThan(60)
+    const css = await compile(classes)
+    expect(missingFrom(css, classes), 'STYLE symbols whose class compiles to nothing').toEqual([])
+  }, 30_000)
+
+  /**
    * The closure that ADR-034 Decision 3 is for, asserted in both directions: a role that
    * left the namespace compiles through the channels its kind declares and through no
    * other. `text-error` would paint prose in a status tint; `bg-error-foreground` would

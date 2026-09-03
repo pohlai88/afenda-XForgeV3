@@ -94,7 +94,7 @@
  *                          obligation, two implementations. The generator won
  *   interaction, mostly    four of five policies are checked on import and by the
  *                          unit suite, and by nothing else
- *   a TypeScript projection   `token-names.json` is the only manifest
+ *   a TypeScript projection   `generated/style.ts` and `style-manifest.json` (ADR-034 step 6)
  */
 
 export * from './define-policy.mjs'

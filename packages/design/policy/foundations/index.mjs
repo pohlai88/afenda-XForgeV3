@@ -171,6 +171,7 @@ export * from './radius.mjs'
 export * from './sizing.mjs'
 export * from './spacing.mjs'
 export * from './stacking.mjs'
+export * from './style.mjs'
 export * from './typography.mjs'
 
 import { assertPolicyRegistry } from '../define-policy.mjs'

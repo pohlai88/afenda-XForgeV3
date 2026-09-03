@@ -110,6 +110,8 @@ import {
   pairsFor,
   SUPPORTED_VALUE_SHAPES,
   serializeValue,
+  styleLeaves,
+  styleTree,
   TOKEN_CONTRACT_VERSION,
   TYPE_ROLES,
   tailwindNameOf,
@@ -319,9 +321,10 @@ const CLOSURE_REASON = deepFreeze({
 const outputsFor = (pkg) => ({
   foundations: join(ROOT, pkg, 'generated/FOUNDATIONS.md'),
   input: join(ROOT, pkg, 'policy/tokens.json'),
-  manifest: join(ROOT, pkg, 'generated/token-names.json'),
   merge: join(ROOT, pkg, 'generated/twmerge.ts'),
   output: join(ROOT, pkg, 'generated/tokens.css'),
+  style: join(ROOT, pkg, 'generated/style.ts'),
+  styleManifest: join(ROOT, pkg, 'generated/style-manifest.json'),
   tailwind: join(ROOT, pkg, 'generated/tailwind-theme.css'),
 })
 
@@ -861,6 +864,8 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
     css: lines.join('\n'),
     foundations: foundations(tokens, blocks),
     mergeGroups: twMergeGroups(projectedRows(tokens), tokens),
+    style: styleContract(),
+    styleManifest: styleManifestJson(),
     tailwindTheme: tailwindTheme(tokens, closes, typeRoles, base),
     tokens,
   }
@@ -1257,6 +1262,53 @@ function scaleAliases(tokens, closes, typeRoles, rows) {
       ]
 }
 
+/**
+ * THE STYLE CONTRACT, DERIVED (ADR-034 Decision 4; consumed under ADR-031 Decision 12). The
+ * nested `STYLE` object a recipe selects from: every leaf is the class string the kernel
+ * projects for that word, and nothing a component says about its appearance comes from
+ * anywhere else. Built by `styleTree()` in the foundations, serialised here, so the tree
+ * and the stylesheet come from one call and cannot disagree. `token-names.json` was the
+ * previous manifest -- a flat list of custom properties no runtime read -- and is subsumed.
+ */
+function styleContract() {
+  const { omitted, symbols } = styleTree()
+  const render = (node, depth) => {
+    const pad = '  '.repeat(depth)
+    if (typeof node.class === 'string' && Array.isArray(node.tokens)) {
+      return `'${node.class}'`
+    }
+    const lines = Object.entries(node).map(([k, v]) => `${pad}  ${k}: ${render(v, depth + 1)},`)
+    return `{\n${lines.join('\n')}\n${pad}}`
+  }
+  return [
+    '/*',
+    ' * GENERATED FROM packages/design/policy -- DO NOT EDIT. Run `pnpm gen:tokens`.',
+    ' *',
+    ' * The style contract (ADR-034 Decision 4). A recipe selects a symbol; the class it',
+    ' * resolves to names a role the kernel declared and the bridge emits. The word is',
+    " * Xforge's (`action.danger`); the class is the role's (`bg-destructive`); STYLE_NAMES in",
+    ' * policy/foundations/style.mjs is where the two meet. Interaction companions carry their',
+    ' * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the',
+    ' * language, decided once.',
+    ' *',
+    ` * ${styleLeaves(symbols).length} symbols. Roles without one, and why:`,
+    ...omitted.map((o) => ` *   ${o.role} -- ${o.reason}`),
+    ' */',
+    `export const STYLE = ${render(symbols, 0)} as const`,
+    '',
+  ].join('\n')
+}
+
+function styleManifestJson() {
+  const { omitted, symbols } = styleTree()
+  const manifest = {
+    contract: TOKEN_CONTRACT_VERSION,
+    omitted,
+    symbols: Object.fromEntries(styleLeaves(symbols)),
+  }
+  return `${JSON.stringify(manifest, null, 2)}\n`
+}
+
 function tailwindTheme(tokens, closes, typeRoles, resolved) {
   // A BREAKPOINT CANNOT BE A REFERENCE, and it is the one place `inline` is
   // wrong. `@theme inline` emits `var(--semantic-breakpoint-medium)` -- which is
@@ -1496,7 +1548,8 @@ function emit({ closes, mergeGroups: wantsMergeGroups = false, pkg, typeRoles })
   const {
     foundations: FOUNDATIONS,
     input: INPUT,
-    manifest: MANIFEST,
+    style: STYLE_OUT,
+    styleManifest: STYLE_MANIFEST,
     merge: MERGE,
     output: OUTPUT,
     tailwind: TAILWIND,
@@ -1508,6 +1561,8 @@ function emit({ closes, mergeGroups: wantsMergeGroups = false, pkg, typeRoles })
     css,
     foundations: doc,
     mergeGroups,
+    style,
+    styleManifest,
     tailwindTheme: theme,
     tokens,
   } = generate(source, { closes, typeRoles: typeRolesFor(typeRoles) })
@@ -1525,16 +1580,8 @@ function emit({ closes, mergeGroups: wantsMergeGroups = false, pkg, typeRoles })
   // The authority a stylesheet's var() references are checked against. Emitted
   // rather than inferred, because a guard deriving the name set by re-parsing
   // the CSS would be a second implementation of what this file already knows.
-  writeFileSync(
-    MANIFEST,
-    `${JSON.stringify(
-      [...tokens.keys()].map(cssName).sort((a, b) => a.localeCompare(b)),
-      null,
-      2,
-    )}
-`,
-    'utf8',
-  )
+  writeFileSync(STYLE_OUT, style, 'utf8')
+  writeFileSync(STYLE_MANIFEST, styleManifest, 'utf8')
 
   const modes = blocks.map((b) => b.label).join(', ')
   process.stdout.write(
