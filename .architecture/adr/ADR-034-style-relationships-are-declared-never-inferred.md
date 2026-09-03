@@ -1,8 +1,11 @@
 # ADR-034 — Xforge is a closed design language
 
-**Status:** Proposed · 2026-09-03 · **Nothing here is built.** No section is FROZEN and none
-may be: law 34 gates a freeze on evidence, and the evidence here is a measurement of the tree
-plus five external claims retrieved once.
+**Status:** Proposed · 2026-09-03 · **Migration steps 1–4 are built** (commits `88dceb6`,
+`04199cc`, `d4f31dc`, `164bc22`): the colour and typography contracts exist, their refusals
+are tested RED-first, and `generated/` moved only where step 3 minted a token. Steps 5–10,
+which change generated output, are not started. No section is FROZEN and none may be: law 34
+gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
+external claims retrieved once.
 
 **Simplified on the owner's review, 2026-09-03.** The first draft (commit `ca61f6a`, kept
 whole in history) ran to eight decisions because it was answering three questions at once:
@@ -396,10 +399,18 @@ moves, the step is wrong.
 
 ```
    1  COLOR_ROLE_CONTRACTS in policy/foundations/color.mjs — all 26 roots, NONE allowed
+                                                            DONE 88dceb6, byte-identical
    2  assertColorRoleContracts(), wired beside assertColorPolicies.
-      WRITE THE TESTS FIRST AND WATCH THEM FAIL
+      WRITE THE TESTS FIRST AND WATCH THEM FAIL                DONE 04199cc: seven red first
    3  clear the red: destructive's pressed, and every slot the assertion names
+                                                            DONE 04199cc, with step 2 --
+                                                            a generator that refuses the
+                                                            shipped file is not a state to
+                                                            check in; the red is recorded
    4  complete TYPE_ROLES — five fields per role; mint, reuse or NONE
+                                                            DONE d4f31dc, byte-identical;
+                                                            164bc22 fixed the tracking
+                                                            measurement it exposed
    5  declare css capabilities per role; emit narrow roles as @utility; withdraw them
       from --color-*                                     (generated output CHANGES here)
    6  emit style-manifest.json and style.ts from the same generate(); delete
@@ -418,16 +429,23 @@ references them. Steps 5–9 roll back by restoring the namespace projection, on
 
 ## Verification
 
-Qualification test: **`packages/design/tests/tokens.test.ts`**, under its `what the generator
-refuses` block, each case observed RED before the table that satisfies it is written:
+Qualification test: **`packages/design/tests/tokens.test.ts`**, each case observed RED before
+the table that satisfies it is written:
 
 ```
-  a semantic colour token owned by no declared root
-  a root declaring a companion slot that is neither a reference nor NONE
-  a token whose name carries a companion suffix but is undeclared
-  a typography role omitting any of its five fields
-  a role used through a CSS channel its capability set refuses
+  a semantic colour token owned by no declared root              WRITTEN, red first (04199cc)
+  a root declaring a companion slot that is neither a reference nor NONE       WRITTEN, red first
+  a token whose name carries a companion suffix but is undeclared              WRITTEN, red first
+  a typography role omitting any of its five fields                 WRITTEN, red first (d4f31dc)
+  a typography token no role names and no shim lists                WRITTEN, red first (d4f31dc)
+  a role used through a CSS channel its capability set refuses                 step 5, unwritten
 ```
+
+Two more landed with step 4 because the work exposed them: a shim a role also names is
+refused (a stale list is a second source), and the shipped package configuration is run
+through `generate()` with its own options and held to the committed `tokens.css` — the unit
+suite had never run those options, which is how `d4f31dc` landed with the CLI generator red
+while every case was green (`164bc22`).
 
 Closure and emission, once step 5 lands — the check that a closed namespace is closed, which a
 green generator cannot tell you:
