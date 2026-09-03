@@ -55,6 +55,8 @@ export interface Group {
  */
 export const NOT_SHOWN: Readonly<Record<string, string>> = {
   page: 'the gallery renders on the Page the root layout provides; a Page inside a frame is a viewport-tall empty ground',
+  shell:
+    'the gallery is rendered inside it: the docked header, the rail and the content are the page itself',
 }
 
 const RELATIONSHIPS = [

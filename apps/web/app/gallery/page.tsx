@@ -1,10 +1,11 @@
 import { Card } from '@xforge/design/components/card'
-import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
 import { Link } from '@xforge/design/components/link'
+import { Shell } from '@xforge/design/components/shell'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { ColourPlate } from './colour'
 import { SPACE_SAMPLES, TYPE_SAMPLES } from './foundations'
 import { MeasurePlate } from './measure'
@@ -28,7 +29,7 @@ import { GALLERY } from './specimens'
  * It composes the design package and nothing else, and writes no class: the
  * components' props do not admit one, which is Decision 12 of ADR-031 as a type rather
  * than a rule. When the gallery needed a word the language lacked -- a grid, a frame, a
- * link -- the word was added to the language, not to this file.
+ * link, a shell -- the word was added to the language, not to this file.
  */
 export const metadata = { title: 'Gallery — Xforge' }
 
@@ -38,32 +39,57 @@ export const titleOf = (component: string): string =>
 
 const anchorOf = (component: string): string => `gallery-${component}`
 
-/** The dictionaries come first in the index: the words, then the components that say them. */
+/** The dictionaries come first in the rail: the words, then the components that say them. */
 const FOUNDATIONS = [
   { id: 'gallery-colour', title: 'Colour' },
   { id: 'gallery-type', title: 'Type' },
   { id: 'gallery-space', title: 'Space' },
 ] as const
 
+/** One card: its heading carries the id the rail points at, and the way back to the top. */
+function Section({
+  children,
+  id,
+  intro,
+  title,
+}: {
+  readonly children: ReactNode
+  readonly id: string
+  readonly intro?: string
+  readonly title: string
+}) {
+  return (
+    <Card aria-labelledby={id}>
+      <Stack gap="normal">
+        <Stack direction="row" gap="normal">
+          <Heading id={id} level={2}>
+            {title}
+          </Heading>
+          <Link href="#gallery-top">Top</Link>
+        </Stack>
+        {intro ? <Text tone="muted">{intro}</Text> : null}
+        {children}
+      </Stack>
+    </Card>
+  )
+}
+
 export default function GalleryPage() {
   if (process.env.NODE_ENV === 'production') {
     notFound()
   }
   return (
-    <Stack gap="loose">
-      <Stack gap="tight">
-        <Heading id="gallery-top" level={1}>
-          Gallery
-        </Heading>
-        <Text tone="muted">
-          Every authored component, in every word it owns, against the stylesheet the application
-          builds. Each group prints its recipe once; beneath each frame, only the words that state
-          adds. Development only.
-        </Text>
-      </Stack>
-      <Modes />
-      <nav aria-label="Index">
-        <Grid columns={4} gap="tight">
+    <Shell
+      header={
+        <Stack direction="row" gap="loose">
+          <Heading id="gallery-top" level={1}>
+            Gallery
+          </Heading>
+          <Modes />
+        </Stack>
+      }
+      nav={
+        <Stack gap="tight">
           {FOUNDATIONS.map((f) => (
             <Link href={`#${f.id}`} key={f.id}>
               {f.title}
@@ -74,67 +100,46 @@ export default function GalleryPage() {
               {titleOf(group.component)}
             </Link>
           ))}
-        </Grid>
-      </nav>
-      <Card aria-labelledby="gallery-colour">
-        <Stack gap="normal">
-          <Stack direction="row" gap="normal">
-            <Heading id="gallery-colour" level={2}>
-              Colour
-            </Heading>
-            <Link href="#gallery-top">Top</Link>
-          </Stack>
-          <Text tone="muted">
-            Every role a swatch can show, in the active theme. Beneath each: the fill, the ink, and
-            their contrast. Fills that exist only under a state are shown by the components that own
-            them.
-          </Text>
+        </Stack>
+      }
+    >
+      <Stack gap="loose">
+        <Text tone="muted">
+          Every authored component, in every word it owns, against the stylesheet the application
+          builds. Each group prints its recipe once; beneath each frame, only the words that state
+          adds. Development only.
+        </Text>
+        <Section
+          id="gallery-colour"
+          intro="Every role a swatch can show, in the active theme. Beneath each: the fill, the ink, and their contrast. Fills that exist only under a state are shown by the components that own them."
+          title="Colour"
+        >
           <ColourPlate />
-        </Stack>
-      </Card>
-      <Card aria-labelledby="gallery-type">
-        <Stack gap="normal">
-          <Stack direction="row" gap="normal">
-            <Heading id="gallery-type" level={2}>
-              Type
-            </Heading>
-            <Link href="#gallery-top">Top</Link>
-          </Stack>
-          <Text tone="muted">
-            Every type role, through the component that wears it. Beneath each: the symbol it drew
-            and its size, weight and leading as computed.
-          </Text>
+        </Section>
+        <Section
+          id="gallery-type"
+          intro="Every type role, through the component that wears it. Beneath each: the symbol it drew and its size, weight and leading as computed."
+          title="Type"
+        >
           <MeasurePlate columns={2} family="typography" samples={TYPE_SAMPLES} />
-        </Stack>
-      </Card>
-      <Card aria-labelledby="gallery-space">
-        <Stack gap="normal">
-          <Stack direction="row" gap="normal">
-            <Heading id="gallery-space" level={2}>
-              Space
-            </Heading>
-            <Link href="#gallery-top">Top</Link>
-          </Stack>
-          <Text tone="muted">
-            Every spacing role, through the layout that owns it. Beneath each: the symbol and the
-            gap or padding in pixels, in the active density.
-          </Text>
+        </Section>
+        <Section
+          id="gallery-space"
+          intro="Every spacing role, through the layout that owns it. Beneath each: the symbol and the gap or padding in pixels, in the active density."
+          title="Space"
+        >
           <MeasurePlate columns={3} family="space" samples={SPACE_SAMPLES} />
-        </Stack>
-      </Card>
-      {GALLERY.map((group) => (
-        <Card aria-labelledby={anchorOf(group.component)} key={group.component}>
-          <Stack gap="normal">
-            <Stack direction="row" gap="normal">
-              <Heading id={anchorOf(group.component)} level={2}>
-                {titleOf(group.component)}
-              </Heading>
-              <Link href="#gallery-top">Top</Link>
-            </Stack>
+        </Section>
+        {GALLERY.map((group) => (
+          <Section
+            id={anchorOf(group.component)}
+            key={group.component}
+            title={titleOf(group.component)}
+          >
             <Plates columns={group.columns} states={group.states} />
-          </Stack>
-        </Card>
-      ))}
-    </Stack>
+          </Section>
+        ))}
+      </Stack>
+    </Shell>
   )
 }
