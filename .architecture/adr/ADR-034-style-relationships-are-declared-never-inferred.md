@@ -6,7 +6,7 @@ exist, their refusals are tested RED-first, and per-channel colour capability is
 emission — forty `@utility` blocks, eight roles kept in the namespace by measured vendored
 shims; `generated/style.ts` and `style-manifest.json` carry 124 semantic symbols and replace
 `token-names.json`; every authored recipe selects those symbols and no Target exposes
-`className` or `style`. Steps 8–10 are not started. No section is FROZEN and none may be: law 34
+`className` or `style`. Step 8 is in progress (Button done); steps 9–10 are not started. No section is FROZEN and none may be: law 34
 gates a freeze on evidence, and the evidence here is a measurement of the tree plus five
 external claims retrieved once.
 
@@ -441,7 +441,17 @@ moves, the step is wrong.
                                                             became "no design-bearing
                                                             literal" (46 red before, 0 after)
    8  per component, move the Adapter's spacing onto role names, then @source not the
-      vendored file it wraps
+      vendored file it wraps                                  IN PROGRESS: Button DONE --
+                                                            the Adapter owns the whole
+                                                            recipe over Base UI's Button;
+                                                            the vendored button.tsx stays
+                                                            reachable only through the
+                                                            vendored combobox.tsx, so no
+                                                            @source not yet. Remaining
+                                                            reachable: card, combobox,
+                                                            input, input-group, switch,
+                                                            textarea -- one at a time,
+                                                            with the owner's eye on each
    9  close --spacing-* once step 8 covers the reachable vendored files
   10  refuse arbitrary [...] design values in authored code (cost today: zero)
 ```

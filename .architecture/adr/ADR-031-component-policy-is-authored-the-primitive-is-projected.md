@@ -387,7 +387,9 @@ four parts are decided differently:
    confirms**, and it changes on a condition it wrote itself: its header says *"THE RECIPE
    IS UPSTREAM'S. The classes live in the vendored file and are its business **until a
    token policy says otherwise**."* ADR-034 is that policy. Button's `variant` stays; what
-   ends is upstream deciding what `variant` looks like.
+   ends is upstream deciding what `variant` looks like. **Changed in ADR-034 step 8:** the
+   Adapter sits on Base UI's Button directly and owns the recipe as STYLE symbols; the
+   vendored `button.tsx` is imported by no Adapter.
 
 2. **The fourth policy tree is not built.** `POLICY_KINDS` keeps `component` reserved and
    `index.mjs` composes three. `policy/components/`, `axes.mjs`, a slot grammar and an
