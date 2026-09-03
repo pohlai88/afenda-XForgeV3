@@ -67,6 +67,12 @@ const NAMESPACES = [...UTILITY_FOR.keys()].sort((a, b) => b.length - a.length)
 const rolesFromBridge = (): { cls: string; variable: string }[] => {
   const bridge = readFileSync(BRIDGE, 'utf8')
   const out: { cls: string; variable: string }[] = []
+  // Per-channel colour utilities (ADR-034 Decision 3) are declared, not projected: a
+  // role that left `--color-*` appears here as `@utility bg-error { … }`, and is a class
+  // the design system writes exactly like a namespaced one.
+  for (const match of bridge.matchAll(/^@utility ([\w-]+) \{/gm)) {
+    out.push({ cls: match[1] ?? '', variable: `@utility ${match[1]}` })
+  }
   for (const match of bridge.matchAll(/^\s*(--[\w-]+):\s*var\(/gm)) {
     const variable = match[1] ?? ''
     const namespace = NAMESPACES.find((ns) => variable.startsWith(`--${ns}-`))
@@ -156,8 +162,21 @@ const compile = async (candidates: string[]): Promise<string> => {
  */
 const cssEscape = (cls: string): string => cls.replace(/[^a-zA-Z0-9_-]/g, (ch) => `\\${ch}`)
 
+// A selector match ends at a non-name character: `.bg-card` must not be satisfied by
+// `.bg-card-foreground`. The substring form was, which hid a missing role behind its
+// companion's rule and reported `text-error` as compiled because `.text-error-foreground` was.
 const missingFrom = (css: string, candidates: string[]): string[] =>
-  candidates.filter((c) => !css.includes(`.${cssEscape(c)}`))
+  candidates.filter((c) => {
+    const selector = `.${cssEscape(c)}`
+    let at = css.indexOf(selector)
+    while (at !== -1) {
+      if (!/[\w-]/.test(css.charAt(at + selector.length))) {
+        return false
+      }
+      at = css.indexOf(selector, at + 1)
+    }
+    return true
+  })
 
 describe('the design system vocabulary compiles', () => {
   const roles = rolesFromBridge()
@@ -206,6 +225,20 @@ describe('the design system vocabulary compiles', () => {
    * to no theme variable, which Tailwind answers with no CSS rather than an
    * error.
    */
+  /**
+   * The closure that ADR-034 Decision 3 is for, asserted in both directions: a role that
+   * left the namespace compiles through the channels its kind declares and through no
+   * other. `text-error` would paint prose in a status tint; `bg-error-foreground` would
+   * paint a surface in an ink. Neither exists now.
+   */
+  it('a narrowed role compiles only through its declared channels', async () => {
+    const declared = ['bg-error', 'text-error-foreground']
+    const refused = ['text-error', 'bg-error-foreground', 'border-scrim', 'bg-shadow-key']
+    const css = await compile([...declared, ...refused])
+    expect(missingFrom(css, declared)).toEqual([])
+    expect(missingFrom(css, refused)).toEqual(refused)
+  }, 30_000)
+
   it('and a class naming no role is reported missing', async () => {
     const css = await compile(['bg-card', 'bg-not-a-role'])
     expect(missingFrom(css, ['bg-card', 'bg-not-a-role'])).toEqual(['bg-not-a-role'])
@@ -251,7 +284,7 @@ describe('every token-driven class the design system writes compiles', () => {
    * looking at a screen rather than by any check here.
    *
    * The Tailwind bridge clears `--text-*`, `--leading-*`, `--font-weight-*` and
-   * `--color-*`, which is what turned forty-six vendored `text-sm`s into
+   * `--color-*', which is what turned forty-six vendored 'text-sm`s into
    * failures above: a utility driven by a theme variable stops existing when the
    * variable does. Two kinds of utility are not driven by one.
    *

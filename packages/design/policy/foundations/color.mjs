@@ -345,19 +345,159 @@ export const palettePolicy = definePolicy({
  * PROVES.
  */
 export const COLOR_POLICY_KINDS = deepFreeze({
-  compositing: { exempt: true },
-  decorative: { exempt: true },
-  inactive: { measures: true, threshold: 'inactive' },
+  // `channels` is the CSS the role may be used through (ADR-034 Decision 3). A
+  // compositing ink has none: shadow-ambient and shadow-key are consumed by the
+  // elevation tokens through var(), and scrim by an overlay's own rule; projected,
+  // they made `text-shadow-ambient` a compilable class producing colour nothing measures.
+  compositing: { channels: [], exempt: true },
+  decorative: { channels: ['border'], exempt: true },
+  inactive: { channels: ['text'], measures: true, threshold: 'inactive' },
   // ONE SURFACE KIND, not two. `intent-surface` existed because `kind` was also
   // being asked where a role may be composed, so a status backdrop had to be a
   // different KIND from a neutral one. Composition contexts answer that question
   // instead, and the second kind dissolved: `danger.surface` and `surface.page`
   // prove exactly the same thing about themselves -- nothing -- and differ only
   // in the context they provide.
-  surface: { pairedAgainst: true },
-  text: { measures: true, threshold: 'text' },
-  ui: { measures: true, threshold: 'ui' },
+  surface: { channels: ['bg'], pairedAgainst: true },
+  text: { channels: ['text'], measures: true, threshold: 'text' },
+  ui: { channels: ['border', 'outline', 'ring'], measures: true, threshold: 'ui' },
 })
+
+/**
+ * THE CSS CHANNELS A COLOUR MAY REACH THE PAGE THROUGH, each with the property its
+ * utility sets (ADR-034 Decision 3). `--color-*` is a namespace, not a channel:
+ * projecting `scrim` into it made `bg-scrim`, `text-scrim` and `border-scrim` all real,
+ * and only one of them meant anything. A role's KIND says which channels it has; the
+ * compiler emits a `@utility` per channel and nothing else, so the class for an
+ * undeclared channel does not exist rather than being documented as a hole.
+ */
+export const COLOR_CHANNELS = deepFreeze({
+  bg: 'background-color',
+  border: 'border-color',
+  fill: 'fill',
+  outline: 'outline-color',
+  ring: '--tw-ring-color',
+  stroke: 'stroke',
+  text: 'color',
+})
+
+/**
+ * WHAT THE REACHABLE VENDORED TREE STILL NEEDS BEYOND A ROLE'S NATURAL CHANNEL, per role,
+ * as the class suffixes it writes: a channel (`text`), or a channel with an opacity
+ * modifier (`bg/50`), which only the Tailwind namespace can compile. A role listed here
+ * STAYS PROJECTED INTO `--color-*`, every channel and modifier working, so the closure
+ * never silently unstyles a primitive an Adapter sits on. Measured 2026-09-03 over the
+ * transitive import closure of the four vendored files the Adapters import; the unit
+ * suite holds each entry to a file that writes it, and refuses a reachable use no entry
+ * covers. Each shim retires when the Adapter above its file owns that styling in role
+ * names (ADR-034 Decision 3, sequenced per component) -- and the test says so the day
+ * the file stops writing it.
+ */
+export const COLOR_CHANNEL_SHIMS = deepFreeze({
+  // combobox.tsx paints its separator with bg-border.
+  'color.border': ['bg'],
+  // button.tsx: the destructive variant and every aria-invalid ring/border in six files.
+  'color.destructive': [
+    'bg/10',
+    'bg/20',
+    'bg/30',
+    'border',
+    'border/40',
+    'border/50',
+    'ring/20',
+    'ring/40',
+    'text',
+  ],
+  // switch.tsx paints the dark thumb bg-foreground; card.tsx and combobox.tsx ring in it.
+  'color.foreground': ['bg', 'ring/10'],
+  // input is the field STROKE colour, and six files also fill with it (the switch track).
+  'color.input': ['bg', 'bg/30', 'bg/50', 'bg/80', 'border/30'],
+  // button.tsx and card.tsx: hover fills at half opacity.
+  'color.muted': ['bg/50'],
+  // button.tsx: the link variant's text, and the hover fill at 80%.
+  'color.primary': ['bg/80', 'text'],
+  // switch.tsx: the dark checked thumb.
+  'color.primary-foreground': ['bg'],
+  // six files: focus ring at half opacity.
+  'color.ring': ['ring/50'],
+})
+
+/**
+ * How one colour role reaches the stylesheet: its natural channels from its kind, and
+ * whether it is projected into the namespace (a shim keeps it there), emitted as
+ * per-channel utilities, or emitted as nothing.
+ */
+export function colorChannelsOf(role, registry = COLOR_ROLE_POLICIES, shims = COLOR_CHANNEL_SHIMS) {
+  const policy = registry[role]
+  if (!policy) {
+    throw new Error(`no colour policy for role '${role}' -- channels are a fact about a role`)
+  }
+  const channels = [...kindPolicy(policy.kind).channels]
+  let projection = 'none'
+  if (Object.hasOwn(shims, role)) {
+    projection = 'namespace'
+  } else if (channels.length > 0) {
+    projection = 'utility'
+  }
+  return { channels, projection }
+}
+
+const SHIM_USE = /^([a-z]+)(?:\/(\d{1,3}))?$/
+
+/** The channel tables' own rules: a shim names a real role, a real channel, and adds something. */
+export function assertColorChannels(
+  registry = COLOR_ROLE_POLICIES,
+  shims = COLOR_CHANNEL_SHIMS,
+  kinds = COLOR_POLICY_KINDS,
+) {
+  for (const [kind, policy] of Object.entries(kinds)) {
+    if (!Array.isArray(policy.channels)) {
+      throw new Error(`colour kind '${kind}' declares no channels -- write [] for none`)
+    }
+    for (const channel of policy.channels) {
+      if (!Object.hasOwn(COLOR_CHANNELS, channel)) {
+        throw new Error(
+          `colour kind '${kind}' names channel '${channel}', which is not a CSS channel`,
+        )
+      }
+    }
+  }
+  for (const [role, uses] of Object.entries(shims)) {
+    if (!registry[role]) {
+      throw new Error(`shim for '${role}', which is not a colour role`)
+    }
+    if (!Array.isArray(uses) || uses.length === 0) {
+      throw new Error(`shim for '${role}' lists no uses -- delete the entry`)
+    }
+    const natural = kindPolicy(registry[role].kind).channels
+    const seen = new Set()
+    for (const use of uses) {
+      const match = SHIM_USE.exec(use)
+      if (!match) {
+        throw new Error(
+          `shim for '${role}' has use '${use}', which is not <channel> or <channel>/<alpha>`,
+        )
+      }
+      const [, channel, alpha] = match
+      if (!Object.hasOwn(COLOR_CHANNELS, channel)) {
+        throw new Error(`shim for '${role}': '${channel}' is not a CSS channel`)
+      }
+      if (alpha !== undefined && (Number(alpha) < 1 || Number(alpha) > 100)) {
+        throw new Error(`shim for '${role}': '${use}' has an opacity outside 1-100`)
+      }
+      if (alpha === undefined && natural.includes(channel)) {
+        throw new Error(
+          `shim for '${role}': '${channel}' is already ${role.slice('color.'.length)}'s natural ` +
+            'channel -- a shim adds what the kind does not give',
+        )
+      }
+      if (seen.has(use)) {
+        throw new Error(`shim for '${role}' lists '${use}' twice`)
+      }
+      seen.add(use)
+    }
+  }
+}
 
 const KIND_MODES = ['exempt', 'measures', 'pairedAgainst']
 
@@ -1231,6 +1371,9 @@ function assertRoleRecordShape(role, policy) {
 }
 
 export function assertColorRoleRegistry(registry = COLOR_ROLE_POLICIES) {
+  // The shims are facts about the SHIPPED registry; a synthetic one under test declares
+  // its own roles and is not asked to carry the vendored tree's needs.
+  assertColorChannels(registry, registry === COLOR_ROLE_POLICIES ? COLOR_CHANNEL_SHIMS : {})
   for (const [role, policy] of Object.entries(registry)) {
     assertRoleRecordShape(role, policy)
     const kind = kindPolicy(policy.kind)

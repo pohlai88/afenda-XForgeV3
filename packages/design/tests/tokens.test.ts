@@ -14,7 +14,7 @@
  * questions, because a simulator agreeing with the generator that produced its
  * input proves less than it appears to.
  */
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error -- untyped .mjs policy module, deliberately outside the app
@@ -1438,4 +1438,157 @@ describe('the shipped package configuration', () => {
       expect(css).toBe(committed)
     },
   )
+})
+
+/**
+ * ADR-034 Decision 3: a colour role declares the CSS channels it may be used through, and
+ * the compiler emits only those. A role with no shim leaves `--color-*` and becomes explicit
+ * `@utility` blocks, one per channel; a role the reachable vendored tree still paints
+ * through other channels or with opacity modifiers stays in the namespace under a SHIM that
+ * names those uses, so the closure never silently unstyles a primitive an Adapter sits on.
+ *
+ * Written before the tables existed; red on every case.
+ */
+describe('colour channels (ADR-034)', () => {
+  const { COLOR_CHANNELS, COLOR_CHANNEL_SHIMS, COLOR_POLICY_KINDS, COLOR_ROLE_POLICIES } =
+    foundations
+
+  it('every kind declares the channels its roles may use, all of them known', () => {
+    const kinds = COLOR_POLICY_KINDS as Record<string, { channels: readonly string[] }>
+    for (const [kind, spec] of Object.entries(kinds)) {
+      expect(Array.isArray(spec.channels), `${kind} declares no channels`).toBe(true)
+      for (const channel of spec.channels) {
+        expect(Object.keys(COLOR_CHANNELS), `${kind} names channel ${channel}`).toContain(channel)
+      }
+    }
+    expect(COLOR_POLICY_KINDS.text.channels).toEqual(['text'])
+    expect(COLOR_POLICY_KINDS.surface.channels).toEqual(['bg'])
+    expect(COLOR_POLICY_KINDS.compositing.channels).toEqual([])
+  })
+
+  it('a role without a shim is emitted as utilities on its natural channels only', () => {
+    expect(foundations.colorChannelsOf('color.error-foreground')).toEqual({
+      channels: ['text'],
+      projection: 'utility',
+    })
+    expect(foundations.colorChannelsOf('color.error')).toEqual({
+      channels: ['bg'],
+      projection: 'utility',
+    })
+    expect(foundations.colorChannelsOf('color.shadow-key')).toEqual({
+      channels: [],
+      projection: 'none',
+    })
+  })
+
+  it('a role with a shim stays in the namespace, every channel and modifier working', () => {
+    expect(foundations.colorChannelsOf('color.destructive').projection).toBe('namespace')
+    expect(Object.keys(COLOR_CHANNEL_SHIMS)).toContain('color.input')
+  })
+
+  it('refuses a shim for a role that does not exist, or naming a channel that does not', () => {
+    expect(() =>
+      foundations.assertColorChannels(COLOR_ROLE_POLICIES, { 'color.brand': ['bg'] }),
+    ).toThrow(/shim for 'color\.brand', which is not a colour role/)
+    expect(() =>
+      foundations.assertColorChannels(COLOR_ROLE_POLICIES, { 'color.primary': ['glow'] }),
+    ).toThrow(/'glow' is not a CSS channel/)
+  })
+
+  it('refuses a shim that merely repeats the natural channel', () => {
+    expect(() =>
+      foundations.assertColorChannels(COLOR_ROLE_POLICIES, { 'color.primary': ['bg'] }),
+    ).toThrow(/'bg' is already primary's natural channel/)
+  })
+
+  it('the shipped bridge emits narrowed roles as @utility and keeps shimmed roles in --color-*', () => {
+    const [pkg] = TOKEN_PACKAGES
+    if (pkg === undefined) {
+      throw new Error('no token package to generate')
+    }
+    const { mergeGroups, tailwindTheme: theme } = generate(source, {
+      closes: pkg.closes,
+      typeRoles: foundations.typeRolesFor(pkg.typeRoles),
+    })
+    expect(theme).toContain('@utility bg-error {')
+    expect(theme).toContain('@utility text-error-foreground {')
+    expect(theme).not.toContain('--color-error:')
+    expect(theme).not.toContain('@utility text-error {')
+    expect(theme).toContain('--color-destructive: var(--semantic-color-destructive);')
+    expect(theme).not.toContain('@utility bg-destructive {')
+    // twMerge learns the colour channels, so `text-foreground text-muted-foreground` still
+    // resolves to the last one once both are @utility blocks it would not otherwise know.
+    expect(mergeGroups).toMatch(/'text-color': \[\{ text: \[[^\]]*'muted-foreground'/)
+    expect(mergeGroups).toMatch(/'bg-color': \[\{ bg: \[[^\]]*'destructive'/)
+  })
+
+  /**
+   * THE SHIMS ARE HELD TO THE FILES THAT NEED THEM. Reachable = the transitive import closure
+   * of the vendored primitives the authored Adapters import. Every class the closure writes
+   * through a non-natural channel or with a modifier must be a declared shim, or the closure
+   * would have unstyled it silently; every declared shim must still be written somewhere, or
+   * it is a stale reason to keep a role in the namespace.
+   */
+  it('every shim is used by a reachable vendored file, and every such use is a shim', () => {
+    const UI = join(ROOT, 'packages/design/src/components/ui')
+    const AUTHORED = join(ROOT, 'packages/design/src/components')
+    const importsOf = (text: string) =>
+      [...text.matchAll(/#components\/ui\/([a-z0-9-]+)/g)].map((m) => m[1] ?? '')
+    const reachable = new Set<string>()
+    const queue = readdirSync(AUTHORED)
+      .filter((f) => f.endsWith('.tsx'))
+      .flatMap((f) => importsOf(readFileSync(join(AUTHORED, f), 'utf8')))
+    while (queue.length > 0) {
+      const name = queue.shift() as string
+      if (reachable.has(name)) {
+        continue
+      }
+      reachable.add(name)
+      queue.push(...importsOf(readFileSync(join(UI, `${name}.tsx`), 'utf8')))
+    }
+    expect(reachable.size).toBeGreaterThan(3)
+
+    const roles = new Set(Object.keys(COLOR_ROLE_POLICIES).map((key) => key.slice('color.'.length)))
+    const channels = Object.keys(COLOR_CHANNELS).sort((a, b) => b.length - a.length)
+    const used = new Map<string, string>()
+    for (const name of reachable) {
+      const text = readFileSync(join(UI, `${name}.tsx`), 'utf8')
+      for (const m of text.matchAll(/"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'/g)) {
+        for (const raw of (m[1] ?? m[2] ?? '').split(/\s+/)) {
+          const word = raw.slice(raw.lastIndexOf(':') + 1).replace(/^-/, '')
+          const [cls, alpha] = word.split('/')
+          for (const channel of channels) {
+            const role = cls?.startsWith(`${channel}-`) ? cls.slice(channel.length + 1) : ''
+            if (roles.has(role)) {
+              used.set(`color.${role} ${alpha ? `${channel}/${alpha}` : channel}`, `${name}.tsx`)
+            }
+          }
+        }
+      }
+    }
+    expect(used.size).toBeGreaterThan(10)
+
+    const unshimmed: string[] = []
+    for (const [key, file] of used) {
+      const [role, use] = key.split(' ') as [string, string]
+      const { channels: natural } = foundations.colorChannelsOf(role)
+      const isNatural = !use.includes('/') && natural.includes(use)
+      const isShim = (COLOR_CHANNEL_SHIMS[role] ?? []).includes(use)
+      if (!(isNatural || isShim)) {
+        unshimmed.push(`${role} used as ${use} in ${file}`)
+      }
+    }
+    expect(unshimmed, 'reachable uses the closure would unstyle').toEqual([])
+
+    const stale: string[] = []
+    const shims = COLOR_CHANNEL_SHIMS as Record<string, readonly string[]>
+    for (const [role, uses] of Object.entries(shims)) {
+      for (const use of uses) {
+        if (!used.has(`${role} ${use}`)) {
+          stale.push(`${role} ${use}`)
+        }
+      }
+    }
+    expect(stale, 'shims no reachable file needs any more').toEqual([])
+  })
 })

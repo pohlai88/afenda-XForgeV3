@@ -92,9 +92,11 @@ import {
   assertTypographyCoverage,
   assertTypographyTokens,
   assertUniqueCssNames,
+  COLOR_CHANNELS,
   COLOR_ROLE_POLICIES,
   COMPONENT_TOKEN_CEILING,
   carriesAlpha,
+  colorChannelsOf,
   cssNameOf,
   DTCG_VERSION,
   deepFreeze,
@@ -858,7 +860,7 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
     componentTokens,
     css: lines.join('\n'),
     foundations: foundations(tokens, blocks),
-    mergeGroups: twMergeGroups(projectedRows(tokens)),
+    mergeGroups: twMergeGroups(projectedRows(tokens), tokens),
     tailwindTheme: tailwindTheme(tokens, closes, typeRoles, base),
     tokens,
   }
@@ -956,8 +958,85 @@ const MERGE_GROUP_OF = deepFreeze({
   tracking: { group: 'tracking', part: 'tracking' },
 })
 
-function twMergeGroups(rows) {
+/**
+ * The colour channel groups, derived (ADR-034 Decision 3). A role emitted as `@utility`
+ * is unknown to twMerge, so `text-foreground text-muted-foreground` would keep both and
+ * let stylesheet order decide -- the exact silent deletion this module exists to prevent,
+ * inverted. Each channel becomes twMerge's own group id for that channel (`text-color`,
+ * `bg-color`, …), listing the roles that can compile there: a namespaced role in every
+ * channel, a narrowed role in its natural ones.
+ */
+const COLOUR_MERGE_GROUP = deepFreeze({
+  bg: 'bg-color',
+  border: 'border-color',
+  fill: 'fill',
+  outline: 'outline-color',
+  ring: 'ring-color',
+  stroke: 'stroke',
+  text: 'text-color',
+})
+
+function colourMergeGroups(tokens) {
   const groups = new Map()
+  for (const path of tokens.keys()) {
+    if (!path.startsWith('semantic.color.')) {
+      continue
+    }
+    const role = path.slice('semantic.color.'.length)
+    const { channels, projection } = colorChannelsOf(`color.${role}`)
+    const reach = projection === 'namespace' ? Object.keys(COLOR_CHANNELS) : channels
+    for (const ch of reach) {
+      const group = COLOUR_MERGE_GROUP[ch]
+      if (!groups.has(group)) {
+        groups.set(group, { members: [], part: ch })
+      }
+      groups.get(group).members.push(role)
+    }
+  }
+  return groups
+}
+
+/**
+ * The colour utilities, DERIVED (ADR-034 Decision 3): one `@utility` per declared channel
+ * for every role that is not kept in the namespace by a shim. `text-error-foreground` and
+ * `bg-error` exist; `text-error` and `bg-error-foreground` do not, and the compile test
+ * says so in both directions.
+ */
+function colorUtilityBlocks(tokens) {
+  const blocks = []
+  for (const path of [...tokens.keys()].sort((a, b) => a.localeCompare(b))) {
+    if (!path.startsWith('semantic.color.')) {
+      continue
+    }
+    const role = path.slice('semantic.color.'.length)
+    const { channels, projection } = colorChannelsOf(`color.${role}`)
+    if (projection !== 'utility') {
+      continue
+    }
+    for (const ch of channels) {
+      blocks.push({
+        css: `@utility ${ch}-${role} {\n  ${COLOR_CHANNELS[ch]}: var(${cssName(path)});\n}`,
+        name: `${ch}-${role}`,
+      })
+    }
+  }
+  if (blocks.length === 0) {
+    return []
+  }
+  return [
+    '/*',
+    ' * PER-CHANNEL COLOUR UTILITIES (ADR-034 Decision 3). A role here has left `--color-*`:',
+    ' * it compiles through the channels its kind declares and through no other, and it',
+    ' * takes no opacity modifier. A role still in the namespace above is kept there by a',
+    ' * vendored shim (COLOR_CHANNEL_SHIMS) until the Adapter above that file owns the styling.',
+    ' */',
+    ...blocks.sort((a, b) => a.name.localeCompare(b.name)).map((b) => b.css),
+    '',
+  ]
+}
+
+function twMergeGroups(rows, tokens = new Map()) {
+  const groups = colourMergeGroups(tokens)
 
   for (const { name } of rows) {
     const namespace = Object.keys(MERGE_GROUP_OF)
@@ -1214,7 +1293,7 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
     ' * declares every property referenced below.',
     ' *',
     ...(excluded.length > 0 ? [' * Deliberately not projected:', ...excluded, ' *'] : []),
-    ` * ${rows.length} roles projected.`,
+    ` * ${rows.length} roles projected; ${colorUtilityBlocks(tokens).filter((l) => l.startsWith('@utility')).length} colour utilities emitted per channel.`,
     ' */',
     ...flatColourAliases(tokens),
     '@theme inline {',
@@ -1230,6 +1309,7 @@ function tailwindTheme(tokens, closes, typeRoles, resolved) {
     ...scaleAliases(tokens, closes, typeRoles, rows),
     '}',
     '',
+    ...colorUtilityBlocks(tokens),
     ...(breakpoints.length === 0
       ? []
       : [
@@ -1372,13 +1452,20 @@ function obligationOf(row) {
   const colour = COLOR_ROLE_POLICIES[role]
   if (colour) {
     const kind = kindPolicy(colour.kind)
+    const { channels, projection } = colorChannelsOf(role)
+    let reach = `${channels.join(', ')} only`
+    if (projection === 'namespace') {
+      reach = 'every channel, kept in the namespace by a vendored shim'
+    } else if (channels.length === 0) {
+      reach = 'no utility'
+    }
     if (kind.measures) {
-      return `${colour.kind} · ≥${minimumFor(colour.kind)}:1 against ${colour.againstContexts.join(', ')}`
+      return `${colour.kind} · ≥${minimumFor(colour.kind)}:1 against ${colour.againstContexts.join(', ')} · ${reach}`
     }
     if (kind.pairedAgainst) {
-      return `${colour.kind} · provides ${colour.providesContexts.join(', ')}`
+      return `${colour.kind} · provides ${colour.providesContexts.join(', ')} · ${reach}`
     }
-    return `${colour.kind} · exempt, ${colour.reason}`
+    return `${colour.kind} · exempt, ${colour.reason} · ${reach}`
   }
 
   for (const [name, policy] of Object.entries(TYPE_ROLES)) {

@@ -154,55 +154,55 @@ elevation domains.
 | `--semantic-breakpoint-extra-large` | `semantic.breakpoint.extra-large` | dimension | `{breakpoint.extra-large}` | -- |
 | `--semantic-breakpoint-large` | `semantic.breakpoint.large` | dimension | `{breakpoint.large}` | -- |
 | `--semantic-breakpoint-medium` | `semantic.breakpoint.medium` | dimension | `{breakpoint.medium}` | -- |
-| `--semantic-color-accent` | `semantic.color.accent` | color | `{color.teal.100}` | surface · provides accent |
-| `--semantic-color-accent-foreground` | `semantic.color.accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against accent |
-| `--semantic-color-accent-hover` | `semantic.color.accent-hover` | color | `{color.teal.200}` | surface · provides accent |
-| `--semantic-color-accent-pressed` | `semantic.color.accent-pressed` | color | `{color.teal.300}` | surface · provides accent |
-| `--semantic-color-background` | `semantic.color.background` | color | `{color.neutral.50}` | surface · provides page |
-| `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary |
-| `--semantic-color-card` | `semantic.color.card` | color | `{color.neutral.0}` | surface · provides card |
-| `--semantic-color-card-foreground` | `semantic.color.card-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against card |
-| `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive |
-| `--semantic-color-destructive-foreground` | `semantic.color.destructive-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against destructive |
-| `--semantic-color-destructive-hover` | `semantic.color.destructive-hover` | color | `{color.red.800}` | surface · provides destructive |
-| `--semantic-color-destructive-pressed` | `semantic.color.destructive-pressed` | color | `{color.red.950}` | surface · provides destructive |
-| `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled |
-| `--semantic-color-disabled-foreground` | `semantic.color.disabled-foreground` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled |
-| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error |
-| `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against card, error, page |
-| `--semantic-color-field` | `semantic.color.field` | color | `{color.neutral.0}` | surface · provides field |
-| `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page |
-| `--semantic-color-info` | `semantic.color.info` | color | `{color.sky.100}` | surface · provides info |
-| `--semantic-color-info-foreground` | `semantic.color.info-foreground` | color | `{color.sky.700}` | text · ≥4.5:1 against info |
-| `--semantic-color-input` | `semantic.color.input` | color | `{color.neutral.500}` | ui · ≥3:1 against card, page |
-| `--semantic-color-muted` | `semantic.color.muted` | color | `{color.neutral.100}` | surface · provides muted |
-| `--semantic-color-muted-foreground` | `semantic.color.muted-foreground` | color | `{color.neutral.600}` | text · ≥4.5:1 against card, muted, page |
-| `--semantic-color-popover` | `semantic.color.popover` | color | `{color.neutral.0}` | surface · provides popover |
-| `--semantic-color-popover-foreground` | `semantic.color.popover-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against popover |
-| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary |
-| `--semantic-color-primary-foreground` | `semantic.color.primary-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary |
-| `--semantic-color-primary-hover` | `semantic.color.primary-hover` | color | `{color.teal.800}` | surface · provides primary |
-| `--semantic-color-primary-pressed` | `semantic.color.primary-pressed` | color | `{color.teal.950}` | surface · provides primary |
-| `--semantic-color-ring` | `semantic.color.ring` | color | `{color.teal.700}` | ui · ≥3:1 against card, page |
-| `--semantic-color-scrim` | `semantic.color.scrim` | color | `{color.scrim}` | compositing · exempt, an alpha layer, not a foreground pair |
-| `--semantic-color-secondary` | `semantic.color.secondary` | color | `{color.neutral.0}` | surface · provides secondary |
-| `--semantic-color-secondary-foreground` | `semantic.color.secondary-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against secondary |
-| `--semantic-color-secondary-hover` | `semantic.color.secondary-hover` | color | `{color.neutral.50}` | surface · provides secondary |
-| `--semantic-color-secondary-pressed` | `semantic.color.secondary-pressed` | color | `{color.neutral.100}` | surface · provides secondary |
-| `--semantic-color-shadow-ambient` | `semantic.color.shadow-ambient` | color | `{color.shadow.ambient}` | compositing · exempt, the wide, faint layer of a shadow; composited, not a pair |
-| `--semantic-color-shadow-key` | `semantic.color.shadow-key` | color | `{color.shadow.key}` | compositing · exempt, the tight, nearer layer of a shadow; composited, not a pair |
-| `--semantic-color-sidebar` | `semantic.color.sidebar` | color | `{color.neutral.100}` | surface · provides sidebar |
-| `--semantic-color-sidebar-accent` | `semantic.color.sidebar-accent` | color | `{color.teal.100}` | surface · provides sidebar-accent |
-| `--semantic-color-sidebar-accent-foreground` | `semantic.color.sidebar-accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against sidebar-accent |
-| `--semantic-color-sidebar-border` | `semantic.color.sidebar-border` | color | `{color.neutral.300}` | decorative · exempt, a divider inside the rail, never a sole control boundary |
-| `--semantic-color-sidebar-foreground` | `semantic.color.sidebar-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against sidebar |
-| `--semantic-color-sidebar-ring` | `semantic.color.sidebar-ring` | color | `{color.teal.700}` | ui · ≥3:1 against sidebar |
-| `--semantic-color-statutory` | `semantic.color.statutory` | color | `{color.brass.100}` | surface · provides statutory |
-| `--semantic-color-statutory-foreground` | `semantic.color.statutory-foreground` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory |
-| `--semantic-color-success` | `semantic.color.success` | color | `{color.green.100}` | surface · provides success |
-| `--semantic-color-success-foreground` | `semantic.color.success-foreground` | color | `{color.green.700}` | text · ≥4.5:1 against card, page, success |
-| `--semantic-color-warning` | `semantic.color.warning` | color | `{color.amber.100}` | surface · provides warning |
-| `--semantic-color-warning-foreground` | `semantic.color.warning-foreground` | color | `{color.amber.800}` | text · ≥4.5:1 against warning |
+| `--semantic-color-accent` | `semantic.color.accent` | color | `{color.teal.100}` | surface · provides accent · bg only |
+| `--semantic-color-accent-foreground` | `semantic.color.accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against accent · text only |
+| `--semantic-color-accent-hover` | `semantic.color.accent-hover` | color | `{color.teal.200}` | surface · provides accent · bg only |
+| `--semantic-color-accent-pressed` | `semantic.color.accent-pressed` | color | `{color.teal.300}` | surface · provides accent · bg only |
+| `--semantic-color-background` | `semantic.color.background` | color | `{color.neutral.50}` | surface · provides page · bg only |
+| `--semantic-color-border` | `semantic.color.border` | color | `{color.neutral.300}` | decorative · exempt, a divider, never a sole control boundary · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-card` | `semantic.color.card` | color | `{color.neutral.0}` | surface · provides card · bg only |
+| `--semantic-color-card-foreground` | `semantic.color.card-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against card · text only |
+| `--semantic-color-destructive` | `semantic.color.destructive` | color | `{color.red.700}` | surface · provides destructive · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-destructive-foreground` | `semantic.color.destructive-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against destructive · text only |
+| `--semantic-color-destructive-hover` | `semantic.color.destructive-hover` | color | `{color.red.800}` | surface · provides destructive · bg only |
+| `--semantic-color-destructive-pressed` | `semantic.color.destructive-pressed` | color | `{color.red.950}` | surface · provides destructive · bg only |
+| `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled · bg only |
+| `--semantic-color-disabled-foreground` | `semantic.color.disabled-foreground` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled · text only |
+| `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error · bg only |
+| `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against card, error, page · text only |
+| `--semantic-color-field` | `semantic.color.field` | color | `{color.neutral.0}` | surface · provides field · bg only |
+| `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-info` | `semantic.color.info` | color | `{color.sky.100}` | surface · provides info · bg only |
+| `--semantic-color-info-foreground` | `semantic.color.info-foreground` | color | `{color.sky.700}` | text · ≥4.5:1 against info · text only |
+| `--semantic-color-input` | `semantic.color.input` | color | `{color.neutral.500}` | ui · ≥3:1 against card, page · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-muted` | `semantic.color.muted` | color | `{color.neutral.100}` | surface · provides muted · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-muted-foreground` | `semantic.color.muted-foreground` | color | `{color.neutral.600}` | text · ≥4.5:1 against card, muted, page · text only |
+| `--semantic-color-popover` | `semantic.color.popover` | color | `{color.neutral.0}` | surface · provides popover · bg only |
+| `--semantic-color-popover-foreground` | `semantic.color.popover-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against popover · text only |
+| `--semantic-color-primary` | `semantic.color.primary` | color | `{color.teal.700}` | surface · provides primary · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-primary-foreground` | `semantic.color.primary-foreground` | color | `{color.neutral.0}` | text · ≥4.5:1 against primary · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-primary-hover` | `semantic.color.primary-hover` | color | `{color.teal.800}` | surface · provides primary · bg only |
+| `--semantic-color-primary-pressed` | `semantic.color.primary-pressed` | color | `{color.teal.950}` | surface · provides primary · bg only |
+| `--semantic-color-ring` | `semantic.color.ring` | color | `{color.teal.700}` | ui · ≥3:1 against card, page · every channel, kept in the namespace by a vendored shim |
+| `--semantic-color-scrim` | `semantic.color.scrim` | color | `{color.scrim}` | compositing · exempt, an alpha layer, not a foreground pair · no utility |
+| `--semantic-color-secondary` | `semantic.color.secondary` | color | `{color.neutral.0}` | surface · provides secondary · bg only |
+| `--semantic-color-secondary-foreground` | `semantic.color.secondary-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against secondary · text only |
+| `--semantic-color-secondary-hover` | `semantic.color.secondary-hover` | color | `{color.neutral.50}` | surface · provides secondary · bg only |
+| `--semantic-color-secondary-pressed` | `semantic.color.secondary-pressed` | color | `{color.neutral.100}` | surface · provides secondary · bg only |
+| `--semantic-color-shadow-ambient` | `semantic.color.shadow-ambient` | color | `{color.shadow.ambient}` | compositing · exempt, the wide, faint layer of a shadow; composited, not a pair · no utility |
+| `--semantic-color-shadow-key` | `semantic.color.shadow-key` | color | `{color.shadow.key}` | compositing · exempt, the tight, nearer layer of a shadow; composited, not a pair · no utility |
+| `--semantic-color-sidebar` | `semantic.color.sidebar` | color | `{color.neutral.100}` | surface · provides sidebar · bg only |
+| `--semantic-color-sidebar-accent` | `semantic.color.sidebar-accent` | color | `{color.teal.100}` | surface · provides sidebar-accent · bg only |
+| `--semantic-color-sidebar-accent-foreground` | `semantic.color.sidebar-accent-foreground` | color | `{color.teal.800}` | text · ≥4.5:1 against sidebar-accent · text only |
+| `--semantic-color-sidebar-border` | `semantic.color.sidebar-border` | color | `{color.neutral.300}` | decorative · exempt, a divider inside the rail, never a sole control boundary · border only |
+| `--semantic-color-sidebar-foreground` | `semantic.color.sidebar-foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against sidebar · text only |
+| `--semantic-color-sidebar-ring` | `semantic.color.sidebar-ring` | color | `{color.teal.700}` | ui · ≥3:1 against sidebar · border, outline, ring only |
+| `--semantic-color-statutory` | `semantic.color.statutory` | color | `{color.brass.100}` | surface · provides statutory · bg only |
+| `--semantic-color-statutory-foreground` | `semantic.color.statutory-foreground` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory · text only |
+| `--semantic-color-success` | `semantic.color.success` | color | `{color.green.100}` | surface · provides success · bg only |
+| `--semantic-color-success-foreground` | `semantic.color.success-foreground` | color | `{color.green.700}` | text · ≥4.5:1 against card, page, success · text only |
+| `--semantic-color-warning` | `semantic.color.warning` | color | `{color.amber.100}` | surface · provides warning · bg only |
+| `--semantic-color-warning-foreground` | `semantic.color.warning-foreground` | color | `{color.amber.800}` | text · ≥4.5:1 against warning · text only |
 | `--semantic-content-dialog` | `semantic.content.dialog` | dimension | `{size.content-dialog}` | -- |
 | `--semantic-content-form` | `semantic.content.form` | dimension | `{size.content-form}` | -- |
 | `--semantic-content-prose` | `semantic.content.prose` | dimension | `{size.content-prose}` | -- |

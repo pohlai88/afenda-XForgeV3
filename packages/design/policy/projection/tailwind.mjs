@@ -1,4 +1,5 @@
 import { definePolicy } from '../define-policy.mjs'
+import { colorChannelsOf } from '../foundations/color.mjs'
 import { assertTokenPath as assertTokenPathGrammar, deepFreeze, tierOf } from '../vocabulary.mjs'
 
 /**
@@ -207,10 +208,6 @@ export const UNPROJECTED = deepFreeze({
    * the dialog backdrop is drawn, and that is the correct use of a scrim. A
    * namespace is projected or not as a whole, so `text-scrim` comes with it.
    */
-  'semantic.color.shadow-ambient':
-    'an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure',
-  'semantic.color.shadow-key':
-    'an alpha ink consumed by the elevation tokens through var(), not by a utility. Projected, it made bg-shadow-key and text-shadow-ambient compilable classes that produce composited colour nothing can measure',
   'semantic.layer.local':
     'z-index has no Tailwind theme namespace; reached through the `layer-local` @utility',
   'semantic.layer.overlay':
@@ -547,6 +544,15 @@ export function tailwindNameOf(path) {
     )
   }
   if (Object.hasOwn(UNPROJECTED, path)) {
+    return null
+  }
+  // A colour role reaches the stylesheet by its declared channels (ADR-034 Decision 3):
+  // only a role a vendored shim keeps whole stays in `--color-*`. The others have no
+  // namespace name; the generator emits their `@utility` blocks instead.
+  if (
+    path.startsWith('semantic.color.') &&
+    colorChannelsOf(path.slice('semantic.'.length)).projection !== 'namespace'
+  ) {
     return null
   }
   if (Object.hasOwn(PATH_PROJECTION, path)) {
