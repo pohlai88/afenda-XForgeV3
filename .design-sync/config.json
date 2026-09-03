@@ -21,6 +21,7 @@
     "EmptyState": "../../packages/design/src/components/empty-state.tsx",
     "Grid": "../../packages/design/src/components/grid.tsx",
     "Heading": "../../packages/design/src/components/heading.tsx",
+    "Link": "../../packages/design/src/components/link.tsx",
     "List": "../../packages/design/src/components/list.tsx",
     "ListItem": "../../packages/design/src/components/list-item.tsx",
     "Page": "../../packages/design/src/components/page.tsx",
