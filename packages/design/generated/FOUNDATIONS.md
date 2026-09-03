@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 236 custom properties: 120 primitive, 112 semantic, 4 component (ceiling 12).
+- 238 custom properties: 122 primitive, 112 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -99,6 +99,8 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--leading-normal` | `leading.normal` | number | `1.4286` |
 | `--leading-snug` | `leading.snug` | number | `1.4` |
 | `--leading-tight` | `leading.tight` | number | `1.3333` |
+| `--leading-tighter` | `leading.tighter` | number | `1.2727` |
+| `--leading-tightest` | `leading.tightest` | number | `1.25` |
 | `--size-border` | `size.border` | dimension | `1px` |
 | `--size-content-dialog` | `size.content-dialog` | dimension | `24rem` |
 | `--size-content-form` | `size.content-form` | dimension | `60rem` |
@@ -120,8 +122,8 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--size-shell-nav-collapsed` | `size.shell-nav-collapsed` | dimension | `64px` |
 | `--size-shell-nav-expanded` | `size.shell-nav-expanded` | dimension | `240px` |
 | `--size-target-min` | `size.target-min` | dimension | `24px` |
-| `--size-text-2xl` | `size.text-2xl` | dimension | `1.875rem` |
-| `--size-text-lg` | `size.text-lg` | dimension | `1.25rem` |
+| `--size-text-2xl` | `size.text-2xl` | dimension | `2rem` |
+| `--size-text-lg` | `size.text-lg` | dimension | `1.375rem` |
 | `--size-text-md` | `size.text-md` | dimension | `1rem` |
 | `--size-text-sm` | `size.text-sm` | dimension | `0.875rem` |
 | `--size-text-xl` | `size.text-xl` | dimension | `1.5rem` |
@@ -213,8 +215,8 @@ elevation domains.
 | `--semantic-leading-body` | `semantic.leading.body` | number | `{leading.loose}` | type body · leading ≥1.5 |
 | `--semantic-leading-body-compact` | `semantic.leading.body-compact` | number | `{leading.normal}` | type body-compact · leading ≥1.4 |
 | `--semantic-leading-caption` | `semantic.leading.caption` | number | `{leading.tight}` | type caption · leading ≥1.33 |
-| `--semantic-leading-display` | `semantic.leading.display` | number | `{leading.tight}` | type display · leading ≥1.15 |
-| `--semantic-leading-heading` | `semantic.leading.heading` | number | `{leading.snug}` | type heading · leading ≥1.15 |
+| `--semantic-leading-display` | `semantic.leading.display` | number | `{leading.tightest}` | type display · leading ≥1.15 |
+| `--semantic-leading-heading` | `semantic.leading.heading` | number | `{leading.tighter}` | type heading · leading ≥1.15 |
 | `--semantic-leading-label` | `semantic.leading.label` | number | `{leading.normal}` | type label · leading ≥1.4 |
 | `--semantic-leading-subheading` | `semantic.leading.subheading` | number | `{leading.loose}` | type subheading · leading ≥1.5 |
 | `--semantic-leading-title` | `semantic.leading.title` | number | `{leading.tight}` | type title · leading ≥1.15 |
@@ -417,13 +419,13 @@ is this system's deviation from M3's regular headlines, recorded rather than hid
 | `display-large` | 57 / 64 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
 | `display-medium` | 45 / 52 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
 | `display-small` | 36 / 44 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
-| `headline-large` | 32 / 40 / 400 | -- | our display role is 30/40, between headline-medium and this step; the owner is choosing which step it takes |
-| `headline-medium` | 28 / 36 / 400 | -- | our display role is 30/40, between this step and headline-large; the owner is choosing which step it takes |
+| `headline-large` | 32 / 40 / 400 | `display` | carried -- set 600 where M3 sets headlines regular: one typeface and no brand face, so rank is carried by size and weight together |
+| `headline-medium` | 28 / 36 / 400 | -- | display sits at headline-large and title at headline-small; a step between them has no consumer |
 | `headline-small` | 24 / 32 / 400 | `title` | carried -- set 600 where M3 sets headlines regular: one typeface and no brand face, so rank is carried by size and weight together |
 | `label-large` | 14 / 20 / 500 | `label` | carried |
 | `label-medium` | 12 / 16 / 500 | -- | 12px is the floor here and it is set regular, as caption; a medium 12 has no consumer |
 | `label-small` | 11 / 16 / 500 | -- | below the 12px floor this system holds; there is no step below caption and there will not be |
-| `title-large` | 22 / 28 / 400 | -- | our heading role is 20/28, two points below this step and off the scale; the owner is choosing whether it moves here |
+| `title-large` | 22 / 28 / 400 | `heading` | carried -- set 600 where M3 sets title-large regular: rank by size and weight together, as every heading here |
 | `title-medium` | 16 / 24 / 500 | `emphasis` | carried |
 | `title-small` | 14 / 20 / 500 | -- | the same metrics as label-large, which label carries; M3 splits the two by job and this system has one job for them |
 
@@ -431,8 +433,6 @@ is this system's deviation from M3's regular headlines, recorded rather than hid
 
 | Role | Difference |
 | --- | --- |
-| `display` | 30/40/600 sits between headline-medium (28/36) and headline-large (32/40), off M3's scale; it was sized against title, not against a ladder, and the owner is choosing the step (comparison 2026-09-04) |
-| `heading` | 20/28/600 sits between title-medium (16/24) and title-large (22/28), off M3's scale; sized against body and title rather than a ladder; the owner is choosing whether it moves to 22/28 |
 | `subheading` | title-medium (16/24) in M3's EMPHASIZED set: 600 where the baseline title-medium, which emphasis carries, is 500 -- the pair is M3's baseline/emphasized pairing at one style |
 
 ## Modes

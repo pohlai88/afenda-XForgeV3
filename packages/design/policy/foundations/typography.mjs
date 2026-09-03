@@ -161,9 +161,10 @@ export const TYPE_ROLES = deepFreeze({
    * components) had to set a headline value at `emphasis` and recorded the gap
    * instead of inventing a size. The owner asked for the role; this is it.
    *
-   * 30px on the same tight leading as `title`: 30 x 1.3333 = 40, on the grid
-   * without a new leading step. Weight is the heading weight -- rank is carried
-   * by six points of size over `title`, so a heavier cut would add nothing.
+   * 32px on a 1.25 leading: 32 x 1.25 = 40, on the grid -- M3's headline-large step,
+   * adopted 2026-09-04 in place of a 30px that sat between two steps of the scale.
+   * Weight is the heading weight -- rank is carried by eight points of size over
+   * `title`, so a heavier cut would add nothing.
    */
   display: {
     font: 'semantic.font.sans',
@@ -198,6 +199,8 @@ export const TYPE_ROLES = deepFreeze({
   heading: {
     // Headings are set tighter on purpose: at larger sizes the same ratio reads
     // as loose. The floor is where ascenders and descenders begin to collide.
+    // 22px on a 1.2727 leading, 28 on the grid: M3's title-large step, adopted
+    // 2026-09-04 in place of a 20px that sat between two steps of the scale.
     font: 'semantic.font.sans',
     leading: 'semantic.leading.heading',
     minimumLeading: 1.15,
@@ -249,7 +252,7 @@ export const TYPE_ROLES = deepFreeze({
   },
 
   // A PAGE TITLE IS NOT A SECTION HEADING, and until this existed they were the
-  // same 20px/600 in every mode -- an h1 and an h2 pixel-identical, so the
+  // same size in every mode -- an h1 and an h2 pixel-identical, so the
   // document outline a screen reader announces had no visual counterpart.
   title: {
     font: 'semantic.font.sans',
@@ -935,15 +938,16 @@ export const M3_TYPE_STYLES = deepFreeze({
     weight: 400,
   },
   'headline-large': {
-    absent:
-      'our display role is 30/40, between headline-medium and this step; the owner is choosing which step it takes',
     line: 40,
+    ours: 'display',
     px: 32,
     weight: 400,
+    weightNote:
+      'set 600 where M3 sets headlines regular: one typeface and no brand face, so rank is carried by size and weight together',
   },
   'headline-medium': {
     absent:
-      'our display role is 30/40, between this step and headline-large; the owner is choosing which step it takes',
+      'display sits at headline-large and title at headline-small; a step between them has no consumer',
     line: 36,
     px: 28,
     weight: 400,
@@ -971,11 +975,12 @@ export const M3_TYPE_STYLES = deepFreeze({
     weight: 500,
   },
   'title-large': {
-    absent:
-      'our heading role is 20/28, two points below this step and off the scale; the owner is choosing whether it moves here',
     line: 28,
+    ours: 'heading',
     px: 22,
     weight: 400,
+    weightNote:
+      'set 600 where M3 sets title-large regular: rank by size and weight together, as every heading here',
   },
   'title-medium': { line: 24, ours: 'emphasis', px: 16, weight: 500 },
   'title-small': {
@@ -988,15 +993,12 @@ export const M3_TYPE_STYLES = deepFreeze({
 })
 
 /**
- * Roles of ours that carry no Material 3 style, each with the difference named. Two are
- * off the scale by size and await the owner's choice; one is M3's emphasized set at a
- * single style.
+ * Roles of ours that carry no Material 3 style, each with the difference named. One today:
+ * M3's emphasized set at a single style.
  */
 export const XFORGE_ONLY_TYPE_ROLES = deepFreeze({
-  display:
-    "30/40/600 sits between headline-medium (28/36) and headline-large (32/40), off M3's scale; it was sized against title, not against a ladder, and the owner is choosing the step (comparison 2026-09-04)",
-  heading:
-    "20/28/600 sits between title-medium (16/24) and title-large (22/28), off M3's scale; sized against body and title rather than a ladder; the owner is choosing whether it moves to 22/28",
+  // heading and display were here on 2026-09-04 (20/28 and 30/40, off the scale); the owner
+  // moved them onto title-large and headline-large the same day.
   subheading:
     "title-medium (16/24) in M3's EMPHASIZED set: 600 where the baseline title-medium, which emphasis carries, is 500 -- the pair is M3's baseline/emphasized pairing at one style",
 })

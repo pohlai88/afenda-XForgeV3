@@ -243,7 +243,7 @@ decision row grades the DTCG pair S, and this table says so beside the rows.
 | Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E35**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
 | Figma REST API *Variables* — "Setting scopes for a variable does not prevent that variable from being bound in other scopes… This only limits the variables that are shown in pickers within the Figma UI." (**E32**) | That a shipped tool modelled per-variable scope, and that its scopes are advisory |
 | Material Design 3 *Color roles* — "There are 26 standard color roles organized into six groups"; surface / primary–secondary–tertiary / container / on / variant as the words every role is built from; "apply colors only in the intended pairs or layering orders"; outline for "important boundaries, such as a text field outline", outline variant for "decorative elements, such as dividers" (**E37**, read 2026-09-04) | The colour-role grammar and the pairing law the tokens now follow: `surface`, `surface-lowest`, `surface-container`, `on-surface`, `on-surface-variant`, `primary` / `on-primary` / `primary-container`, `error` / `error-container`, `outline` / `outline-variant`, and `COLOR_PAIRS`. ADAPT: hover and pressed stay explicit fills where M3 uses state layers, and the status containers follow M3's custom-colour pattern with no high-emphasis fill |
-| Material Design 3 *Type scale & tokens* — fifteen baseline styles "from Display Large to Label Small", a brand and a plain typeface, an emphasized set that is "a higher weight" and never a new size, "the Major Second type scale with 14 as its key base size"; metrics from Google's material-web token file v0.192 (**E38**, read 2026-09-04) | The placement of our nine type roles: six carry a style to the pixel (`M3_TYPE_STYLES`), heading and display sit off the scale and say so (`XFORGE_ONLY_TYPE_ROLES`), rank by weight on headings is the recorded deviation. ADAPT: one typeface, no brand face, no emphasized set beyond subheading |
+| Material Design 3 *Type scale & tokens* — fifteen baseline styles "from Display Large to Label Small", a brand and a plain typeface, an emphasized set that is "a higher weight" and never a new size, "the Major Second type scale with 14 as its key base size"; metrics from Google's material-web token file v0.192 (**E38**, read 2026-09-04) | The placement of our nine type roles: six carry a style to the pixel (`M3_TYPE_STYLES`), heading and display moved onto title-large and headline-large the same day, rank by weight on headings is the recorded deviation. ADAPT: one typeface, no brand face, no emphasized set beyond subheading |
 
 For the relationship layer itself:
 
@@ -664,9 +664,11 @@ fifteen from Google's token file. Six carry a style to the pixel — caption/bod
 body-compact/body-medium, label/label-large, body/body-large, emphasis/title-medium,
 title/headline-small — and the tables say so with the numbers; `assertTypeRolesPlaced`
 measures a carried role against its resolved tokens, so the verdict cannot outlive a token
-change. Two roles are off the scale, heading at 20/28 and display at 30/40, each sized against
-its neighbours rather than a ladder, and each is named as such until the owner chooses whether
-they move to 22/28 and 32/40. subheading is title-medium in M3's emphasized set. Weight is the
+change. Two roles were off the scale, heading at 20/28 and display at 30/40, each sized against
+its neighbours rather than a ladder; the owner moved them the same day onto title-large (22/28)
+and headline-large (32/40), at 600, so eight of nine roles now carry a style to the pixel and
+the size ramp reads 12, 14, 16, 22, 24, 32 -- M3's steps. subheading is title-medium in M3's
+emphasized set. Weight is the
 systematic deviation: M3 sets headlines regular and carries rank by size; this system, with one
 typeface and no brand face, carries rank by size and weight together, and says so on the row.
 Tracking is absent rather than zero on every role but body, and is not yet decided.

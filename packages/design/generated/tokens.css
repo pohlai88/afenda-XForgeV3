@@ -102,11 +102,11 @@
   --size-shell-nav-collapsed: 64px;
   --size-shell-nav-expanded: 240px;
   --size-target-min: 24px;
-  --size-text-lg: 1.25rem;
+  --size-text-lg: 1.375rem;
   --size-text-md: 1rem;
   --size-text-sm: 0.875rem;
   --size-text-xl: 1.5rem;
-  --size-text-2xl: 1.875rem;
+  --size-text-2xl: 2rem;
   --size-text-xs: 0.75rem;
   --font-sans: IBM Plex Sans, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   --font-mono: IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -115,6 +115,8 @@
   --weight-semibold: 600;
   --weight-bold: 700;
   --leading-tight: 1.3333;
+  --leading-tighter: 1.2727;
+  --leading-tightest: 1.25;
   --leading-snug: 1.4;
   --leading-normal: 1.4286;
   --leading-loose: 1.5;
@@ -207,9 +209,9 @@
   --semantic-leading-label: var(--leading-normal);
   --semantic-leading-body: var(--leading-loose);
   --semantic-leading-subheading: var(--leading-loose);
-  --semantic-leading-heading: var(--leading-snug);
+  --semantic-leading-heading: var(--leading-tighter);
   --semantic-leading-title: var(--leading-tight);
-  --semantic-leading-display: var(--leading-tight);
+  --semantic-leading-display: var(--leading-tightest);
   --semantic-tracking-body: var(--tracking-normal);
   --semantic-ease-standard: var(--easing-standard);
   --semantic-ease-entrance: var(--easing-entrance);
