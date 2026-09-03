@@ -28,10 +28,21 @@ export interface SpecimenProps extends NativeProps<'figure'> {
   readonly footer?: ReactNode
   /** The caption. Names the state, not the component; the group heading names that. */
   readonly label: string
+  /**
+   * The surface the state is judged on. The page ground unless a card is named: the muted
+   * ink is measured against both, and a state judged only on the ground is judged on half
+   * its surfaces.
+   */
+  readonly surface?: 'card' | 'page' | undefined
 }
 
+const STAGE_SURFACE = {
+  card: [STYLE.surface.card.background, STYLE.surface.card.foreground].join(' '),
+  page: STYLE.surface.page.background,
+} as const
+
 /** Section 4 — the Adapter. */
-export function Specimen({ children, footer, label, ...props }: SpecimenProps) {
+export function Specimen({ children, footer, label, surface = 'page', ...props }: SpecimenProps) {
   return (
     <figure
       className={cn('flex flex-col', STYLE.space.none.margin, STYLE.space.tight.gap)}
@@ -50,7 +61,7 @@ export function Specimen({ children, footer, label, ...props }: SpecimenProps) {
       </figcaption>
       <div
         className={cn(
-          STYLE.surface.page.background,
+          STAGE_SURFACE[surface],
           STYLE.shape.control,
           STYLE.stroke.width,
           STYLE.stroke.border.border,

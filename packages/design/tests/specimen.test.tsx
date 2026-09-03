@@ -39,6 +39,22 @@ describe('Specimen frames one state', () => {
     }
   })
 
+  it('can stage a state on the card surface instead of the page ground', () => {
+    // The muted ink is measured against the page AND the card; a state judged only on the
+    // ground is judged on half its surfaces. Red before the surface axis existed.
+    const onCard =
+      /class="([^"]*)" data-slot="specimen-stage"/.exec(
+        render({ label: 'x', surface: 'card' }),
+      )?.[1] ?? ''
+    expect(onCard).toContain('bg-card')
+    expect(onCard).toContain('text-card-foreground')
+    expect(onCard).not.toContain('bg-background')
+    const onPage =
+      /class="([^"]*)" data-slot="specimen-stage"/.exec(render({ label: 'x' }))?.[1] ?? ''
+    expect(onPage).toContain('bg-background')
+    expect(onPage).not.toContain('bg-card')
+  })
+
   it('renders the footer only when given one', () => {
     expect(render({ label: 'x' })).not.toContain('data-slot="specimen-footer"')
     const html = renderToStaticMarkup(
