@@ -239,13 +239,13 @@
       ]
     },
     "interaction.checked.background": {
-      "class": "data-checked:bg-primary",
+      "class": "data-checked:not-data-disabled:bg-primary",
       "tokens": [
         "semantic.color.primary"
       ]
     },
     "interaction.checked.foreground": {
-      "class": "data-checked:text-primary-foreground",
+      "class": "data-checked:not-data-disabled:text-primary-foreground",
       "tokens": [
         "semantic.color.primary-foreground"
       ]
@@ -263,19 +263,19 @@
       ]
     },
     "interaction.highlighted.background": {
-      "class": "data-highlighted:bg-accent",
+      "class": "data-highlighted:not-data-disabled:bg-accent",
       "tokens": [
         "semantic.color.accent"
       ]
     },
     "interaction.highlighted.foreground": {
-      "class": "data-highlighted:text-accent-foreground",
+      "class": "data-highlighted:not-data-disabled:text-accent-foreground",
       "tokens": [
         "semantic.color.accent-foreground"
       ]
     },
     "interaction.unchecked.background": {
-      "class": "data-unchecked:bg-field",
+      "class": "data-unchecked:not-data-disabled:bg-field",
       "tokens": [
         "semantic.color.field"
       ]

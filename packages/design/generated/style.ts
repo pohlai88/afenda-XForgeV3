@@ -82,19 +82,19 @@ export const STYLE = {
   },
   interaction: {
     checked: {
-      background: 'data-checked:bg-primary',
-      foreground: 'data-checked:text-primary-foreground',
+      background: 'data-checked:not-data-disabled:bg-primary',
+      foreground: 'data-checked:not-data-disabled:text-primary-foreground',
     },
     disabled: {
       background: 'data-disabled:bg-disabled',
       foreground: 'data-disabled:text-disabled-foreground',
     },
     highlighted: {
-      background: 'data-highlighted:bg-accent',
-      foreground: 'data-highlighted:text-accent-foreground',
+      background: 'data-highlighted:not-data-disabled:bg-accent',
+      foreground: 'data-highlighted:not-data-disabled:text-accent-foreground',
     },
     unchecked: {
-      background: 'data-unchecked:bg-field',
+      background: 'data-unchecked:not-data-disabled:bg-field',
     },
   },
   layer: {

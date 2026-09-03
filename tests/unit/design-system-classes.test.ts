@@ -316,6 +316,34 @@ describe('the design system vocabulary compiles', () => {
     expect(missingFrom(css, roleClasses)).toEqual([])
   }, 30_000)
 
+  /**
+   * DISABLED DOMINATES. A disabled, unchecked Switch carries both `data-unchecked` and
+   * `data-disabled`; with one attribute selector each, the stylesheet's order decided
+   * which fill won, and it was the field fill. The gallery proof measured it on
+   * 2026-09-04: rgb(255,255,255) where the disabled token was meant. The contract now says
+   * it: every interaction state at rest excludes disabled, so a disabled control shows no
+   * other interaction state whatever the order the rules come out in. Red before
+   * INTERACTION_STATES emitted the exclusion.
+   */
+  it('every interaction state at rest excludes disabled, so disabled needs no luck to win', async () => {
+    const manifest = JSON.parse(
+      readFileSync(join(PKG, 'generated/style-manifest.json'), 'utf8'),
+    ) as { symbols: Record<string, { class: string }> }
+    const atRest = Object.entries(manifest.symbols).filter(
+      ([symbol]) =>
+        symbol.startsWith('interaction.') && !symbol.startsWith('interaction.disabled.'),
+    )
+    expect(atRest.length).toBeGreaterThan(3)
+    const css = await compile(atRest.map(([, s]) => s.class))
+    for (const [symbol, { class: cls }] of atRest) {
+      expect(cls, symbol).toContain('not-data-disabled:')
+      // The rule the browser applies carries the exclusion, not only the class name.
+      const at = css.indexOf(`.${cssEscape(cls)}`)
+      expect(at, `${symbol} compiles`).toBeGreaterThan(-1)
+      expect(css.slice(at, at + 400), symbol).toContain(':not([data-disabled])')
+    }
+  }, 30_000)
+
   it('and a class naming no role is reported missing', async () => {
     const css = await compile(['bg-card', 'bg-not-a-role'])
     expect(missingFrom(css, ['bg-card', 'bg-not-a-role'])).toEqual(['bg-not-a-role'])

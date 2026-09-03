@@ -1648,10 +1648,16 @@ describe('the style contract (ADR-034 Decision 4)', () => {
     expect(leaves.get('state.disabled.background')?.class).toBe('disabled:bg-disabled')
     expect(leaves.get('state.disabled.foreground')?.class).toBe('disabled:text-disabled-foreground')
     // Base UI's data-state vocabulary selects declared roles, one table (ADR-034 step 8).
-    expect(leaves.get('interaction.checked.background')?.class).toBe('data-checked:bg-primary')
-    expect(leaves.get('interaction.unchecked.background')?.class).toBe('data-unchecked:bg-field')
+    // Every state at rest excludes disabled, so disabled dominates by selector, never by the
+    // order the rules happen to come out in (the gallery proof caught the order winning).
+    expect(leaves.get('interaction.checked.background')?.class).toBe(
+      'data-checked:not-data-disabled:bg-primary',
+    )
+    expect(leaves.get('interaction.unchecked.background')?.class).toBe(
+      'data-unchecked:not-data-disabled:bg-field',
+    )
     expect(leaves.get('interaction.highlighted.foreground')?.class).toBe(
-      'data-highlighted:text-accent-foreground',
+      'data-highlighted:not-data-disabled:text-accent-foreground',
     )
     expect(leaves.get('interaction.disabled.background')?.class).toBe('data-disabled:bg-disabled')
     expect(leaves.get('field.placeholder')?.class).toBe('placeholder:text-muted-foreground')

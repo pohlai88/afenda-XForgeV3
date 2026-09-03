@@ -101,6 +101,13 @@ const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
  * fill, unchecked is the field surface, highlighted is the accent fill, disabled is the
  * disabled role. A recipe writes `STYLE.interaction.checked.background` and never assembles
  * `data-checked:` by hand.
+ *
+ * DISABLED DOMINATES, BY SELECTOR AND NOT BY LUCK. A disabled unchecked switch carries
+ * `data-unchecked` and `data-disabled` at once; with one attribute selector each, the
+ * stylesheet's order decided which fill won, and the gallery proof measured the field fill
+ * where the disabled token was meant (2026-09-04). So every state at rest is emitted
+ * excluding the dominant one -- `data-unchecked:not-data-disabled:bg-field` -- and a disabled
+ * control shows no other interaction state whatever order the rules come out in.
  */
 export const INTERACTION_STATES = deepFreeze({
   checked: { root: 'primary', selector: 'data-checked' },
@@ -265,15 +272,18 @@ function geometrySymbols(tree, omitted) {
   set(tree, ['easing', 'standard'], symbol('ease-standard', ['semantic.ease.standard']))
   set(tree, ['easing', 'entrance'], symbol('ease-entrance', ['semantic.ease.entrance']))
   set(tree, ['easing', 'exit'], symbol('ease-exit', ['semantic.ease.exit']))
+  const dominant = INTERACTION_STATES.disabled.selector
   for (const [state, { root, selector }] of Object.entries(INTERACTION_STATES)) {
     const contract = COLOR_ROLE_CONTRACTS[root]
     const { channels } = colorChannelsOf(`color.${root}`)
+    // Every state at rest excludes the dominant one, so disabled wins by selector.
+    const variant = state === 'disabled' ? `${selector}:` : `${selector}:not-${dominant}:`
     const node = {}
     for (const channel of channels) {
-      node[CHANNEL_KEY[channel]] = symbol(`${selector}:${channel}-${root}`, [contract.base])
+      node[CHANNEL_KEY[channel]] = symbol(`${variant}${channel}-${root}`, [contract.base])
     }
     if (contract.foreground !== NONE) {
-      node.foreground = symbol(`${selector}:text-${roleOf(contract.foreground)}`, [
+      node.foreground = symbol(`${variant}text-${roleOf(contract.foreground)}`, [
         contract.foreground,
       ])
     }

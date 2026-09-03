@@ -67,8 +67,10 @@ describe('Switch keeps the primitive behaviour and exposes only Xforge words', (
     for (const cls of [
       'w-switch-track-width',
       'h-switch-track-height',
-      'data-unchecked:bg-field',
-      'data-checked:bg-primary',
+      // At rest excludes disabled: a disabled control shows no other interaction state.
+      'data-unchecked:not-data-disabled:bg-field',
+      'data-checked:not-data-disabled:bg-primary',
+      'data-disabled:bg-disabled',
     ]) {
       expect(html).toContain(cls)
     }

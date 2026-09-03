@@ -274,7 +274,9 @@ For the relationship layer itself:
 - **Nothing external supports the words this ADR minted while building.** The semantic
   taxonomy in `STYLE_NAMES` (`error` → `status.danger`, `destructive` → `action.danger`,
   `sidebar` → `surface.rail`, `ring` → `stroke.focus`); the `INTERACTION_STATES` mapping of Base
-  UI's data attributes to roles (checked → primary, unchecked → field, highlighted → accent);
+  UI's data attributes to roles (checked → primary, unchecked → field, highlighted → accent), and
+  the rule that every state at rest excludes disabled so disabled wins by selector rather than
+  by stylesheet order (added 2026-09-04 after the gallery proof measured the order winning);
   `pressed` as `:active` and `disabled` as `:disabled`; the switch track aliased to the control
   minimum and the target floor; the `subheading` and `space.none` roles; Button's outline
   hovering `secondary`; and channels declared per KIND rather than per role — every one is
