@@ -1,6 +1,6 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–10
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–11
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
 revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
 — the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
@@ -840,21 +840,30 @@ Rules the schema encodes, each with the check that sees it:
   every class in RECIPE names a token role                 design-system-classes.test.ts
   every CONTRACT row renders what it declares              <name>.test.tsx (Verification 1 shape)
   the adaptee is unreachable from outside the package      package-exports.test.ts (ADR-033)
-  --- added by Decision 12, none of these has a check yet ---
-  no public `className`, no public `style`                 Verification 5, EXTENSION OWED
-  STYLE SELECTION holds symbols, not literal classes       Verification 5, EXTENSION OWED
+  --- added by Decision 12 ---
+  no public `className`, no public `style`                 adapter-schema.test.ts, WRITTEN
+                                                            (ADR-034 step 7: intrinsic props
+                                                            come through NativeProps;
+                                                            ComponentProps<'…'> refused;
+                                                            className only as the attribute
+                                                            an Adapter sets on its adaptee)
+  STYLE SELECTION holds symbols, not literal classes       design-system-classes.test.ts, WRITTEN
+                                                            (step 7: no design-bearing literal
+                                                            in authored source; 46 red before)
   every STYLE symbol resolves to an emitted class          design-system-classes.test.ts, WRITTEN
                                                             (ADR-034 step 6: every manifest
                                                             class compiles, variants included)
   no foreign class survives the adaptee undeclared         NOT WRITTEN — see below
 ```
 
-**The last four are declared and unenforced today, and saying so is the point.** ADR-024's
-rule is that a guard whose name overclaims is worse than none; a schema listing four rules
-no check reads is the prose equivalent. They are listed as OWED rather than as encoded, and
-`design-system-classes.test.ts`'s lexical class reader is defeated by symbol indirection —
-so the replacement must land in the same commit that introduces `STYLE.*`, or the one
-guarantee the schema currently does enforce lapses silently while looking stronger.
+**Three of the four are enforced since ADR-034 steps 6 and 7; the fourth stays OWED, and
+saying so is the point.** ADR-024's rule is that a guard whose name overclaims is worse than
+none. "No foreign class survives the adaptee undeclared" asks what the VENDORED file renders,
+which no lexical read of the Adapter can see; today's answer is ADR-034 Decision 3's shim
+table, which names every channel the reachable vendored tree still paints through and goes
+red when a use appears that no shim covers. That is a declaration of the leak, not its
+absence. The lexical class reader that compiled every literal was replaced in the same
+commit that introduced `STYLE.*` (step 7), as this paragraph required.
 
 Test file schema, `packages/design/tests/<name>.test.tsx`, JSX-free (`createElement` +
 `renderToStaticMarkup`, node environment, no new dependency):
@@ -1198,16 +1207,34 @@ In this order, each its own commit, rollback `git revert`:
       kernel proves adjacent type roles differ (`typographyFailures`); nothing proved a
       component's level table used different ones. Level 3 now renders `text-body` at the
       heading weight — 16px/600, apart from h2 by size, from `emphasis` by weight, from body by
-      both — with no new role minted. `heading.test.tsx` (Verification 9) holds every level to
-      a distinct role and to its own element; red first on the shared role.
+      both — with no new role minted at the time; step 11 then minted `subheading` for exactly
+      that combination, and level 3 selects it. `heading.test.tsx` (Verification 9) holds
+      every level to a distinct role and to its own element; red first on the shared role.
     - **`h-control` governed nothing.** The utility that sets `min-block-size` to the control
       minimum — the WCAG 2.5.8 target floor the density axis rebinds — had no consumer, so
       Tailwind never emitted it and upstream's `h-8` held every button at 32px under a 40px
-      floor. The Button Adapter now carries the class, merged with a caller's `className`
-      through `cn`; `button.test.tsx` asserts it on both variants and under a merge, red first.
-      Under Decision 12 this is a floor Xforge SELECTS, not a style it defines.
+      floor. The Button Adapter now carries the class; `button.test.tsx` asserts it on both
+      variants, red first. Under Decision 12 this is a floor Xforge SELECTS, not a style it
+      defines — and once step 11 closed the Target, the merge-with-a-caller's-`className` case
+      became a compile-time refusal, since there is no longer a `className` to merge.
     - **Not fixed here:** the same table-versus-kernel gap exists for any other component
       that maps an axis to roles; only Heading has a level table today.
+
+11. **Recipes select STYLE symbols; Targets close — 2026-09-03**, ADR-034 step 7, one kernel
+    commit and one component commit. Kernel first: a `subheading` type role (16px at the
+    heading weight, body's leading; rank between emphasis and heading) because Heading level
+    3 rendered a combination no role named, and `STYLE.family.sans`/`.mono` because Page and
+    Code select a face. Then every design-bearing class in the fifteen Adapters became a
+    `STYLE` symbol — Alert's tone table selects `status.<tone>` and `stroke.border`, Text's
+    tones and variants select ink, surface, status and typography, Heading's levels select
+    `typography.title/heading/subheading`, Stack's gaps, Code, EmptyState, List, ListItem,
+    Page, Status and Button's control floor likewise — and what a component still writes as
+    a literal is structural (`flex`, `items-start`, `shrink-0`, `border-dashed`,
+    `tabular-nums`) or a zero reset (`m-0`, `p-0`). The Targets dropped `className` and
+    `style` through `NativeProps<'x'>` in `#lib/props`; the app passed neither anywhere.
+    Rendered classes are unchanged except Text's `label` variant, which now selects the
+    label role's own size token, and Code, which carries body-compact's weight explicitly.
+    The two Decision 12 rules and the replaced lexical check are recorded in Verification 5.
 
 ## Verification
 
@@ -1240,13 +1267,15 @@ for machinery that is not built and are rejected with it.
    `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases at
    thirteen files, 61 at fifteen. Lexical: see "does NOT prove" for what it cannot see.
 
-   **Extension owed under Decision 12**, and it must be observed RED first — which it will
-   be, because the tree already fails it: no public `className`; no public `style`; no
-   literal design class inside STYLE SELECTION. **13 of 15 authored Targets fail the first
-   two today** (Switch and Combobox pass), so this is a check with a known red, which is the
-   only kind worth adding. A separate style-contract test proves the other direction —
-   every `STYLE` symbol resolves to a class the generator emitted, and no emitted class is
-   undeclared — and neither test exists.
+   **Extended under Decision 12 (ADR-034 step 7), observed RED first as predicted:** two
+   rules joined — intrinsic props come through `NativeProps<'x'>` and `ComponentProps<'…'>`
+   is refused (thirteen of fifteen files red before the move), and `className` appears only
+   as the attribute an Adapter sets on its adaptee (three files red). Both read code with
+   comments stripped, because a header that explains why `className` is not a prop would
+   otherwise trip the rule that says so. The other direction — every `STYLE` symbol
+   resolves to a class the generator emitted — is `design-system-classes.test.ts` since
+   ADR-034 step 6, and its lexical class reader became "the authored layer writes no
+   design-bearing literal" in step 7 (46 red before, none after).
 6. **`packages/design/tests/{switch,combobox}.browser.test.tsx`** — the `browser` Vitest
    project (`vitest run --project browser`): Playwright Chromium, headless, mounted with
    `react-dom/client`, no framework helper, a stand-in box for the switch
