@@ -895,3 +895,186 @@ export const typographyPolicy = definePolicy({
   id: 'foundation.typography',
   kind: 'foundation',
 })
+
+/* --------------------------------------------------------- Material 3 placement -- */
+
+/**
+ * MATERIAL 3'S BASELINE TYPE SCALE, PLACED. The fifteen styles with their metrics for the
+ * web, from Google's generated token file (material-components/material-web,
+ * tokens/versions/v0_192/_md-sys-typescale.scss, read 2026-09-04; the site's token viewer
+ * carries the same values in a widget the page text does not) -- pixels at a 16px root,
+ * line heights in pixels, baseline weights. Each style carries exactly one verdict: `ours`,
+ * the role of ours whose size and line height are the same numbers, or `absent`, with the
+ * reason nothing here has it. A role that carries a style at a different weight says so in
+ * `weightNote`; a role that merely resembles a style belongs in XFORGE_ONLY_TYPE_ROLES with
+ * the difference named. The generator refuses a role placed in neither table.
+ */
+export const M3_TYPE_STYLES = deepFreeze({
+  'body-large': { line: 24, ours: 'body', px: 16, weight: 400 },
+  'body-medium': { line: 20, ours: 'body-compact', px: 14, weight: 400 },
+  'body-small': { line: 16, ours: 'caption', px: 12, weight: 400 },
+  'display-large': {
+    absent:
+      'nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer',
+    line: 64,
+    px: 57,
+    weight: 400,
+  },
+  'display-medium': {
+    absent:
+      'nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer',
+    line: 52,
+    px: 45,
+    weight: 400,
+  },
+  'display-small': {
+    absent:
+      'nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer',
+    line: 44,
+    px: 36,
+    weight: 400,
+  },
+  'headline-large': {
+    absent:
+      'our display role is 30/40, between headline-medium and this step; the owner is choosing which step it takes',
+    line: 40,
+    px: 32,
+    weight: 400,
+  },
+  'headline-medium': {
+    absent:
+      'our display role is 30/40, between this step and headline-large; the owner is choosing which step it takes',
+    line: 36,
+    px: 28,
+    weight: 400,
+  },
+  'headline-small': {
+    line: 32,
+    ours: 'title',
+    px: 24,
+    weight: 400,
+    weightNote:
+      'set 600 where M3 sets headlines regular: one typeface and no brand face, so rank is carried by size and weight together',
+  },
+  'label-large': { line: 20, ours: 'label', px: 14, weight: 500 },
+  'label-medium': {
+    absent: '12px is the floor here and it is set regular, as caption; a medium 12 has no consumer',
+    line: 16,
+    px: 12,
+    weight: 500,
+  },
+  'label-small': {
+    absent:
+      'below the 12px floor this system holds; there is no step below caption and there will not be',
+    line: 16,
+    px: 11,
+    weight: 500,
+  },
+  'title-large': {
+    absent:
+      'our heading role is 20/28, two points below this step and off the scale; the owner is choosing whether it moves here',
+    line: 28,
+    px: 22,
+    weight: 400,
+  },
+  'title-medium': { line: 24, ours: 'emphasis', px: 16, weight: 500 },
+  'title-small': {
+    absent:
+      'the same metrics as label-large, which label carries; M3 splits the two by job and this system has one job for them',
+    line: 20,
+    px: 14,
+    weight: 500,
+  },
+})
+
+/**
+ * Roles of ours that carry no Material 3 style, each with the difference named. Two are
+ * off the scale by size and await the owner's choice; one is M3's emphasized set at a
+ * single style.
+ */
+export const XFORGE_ONLY_TYPE_ROLES = deepFreeze({
+  display:
+    "30/40/600 sits between headline-medium (28/36) and headline-large (32/40), off M3's scale; it was sized against title, not against a ladder, and the owner is choosing the step (comparison 2026-09-04)",
+  heading:
+    "20/28/600 sits between title-medium (16/24) and title-large (22/28), off M3's scale; sized against body and title rather than a ladder; the owner is choosing whether it moves to 22/28",
+  subheading:
+    "title-medium (16/24) in M3's EMPHASIZED set: 600 where the baseline title-medium, which emphasis carries, is 500 -- the pair is M3's baseline/emphasized pairing at one style",
+})
+
+/**
+ * Every M3 style placed once, every role placed once, and a carried style's numbers agree
+ * with the role's resolved tokens. `resolved` is a Map<tokenPath, literal> of the base mode,
+ * as the generator holds it; without one only the placement is checked.
+ */
+export function assertTypeRolesPlaced(
+  resolved,
+  roles = TYPE_ROLES,
+  m3 = M3_TYPE_STYLES,
+  only = XFORGE_ONLY_TYPE_ROLES,
+  rootPx = ASSUMED_ROOT_PX,
+) {
+  const carried = new Map()
+  for (const [style, row] of Object.entries(m3)) {
+    const hasOurs = typeof row.ours === 'string'
+    const hasAbsent = typeof row.absent === 'string' && row.absent.length > 0
+    if (hasOurs === hasAbsent) {
+      throw new Error(
+        `M3 type style '${style}' must carry exactly one verdict: ours, or absent with a reason`,
+      )
+    }
+    if (hasOurs) {
+      if (!(row.ours in roles)) {
+        throw new Error(
+          `M3 type style '${style}' is carried by '${row.ours}', which is no type role`,
+        )
+      }
+      if (carried.has(row.ours)) {
+        throw new Error(
+          `type role '${row.ours}' carries both '${carried.get(row.ours)}' and '${style}'`,
+        )
+      }
+      carried.set(row.ours, style)
+    }
+  }
+  for (const role of Object.keys(roles)) {
+    if (carried.has(role) && role in only) {
+      throw new Error(`type role '${role}' is both carried by an M3 style and declared Xforge-only`)
+    }
+    if (!(carried.has(role) || role in only)) {
+      throw new Error(
+        `type role '${role}' carries no M3 style and is not declared Xforge-only -- a word minted without a benchmark`,
+      )
+    }
+  }
+  if (!(resolved instanceof Map)) {
+    return
+  }
+  const px = (token) => toPixels(resolved.get(token), { rootPx })
+  for (const [role, style] of carried) {
+    const policy = roles[role]
+    const row = m3[style]
+    if (resolved.get(policy.size) === undefined) {
+      // A source that lacks the role's tokens (a test fixture) is placed, not measured.
+      continue
+    }
+    const size = px(policy.size)
+    const leading = resolved.get(policy.leading)
+    const line = /^[0-9.]+$/.test(String(leading))
+      ? Number(leading) * size
+      : toPixels(leading, { fontPx: size, rootPx })
+    const weight = Number(resolved.get(policy.weight))
+    if (Math.abs(size - row.px) > 0.5 || Math.abs(line - row.line) > 0.5) {
+      throw new Error(
+        `type role '${role}' is placed as M3 '${style}' (${row.px}/${row.line}) but resolves to ${size}/${line.toFixed(1)} -- a carried style is the same numbers, or it is Xforge-only with the difference named`,
+      )
+    }
+    if (
+      weight !== row.weight &&
+      !(typeof row.weightNote === 'string' && row.weightNote.length > 0)
+    ) {
+      throw new Error(
+        `type role '${role}' is placed as M3 '${style}' at weight ${row.weight} but resolves to ${weight}, and the row carries no weightNote saying why`,
+      )
+    }
+  }
+}

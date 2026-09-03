@@ -87,6 +87,11 @@ import {
   XFORGE_ONLY_ROLES,
 } from '../foundations/pairing.mjs'
 import {
+  assertTypeRolesPlaced,
+  M3_TYPE_STYLES,
+  XFORGE_ONLY_TYPE_ROLES,
+} from '../foundations/typography.mjs'
+import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
   assertColorRoleContracts,
@@ -788,6 +793,9 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
     assertTypographyCoverage(tokens, typeRoles)
   }
   const typography = typographyFailures(byMode, typeRoles)
+  // The placement is a fact about the whole catalogue, not the package's selection; a
+  // fixture source without the type tokens is placement-checked and not measured.
+  assertTypeRolesPlaced(base)
   if (typography.length > 0) {
     throw new Error(`typography policy violated:\n${typography.join('\n')}`)
   }
@@ -1321,6 +1329,8 @@ function foundations(tokens, blocks, source) {
     '',
     ...colourRules(source),
     '',
+    ...typeRules(),
+    '',
     '## Modes',
     '',
     'Two axes compose: `theme` owns colour, `density` owns geometry. A token rebound by',
@@ -1415,6 +1425,45 @@ function colourRules(source) {
     '| Ink | Fill | Floor | Light | Dark |',
     '| --- | --- | --- | --- | --- |',
     ...pairs,
+  ]
+}
+
+/**
+ * The type rules, printed from the tables that hold them: every Material 3 baseline style
+ * with its metrics and the role of ours that carries it or the reason none does, and every
+ * role of ours off the scale with the difference named.
+ */
+function typeRules() {
+  const styles = Object.entries(M3_TYPE_STYLES).map(([style, row]) =>
+    row.ours
+      ? `| \`${style}\` | ${row.px} / ${row.line} / ${row.weight} | \`${row.ours}\` | carried${row.weightNote ? ` -- ${row.weightNote}` : ''} |`
+      : `| \`${style}\` | ${row.px} / ${row.line} / ${row.weight} | -- | ${row.absent} |`,
+  )
+  const only = Object.entries(XFORGE_ONLY_TYPE_ROLES).map(
+    ([role, why]) => `| \`${role}\` | ${why} |`,
+  )
+  return [
+    '## Type rules',
+    '',
+    "The type roles are placed against Material 3's baseline type scale (fifteen styles, five",
+    'families at three steps; m3.material.io/styles/typography/type-scale-tokens, values from',
+    "Google's material-web token file v0.192, read 2026-09-04). A style is CARRIED when a role of",
+    'ours has the same size and line height in pixels; a weight that differs is named on the row.',
+    'A role that carries no style names its difference below. Every line height sits on the 4px',
+    'grid, which `typographyFailures` holds; rank is carried by size and weight together, which',
+    "is this system's deviation from M3's regular headlines, recorded rather than hidden.",
+    '',
+    '### Material 3 baseline styles, placed',
+    '',
+    '| M3 style | px / line / weight | Ours | Verdict |',
+    '| --- | --- | --- | --- |',
+    ...styles,
+    '',
+    '### Roles off the scale, or beside it',
+    '',
+    '| Role | Difference |',
+    '| --- | --- |',
+    ...only,
   ]
 }
 

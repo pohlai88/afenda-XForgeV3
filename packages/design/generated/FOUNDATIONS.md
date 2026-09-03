@@ -397,6 +397,44 @@ its floor and the generator refuses a root placed against no Material 3 role.
 | `outline` | `surface` | 3:1 | 3.96:1 | 4.22:1 |
 | `outline` | `surface-lowest` | 3:1 | 4.33:1 | 3.82:1 |
 
+## Type rules
+
+The type roles are placed against Material 3's baseline type scale (fifteen styles, five
+families at three steps; m3.material.io/styles/typography/type-scale-tokens, values from
+Google's material-web token file v0.192, read 2026-09-04). A style is CARRIED when a role of
+ours has the same size and line height in pixels; a weight that differs is named on the row.
+A role that carries no style names its difference below. Every line height sits on the 4px
+grid, which `typographyFailures` holds; rank is carried by size and weight together, which
+is this system's deviation from M3's regular headlines, recorded rather than hidden.
+
+### Material 3 baseline styles, placed
+
+| M3 style | px / line / weight | Ours | Verdict |
+| --- | --- | --- | --- |
+| `body-large` | 16 / 24 / 400 | `body` | carried |
+| `body-medium` | 14 / 20 / 400 | `body-compact` | carried |
+| `body-small` | 12 / 16 / 400 | `caption` | carried |
+| `display-large` | 57 / 64 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
+| `display-medium` | 45 / 52 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
+| `display-small` | 36 / 44 / 400 | -- | nothing here sets anything above a KPI figure; the brand-typeface display sizes have no consumer |
+| `headline-large` | 32 / 40 / 400 | -- | our display role is 30/40, between headline-medium and this step; the owner is choosing which step it takes |
+| `headline-medium` | 28 / 36 / 400 | -- | our display role is 30/40, between this step and headline-large; the owner is choosing which step it takes |
+| `headline-small` | 24 / 32 / 400 | `title` | carried -- set 600 where M3 sets headlines regular: one typeface and no brand face, so rank is carried by size and weight together |
+| `label-large` | 14 / 20 / 500 | `label` | carried |
+| `label-medium` | 12 / 16 / 500 | -- | 12px is the floor here and it is set regular, as caption; a medium 12 has no consumer |
+| `label-small` | 11 / 16 / 500 | -- | below the 12px floor this system holds; there is no step below caption and there will not be |
+| `title-large` | 22 / 28 / 400 | -- | our heading role is 20/28, two points below this step and off the scale; the owner is choosing whether it moves here |
+| `title-medium` | 16 / 24 / 500 | `emphasis` | carried |
+| `title-small` | 14 / 20 / 500 | -- | the same metrics as label-large, which label carries; M3 splits the two by job and this system has one job for them |
+
+### Roles off the scale, or beside it
+
+| Role | Difference |
+| --- | --- |
+| `display` | 30/40/600 sits between headline-medium (28/36) and headline-large (32/40), off M3's scale; it was sized against title, not against a ladder, and the owner is choosing the step (comparison 2026-09-04) |
+| `heading` | 20/28/600 sits between title-medium (16/24) and title-large (22/28), off M3's scale; sized against body and title rather than a ladder; the owner is choosing whether it moves to 22/28 |
+| `subheading` | title-medium (16/24) in M3's EMPHASIZED set: 600 where the baseline title-medium, which emphasis carries, is 500 -- the pair is M3's baseline/emphasized pairing at one style |
+
 ## Modes
 
 Two axes compose: `theme` owns colour, `density` owns geometry. A token rebound by
