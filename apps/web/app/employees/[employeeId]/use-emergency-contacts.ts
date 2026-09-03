@@ -23,12 +23,14 @@ import {
   useListEmergencyContacts,
   useUpdateEmergencyContact,
 } from '@xforge/api-client'
-import { assertNever, type ResourceState, type WriteOutcome } from '@xforge/design/state'
 import {
+  assertNever,
   type MutationOutcome,
   type ReadOutcome,
+  type ResourceState,
   toResourceState,
   toWriteOutcome,
+  type WriteOutcome,
 } from './resource-state'
 
 export type Contact = EmergencyContact

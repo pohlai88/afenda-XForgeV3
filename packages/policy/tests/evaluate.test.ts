@@ -10,7 +10,7 @@
  * response to that guessing is to widen a grant until the error goes away.
  */
 import { describe, expect, it } from 'vitest'
-import { evaluate, type Grant, type Principal } from '../src/index.js'
+import { evaluate, type Grant, type Principal } from '../src/index'
 
 const T = '11111111-1111-1111-1111-111111111111'
 const OTHER = '22222222-2222-2222-2222-222222222222'

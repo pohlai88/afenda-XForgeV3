@@ -1,9 +1,9 @@
 'use client'
 
 import { Component, type ComponentProps, type ErrorInfo } from 'react'
-import { Alert } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Text } from '@/components/ui/text'
+import { Alert } from '#components/alert'
+import { Text } from '#components/text'
+import { Button } from '#components/ui/button'
 
 /**
  * Contains the failure of ONE resource surface, and deliberately not the page.

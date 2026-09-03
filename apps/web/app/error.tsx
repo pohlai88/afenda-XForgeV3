@@ -1,6 +1,9 @@
 'use client'
 
-import { Alert, Button, Stack, Text } from '@xforge/design'
+import { Alert } from '@xforge/design/components/alert'
+import { Button } from '@xforge/design/components/button'
+import { Stack } from '@xforge/design/components/stack'
+import { Text } from '@xforge/design/components/text'
 
 /**
  * The OUTER net, and deliberately not a replacement for `ResourceBoundary`.

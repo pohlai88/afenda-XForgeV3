@@ -33,14 +33,14 @@
  * connected and then skipped every case has still proven nothing. Reachability
  * is a precondition, not evidence.
  */
-import postgres from 'postgres'
 // The developer fallbacks have ONE owner, and it is not this file. The literal
 // stood here, in `db/migrate.mjs` and in `verify/lib/migrate-check.mjs`, while
 // `tests/fixtures/local-database.ts` opens by declaring that "one file owns
 // these strings so there is exactly one place to look". Reading its accessors
 // rather than its constants also inherits the no-fallback-under-CI rule, which
 // is the same reason those accessors exist.
-import { appUrl, ownerUrl } from '../../tests/fixtures/local-database.ts'
+import { appUrl, ownerUrl } from '@xforge/fixtures/local-database'
+import postgres from 'postgres'
 
 /** Connect, ask the cheapest possible question, and hang up. */
 async function reachable(url) {

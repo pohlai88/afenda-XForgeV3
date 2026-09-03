@@ -340,10 +340,10 @@ export function assertStateLayers(
   if (missing.length > 0 || extra.length > 0) {
     const parts = []
     if (missing.length > 0) {
-      parts.push(`missing ${missing.sort().join(', ')}`)
+      parts.push(`missing ${missing.sort((a, b) => a.localeCompare(b)).join(', ')}`)
     }
     if (extra.length > 0) {
-      parts.push(`unexpected ${extra.sort().join(', ')}`)
+      parts.push(`unexpected ${extra.sort((a, b) => a.localeCompare(b)).join(', ')}`)
     }
     throw new Error(
       `state layers do not match interaction states minus 'rest' -- ${parts.join('; ')}. ` +
@@ -407,10 +407,10 @@ export function assertInteractionStateExpressions(
   if (missing.length > 0 || extra.length > 0) {
     const parts = []
     if (missing.length > 0) {
-      parts.push(`missing ${missing.sort().join(', ')}`)
+      parts.push(`missing ${missing.sort((a, b) => a.localeCompare(b)).join(', ')}`)
     }
     if (extra.length > 0) {
-      parts.push(`unexpected ${extra.sort().join(', ')}`)
+      parts.push(`unexpected ${extra.sort((a, b) => a.localeCompare(b)).join(', ')}`)
     }
     throw new Error(
       `interaction expressions do not match the interaction axis -- ${parts.join('; ')}. ` +

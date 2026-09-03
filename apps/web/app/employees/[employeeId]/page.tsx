@@ -1,5 +1,5 @@
-import { Heading } from '@xforge/design'
-import { ResourceBoundary } from '@xforge/design/boundary'
+import { Heading } from '@xforge/design/components/heading'
+import { ResourceBoundary } from '@xforge/design/components/resource-boundary'
 import { EmergencyContacts } from './emergency-contacts'
 
 /**

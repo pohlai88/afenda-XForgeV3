@@ -60,6 +60,7 @@ opinion**, and the architecture treats it as such.
 | [028](ADR-028-tailwind-and-shadcn-base.md) | Tailwind v4 styles packages/ui; shadcn on Base UI is its component base | Amended by 029 | AQS-028 |
 | [029](ADR-029-one-ui-system.md) | One UI system; the token vocabulary is settled in one pass and proved by the compiler | Accepted | AQS-029 |
 | [030](ADR-030-at-evidence-is-a-record-not-an-integer.md) | Assistive-technology evidence is a record, not an integer | Accepted | A11y-1, A11y-3 gate |
+| [033](ADR-033-workspace-code-is-reached-through-declared-entry-points.md) | Workspace code is reached through declared `exports`; named `#` namespaces for internals; no `paths`, no relative crossings | Accepted | `package-exports.test.ts`, `noRestrictedImports`, `next build` (passed 2026-09-03) |
 
 ADRs 001–013 record decisions reconciled from thirteen predecessor drafts.
 **ADRs 014–020 record defects found by adversarial review** that no draft had caught;

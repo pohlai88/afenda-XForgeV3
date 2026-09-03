@@ -100,6 +100,16 @@
       // typeset skill's scripts among it -- was written here and we own it.
       "!!.agents",
 
+      // VENDORED shadcn PRIMITIVES, same line as above: authored vs vendored.
+      // `packages/design/src/components/ui/**` is written by `shadcn add` and
+      // is never edited here (ADR-031 rule 7: shadcn is distribution, its
+      // styling is never transformed). Linting it reports upstream's house
+      // style and the next `shadcn add --overwrite` reverts every fix. The
+      // folder is also unexported (`"./components/ui/*": null`), so nothing
+      // outside the package can reach it. Authored components live one level
+      // up, in `packages/design/src/components/*.tsx`, and ARE linted.
+      "!!packages/design/src/components/ui",
+
       // Biome's own config, excluded from Biome. `**/*.json` above would
       // otherwise have it lint itself as strict JSON, where the comments
       // explaining each disabled rule are a parse error. The alternative was
@@ -153,9 +163,11 @@
         // THE REASON RECORDED HERE UNTIL 2026-09-01 WAS THE NEGATION OF THE
         // CONFIG. It said tsconfig has no `allowImportingTsExtensions`, so
         // writing `./thing.ts` is a type error. tsconfig.base.json sets that flag
-        // TRUE, and ten files import with explicit extensions -- including
-        // tests/unit/workspace-aliases.test.ts, which imports
-        // '../../workspace.aliases.ts' to assert alias derivation.
+        // TRUE, and files import with explicit extensions -- playwright.config.ts
+        // imports './tooling/e2e/config.ts', for one. ADR-033 rule 8 settles the
+        // convention: TypeScript relative imports are extensionless or `.ts`,
+        // `.mjs` carries its extension because Node requires it, and `.js`
+        // naming a `.ts` file is the nodenext idiom this repository does not use.
         //
         // The rule still belongs off. The premise under it was inverted, which
         // is worse than no reason: it sends the next reader to fix the config
@@ -172,6 +184,45 @@
       },
       "style": {
         "useConst": "error",
+
+        // ADR-033: workspace code is reached through the package's declared
+        // entry points and nothing else resolves it. Ultracite turns this rule
+        // on with NO options, which checks nothing; the patterns are the rule.
+        //
+        // LEXICAL, NOT SEMANTIC. Biome matches the specifier TEXT. The first
+        // group rejects every relative spelling that can reach a workspace
+        // root directory; it does not know which package a file belongs to.
+        // `tooling/**` is absent on purpose -- it is the root package, not a
+        // boundary. tests/unit/package-exports.test.ts is the semantic half:
+        // it reads the real manifests. Review these patterns whenever
+        // pnpm-workspace.yaml changes.
+        //
+        // Observed rejecting all 13 boundary crossings in the tree of
+        // 2026-09-03 before any was fixed.
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": [
+                  "**/packages/**",
+                  "**/modules/**",
+                  "**/apps/**",
+                  "**/tests/fixtures/**"
+                ],
+                "message": "Cross a workspace boundary through the package's declared entry point (@xforge/...), never by relative path."
+              },
+              {
+                "group": ["@xforge/*/src/**", "@xforge/*/policy/**"],
+                "message": "Deep import into a workspace package's internals. Import a declared export instead."
+              },
+              {
+                "group": ["@/**"],
+                "message": "tsconfig paths do not resolve workspace code (ADR-033). Inside a package use its #namespace imports; across packages use @xforge/..."
+              }
+            ]
+          }
+        },
 
         // THE COMPILER OWNS IMPORT ELISION. `verbatimModuleSyntax` is true in
         // tsconfig.base.json, and under `module: "Preserve"` with `noEmit` it
@@ -197,10 +248,13 @@
         "useFilenamingConvention": "off"
       },
       "performance": {
-        // Our packages expose ONE entry point on purpose. The
-        // module-boundaries and kernel-independence guards depend on a package
-        // having a public surface rather than deep-importable internals, which
-        // is the opposite of what this rule optimises for.
+        // Workspace root entry-point barrels are deliberate public APIs on the
+        // small packages -- db, api, policy, tenancy -- and surface area is
+        // governed by each package's `exports` map, not by a blanket
+        // prohibition on re-export files (ADR-033 rule 2). The design package,
+        // whose surface is a large component tree, has no barrel at all; it
+        // exports `./components/*`. A previous version of this comment cited two
+        // guards that were deleted in a3cf31b.
         "noBarrelFile": "off",
 
         // E2E keyboard navigation is sequential BY NATURE: Tab, observe, Tab

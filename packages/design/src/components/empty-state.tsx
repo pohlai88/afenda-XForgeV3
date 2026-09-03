@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { cn } from '@/lib/cn'
+import { cn } from '#lib/cn'
 
 /**
  * Nothing here — said as an invitation, never as an apology.

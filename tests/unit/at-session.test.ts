@@ -19,16 +19,15 @@
  * rather than to a structural guard.
  */
 
-import { describe, expect, it } from 'vitest'
 import {
   REQUIRED_PAIRINGS,
   SUPPORTED_AT,
   sessionFailures,
   // @ts-expect-error -- untyped .mjs policy module, deliberately outside the app
-  // graph. NOT the reason the old path carried ("tooling is untyped"): this
-  // module is in packages/, and it is the same shape for a different cause, so
-  // it gets its own sentence rather than inheriting a wrong one.
-} from '../../packages/design/policy/interaction/assistive-technology.mjs'
+  // graph, reached through the package's declared `./policy` export (ADR-033)
+  // rather than by a relative path into another workspace package.
+} from '@xforge/design/policy'
+import { describe, expect, it } from 'vitest'
 
 /** One real sitting, with everything the ledger and ADR-025 promise. */
 const run = (at: string, browser: string) => ({

@@ -1396,8 +1396,8 @@ this package", which is exactly the claim a production import contradicts.
 **Type-only imports are erased**, so a production install omitting the package
 cannot break them, and the types are needed at BUILD time -- when
 devDependencies are present. Found on the guard's first run:
-`workspace.aliases.ts` takes `Alias` from vite and nothing resolves vite at
-runtime. Declaration-time and consumer-time are separate questions, which is the
+`workspace.aliases.ts` (since deleted under ADR-033) took `Alias` from vite and
+nothing resolved vite at runtime. Declaration-time and consumer-time are separate questions, which is the
 distinction raised earlier about `postgres` in `@xforge/fixtures` and is why it
 was not assumed either way.
 

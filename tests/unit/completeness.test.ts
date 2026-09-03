@@ -11,8 +11,9 @@
  * marker is a separate question, proved against a real database, because a
  * schema accepting a partial envelope is not evidence that anything emits one.
  */
+
+import { Completeness } from '@xforge/hr/contract'
 import { describe, expect, it } from 'vitest'
-import { Completeness } from '../../modules/hr/contract/routes'
 
 const parse = (value: unknown) => Completeness.safeParse(value)
 

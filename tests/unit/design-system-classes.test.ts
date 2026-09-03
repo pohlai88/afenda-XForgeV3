@@ -81,10 +81,20 @@ const rolesFromBridge = (): { cls: string; variable: string }[] => {
   return out
 }
 
+/**
+ * Authored source only. `components/ui/` is the vendored shadcn tree: written by
+ * `shadcn add`, never edited here, unexported, and excluded from every check
+ * (ADR-031 rule 7, ADR-033). Its classes are upstream's business until a
+ * component policy projects them; the classes THIS repository writes are what
+ * these two questions are about.
+ */
+const VENDORED = /[\\/]components[\\/]ui$/
+
 const sourceFiles = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     if (entry.isDirectory()) {
-      return sourceFiles(join(dir, entry.name))
+      const sub = join(dir, entry.name)
+      return VENDORED.test(sub) ? [] : sourceFiles(sub)
     }
     return /\.tsx?$/.test(entry.name) ? [join(dir, entry.name)] : []
   })

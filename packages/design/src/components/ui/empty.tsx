@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
-import { cn } from '@/lib/cn'
+import { cn } from '#lib/cn'
 
 function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -56,7 +56,13 @@ function EmptyMedia({
 }
 
 function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div className={cn('font-medium text-sm', className)} data-slot="empty-title" {...props} />
+  return (
+    <div
+      className={cn('font-medium text-sm tracking-tight', className)}
+      data-slot="empty-title"
+      {...props}
+    />
+  )
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {

@@ -34,13 +34,87 @@
  */
 import type { Completeness, PartialReason } from '@xforge/api-client'
 import { ApiProblem } from '@xforge/api-client'
-import {
-  assertNever,
-  type ResourceState,
-  type UiPartialReason,
-  type UiProblem,
-  type WriteOutcome,
-} from '@xforge/design/state'
+
+/*
+ * THE EXPERIENCE VOCABULARY LIVES HERE, BESIDE ITS ONLY PRODUCER. It sat in the
+ * design package until ae4e294; no component ever read it, and this screen is
+ * its one consumer. It moves back to `@xforge/design` the day a component
+ * needs it (law 31), not before.
+ */
+
+/** Why a read is incomplete, in terms a person could be told. */
+export interface UiPartialReason {
+  kind: 'truncated'
+  limit: number
+  shown: number
+}
+
+/**
+ * A condition preventing progress. `retryable` decides whether a retry control
+ * appears at all -- offering one for a permission failure teaches people the
+ * button is decorative. `detail?: string | undefined` is deliberate under
+ * `exactOptionalPropertyTypes`: the mapper reads it off an ApiProblem that may
+ * not carry one.
+ */
+export interface UiProblem {
+  code: 'forbidden' | 'unavailable'
+  detail?: string | undefined
+  retryable: boolean
+  title: string
+}
+
+/** Competing valid realities that need a decision -- NOT a failure (ADR-013). */
+export interface UiConflict {
+  detail?: string
+  kind: 'stale-version'
+  title: string
+}
+
+/**
+ * The state of a READ. `conflict` is deliberately absent: a read cannot be in
+ * conflict, a write can, and folding it in would give every reader a case it
+ * can never produce.
+ */
+export type ResourceState<T> =
+  | { status: 'loading' }
+  | { status: 'empty' }
+  | { status: 'ready'; data: T }
+  | { status: 'partial'; data: T; reasons: UiPartialReason[] }
+  | { status: 'forbidden'; issue: UiProblem }
+  | { status: 'error'; issue: UiProblem }
+
+/** The outcome of a WRITE. Separate from a read: a failed write leaves the user holding an edit. */
+export type WriteOutcome =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'saved' }
+  | { status: 'conflict'; conflict: UiConflict }
+  | { status: 'failed'; issue: UiProblem }
+
+/**
+ * Did the read produce an answer? TRUE for `empty` too: adding the first record
+ * is the entire point of that state. A write control beneath an unsuccessful
+ * read offers an action whose result the caller cannot see.
+ */
+export function readSucceeded<T>(state: ResourceState<T>): boolean {
+  switch (state.status) {
+    case 'empty':
+    case 'ready':
+    case 'partial':
+      return true
+    case 'loading':
+    case 'forbidden':
+    case 'error':
+      return false
+    default:
+      return assertNever(state, 'resource state')
+  }
+}
+
+/** Refuse a value the type system believes impossible, so a new member stops the build. */
+export function assertNever(value: never, context: string): never {
+  throw new Error(`${context}: unhandled ${JSON.stringify(value)}`)
+}
 
 /**
  * What a read can report, stated as a closed union.

@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { cn } from '@/lib/cn'
+import { cn } from '#lib/cn'
 
 /**
  * An identifier, a wire code, a request id — read by comparison, not as a word.

@@ -346,21 +346,26 @@ export function assertMotionModel(
  *   "150ms" / "0.15s"
  *   { value: 150, unit: "ms" }
  */
-const durationMs = (raw) => {
-  let value
-  let unit
-
+/** Either accepted spelling, split into its two parts; `null` when it is neither. */
+const durationParts = (raw) => {
   if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
-    value = Number(raw.value)
-    unit = raw.unit
-  } else {
-    const parsed = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(String(raw))
-    if (!parsed) {
-      return { ms: null, why: `${JSON.stringify(raw)} is not a duration` }
-    }
-    value = Number(parsed[1])
-    unit = parsed[2]
+    const { value, unit } = raw
+    return { unit, value: Number(value) }
   }
+  const parsed = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(String(raw))
+  if (!parsed) {
+    return null
+  }
+  const [, digits, unit] = parsed
+  return { unit, value: Number(digits) }
+}
+
+const durationMs = (raw) => {
+  const parts = durationParts(raw)
+  if (parts === null) {
+    return { ms: null, why: `${JSON.stringify(raw)} is not a duration` }
+  }
+  const { unit, value } = parts
 
   if (!(Number.isFinite(value) && (unit === 'ms' || unit === 's'))) {
     return { ms: null, why: `${JSON.stringify(raw)} is not a duration` }

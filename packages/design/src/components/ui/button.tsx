@@ -1,10 +1,10 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 
-import { cn } from '@/lib/cn'
+import { cn } from '#lib/cn'
 
 const buttonVariants = cva(
-  "group/button focus-visible:focus-ring inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-container border border-transparent bg-clip-padding font-label text-body-compact outline-none transition duration-press disabled:pointer-events-none disabled:border-transparent disabled:bg-disabled disabled:text-disabled-foreground aria-invalid:border-destructive aria-invalid:ring-3 dark:aria-invalid:border-destructive [&_svg:not([class*='size-'])]:size-icon [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "group/button inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-clip-padding font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     defaultVariants: {
       size: 'default',
@@ -13,50 +13,28 @@ const buttonVariants = cva(
     variants: {
       size: {
         default:
-          'h-control gap-tight px-snug has-data-[icon=inline-end]:pr-tight has-data-[icon=inline-start]:pl-tight',
+          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
         icon: 'size-8',
         'icon-lg': 'size-9',
-        'icon-sm': 'size-7 in-data-[slot=button-group]:rounded-container rounded-control',
+        'icon-sm':
+          'size-7 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),12px)]',
         'icon-xs':
-          "size-6 in-data-[slot=button-group]:rounded-container rounded-control [&_svg:not([class*='size-'])]:size-icon",
-        lg: 'h-control gap-tight px-snug has-data-[icon=inline-end]:pr-tight has-data-[icon=inline-start]:pl-tight',
-        sm: "h-control gap-related in-data-[slot=button-group]:rounded-container rounded-control px-snug text-body-compact has-data-[icon=inline-end]:pr-tight has-data-[icon=inline-start]:pl-tight [&_svg:not([class*='size-'])]:size-icon",
-        xs: "h-control gap-related in-data-[slot=button-group]:rounded-container rounded-control px-tight text-body-compact has-data-[icon=inline-end]:pr-tight has-data-[icon=inline-start]:pl-tight [&_svg:not([class*='size-'])]:size-icon",
+          "size-6 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
+        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        sm: "h-7 gap-1 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        xs: "h-6 gap-1 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
       },
       variant: {
-        default:
-          'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed',
-        // REWRITTEN FROM `bg-destructive text-destructive-foreground`. Opacity
-        // composites: the pair the token graph can measure is not the pair a
-        // reader sees, which is the defect that once rendered a disabled label
-        // at 2.56:1 while every check reported 5.17:1. Real roles instead, so
-        // the contrast invariant measures what the eye receives.
+        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover',
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 dark:hover:bg-destructive/30',
         ghost:
-          'hover:bg-muted hover:text-foreground active:bg-accent aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-accent',
+          'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
         link: 'text-primary underline-offset-4 hover:underline',
         outline:
-          'border-border bg-background hover:bg-muted hover:text-foreground active:bg-accent aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-field dark:hover:bg-muted',
+          'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-muted active:bg-secondary-pressed aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
-        // MID-EMPHASIS, AND THE RUNG THE LADDER WAS MISSING. Material 3 calls
-        // this 'filled tonal' and places it between a filled button and an
-        // outlined one: the action you want found without claiming the page's
-        // single primary. Every other rung already existed here -- `default` is
-        // M3's filled, `outline` its outlined, `ghost` and `link` its text.
-        //
-        // IT REUSES `accent` RATHER THAN GROWING A CONTAINER ROLE. The tonal
-        // pair M3 asks for -- a low-chroma fill with a dark on-colour -- is
-        // exactly what `accent`/`accent-foreground` already are, in both themes.
-        // Adding `primary-container` beside it would have been a second name for
-        // one fact, agreeing until it did not.
-        //
-        // THE STATES ARE FILLS, NOT A STATE LAYER. M3 composites the on-colour
-        // over the container at 8% and 10%; `color.mjs` refuses that for the
-        // reason the destructive variant above records.
-        tonal:
-          'bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-pressed aria-expanded:bg-accent-hover',
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
       },
     },
   },

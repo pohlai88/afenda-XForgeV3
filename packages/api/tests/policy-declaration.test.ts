@@ -14,8 +14,8 @@
 
 import { z } from '@hono/zod-openapi'
 import { describe, expect, it } from 'vitest'
-import type { RouteDefinition } from '../src/index.js'
-import { createApp, UnmountableRouteError } from '../src/index.js'
+import type { RouteDefinition } from '../src/index'
+import { createApp, UnmountableRouteError } from '../src/index'
 
 const ok = (c: { json: (b: unknown, s: number) => Response }) => c.json({ ok: true }, 200)
 

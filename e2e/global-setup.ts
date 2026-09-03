@@ -1,6 +1,6 @@
+import { ownerUrl } from '@xforge/fixtures/local-database'
+import { seedTenancy, TENANT_A } from '@xforge/fixtures/tenancy'
 import postgres from 'postgres'
-import { ownerUrl } from '../tests/fixtures/local-database'
-import { seedTenancy, TENANT_A } from '../tests/fixtures/tenancy'
 
 /** Matches the composition root's development principal. */
 const DEV_PRINCIPAL = 'dev-user'

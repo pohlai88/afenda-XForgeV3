@@ -1,8 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "paths": { "@/*": ["./packages/design/src/*"] }
-  },
   "include": [
     "packages/**/*.ts",
     "packages/**/*.tsx",
@@ -14,5 +11,11 @@
     "tests/**/*.tsx",
     "e2e/**/*.ts"
   ],
-  "exclude": ["node_modules", "**/node_modules", "**/.next", "**/dist"]
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/.next",
+    "**/dist",
+    "packages/design/src/components/ui"
+  ]
 }

@@ -6,9 +6,14 @@
     "*.css"
   ],
   "type": "module",
+  "imports": {
+    "#components/*": "./src/components/*.tsx",
+    "#hooks/*": "./src/hooks/*.ts",
+    "#lib/*": "./src/lib/*.ts"
+  },
   "exports": {
-    ".": "./src/index.ts",
-    "./boundary": "./src/components/ui/resource-boundary.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./components/ui/*": null,
     "./policy": "./policy/index.mjs",
     "./tailwind-theme.css": "./generated/tailwind-theme.css",
     "./tokens.css": "./generated/tokens.css",

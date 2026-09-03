@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 import { EMPLOYEE } from '@xforge/fixtures/employee'
+import { appUrl } from '@xforge/fixtures/local-database'
 import { TENANT_A } from '@xforge/fixtures/tenancy'
-import { appUrl } from './tests/fixtures/local-database'
 import { E2E_ORIGIN, E2E_PORT } from './tooling/e2e/config.ts'
 
 /**

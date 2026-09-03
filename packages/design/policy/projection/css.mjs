@@ -69,7 +69,13 @@ const INVALID_VALUE = /[;{}\r\n]|\/\*|\*\//
 const IMPORTANT = /!\s*important\b/i
 const INVALID_SELECTOR = /[{};\r\n]|\/\*|\*\//
 
-const asciiCompare = (a, b) => (a === b ? 0 : a < b ? -1 : 1)
+/** Code-unit order, deliberately not locale order: the projection must be byte-stable across machines. */
+const asciiCompare = (a, b) => {
+  if (a === b) {
+    return 0
+  }
+  return a < b ? -1 : 1
+}
 
 function assertPlainTable(value, label) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {

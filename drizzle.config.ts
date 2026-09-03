@@ -1,5 +1,5 @@
+import { LOCAL_OWNER_URL } from '@xforge/fixtures/local-database'
 import { defineConfig } from 'drizzle-kit'
-import { LOCAL_OWNER_URL } from './tests/fixtures/local-database.ts'
 
 export default defineConfig({
   dbCredentials: {

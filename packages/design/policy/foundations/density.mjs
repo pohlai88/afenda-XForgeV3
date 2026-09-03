@@ -366,8 +366,8 @@ export function densityFailures(resolvedByDensity, densityModes, rootPx = ASSUME
       }
     }
 
-    const compactPx = measured[0][1]
-    const comfortablePx = measured[measured.length - 1][1]
+    const [[, compactPx]] = measured
+    const [, comfortablePx] = measured.at(-1)
 
     if (Math.abs(compactPx - comfortablePx) <= DENSITY_TOLERANCE_PX) {
       failures.push(

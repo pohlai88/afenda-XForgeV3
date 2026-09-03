@@ -1,4 +1,4 @@
-import { Page } from '@xforge/design'
+import { Page } from '@xforge/design/components/page'
 // ONE STYLESHEET IMPORT, AND IT IS THE ENTRY. `globals.css` pulls in Tailwind,
 // the token declarations and the theme bridge, in the order that decides which
 // namespace wins. Importing `tokens.css` here as well put the entry in two

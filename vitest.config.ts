@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config'
-import { aliases } from './workspace.aliases.ts'
 
 /**
  * Which files are unit, contract, integration or architecture is ONE fact, and
@@ -24,8 +23,12 @@ import { aliases } from './workspace.aliases.ts'
  *   vitest run --project architecture   database, serial
  *
  * `extends: true` is not decoration. Projects inherit NOTHING from the root by
- * default, and the root is where `resolve.alias` lives -- omit it and every
- * `@xforge/*` import in that project fails to resolve.
+ * default, and the root is where `environment` lives.
+ *
+ * NO ALIAS TABLE. One stood here until ADR-033, derived from every package's
+ * `exports` so the suites resolved the same graph as the application. Measured
+ * redundant: Vite reads the pnpm-linked packages' `exports` itself, and the
+ * unit project produced an identical result with and without it.
  */
 
 /**
@@ -47,7 +50,6 @@ import { aliases } from './workspace.aliases.ts'
 const NOT_THIS_CHECKOUT = ['**/node_modules/**', '**/.claude/**', '**/.next/**']
 
 export default defineConfig({
-  resolve: { alias: aliases },
   test: {
     environment: 'node',
     projects: [

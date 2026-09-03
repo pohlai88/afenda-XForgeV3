@@ -285,7 +285,7 @@ const assertTokenPath = (path, where = 'token path') => {
   try {
     return assertTokenPathGrammar(path)
   } catch (error) {
-    throw new Error(`${where}: ${error.message}`)
+    throw new Error(`${where}: ${error.message}`, { cause: error })
   }
 }
 
@@ -302,7 +302,7 @@ const assertBridgePath = (path, where) => {
       `${where} '${path}' must contain at least tier.group.name to cross the Tailwind bridge`,
     )
   }
-  const tier = path.split('.')[0]
+  const [tier] = path.split('.')
   if (tier !== 'semantic' && tier !== 'component') {
     throw new Error(
       `${where} '${path}' is ${tier} tier -- only semantic and component roles may enter ` +
@@ -406,7 +406,8 @@ const assertPrefixTable = (prefixes, namespaces = TAILWIND_NAMESPACES) => {
 
 const tokenPathsOf = (tokens, where) => {
   if (
-    tokens == null ||
+    tokens === null ||
+    tokens === undefined ||
     typeof tokens === 'string' ||
     typeof tokens[Symbol.iterator] !== 'function'
   ) {

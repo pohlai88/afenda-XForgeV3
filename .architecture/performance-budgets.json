@@ -130,13 +130,28 @@
     "apps/web/app/globals.css": {
       "status": "explicit",
       "cssDeclarationsGzipBytes": 900,
-      "reason": "An entry point and two custom utilities, not a stylesheet. Tighter than the 2400 B default because every design value is supposed to arrive through the generated bridge, and a budget it cannot grow into is what keeps that true.",
+      "reason": "An entry point and a handful of custom utilities, not a stylesheet. Tighter than the 2400 B default because every design value is supposed to arrive through the generated bridge, and a budget it cannot grow into is what keeps that true.",
       "$comment": [
+        "ONE ENTRY FOR ONE FILE. Until 2026-09-03 this key appeared twice: this",
+        "block, which had been packages/design/src/design.css's budget (238 B",
+        "when it landed, raised twice below) and was re-keyed when 6aa651b moved",
+        "that file's at-rules and utilities into globals.css; and the original",
+        "146 B / 400 B globals.css block beneath it, which JSON silently discarded",
+        "because the last key wins. Merged here. Measured at the merge: 553 B",
+        "gzipped with comments stripped -- past the old 400 B, 61% of this 900 B.",
+        "",
+        "NOTHING READS THIS FILE TODAY. The perf-budgets stage went with the",
+        "gate in a3cf31b, and the CSS guards this history refers to went with it.",
+        "The numbers are kept as the record of what was decided and why, so the",
+        "stage that returns inherits them rather than re-deriving them.",
+        "",
+        "History of this budget, when it still governed design.css:",
+        "",
         "238 B when it landed: four at-rules and the two width utilities Tailwind",
-        "has no namespace for. Unlike globals.css this file IS read by the CSS",
-        "guards -- it sits under packages/**, so a literal or a primitive",
-        "reference is refused. The budget is the second line of defence, against",
-        "growth the guards permit but nobody intended.",
+        "has no namespace for. That file sat under packages/**, so the CSS guards",
+        "refused a literal or a primitive reference there; the budget was the",
+        "second line of defence, against growth the guards permitted but nobody",
+        "intended.",
         "",
         "RAISED 500 -> 700 at 540 B, deliberately and with the count, which is what",
         "a tripwire is for. What crossed it:",
@@ -159,20 +174,6 @@
         "reduced-motion block, four duration utilities and the shimmer keyframes, and",
         "the remaining known work is small -- a couple of utilities for properties",
         "Tailwind has no namespace for."
-      ]
-    },
-    "apps/web/app/globals.css": {
-      "status": "explicit",
-      "cssDeclarationsGzipBytes": 400,
-      "reason": "Tighter than the 2400 B default on purpose: this is an entry point, not a stylesheet, and it is the one stylesheet no CSS guard reads.",
-      "$comment": [
-        "146 B when the Tailwind pipeline landed, and it should stay near that.",
-        "Four at-rules and no declarations of its own by design -- every design",
-        "value reaches Tailwind through the generated bridge instead.",
-        "tokens-are-the-authority and stylesheet-names-roles-not-primitives are",
-        "both scoped to packages/design/**.css, so a literal written here would be",
-        "caught by nothing. A budget it cannot grow into is the only thing",
-        "standing between this file and becoming a second home for design values."
       ]
     }
   },

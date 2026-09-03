@@ -1,23 +1,16 @@
 'use client'
 
-import {
-  Alert,
-  Button,
-  Card,
-  Code,
-  Heading,
-  List,
-  ListItem,
-  Stack,
-  Status,
-  Text,
-} from '@xforge/design'
-import {
-  assertNever,
-  type ResourceState,
-  readSucceeded,
-  type WriteOutcome,
-} from '@xforge/design/state'
+import { Alert } from '@xforge/design/components/alert'
+import { Button } from '@xforge/design/components/button'
+import { Card } from '@xforge/design/components/card'
+import { Code } from '@xforge/design/components/code'
+import { Heading } from '@xforge/design/components/heading'
+import { List } from '@xforge/design/components/list'
+import { ListItem } from '@xforge/design/components/list-item'
+import { Stack } from '@xforge/design/components/stack'
+import { Status } from '@xforge/design/components/status'
+import { Text } from '@xforge/design/components/text'
+import { assertNever, type ResourceState, readSucceeded, type WriteOutcome } from './resource-state'
 /**
  * Emergency contacts -- the design system's representative screen.
  *

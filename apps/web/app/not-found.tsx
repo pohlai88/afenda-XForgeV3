@@ -1,4 +1,4 @@
-import { EmptyState } from '@xforge/design'
+import { EmptyState } from '@xforge/design/components/empty-state'
 
 /**
  * An unrouted URL, and ONLY that.

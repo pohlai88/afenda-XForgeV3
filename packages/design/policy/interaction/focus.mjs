@@ -229,7 +229,7 @@ export function assertFocusRequirements(requirements = WCAG_FOCUS_REQUIREMENTS) 
     }
   }
 
-  const appearance = requirements.appearance
+  const { appearance } = requirements
   if (!(appearance.minimumEquivalentPerimeterPx >= 2)) {
     throw new Error(
       `WCAG ${appearance.criterion} equivalent-perimeter floor is ` +
@@ -311,7 +311,7 @@ export function assertFocusIndicator(
     )
   }
 
-  const appearance = requirements.appearance
+  const { appearance } = requirements
 
   if (
     !(
@@ -435,7 +435,7 @@ export function focusFailures(
   requirements = WCAG_FOCUS_REQUIREMENTS,
 ) {
   const failures = []
-  const appearance = requirements.appearance
+  const { appearance } = requirements
 
   for (const [label, resolved] of resolvedByMode) {
     const raw = resolved.get(indicator.tokens.thickness)

@@ -28,7 +28,13 @@
  */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Where Tailwind looks for class names: the design package's source only. */
+/*
+ * Where Tailwind looks for class names: the design package's source only.
+ *
+ * INTENTIONAL CROSS-WORKSPACE FILESYSTEM REFERENCE, and the one exception to
+ * ADR-033. `@source` registers a directory for class detection; it is not
+ * module resolution, and package.json `exports` cannot expose a directory.
+ */
 @source "../../../packages/design/src/";
 /*
  * CUSTOM UTILITIES — the widths Tailwind has no namespace for.

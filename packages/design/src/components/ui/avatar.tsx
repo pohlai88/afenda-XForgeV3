@@ -3,7 +3,7 @@
 import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar'
 import * as React from 'react'
 
-import { cn } from '@/lib/cn'
+import { cn } from '#lib/cn'
 
 function Avatar({
   className,
@@ -39,7 +39,7 @@ function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props)
   return (
     <AvatarPrimitive.Fallback
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-muted text-body-compact text-muted-foreground group-data-[size=sm]/avatar:text-body-compact',
+        'flex size-full items-center justify-center rounded-full bg-muted text-muted-foreground text-sm group-data-[size=sm]/avatar:text-xs',
         className,
       )}
       data-slot="avatar-fallback"
@@ -52,10 +52,10 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
       className={cn(
-        'layer-local absolute right-0 bottom-0 inline-flex select-none items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background',
+        'absolute right-0 bottom-0 z-10 inline-flex select-none items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background',
         'group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden',
         'group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2',
-        'group-data-[size=lg]/avatar:size-icon group-data-[size=lg]/avatar:[&>svg]:size-2',
+        'group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2',
         className,
       )}
       data-slot="avatar-badge"
@@ -81,7 +81,7 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
   return (
     <div
       className={cn(
-        'relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-body-compact text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-icon group-has-data-[size=lg]/avatar-group:[&>svg]:size-icon group-has-data-[size=sm]/avatar-group:[&>svg]:size-icon',
+        'relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3',
         className,
       )}
       data-slot="avatar-group-count"
