@@ -846,7 +846,11 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     providesContexts: ['error'],
     reason: 'a status backdrop for failure, proved through error-foreground',
   },
-  'color.error-foreground': { againstContexts: ['error'], kind: 'text' },
+  // READ ON THE PAGE AS WELL AS ON ITS TINT. Text's trend tone sets a delta in
+  // this ink directly on a card or the page, with no `error` backdrop under it,
+  // so those surfaces are declared here and measured -- the pairing is the
+  // claim, and the generator refuses the token file if the ink stops clearing it.
+  'color.error-foreground': { againstContexts: ['card', 'error', 'page'], kind: 'text' },
   'color.field': {
     kind: 'surface',
     providesContexts: ['field'],
@@ -970,7 +974,8 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     providesContexts: ['success'],
     reason: 'a status backdrop, proved through success-foreground',
   },
-  'color.success-foreground': { againstContexts: ['success'], kind: 'text' },
+  // Same declaration as `error-foreground`, for the same reason: the trend tone.
+  'color.success-foreground': { againstContexts: ['card', 'page', 'success'], kind: 'text' },
   'color.warning': {
     kind: 'surface',
     providesContexts: ['warning'],

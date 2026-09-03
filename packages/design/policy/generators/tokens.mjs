@@ -170,7 +170,16 @@ const TOKEN_PACKAGES = deepFreeze([
     // colours; see `twMergeGroups`.
     mergeGroups: true,
     pkg: 'packages/design',
-    typeRoles: ['caption', 'body-compact', 'label', 'body', 'emphasis', 'heading', 'title'],
+    typeRoles: [
+      'caption',
+      'body-compact',
+      'label',
+      'body',
+      'emphasis',
+      'heading',
+      'title',
+      'display',
+    ],
   },
 ])
 

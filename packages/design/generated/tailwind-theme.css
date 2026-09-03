@@ -25,7 +25,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 106 roles projected.
+ * 108 roles projected.
  */
 :root {
   --accent: var(--semantic-color-accent);
@@ -262,6 +262,7 @@
   --leading-body: var(--semantic-leading-body);
   --leading-caption: var(--semantic-leading-caption);
   --leading-compact: var(--semantic-leading-compact);
+  --leading-display: var(--semantic-leading-display);
   --leading-heading: var(--semantic-leading-heading);
   --leading-label: var(--semantic-leading-label);
   --leading-title: var(--semantic-leading-title);
@@ -297,6 +298,7 @@
   --text-body: var(--semantic-type-body);
   --text-body-compact: var(--semantic-type-body-compact);
   --text-caption: var(--semantic-type-caption);
+  --text-display: var(--semantic-type-display);
   --text-emphasis: var(--semantic-type-emphasis);
   --text-heading: var(--semantic-type-heading);
   --text-label: var(--semantic-type-label);
@@ -306,6 +308,7 @@
   --text-body--line-height: var(--semantic-leading-body);
   --text-body-compact--line-height: var(--semantic-leading-compact);
   --text-caption--line-height: var(--semantic-leading-caption);
+  --text-display--line-height: var(--semantic-leading-display);
   --text-emphasis--line-height: var(--semantic-leading-body);
   --text-heading--line-height: var(--semantic-leading-heading);
   --text-label--line-height: var(--semantic-leading-label);

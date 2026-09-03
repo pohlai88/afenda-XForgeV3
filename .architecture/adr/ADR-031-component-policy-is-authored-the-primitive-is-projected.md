@@ -1,6 +1,6 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–5
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–7
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
 revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
 — the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
@@ -8,8 +8,8 @@ Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. 
 maintenance loop ran once** (Migration step 6): PREVIEW, ASSESS and REFRESH are proved and
 frozen with the core; **RECONCILE is proved only in its null form** — no upstream change has
 reached an Adapter — and stays provisional. TRANSLATE, the Integration Adapter class and the
-registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5 and
-6 exist, were observed RED first, and were green on the author's run; behaviour survival for
+registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5, 6 and
+7 exist, were observed RED first, and were green on the author's run; behaviour survival for
 Switch and Combobox is proved in Chromium (Verification 6).
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
@@ -855,7 +855,8 @@ In this order, each its own commit, rollback `git revert`:
      one recipe (a grid of 4–6 cards, a value, a label, a comparison in words; thin
      accessibility). NORMALIZE kept the idea — a number never shown without its baseline —
      and recorded two gaps the system has no word for: a display-size type role, and a
-     trend tone on Text. Neither was invented (Decision 4). ADAPT: none; it is a
+     trend tone on Text. Neither was invented (Decision 4); both were admitted afterwards
+     with this composition as their consumer (step 7). ADAPT: none; it is a
      composition of `Card`, `Stack`, `Heading`, `Text`, defined in the test because no
      screen has asked for it, and it moves beside the first screen that does. PROVE: one
      labelled region, a real heading, one tile per metric, every value with its baseline,
@@ -882,7 +883,8 @@ In this order, each its own commit, rollback `git revert`:
      words by the same explicit adoption — a distinction the check cannot make and a
      reader did.
    - **D — does the studio block reduce to Xforge primitives and compositions without an
-     adapter subsystem?** YES, with two vocabulary gaps recorded and nothing invented.
+     adapter subsystem?** YES, with two vocabulary gaps recorded and nothing invented
+     (closed in step 7, by the owner's request, once the composition existed to consume them).
 
    Three clean yeses and one half: the **creation core** is frozen — five stages,
    No-Leakage, Adapter-versus-Composition, Primitive and Compound, ADOPT and INSPIRE.
@@ -921,6 +923,30 @@ In this order, each its own commit, rollback `git revert`:
    prove:** RECONCILE against an upstream change that reaches an Adapter, because none has
    arrived. That step stays provisional; the rest of the loop is frozen with the creation
    core.
+
+7. **The two vocabulary gaps, closed — 2026-09-03.** Kernel first, component second,
+   consumer third, in that order, because a word the component can say before the kernel
+   projects it is a class that compiles to nothing.
+   - **Kernel.** `size.text-2xl` (1.875rem) joins the primitive scale; `semantic.type.display`
+     and `semantic.leading.display` (the tight ratio) join the semantic layer; `display`
+     joins `TYPE_ROLES` at rank 5 above `title`, heading weight, 24px floor — 30 × 1.3333 =
+     40px, on the grid with no new leading step. `color.success-foreground` and
+     `color.error-foreground` now declare `card` and `page` among the contexts they are
+     read on, so the generator measures the inks where the trend tone actually puts them
+     (light 6.79–8.01 : 1, dark 7.13–10.27 : 1, all above 4.5). Mutation watched go red:
+     `display` bound to `size.text-xl` — the same size as `title` — and the generator refused
+     the file on the relational check. Five generated files changed, deliberately (law 27).
+   - **Component.** `Text` gains `variant="display"` (`font-heading text-display`) and
+     `tone="success" | "danger"` (`text-success-foreground` / `text-error-foreground`) —
+     names the kernel projects, nothing decided in the recipe. A trend tone names MEANING,
+     not direction; the screen decides which way is good.
+   - **Consumer.** MetricRow sets its values in `display`, and each `Metric` may carry a
+     `trend` the screen chooses; the delta stays words with a sign, and the composition
+     test asserts that a trend ink never appears without a signed delta in front of it
+     (constitution rule 7). The sample deliberately colours a falling number `success`.
+   - **PROVE.** Verification 7, RED first on the unchanged component (display and both
+     trend cases; the four existing words passed), green after the recipe gained the words.
+     `design-system-classes` compiles the three new classes from the bridge.
 
 ## Verification
 
@@ -968,6 +994,11 @@ for machinery that is not built and are rejected with it.
    not forwarding `onCheckedChange` → the three callback cases red while the DOM still
    toggled; Switch not spreading its props → all six Switch cases red; Combobox reporting
    the option object → the selection case red.
+7. **`packages/design/tests/text.test.tsx`** — every variant and tone `Text` owns renders
+   the classes the kernel projects for it, and a tone never displaces the role. **Observed
+   2026-09-03:** written before the recipe knew `display`, `success` or `danger`; four of
+   ten red on the unchanged component, all green once the recipe gained the words. The
+   kernel half is the generator's refusal (Migration step 7), not this file.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person

@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 238 custom properties: 118 primitive, 120 semantic, 0 component (ceiling 12).
+- 241 custom properties: 119 primitive, 122 semantic, 0 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -120,6 +120,7 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--size-shell-nav-collapsed` | `size.shell-nav-collapsed` | dimension | `64px` |
 | `--size-shell-nav-expanded` | `size.shell-nav-expanded` | dimension | `240px` |
 | `--size-target-min` | `size.target-min` | dimension | `24px` |
+| `--size-text-2xl` | `size.text-2xl` | dimension | `1.875rem` |
 | `--size-text-lg` | `size.text-lg` | dimension | `1.25rem` |
 | `--size-text-md` | `size.text-md` | dimension | `1rem` |
 | `--size-text-sm` | `size.text-sm` | dimension | `0.875rem` |
@@ -167,7 +168,7 @@ elevation domains.
 | `--semantic-color-disabled` | `semantic.color.disabled` | color | `{color.neutral.200}` | surface · provides disabled |
 | `--semantic-color-disabled-foreground` | `semantic.color.disabled-foreground` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled |
 | `--semantic-color-error` | `semantic.color.error` | color | `{color.red.100}` | surface · provides error |
-| `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against error |
+| `--semantic-color-error-foreground` | `semantic.color.error-foreground` | color | `{color.red.700}` | text · ≥4.5:1 against card, error, page |
 | `--semantic-color-field` | `semantic.color.field` | color | `{color.neutral.0}` | surface · provides field |
 | `--semantic-color-foreground` | `semantic.color.foreground` | color | `{color.neutral.900}` | text · ≥4.5:1 against field, page |
 | `--semantic-color-info` | `semantic.color.info` | color | `{color.sky.100}` | surface · provides info |
@@ -198,7 +199,7 @@ elevation domains.
 | `--semantic-color-statutory` | `semantic.color.statutory` | color | `{color.brass.100}` | surface · provides statutory |
 | `--semantic-color-statutory-foreground` | `semantic.color.statutory-foreground` | color | `{color.brass.700}` | text · ≥4.5:1 against statutory |
 | `--semantic-color-success` | `semantic.color.success` | color | `{color.green.100}` | surface · provides success |
-| `--semantic-color-success-foreground` | `semantic.color.success-foreground` | color | `{color.green.700}` | text · ≥4.5:1 against success |
+| `--semantic-color-success-foreground` | `semantic.color.success-foreground` | color | `{color.green.700}` | text · ≥4.5:1 against card, page, success |
 | `--semantic-color-warning` | `semantic.color.warning` | color | `{color.amber.100}` | surface · provides warning |
 | `--semantic-color-warning-foreground` | `semantic.color.warning-foreground` | color | `{color.amber.800}` | text · ≥4.5:1 against warning |
 | `--semantic-content-dialog` | `semantic.content.dialog` | dimension | `{size.content-dialog}` | -- |
@@ -222,6 +223,7 @@ elevation domains.
 | `--semantic-leading-body` | `semantic.leading.body` | number | `{leading.loose}` | type body · leading ≥1.5 |
 | `--semantic-leading-caption` | `semantic.leading.caption` | number | `{leading.tight}` | type caption · leading ≥1.33 |
 | `--semantic-leading-compact` | `semantic.leading.compact` | number | `{leading.normal}` | type body-compact · leading ≥1.4 |
+| `--semantic-leading-display` | `semantic.leading.display` | number | `{leading.tight}` | type display · leading ≥1.15 |
 | `--semantic-leading-heading` | `semantic.leading.heading` | number | `{leading.snug}` | type heading · leading ≥1.15 |
 | `--semantic-leading-label` | `semantic.leading.label` | number | `{leading.normal}` | type label · leading ≥1.4 |
 | `--semantic-leading-title` | `semantic.leading.title` | number | `{leading.tight}` | type title · leading ≥1.15 |
@@ -258,6 +260,7 @@ elevation domains.
 | `--semantic-type-body` | `semantic.type.body` | dimension | `{size.text-md}` | type body · ≥14px at a 16px root |
 | `--semantic-type-body-compact` | `semantic.type.body-compact` | dimension | `{size.text-sm}` | type body-compact · ≥14px at a 16px root |
 | `--semantic-type-caption` | `semantic.type.caption` | dimension | `{size.text-xs}` | type caption · ≥12px at a 16px root |
+| `--semantic-type-display` | `semantic.type.display` | dimension | `{size.text-2xl}` | type display · ≥24px at a 16px root |
 | `--semantic-type-emphasis` | `semantic.type.emphasis` | dimension | `{size.text-md}` | type emphasis · ≥14px at a 16px root |
 | `--semantic-type-heading` | `semantic.type.heading` | dimension | `{size.text-lg}` | type heading · ≥16px at a 16px root |
 | `--semantic-type-label` | `semantic.type.label` | dimension | `{size.text-sm}` | type label · ≥12px at a 16px root |

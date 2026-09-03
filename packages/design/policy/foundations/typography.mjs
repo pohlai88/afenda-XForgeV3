@@ -146,6 +146,29 @@ export const TYPE_ROLES = deepFreeze({
   },
 
   /**
+   * ONE NUMBER, READ FROM ACROSS THE ROOM. A KPI value in a metric tile, a total
+   * on a summary card -- a figure that is the whole point of the surface it sits
+   * on, and that the reader should find before reading anything else.
+   *
+   * ADMITTED WITH ITS CONSUMER, not ahead of it. The scale stopped at `title`
+   * until ADR-031's INSPIRE composition (a statistics block reduced to Xforge
+   * components) had to set a headline value at `emphasis` and recorded the gap
+   * instead of inventing a size. The owner asked for the role; this is it.
+   *
+   * 30px on the same tight leading as `title`: 30 x 1.3333 = 40, on the grid
+   * without a new leading step. Weight is the heading weight -- rank is carried
+   * by six points of size over `title`, so a heavier cut would add nothing.
+   */
+  display: {
+    leading: 'semantic.leading.display',
+    minimumLeading: 1.15,
+    minimumPx: 24,
+    rank: 5,
+    size: 'semantic.type.display',
+    weight: 'semantic.weight.heading',
+  },
+
+  /**
    * EMPHASIS WITHOUT SIZE INFLATION. A row's subject beside its detail, a total
    * beside its lines, or a card title above its content.
    *

@@ -11,11 +11,14 @@
  *           depends on studio's card/badge/avatar/dropdown/progress and lucide icons.
  * NORMALIZE what Xforge keeps is the IDEA — a row of equal tiles, one number each, every
  *           number carrying its baseline in words so a figure is never presented without
- *           one. What Xforge does not have, and does NOT invent here (Decision 4):
- *             - a display-size type role for the value (the scale stops at `title`);
- *               the value renders at `emphasis` and the gap is recorded
- *             - a trend tone on Text (success / danger); the delta is words with a sign,
- *               and colour would not carry the meaning anyway (constitution rule 7)
+ *           one. Two words Xforge did not have were recorded here rather than invented
+ *           (Decision 4), and were admitted the same day, by the owner, with this
+ *           composition as their consumer:
+ *             - `display`, a type role one step above `title`; the value renders in it
+ *             - a trend tone on Text (`success` / `danger`), set by the SCREEN for what
+ *               the change means, not by the sign: fewer overtime hours is `success`.
+ *               The delta stays words with a sign, so colour never carries the meaning
+ *               alone (constitution rule 7), and the test reads that back.
  *           Studio's CardHeader/CardContent anatomy is not adopted: Card is a root and
  *           Stack does the layout. Icons, badges and the period dropdown are dropped —
  *           nothing on a payroll screen has asked for them.
@@ -42,6 +45,8 @@ interface Metric {
   /** Signed and worded, never colour alone: "+4%", "−2 days". */
   readonly delta?: string
   readonly label: string
+  /** What the delta MEANS for this metric. The screen decides; the sign does not. */
+  readonly trend?: 'danger' | 'success'
   readonly value: string
 }
 
@@ -63,8 +68,12 @@ function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Me
               Stack,
               { gap: 'tight' },
               h(Text, { variant: 'label' }, m.label),
-              h(Text, { variant: 'emphasis' }, m.value),
-              h(Text, { tone: 'muted' }, m.delta ? `${m.delta} ${m.baseline}` : m.baseline),
+              h(Text, { variant: 'display' }, m.value),
+              h(
+                Text,
+                { tone: m.delta && m.trend ? m.trend : 'muted' },
+                m.delta ? `${m.delta} ${m.baseline}` : m.baseline,
+              ),
             ),
           ),
       ),
@@ -75,9 +84,16 @@ function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Me
 // -- end of the composition; everything below is the test that reads it back --
 
 const sample: readonly Metric[] = [
-  { baseline: 'than last month', delta: '+3', label: 'Headcount', value: '128' },
+  { baseline: 'than last month', delta: '+3', label: 'Headcount', trend: 'success', value: '128' },
   { baseline: 'of 42 submitted', label: 'Timesheets pending', value: '7' },
-  { baseline: 'than last month', delta: '−2%', label: 'Overtime hours', value: '212' },
+  // A falling number that is GOOD: the trend is the screen's judgement, not the sign's.
+  {
+    baseline: 'than last month',
+    delta: '−2%',
+    label: 'Overtime hours',
+    trend: 'success',
+    value: '212',
+  },
 ]
 
 describe('a studio statistics block reduces to Xforge components', () => {
@@ -94,6 +110,22 @@ describe('a studio statistics block reduces to Xforge components', () => {
       expect(html).toContain(m.value)
       expect(html).toContain(m.baseline)
       expect(html).toContain(`aria-label="${m.label}: ${m.value} ${m.baseline}"`)
+    }
+  })
+
+  it('sets every value in the display role', () => {
+    expect(html.match(/text-display/g)).toHaveLength(sample.length)
+  })
+
+  it('a trend ink never appears without a signed delta in words beside it', () => {
+    // Colour is redundant to the sign (rule 7). Each trend-toned paragraph must open with
+    // a signed delta; a metric without a delta must not be trend-toned at all.
+    const toned = [
+      ...html.matchAll(/<p class="[^"]*text-(?:success|error)-foreground[^"]*"[^>]*>([^<]*)</g),
+    ]
+    expect(toned).toHaveLength(sample.filter((m) => m.delta && m.trend).length)
+    for (const [, content] of toned) {
+      expect(content).toMatch(/^[+−-]\d/)
     }
   })
 

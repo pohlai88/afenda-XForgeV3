@@ -10,8 +10,8 @@
  */
 export const TWMERGE_CLASS_GROUPS = {
   'font-family': [{ font: ['mono', 'sans'] }],
-  'font-size': [{ text: ['body', 'body-compact', 'caption', 'emphasis', 'heading', 'label', 'title'] }],
+  'font-size': [{ text: ['body', 'body-compact', 'caption', 'display', 'emphasis', 'heading', 'label', 'title'] }],
   'font-weight': [{ font: ['body', 'body-compact', 'caption', 'emphasis', 'heading', 'label', 'medium'] }],
-  'leading': [{ leading: ['body', 'caption', 'compact', 'heading', 'label', 'title'] }],
+  'leading': [{ leading: ['body', 'caption', 'compact', 'display', 'heading', 'label', 'title'] }],
   'tracking': [{ tracking: ['body', 'shortcut'] }],
 } as const
