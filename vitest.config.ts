@@ -50,6 +50,12 @@ import { defineConfig } from 'vitest/config'
 const NOT_THIS_CHECKOUT = ['**/node_modules/**', '**/.claude/**', '**/.next/**']
 
 export default defineConfig({
+  // THE JSX RUNTIME FOR TESTS. tsconfig.base.json says `jsx: "preserve"` because
+  // Next's compiler owns JSX in the application. Vitest has no Next in front of
+  // it, and left to the tsconfig esbuild emitted the classic `React.createElement`
+  // form into component files that never import React -- "React is not defined"
+  // on the first component test. Automatic runtime, stated once here.
+  esbuild: { jsx: 'automatic' },
   test: {
     environment: 'node',
     projects: [

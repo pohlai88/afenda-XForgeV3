@@ -2,7 +2,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * An identifier, a wire code, a request id — read by comparison, not as a word.
+ * Code — an identifier, a wire code, a request id: read by comparison, not as a word.
+ *
+ * Adaptee   native `code`
+ * Intent    ADOPT
+ * Owns      none
+ * Contract  inherited from the element
  *
  * TABULAR FIGURES ARE THE POINT, not the monospace face. EMP-0011 and EMP-0117
  * must be the same width down a column or the eye cannot scan them, and

@@ -1,10 +1,10 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed and amended the same day against the
-tree as measured. Decision 9 (generation) REJECTED with two revisit triggers. §Beta, the
-Xforge Component Adaptation Protocol, is provisional; its core freezes on the beta exit
-questions. Decision accepted ≠ migration completed ≠ protocol frozen: Verification 1 is
-named and unwritten, and is expected RED on `danger` and `warning` before it goes green.
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–2
+landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
+revisit triggers. §Beta, the Xforge Component Adaptation Protocol, is provisional; its
+Adapter file schema is normative and enforced; its core freezes on the beta exit questions.
+Verification 1 and 5 exist, were observed RED first, and are green.
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
 ADR-033 (entry points; the vendored tree is unexported).
@@ -95,8 +95,12 @@ wholesale re-exports of the adaptee, written on 2026-09-03 as ADR-033's transiti
 facades. Upstream `Button`'s props are `ButtonPrimitive.Props & VariantProps<typeof
 buttonVariants>` — exactly the shape Decision 3's No-Leakage Law forbids, done implicitly.
 `package-exports.test.ts` cannot see it: the specifier is legal, the type is the leak. This
-ADR names them as the first two REFINE items after Alert, and records that beta exit
-question C is answered "no" by today's Card before the beta has begun.
+ADR named them as the first two REFINE items after Alert; both were refined the same day
+(Migration step 2), and the check that sees the shape (Verification 5) was observed red on
+them first. A third finding came out of the refinement: `resource-boundary.tsx` imported
+`#components/ui/button` directly while `button.tsx` existed one directory up, so the Xforge
+`variant` vocabulary was bypassed and a mutation of the Button table reached nothing it
+rendered. The schema gained its fifth rule from that.
 
 The same commit that deleted `contracts.ts` took the component registry with it, so
 ADR-029's claim that "all 33 keep their id, profile, slots and revision" is no longer true
@@ -293,9 +297,10 @@ four parts are decided differently:
    component cannot render a value the tables lack, and nothing generates it. Text and
    Stack carry cva recipes; Alert earns a contract because announcement varies by tone;
    Heading's semantics are inherent in rendering `h1..h3` and need no table; Card owns no
-   axis and should carry neither. Button will own a recipe when it is an Adapter — today it
-   re-exports upstream's, which is the leak Context names. Mandating thirteen recipes and
-   thirteen contracts would recreate the rejected policy tree at finer grain.
+   axis and carries neither. Button owns one axis, `variant` (`primary | outline`, the two
+   words two screens use), as a mapping table onto the adaptee's vocabulary — the classes
+   stay upstream's. Mandating thirteen recipes and thirteen contracts would recreate the
+   rejected policy tree at finer grain.
 
 2. **The fourth policy tree is not built.** `POLICY_KINDS` keeps `component` reserved and
    `index.mjs` composes three. `policy/components/`, `axes.mjs`, a slot grammar and an
@@ -542,6 +547,97 @@ components. Adapter versus Composition is a hard boundary: Button, Card, Combobo
 DataGrid are adapters; EmployeeHeader, PayrunToolbar are compositions that consume them,
 and never enter `packages/design` merely because they came from a studio.
 
+### Adapter file schema — normative
+
+Every authored component follows this shape, in this order, and an agent writing one does
+not improvise around it. Sections 1 and 2 appear only when earned (Decision 1); sections
+0, 3 and 4 always. The public name is fixed by the file name: `<name>.tsx` →
+`@xforge/design/components/<name>`.
+
+```tsx
+/**                                                        0 PROVENANCE — required
+ * <Name> — <what it is for, one line>.
+ *
+ * Adaptee   <native element | Base UI <Part> | shadcn <item>@<version|sha> | studio <block-id>>
+ * Intent    ADOPT | INSPIRE | TRANSLATE
+ * Owns      <the axes Xforge decides: intent, size, tone, …>   or   none
+ * Contract  <the a11y decision this file owns>                  or   inherited from adaptee
+ *
+ * <Why this component exists in the authored layer, in one paragraph. What NORMALIZE
+ *  decided: which upstream words became which Xforge words, and what was NOT adopted.>
+ */
+'use client'                                              // only if the adaptee needs it
+
+import { X as Primitive } from '#components/ui/x'          // the adaptee, private import
+import type { ComponentProps } from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '#lib/cn'
+
+                                                           // 1 RECIPE — when Owns ≠ none
+export const xRecipe = cva('<base classes, roles only>', {
+  defaultVariants: { intent: 'primary', size: 'md' },
+  variants: {
+    intent: { primary: '…', secondary: '…', danger: '…' }, // every value a token role
+    size:   { sm: '…', md: '…', lg: '…' },
+  },
+})
+
+                                                           // 2 CONTRACT — when Contract ≠ inherited
+export const X_CONTRACT = {
+  //  keyed by the axis that decides the semantics; one row per value; exported for tests
+  danger:  { role: 'alert'  },
+  info:    { role: 'status' },
+} as const satisfies Record<string, { role: 'alert' | 'status' }>
+
+                                                           // 3 TARGET — always, Xforge-owned
+export interface XProps
+  extends Omit<ComponentProps<'button'>, 'color'> {        // HTML attrs, never ComponentProps<typeof Primitive>
+  intent?: keyof typeof xRecipe.variants.intent            // Xforge vocabulary only
+  size?: 'sm' | 'md' | 'lg'
+}
+//   internal, unexported, allowed:  type PrimitiveProps = ComponentProps<typeof Primitive>
+
+                                                           // 4 ADAPTER — always, translation only
+export function X({ intent = 'primary', size = 'md', className, ...props }: XProps) {
+  return (
+    <Primitive
+      className={cn(xRecipe({ intent, size }), className)}
+      data-intent={intent}                                  // state and axes as data-*
+      data-slot="x"
+      {...props}
+    />
+  )
+}
+```
+
+Rules the schema encodes, each with the check that sees it:
+
+```
+  no `export * from '#components/ui/…'`                    Verification 5 (lexical)
+  no exported type built on `typeof <ui import>`           Verification 5 (lexical)
+  a file imports `#components/ui/<x>` only if it IS x's    Verification 5 (lexical) — an
+    adapter, or x has no adapter yet                         authored file consumes ADAPTERS
+  PROVENANCE names Adaptee / Intent / Owns / Contract      Verification 5 asserts the labels;
+                                                            review reads the paragraph
+  every class in RECIPE names a token role                 design-system-classes.test.ts
+  every CONTRACT row renders what it declares              <name>.test.tsx (Verification 1 shape)
+  the adaptee is unreachable from outside the package      package-exports.test.ts (ADR-033)
+```
+
+Test file schema, `packages/design/tests/<name>.test.tsx`, JSX-free (`createElement` +
+`renderToStaticMarkup`, node environment, no new dependency):
+
+```
+  for each CONTRACT row      the rendered element carries role=<row.role>; alert-role rows
+                             carry no aria-live
+  for each RECIPE axis       every declared value renders (no throw) and sets data-<axis>
+  one mutation is recorded   the header of the test names the mutation that was watched
+                             go RED before the component was written
+```
+
+A Tier-3 component splits 1 and 2 into `<name>.recipe.ts` and `<name>.contract.ts` under
+`<name>/` with an `index.ts`; the sections and their order do not change.
+
 ### Complexity-earned decomposition
 
 No universal folder template. Tier 1: `button.tsx`. Tier 2: `alert.tsx` + `alert.test.tsx`.
@@ -626,11 +722,12 @@ Decision 2's trigger. Recipe and contract are optional, so their presence is a j
 per component rather than a rule a check can enforce; the judgement is written into the
 component's header when it is made.
 
-**What this costs today.** An Adapter per component: eleven are, two (`button.tsx`,
-`card.tsx`) are pass-throughs that must become Adapters under REFINE. A recipe or a
-contract only where the component owns the decision: Alert earns a contract; Text and
-Stack carry recipes; Button will when it is adapted; nothing else does. One test per
-component that has an announcement contract, and one leakage check for the layer.
+**What this costs today.** An Adapter per component: thirteen, every one carrying the
+provenance header. A recipe or a contract only where the component owns the decision:
+Alert owns a contract (`ALERT_TONE`); Text and Stack carry cva recipes; Button carries a
+two-row mapping table; nothing else does. Three component tests (`alert`, `button`,
+`card`), one schema check for the layer, and one JSX-runtime line in `vitest.config.ts`
+that the first component test made necessary.
 
 **What this does NOT change.** Laws 6 and 16 (what the UI and a module may import by
 content), ADR-033 (how anything is imported), the token kernel and its generator (law 27).
@@ -639,14 +736,21 @@ content), ADR-033 (how anything is imported), the token kernel and its generator
 
 In this order, each its own commit, rollback `git revert`:
 
-1. **Alert** — the live defect and Verification 1. Owner's decision on which tones are
-   `alert` comes first (Decision 11). The `alert.tsx` header (lines 39–47) still cites a
-   contract `revision` and a recorded screen-reader session from the deleted registry, and
-   argues for `status`; it is rewritten in the same commit as the table.
-2. **Button and Card** — REFINE: replace `export *` with an Xforge-owned props interface
-   and a deliberate translation (Verification 5 goes RED first). Card is a beta case and
-   question C is currently "no" for it; the beta cannot begin honestly until this lands.
-3. The follow-ups this ADR names and does not do:
+1. **Alert** — DONE 2026-09-03. Owner's decision: `danger` and `warning` are `alert`,
+   `info` and `success` are `status` (Decision 11). `ALERT_TONE` exported with a `role`
+   column; the component reads it; the header rewritten with provenance and without the
+   deleted registry's `revision`. Verification 1 observed RED on `danger` and `warning`
+   (table said `alert`, DOM said `status`), then green. The five e2e assertions are
+   untouched and now agree with the table.
+2. **Button and Card** — DONE 2026-09-03. `export *` replaced with Xforge-owned props and
+   deliberate translation; Button owns `variant: primary | outline` mapped onto upstream's
+   `default | outline`; Card is the root only. Verification 5 observed RED on both first.
+   `emergency-contacts.tsx` wrote upstream's `variant="default"` and is now silent (primary
+   is the default); `resource-boundary.tsx` reached the adaptee directly and now consumes
+   the authored Button. Question C is "yes" for Card.
+3. **Provenance headers** — DONE 2026-09-03 on all thirteen authored files, per the
+   owner's decision to apply the schema retroactively.
+4. The follow-ups this ADR names and does not do:
    - `packages/design/policy/projection/css.mjs` — emitters with no caller; delete them
      and the re-export at `projection/index.mjs:72`, or have the generator call them. Not
      both.
@@ -664,31 +768,38 @@ In this order, each its own commit, rollback `git revert`:
    - `.claude/skills/design-system/references/09-xforge.md` — stale pointers to
      `packages/design/tokens.json`, `policy/contracts.ts` and deleted guards.
    - ADR-029:45 "all 33 keep their id, profile, slots and revision" — no longer true.
-4. The beta slice: Card, Switch, Combobox, one studio block, through the protocol.
+5. The beta slice: Switch, Combobox, one studio block, through the protocol (Card is
+   already through it, as the Tier-1 case).
 
 ## Verification
 
 Replaces the first draft's four conditions and mutation fixtures A–F, which were fixtures
 for machinery that is not built and are rejected with it.
 
-1. **`packages/design/tests/alert.test.tsx`** — for every key of the exported tone table,
-   `renderToStaticMarkup(<Alert tone={k}>x</Alert>)` carries `role="${table[k].role}"`.
-   Tones whose role is `alert` carry no `aria-live` (implicit in the role; an explicit
-   duplicate double-announces in VoiceOver on iOS per MDN). Tones whose role is `status`
-   may carry the redundant `aria-live="polite"` MDN recommends, as `status.tsx` already
-   does. **Must be observed RED on `danger` and `warning` before `alert.tsx` changes.**
-   `react-dom/server`, node environment, no new dependency.
-2. **Mutation:** change one `role` in the table without the component → one case fails;
-   delete a tone from the table → tsc fails at a call site. Exhaustiveness is by
-   construction: one table feeds prop type, class, icon and role, so there is no second
-   list to drift.
+1. **`packages/design/tests/alert.test.tsx`** — for every key of `ALERT_TONE`,
+   `renderToStaticMarkup(createElement(Alert, { tone }))` carries `role="${row.role}"`;
+   alert-role tones carry no `aria-live` (implicit in the role; an explicit duplicate
+   double-announces in VoiceOver on iOS per MDN); every row names `alert` or `status`;
+   every row binds an icon (colour never alone). **Observed 2026-09-03:** first run red on
+   all four for the wrong reason (no JSX runtime under Vitest — fixed in `vitest.config.ts`
+   with `esbuild.jsx = 'automatic'`); second run red on `danger` and `warning` only, the
+   table saying `alert` and the DOM `status`; third run green after the component read the
+   table. 11 cases.
+2. **Mutations, performed and undone the same day:** Card without its props spread → both
+   Card cases red. Button table without `outline` → tsc `TS2322` at
+   `resource-boundary.tsx:72` — but only AFTER that file was repointed from the adaptee to
+   the authored Button; the first attempt reached nothing, which is the finding behind
+   Verification 5's fifth rule.
 3. **The five e2e assertions stay untouched.** They are the DOM half; Verification 1 is
-   the table half; agreement between them is the property.
-4. **Beta exit questions A–D** are the protocol's verification and are future work.
-5. **Leakage check** — no file in `packages/design/src/components/*.tsx` re-exports the
-   vendored tree wholesale (`export * from '#components/ui/…'`), and every exported props
-   type is declared in the authored file. Lexical and cheap; RED today on `button.tsx` and
-   `card.tsx`; named, not written, and written before those two are refined.
+   the table half; agreement between them is the property, and it holds on this tree.
+4. **Beta exit questions A–D** are the protocol's verification and are future work; C is
+   now "yes" for Card.
+5. **`packages/design/tests/adapter-schema.test.ts`** — the Adapter file schema, the parts
+   a check can see: no `export * from '#components/ui/…'`; no exported type built on
+   `typeof <adaptee import>`; a file imports `#components/ui/<x>` only if it is `<x>`'s
+   adapter or `<x>` has none; the four provenance labels present. **Observed 2026-09-03:**
+   red on 15 cases (two wholesale re-exports, thirteen missing headers), then red on
+   `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person

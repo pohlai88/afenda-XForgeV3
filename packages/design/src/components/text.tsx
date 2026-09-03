@@ -3,7 +3,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * A paragraph, at one of the roles the scale actually has.
+ * Text — a paragraph, at one of the roles the scale actually has.
+ *
+ * Adaptee   native `p`
+ * Intent    ADOPT
+ * Owns      variant (body | emphasis | label), tone (default | muted)
+ * Contract  inherited from the element
  *
  * `emphasis` IS THE SECOND AXIS. Same 16px as `body`, at 500 rather than 400 --
  * the term against its value. Apple sets Headline against Body this way at an

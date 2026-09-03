@@ -2,8 +2,13 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * The document surface: the one element that establishes the type and colour
+ * Page — the document surface: the one element that establishes the type and colour
  * every screen inherits.
+ *
+ * Adaptee   native `div`
+ * Intent    ADOPT
+ * Owns      none
+ * Contract  inherited from the element
  *
  * IT SETS THE ROLES ONCE, AT THE TOP. Family, body size, body weight, body
  * leading and the page ground are declared here and nowhere else, so a screen

@@ -3,7 +3,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * One-dimensional layout, and the only way a screen gets to space things.
+ * Stack — one-dimensional layout, and the only way a screen gets to space things.
+ *
+ * Adaptee   native `div`
+ * Intent    ADOPT
+ * Owns      direction (column | row), gap (tight | normal | loose)
+ * Contract  inherited from the element; layout carries no semantics
  *
  * GAP IS A ROLE, NEVER A NUMBER. `tight`, `normal` and `loose` are density-bound
  * tokens, so compact rebinds all three at once; a screen writing `gap-tight` would

@@ -2,7 +2,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * A heading, with its level and its size decided separately.
+ * Heading — a heading, with its level and its size decided separately.
+ *
+ * Adaptee   native `h1` | `h2` | `h3`
+ * Intent    ADOPT
+ * Owns      level (1 | 2 | 3), and the type role each level renders at
+ * Contract  inherited from the element: the level IS the document outline
  *
  * THE DOCUMENT OUTLINE IS NOT THE TYPE SCALE, and conflating them is how a page
  * ends up with an h3 chosen because 20px looked right. `level` picks the

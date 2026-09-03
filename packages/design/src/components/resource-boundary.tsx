@@ -2,11 +2,16 @@
 
 import { Component, type ComponentProps, type ErrorInfo } from 'react'
 import { Alert } from '#components/alert'
+import { Button } from '#components/button'
 import { Text } from '#components/text'
-import { Button } from '#components/ui/button'
 
 /**
- * Contains the failure of ONE resource surface, and deliberately not the page.
+ * ResourceBoundary — contains the failure of ONE resource surface, and deliberately not the page.
+ *
+ * Adaptee   React error boundary (`Component`), rendering the authored `Alert`
+ * Intent    ADOPT
+ * Owns      none
+ * Contract  inherited from `Alert`: the failure surface is `tone="danger"`, so it interrupts
  *
  * WHY THE SCOPE IS THIS SMALL. The failure it exists for is a client bundle
  * meeting a server that has moved on: an experience mapper is handed a wire

@@ -2,7 +2,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * Nothing here — said as an invitation, never as an apology.
+ * EmptyState — nothing here, said as an invitation, never as an apology.
+ *
+ * Adaptee   native `div`
+ * Intent    ADOPT
+ * Owns      none (title and description are content slots, not axes)
+ * Contract  inherited from the element
  *
  * TWO LINES, AND THEY DO DIFFERENT JOBS. The title states the fact; the
  * description says what to do about it. Collapsing them into one sentence is how

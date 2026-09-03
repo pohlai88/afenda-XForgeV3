@@ -2,7 +2,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * A collection, kept as a real `<ul>`.
+ * List — a collection, kept as a real `<ul>`.
+ *
+ * Adaptee   native `ul`
+ * Intent    ADOPT
+ * Owns      none
+ * Contract  inherited from the element: "list, four items" and item navigation
  *
  * THE ELEMENT IS THE FEATURE. A screen reader announces "list, four items" and
  * lets a reader jump between them; a stack of divs announces nothing and offers

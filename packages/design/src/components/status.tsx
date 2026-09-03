@@ -2,7 +2,12 @@ import type { ComponentProps } from 'react'
 import { cn } from '#lib/cn'
 
 /**
- * Work in progress, announced rather than only drawn.
+ * Status — work in progress, announced rather than only drawn.
+ *
+ * Adaptee   native `p`
+ * Intent    ADOPT
+ * Owns      none
+ * Contract  live-region: `role="status"`, `aria-live="polite"`, `aria-busy` — owned here
  *
  * `aria-live="polite"` IS THE COMPONENT. A spinner is invisible to a screen
  * reader, so a page that is loading and a page that is empty are the same page

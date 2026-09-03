@@ -209,7 +209,6 @@ export function EmergencyContacts({ employeeId }: { employeeId: string }) {
           <Button
             disabled={!readSucceeded(contacts) || add.outcome.status === 'saving'}
             onClick={add.run}
-            variant="default"
           >
             {add.outcome.status === 'saving' ? 'Adding…' : 'Add contact'}
           </Button>
