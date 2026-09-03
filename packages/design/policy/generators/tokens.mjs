@@ -83,6 +83,7 @@ import {
   ALLOWED_EDGES,
   ASSUMED_ROOT_PX,
   assertColorRoleRegistry,
+  assertDensityAxis,
   assertExclusionsAreCurrent,
   assertNoUtilityShadowing,
   assertTailwindProjection,
@@ -765,6 +766,14 @@ export function generate(source, { closes = ['color'], typeRoles = {} } = {}) {
   }
 
   assertTargetFloor(byMode)
+
+  // THE DENSITY AXIS AS A WHOLE, after the per-override checks above. Those ask
+  // whether each rebind is legal; this asks whether the axis is coherent: exactly
+  // compact and comfortable, both rebinding the same tokens, all of them spatial.
+  // `foundations/index.mjs` recorded for weeks that this function "still runs
+  // nowhere". It runs here (ADR-031, Migration step 4), over the real `$modes`,
+  // and `tests/tokens.test.ts` shows it an asymmetric pair and a lone mode.
+  assertDensityAxis(axes.density, axes.theme)
 
   // TYPOGRAPHY AND MOTION ARE CHECKED IN EVERY MODE, for the same reason the
   // target floor is: compact is exactly where a distinction gets shaved. The

@@ -78,7 +78,6 @@
  * imported cannot be unit-tested against anything but the real one.
  */
 
-import { pathToFileURL } from 'node:url'
 import { definePolicy } from '../define-policy.mjs'
 import { deepFreeze } from '../vocabulary.mjs'
 
@@ -451,46 +450,3 @@ export const assistiveTechnologyPolicy = definePolicy({
   id: 'interaction.assistive-technology',
   kind: 'interaction',
 })
-
-/* ------------------------------------------------------------------ cli -- */
-
-/**
- * `node packages/design/interaction/assistive-technology.mjs` prints the ledger
- * verdict as JSON. Nothing below runs on import.
- *
- * BOTH URL CONVERSIONS ARE LOAD-BEARING ON WINDOWS, and hand-rolling either is
- * how the file this replaces first failed. A `file:` URL's pathname begins with
- * a slash before the drive letter, and a dynamic import of a bare absolute path
- * is rejected with ERR_UNSUPPORTED_ESM_URL_SCHEME because the loader reads the
- * drive letter as a URL scheme.
- *
- * IT CALLS THE RULE, it does not restate it. `contractsOwingAtEvidence` is
- * ADR-025's derivation and lives with the registry; a copy here would agree with
- * it until somebody changed one, which is the defect this repository keeps
- * having. The same function is what the profile-mutation table interrogates.
- */
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { readFileSync } = await import('node:fs')
-  const { dirname, join } = await import('node:path')
-  const { fileURLToPath } = await import('node:url')
-
-  // FOUR LEVELS, not three: interaction -> policy -> design -> packages -> root.
-  // It read `../../..` until the first time anything executed this block, which
-  // was the commit that deleted the module it was copied from. That depth was
-  // correct in `tooling/verify/lib/`, travelled with the code, and resolved to
-  // `packages/packages/design/policy/contracts.ts` here -- a defect no import, no
-  // suite and no stage could see, because a CLI block guarded by `argv[1]` is
-  // invisible to every one of them until somebody runs the file.
-  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../../..')
-
-  const { contracts, contractsOwingAtEvidence } = await import(
-    pathToFileURL(join(ROOT, 'packages/design/policy/contracts.ts')).href
-  )
-  const { sessions = {} } = JSON.parse(
-    readFileSync(join(ROOT, '.architecture/a11y-evidence.json'), 'utf8'),
-  )
-
-  process.stdout.write(
-    JSON.stringify(ledgerFailures({ contracts, gated: contractsOwingAtEvidence(), sessions })),
-  )
-}

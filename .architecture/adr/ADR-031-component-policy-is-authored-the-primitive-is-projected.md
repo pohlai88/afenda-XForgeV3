@@ -750,24 +750,36 @@ In this order, each its own commit, rollback `git revert`:
    the authored Button. Question C is "yes" for Card.
 3. **Provenance headers** — DONE 2026-09-03 on all thirteen authored files, per the
    owner's decision to apply the schema retroactively.
-4. The follow-ups this ADR names and does not do:
-   - `packages/design/policy/projection/css.mjs` — emitters with no caller; delete them
-     and the re-export at `projection/index.mjs:72`, or have the generator call them. Not
-     both.
-   - `packages/design/policy/interaction/assistive-technology.mjs:475-497` — CLI block
-     importing the deleted `contracts.ts`; delete it, and correct
-     `.architecture/a11y-evidence.json:32,47`, which tells people to run it.
-   - `contracts.ts` cited as the checked-against registry in `policy/index.mjs:46,50`,
-     `interaction/index.mjs:37,82,138`, `interaction/keyboard.mjs:17,75`,
-     `projection/index.mjs:47`, `vocabulary.mjs:219`.
-   - `foundations/density.mjs:189` `assertDensityAxis` — wire it into `FOUNDATION_POLICIES`
-     or delete it.
-   - `POLICY.md`, which does not exist, cited from `.architecture/project-state.md:86`,
-     ADR-030:41 and `.claude/commands/{cui,iui,rui}.md`; those three commands also name
-     `packages/design/policy/contracts.ts`, a path the file never had.
-   - `.claude/skills/design-system/references/09-xforge.md` — stale pointers to
-     `packages/design/tokens.json`, `policy/contracts.ts` and deleted guards.
-   - ADR-029:45 "all 33 keep their id, profile, slots and revision" — no longer true.
+4. **Dead surfaces — DONE 2026-09-03**, each resolved as decided rather than as listed:
+   - `projection/css.mjs` — DELETED whole, not trimmed. Its emitters had no caller, and
+     its one live export, `CSS_MODE_AXES`, restated the `$modes` axes the generator reads
+     from `tokens.json`: one fact, two declarations. `PROJECTION_POLICIES` is
+     `[tailwindPolicy]`; the CSS projection is governed by the generator and proved by
+     `tests/tokens.test.ts` against its output. `vocabulary.mjs`'s `cssReferenceOf`, whose
+     only caller was that file, went with it.
+   - `assistive-technology.mjs` CLI block — DELETED, with the `node:url` import only it
+     used. `sessionFailures` and `ledgerFailures` remain; the first is tested.
+     `.architecture/a11y-evidence.json` now says the gated set is not derivable until a
+     contract table declares a profile, and that no stage reads the file today.
+   - `assertDensityAxis` — WIRED, not deleted: `generators/tokens.mjs` calls it over the
+     real `$modes` after its per-override checks. The real token file already satisfied
+     it (measured before wiring). `tests/tokens.test.ts` gained two refusals — an
+     asymmetric pair, a lone mode — observed RED against the un-wired generator, then
+     green; the synthetic source now declares both density modes. Regeneration is
+     byte-identical.
+   - `contracts.ts` citations in `policy/index.mjs`, `interaction/index.mjs`,
+     `keyboard.mjs`, `projection/index.mjs` — rewritten to the truth: the registry was
+     deleted in ae4e294; the subject of the interaction tree is the authored components
+     and their exported tables; `PROFILE_KEYBOARD` is the profile list.
+   - `POLICY.md` and `policy/contracts.ts` in `.claude/commands/{cui,iui,rui}.md` — each
+     command now names its protocol intent (ADOPT/INSPIRE, INSPIRE, REFINE), points at the
+     Adapter file schema and `adapter-schema.test.ts`, and lists the real authorship loop
+     (`pnpm verify:fast` does not exist on this branch). `project-state.md:86` and
+     ADR-030:41 mark `POLICY.md` as deleted.
+   - `09-xforge.md` — repointed: `policy/tokens.json`; the authored components as the UI
+     vocabulary; the three deleted guards replaced by the two tests and the manifest
+     null-block that hold the boundary now; no gate, so the authorship loop is named.
+   - ADR-029:45 — annotated as no longer true, superseded by ADR-031 Decision 1.
 5. The beta slice: Switch, Combobox, one studio block, through the protocol (Card is
    already through it, as the Tier-1 case).
 

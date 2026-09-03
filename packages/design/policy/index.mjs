@@ -1,5 +1,5 @@
 /**
- * THE DESIGN POLICY. One entry point, over four trees, and the only thing a
+ * THE DESIGN POLICY. One entry point, over three trees, and the only thing a
  * consumer outside this directory imports.
  *
  * ── WHAT THIS FILE IS FOR ──────────────────────────────────────────────────
@@ -43,11 +43,13 @@
  *                `vocabulary`: all three import it. It was
  *                `foundations/contract.mjs`, where `interaction/` and
  *                `projection/` reached across to fetch it, and where its name
- *                collided with `policy/contracts.ts` — the COMPONENT registry —
- *                closely enough to produce a request to delete one as redundant
- *                with the other
+ *                collided with the component registry `contracts.ts` (deleted in
+ *                ae4e294) closely enough to produce a request to delete one as
+ *                redundant with the other
  *   foundations  "what may a value BE" — checked against `tokens.json`
- *   interaction  "what must a component DO" — checked against `contracts.ts`
+ *   interaction  "what must a component DO" — its subject is the authored
+ *                components in `src/components/*.tsx` and the tables they export
+ *                (ADR-031); the profile list is `PROFILE_KEYBOARD`'s keys
  *   projection   "what does a name BECOME" — checked against the generator's own
  *                output
  *
@@ -86,10 +88,10 @@
  *
  *   lifecycle enforcement  the states are declared and validated; no lint, no
  *                          registry, no compatibility gate consumes them
- *   projection/css.mjs     a complete CSS emitter with no caller. The generator
- *                          assembles blocks itself, so that is one obligation
- *                          with two implementations — the thing this file exists
- *                          to stop. Whichever survives, the other is deleted
+ *   projection/css.mjs     DELETED 2026-09-03 (ADR-031, Migration step 4). It
+ *                          was a complete CSS emitter with no caller beside a
+ *                          generator that assembles blocks itself — one
+ *                          obligation, two implementations. The generator won
  *   interaction, mostly    four of five policies are checked on import and by the
  *                          unit suite, and by nothing else
  *   a TypeScript projection   `token-names.json` is the only manifest

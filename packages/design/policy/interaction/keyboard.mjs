@@ -14,9 +14,9 @@
  *      contract would inherit the evidence debt automatically and inherit no
  *      conformance at all."
  *
- * That asymmetry is invisible from every direction. `contracts.ts` states the
- * profile and cannot know what covers it. The specs name components and cannot
- * know which profile they stand for. So a profile with no behavioural coverage
+ * That asymmetry is invisible from every direction. A component's provenance
+ * header states what it owns and cannot know what covers it. The specs name
+ * components and cannot know which profile they stand for. So a profile with no behavioural coverage
  * looks exactly like one with coverage, from both ends, and the only place the
  * difference existed was a table in a state document that its own author records
  * having written from memory and got wrong twice.
@@ -70,11 +70,11 @@ export const KEYBOARD_SUPPLIERS = deepFreeze(['platform', 'library', 'this-syste
 /**
  * What each interaction profile owes a keyboard.
  *
- * KEYED BY PROFILE, and `assertProfileKeyboard` cross-checks the keys against
- * the registry's own list in both directions -- so a profile added to
- * `contracts.ts` without an entry here is a red build rather than a silent hole,
- * and an entry here for a profile no contract can declare is refused as coverage
- * over nothing.
+ * KEYED BY PROFILE. This table IS the profile list now: the component registry
+ * that held a second copy was deleted in ae4e294, and `assertProfileKeyboard`
+ * cross-checks whatever list it is handed against these keys in both directions
+ * -- `tests/unit/interaction-policy.test.ts` hands it perturbed copies so that a
+ * profile with no entry, and an entry for no profile, are both refused.
  *
  * THAT SENTENCE WAS WRITTEN BEFORE ANY OF IT WAS TRUE, and it is worth knowing
  * which part was the lie. The validator existed and was correct; nothing called

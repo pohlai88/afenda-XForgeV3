@@ -34,11 +34,12 @@
  *
  * A foundation answers "what may a value BE" and is checked against
  * `tokens.json`. These answer "what must a component DO", and their subject is
- * `packages/design/policy/contracts.ts`. Two of the five touch no token at all.
- * Folding them into `foundations/` would put a policy with no token beside eight
- * that have nothing else, and the registry's own comment about ordering meaning
- * nothing would stop being true -- `keyboard.mjs` genuinely depends on the
- * contract registry in a way no foundation depends on anything.
+ * the authored components in `packages/design/src/components/*.tsx` and the
+ * tables they export -- `ALERT_TONE`, `PROFILE_KEYBOARD` (ADR-031). The component
+ * registry that used to be the subject, `contracts.ts`, was deleted in ae4e294.
+ * Two of the five touch no token at all. Folding them into `foundations/` would
+ * put a policy with no token beside eight that have nothing else, and the
+ * registry's own comment about ordering meaning nothing would stop being true.
  *
  * ── WHAT THIS TREE GOVERNS, AND WHAT IT STILL DOES NOT ─────────────────────
  *
@@ -60,12 +61,14 @@
  * and `focusFailures` are written to be called by the generator and are not
  * called by it.
  *
- * ASSISTIVE-TECHNOLOGY IS NOW THE A11Y-3 STAGE, AND THE ROUTE MATTERS MORE THAN
- * THE CLAIM. `tooling/verify/stages.mjs` runs
- * `packages/design/policy/interaction/assistive-technology.mjs` as a subprocess
- * and reads all four categories from `ledgerFailures`. It is the only
- * implementation: `tooling/verify/lib/at-session.mjs` and `at-evidence.mjs` are
- * deleted, and `tests/unit/at-session.test.ts` points here.
+ * ASSISTIVE-TECHNOLOGY IS THE ONE IMPLEMENTATION OF THE A11Y-3 VERDICT, AND
+ * NOTHING RUNS IT AS A GATE TODAY. `tooling/verify/stages.mjs` used to run this
+ * module as a subprocess and read all four categories from `ledgerFailures`; the
+ * stage went with the gate in a3cf31b and the CLI block it invoked is deleted
+ * (ADR-031, Migration step 4). `tooling/verify/lib/at-session.mjs` and
+ * `at-evidence.mjs` are deleted too, so there is no second copy:
+ * `tests/unit/at-session.test.ts` exercises `sessionFailures` here, and whatever
+ * gate returns reads `ledgerFailures` here.
  *
  * THIS SECTION HELD THE ACCURATE HALF OF A CONTRADICTION, and that is why it is
  * rewritten rather than simply updated. It read: two files, one obligation,
@@ -80,9 +83,14 @@
  * its CLI block computed `ROOT` at the depth it had in `tooling/verify/lib/`,
  * three levels up rather than four, and resolved
  * `packages/packages/design/policy/contracts.ts`. Import-time checking could not
- * see it, because the block is guarded by `argv[1]`. The stage now invokes it,
- * so that class of defect is a red stage from here on rather than a file nobody
- * runs.
+ * see it, because the block is guarded by `argv[1]`.
+ *
+ * THAT CLI BLOCK IS GONE (2026-09-03, ADR-031 Migration step 4). The stage that
+ * invoked it went with the gate in a3cf31b, and the registry it imported went in
+ * ae4e294; a block whose two dependencies are both deleted is not dormant, it is
+ * dead. `sessionFailures` and `ledgerFailures` remain as exported, falsifiable
+ * functions -- `tests/unit/at-session.test.ts` exercises the first -- and the
+ * gate that reads them is whatever replaces the deleted one.
  */
 
 export * from './accessibility.mjs'
@@ -129,17 +137,13 @@ export const INTERACTION_POLICIES = assertPolicyRegistry([
  * own configuration is still fail-open, and "someone calls it" is not a
  * guarantee.
  *
- * TWO ARE ABSENT, and they are named rather than quietly skipped -- the same
- * treatment `foundations/index.mjs` gives `assertDensityAxis`, which is a
- * comparison worth stating carefully now that it has been checked: that one runs
- * nowhere either, and the sentence claiming it ran was corrected in the same pass
- * as this. So the shared treatment is the DISCLOSURE, not a shared home.
+ * TWO ARE ABSENT, and they are named rather than quietly skipped.
  *
- *   assertProfileKeyboard   takes the profile list from `contracts.ts`, which is
- *                           TypeScript. Node strips types on import, but only
- *                           dynamically, and an import-time `await` here would
- *                           make every consumer of this tree an async module for
- *                           one assertion.
+ *   assertProfileKeyboard   takes a profile list as its argument, and the point
+ *                           of the argument is that it can be shown a list the
+ *                           table disagrees with. The registry that once supplied
+ *                           the list is deleted; `tests/unit/interaction-policy.test.ts`
+ *                           derives one from `PROFILE_KEYBOARD` and perturbs it.
  *   assertFocusSurvives     takes the state axes as its subject, and the point of
  *                           passing them is that it can be shown a vocabulary
  *                           that does not contain them. Running it here against
@@ -165,9 +169,8 @@ export const INTERACTION_POLICIES = assertPolicyRegistry([
  * behaviour". Before the profile list was exported and this validator called,
  * that same edit produced no red build anywhere in the repository.
  *
- * `assertDensityAxis` in `foundations/index.mjs` is still the genuine remaining
- * case of this shape, and the comparison that paragraph draws now holds in one
- * direction only: it runs nowhere, and these two do.
+ * `assertDensityAxis` was the remaining case of this shape until 2026-09-03; the
+ * generator now calls it over the real `$modes` (ADR-031, Migration step 4).
  */
 assertAccessibilityPolicy()
 assertA11yLevels()

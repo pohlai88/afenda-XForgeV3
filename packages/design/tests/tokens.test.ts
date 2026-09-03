@@ -69,6 +69,9 @@ const base = (): TokenTree => ({
   $modes: {
     density: {
       $axis: 'dimension',
+      // BOTH declared modes, rebinding the SAME token, because `assertDensityAxis`
+      // now runs inside `generate()` and refuses a lone mode or an asymmetric pair.
+      comfortable: { semantic: { space: { stack: { $value: '0.75rem' } } } },
       compact: { semantic: { space: { stack: { $value: '0.25rem' } } } },
     },
     theme: {
@@ -385,6 +388,38 @@ describe('what the generator refuses', () => {
         set(s, '$modes.density.compact.semantic.color', { foreground: { $value: '#123456' } })
       }),
     ).toThrow(/axis owns/)
+  })
+
+  /**
+   * THE DENSITY AXIS IS ONE AXIS, NOT TWO LISTS. `assertDensityAxis` existed as a
+   * falsifiable function that nothing called (foundations/index.mjs said so);
+   * ADR-031 Migration step 4 wired it into the generator. Observed RED against the
+   * un-wired generator on 2026-09-03 -- generation succeeded with `compact`
+   * rebinding a token `comfortable` did not -- then green.
+   */
+  it('a density mode that rebinds a token its sibling mode does not', () => {
+    // On `comfortable`, LARGER, and in px: the generator's per-mode target checks
+    // run first and refuse a rem target or a shrunk one, so the asymmetry has to be
+    // the only thing wrong for this to prove the symmetry rule fires.
+    expect(
+      withSource((s) => {
+        set(s, '$modes.density.comfortable.semantic.control', { 'min-size': { $value: '48px' } })
+      }),
+    ).toThrow(/rebind different tokens/)
+  })
+
+  it('a density axis with one declared mode', () => {
+    expect(
+      withSource((s) => {
+        set(s, '$modes', {
+          density: {
+            $axis: 'dimension',
+            compact: { semantic: { space: { stack: { $value: '0.25rem' } } } },
+          },
+          theme: (s.$modes as TokenTree).theme as TokenTree,
+        })
+      }),
+    ).toThrow(/compact and comfortable must both exist/)
   })
 
   it('a mode inventing a token instead of rebinding a role', () => {

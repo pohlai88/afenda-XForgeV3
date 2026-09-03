@@ -35,16 +35,16 @@
  * at least two path segments and did not resolve the tier.
  *
  * The vocabulary's copy won, because it was the one under test and under load.
- * `identity.mjs` is deleted rather than left forwarding, and `css.mjs` reaches
- * `cssNameOf`, `cssReferenceOf` and `assertUniqueCssNames` through the vocabulary
- * directly. Naming is not a projection TARGET; it is the grammar every target
- * shares, which is why it sits above this tree rather than inside it.
+ * `identity.mjs` is deleted rather than left forwarding. Naming is not a
+ * projection TARGET; it is the grammar every target shares, which is why it sits
+ * above this tree rather than inside it.
  *
  * ── WHY THIS IS A THIRD TREE AND NOT PART OF EITHER ────────────────────────
  *
  * A foundation answers "what may a value BE" and is checked against
- * `tokens.json`. An interaction policy answers "what must a component DO" and is
- * checked against `contracts.ts`. These answer "what does a name BECOME", and
+ * `tokens.json`. An interaction policy answers "what must a component DO" --
+ * its subject is the authored components in `src/components/*.tsx` and the
+ * tables they export (ADR-031). These answer "what does a name BECOME", and
  * their subject is neither -- it is the output of
  * `packages/design/policy/generators/tokens.mjs`. `tailwind.mjs` is the only file
  * in the whole policy tree whose vocabulary belongs to another system, which is
@@ -52,39 +52,32 @@
  *
  * ── WHAT THIS TREE GOVERNS TODAY ───────────────────────────────────────────
  *
- * TAILWIND IS WIRED AND CSS IS NOT, and the asymmetry is stated rather than left
- * to be discovered. This header used to read "NOTHING IMPORTS THIS TREE TODAY",
- * which was true of the scaffold that stood here. `tailwind.mjs` IS the token
- * kernel's Tailwind bridge, moved -- the generator imports `tailwindNameOf`,
- * `UNPROJECTED`, `assertTailwindProjection`, `assertNoUtilityShadowing` and
+ * ONE PROJECTION, AND IT IS WIRED. `tailwind.mjs` IS the token kernel's Tailwind
+ * bridge, moved -- the generator imports `tailwindNameOf`, `UNPROJECTED`,
+ * `assertTailwindProjection`, `assertNoUtilityShadowing` and
  * `assertExclusionsAreCurrent` through the policy barrel, and every namespace in
  * `generated/tailwind-theme.css` is projected by it.
  *
- * `css.mjs` is still checked on import and by nothing else. Its emitters --
- * `emitCssBlock`, `emitRootTokens`, `emitModeTokens` -- are written to be called
- * by the generator and are not called by it: the generator has its own
- * `declarations()` and block assembly, which predates this file. That is one fact
- * with two implementations, and it is named here rather than left for the next
- * reader to find. Whichever survives, the other is deleted; a projection nobody
- * imports is the exact shape ADR-024 is about.
+ * `css.mjs` STOOD HERE UNTIL 2026-09-03 AND IS DELETED (ADR-031, Migration step
+ * 4). It was a complete CSS emitter -- selectors, blocks, mode composition -- that
+ * the generator never called: the generator has its own block assembly, which
+ * predates the file, and reads the mode axes from `tokens.json`'s `$modes`
+ * directly. The file's one live export, `CSS_MODE_AXES`, restated those axes a
+ * second time. One fact, two implementations, and the one under load survived;
+ * the other is gone rather than left forwarding. The CSS projection is governed
+ * by the generator and proved by `tests/tokens.test.ts` against its output.
  */
 
-export * from './css.mjs'
 export * from './tailwind.mjs'
 
 import { assertPolicyRegistry } from '../define-policy.mjs'
-import { assertCssModes, cssPolicy } from './css.mjs'
 import { assertTailwindTables, tailwindPolicy } from './tailwind.mjs'
 
 /**
- * Every projection policy, in one registry.
- *
- * ORDER IS ALPHABETICAL AND MEANS NOTHING, deliberately -- the same reasoning
- * both sibling indexes record. Each policy's `assert` reads only its own table,
- * so an ordering here would imply a dependency that does not exist and would
- * then have to be maintained.
+ * Every projection policy, in one registry. One today; the registry stays so a
+ * second projection joins by declaration rather than by a new mechanism.
  */
-export const PROJECTION_POLICIES = assertPolicyRegistry([cssPolicy, tailwindPolicy])
+export const PROJECTION_POLICIES = assertPolicyRegistry([tailwindPolicy])
 
 /*
  * EVERY TABLE, CHECKED ON IMPORT. A kernel that checks its subject but not its
@@ -106,9 +99,9 @@ export const PROJECTION_POLICIES = assertPolicyRegistry([cssPolicy, tailwindPoli
  * five. Passing them a synthetic set here would make them checks on this file's
  * agreement with itself, which is principle 3 inverted.
  *
- * TAILWIND RUNS LAST, because it is the only projection that leaves this
- * repository's vocabulary for another system's -- so a failure there should be
- * read after every rule about the vocabulary itself has passed.
+ * TAILWIND RUNS LAST in the policy tree as a whole, because it is the only
+ * projection that leaves this repository's vocabulary for another system's -- so
+ * a failure there should be read after every rule about the vocabulary itself
+ * has passed.
  */
-assertCssModes()
 assertTailwindTables()

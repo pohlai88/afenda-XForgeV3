@@ -38,7 +38,7 @@ Three further divergences were found by measurement rather than by reading:
 - **`disclosure` had been added to the gated set with no ADR**, and the test
   asserting the set was edited to match, so the divergence was invisible.
 - **The recorded debt was wrong everywhere.** ADR-025 says one contract
-  (Dialog); ADR-029 and `POLICY.md` say five; the derivation returned six.
+  (Dialog); ADR-029 and `POLICY.md` (since deleted) said five; the derivation returned six.
 
 And a defect ADR-025's criterion already covered but its list did not. The
 Decision reads: "A11y-3 is required where a component MANAGES FOCUS ITSELF **or

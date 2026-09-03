@@ -45,6 +45,9 @@ And the method, which is the part that supersedes rather than repeats ADR-028:
 4. **Contracts are not styling and are retained.** All 33 keep their id, profile,
    slots and revision, so the four conformance suites and the ADR-025 evidence
    gate keep working across the rewrite unchanged.
+   *(No longer true since ae4e294 deleted the registry on 2026-09-03. ADR-031
+   replaces the registry with a table beside each component; see its Decision 1
+   and §Beta. Left in place as the record of what this ADR decided at the time.)*
 5. **Business screens are unchanged.** They compose primitives and carry no
    `className`. Phase 2's exit criterion stays true and stays checkable.
 

@@ -35,8 +35,12 @@ to skim past.
 not true here and following it will send you looking for a file that decides nothing.
 
 ```
-  design tokens        packages/design/tokens.json        W3C DTCG v2025.10
-  UI vocabulary        packages/design/policy/contracts.ts   the contract registry
+  design tokens        packages/design/policy/tokens.json        W3C DTCG v2025.10
+  UI vocabulary        packages/design/src/components/*.tsx      each file is the Adapter;
+                                                                  its exported tables (ALERT_TONE,
+                                                                  BUTTON_VARIANT) are its contract
+  the schema           .architecture/adr/ADR-031-component-policy-is-authored-the-primitive-is-projected.md
+                                                                  §Beta, "Adapter file schema"
   decisions            .architecture/adr/
   current state        .architecture/project-state.md
 ```
@@ -105,19 +109,26 @@ is worth knowing before deciding one is too expensive to make.
 ## Styling is constrained more tightly than "match the existing system"
 
 The skill says to express a fix in the project's idiom and lists Tailwind, CSS Modules,
-styled-components, StyleX. None applies. This repository uses plain CSS with custom
-properties, and three guards hold the boundary:
+styled-components, StyleX. Tailwind v4 utilities apply, but only utilities that name a
+token role — the generated `@theme` bridge erases Tailwind's default scale on purpose.
+THE THREE GUARDS THIS PARAGRAPH USED TO NAME (`no-bespoke-styling`,
+`tokens-are-the-authority`, `stylesheet-names-roles-not-primitives`) WERE DELETED in
+a3cf31b with the rest of the guard subsystem. What holds the boundary now:
 
 ```
-  no-bespoke-styling                    business screens carry no className and no style
-  tokens-are-the-authority              no literal hex/rgb/hsl in packages/design/src/**/*.css
-  stylesheet-names-roles-not-primitives the stylesheet reaches semantics, never primitives
+  tests/unit/design-system-classes.test.ts     every class the authored layer writes
+                                                compiles, and none carries a raw value
+  packages/design/tests/adapter-schema.test.ts  an authored component never re-exports
+                                                or leaks its adaptee, and reaches other
+                                                primitives only through their adapters
+  packages/design/package.json                  "./components/ui/*": null -- the vendored
+                                                tree is unreachable from outside
 ```
 
-A variant is a `data-*` attribute on a primitive, not a class string. If no variant fits,
-the fix is a new variant in `@xforge/design` — never styling at the call site. (There is
-no `@xforge/ui`; this file said there was. The published packages are `api`, `api-client`,
-`db`, `design`, `policy`, `tenancy`.)
+A variant is a `data-*` attribute stamped by the Adapter, driven by an axis Xforge owns.
+If no variant fits, the fix is a new axis value in the authored component — never styling
+at the call site, never an edit to `src/components/ui/**`. (The published packages are
+`api`, `api-client`, `db`, `design`, `policy`, `tenancy`; there is no `@xforge/ui`.)
 
 ## Accessibility is already mechanically enforced
 
@@ -131,10 +142,13 @@ folded into rewritten specs. Naming suites is the same mistake as naming paths, 
 directory up: the spec files are the most volatile thing this document could point at.
 
 ```
-  what runs        ls e2e/*.spec.ts
-  what is gated    contractsOwingAtEvidence() in packages/design/policy/contracts.ts,
-                   which is what the `a11y-evidence` stage imports -- the gate is
-                   derived from the contract profiles, never from a list
+  what runs        ls e2e/*.spec.ts                (browser + database; not the fast loop)
+                   packages/design/tests/*.test.tsx (per-component contract tests, fast loop)
+  what is gated    NOTHING MECHANICALLY TODAY. The registry that derived the gated set
+                   and the stage that read it are both deleted (ae4e294, a3cf31b).
+                   A component's announcement contract is the table beside it, e.g.
+                   ALERT_TONE in packages/design/src/components/alert.tsx, asserted by
+                   packages/design/tests/alert.test.tsx
   target size      the WCAG 2.5.8 floor, statically in the generator and rendered
                    in e2e/token-modes.spec.ts
 ```
@@ -150,12 +164,12 @@ carrying meaning alone, hierarchy, writing, and whether a screen's states are ho
 Constitution rule 7 — never let colour carry meaning alone — is genuinely uncovered by
 any automated check here and is worth applying.
 
-A11y-3 (a real screen-reader session) is owed and gated: `.architecture/a11y-evidence.json`
-records sessions and the `a11y-evidence` stage reports PENDING until the design-system
-phase starts, then BLOCKED. No review output substitutes for it.
+A11y-3 (a real screen-reader session) is owed and not gated: `.architecture/a11y-evidence.json`
+records sessions (none yet), and the stage that read it went with the gate. No review
+output substitutes for it.
 
 ## Reviews are read-only here in a stronger sense than rule 3
 
-`pnpm verify` is the human's command, not an agent's, and a green it did not witness is
-not evidence. An agent runs `pnpm verify:fast` and hands the rest over, naming what did
-not run. Report findings; do not run the aggregate gate to prove them.
+There is no `pnpm verify` on this branch; the gate was deleted in a3cf31b. The authorship
+loop an agent runs is `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json` and
+`pnpm exec vitest run --project unit`. Report findings; do not claim a green nobody ran.

@@ -214,20 +214,6 @@ export function cssNameOf(tokenPath) {
 }
 
 /**
- * The same name, as the reference a stylesheet writes.
- *
- * ONE ALGORITHM, NOT TWO. `projection/css.mjs` needs `var(--x)` and used to get
- * it from a second identity module that reimplemented the grammar -- a copy that
- * differed from this one in two ways nobody had compared: it required at least
- * two path segments, and it did not resolve the tier. That module is deleted and
- * this is the single seam, so a caller that needs a reference cannot reproduce
- * the naming rule by accident.
- */
-export function cssReferenceOf(tokenPath) {
-  return `var(${cssNameOf(tokenPath)})`
-}
-
-/**
  * The CSS projection is one-to-one. `semantic.radius-control` and
  * `semantic.radius.control` both project to `--semantic-radius-control`, and the
  * generator emitted that property twice at exit 0 with the later declaration

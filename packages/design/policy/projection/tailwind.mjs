@@ -266,13 +266,15 @@ const assertKebab = (value, where) => {
 /**
  * THE NAMING GRAMMAR IS VOCABULARY'S, AND THIS FILE HELD A SECOND COPY OF IT.
  *
- * `vocabulary.mjs` says of `cssReferenceOf`: "ONE ALGORITHM, NOT TWO ... a copy
+ * `vocabulary.mjs` said of its naming seam: "ONE ALGORITHM, NOT TWO ... a copy
  * that differed from this one in two ways nobody had compared: it required at
  * least two path segments, and it did not resolve the tier. That module is
  * deleted and this is the single seam." The module deleted was
- * `projection/identity.mjs`. THIS copy survived that pass with the same two
- * differences -- an arity floor of three, and no `tierOf` -- so the comment
- * claiming a single seam was two files away from the second one.
+ * `projection/identity.mjs`. (The `cssReferenceOf` helper that sentence sat on
+ * was itself deleted on 2026-09-03 -- its only caller was `projection/css.mjs`,
+ * deleted the same day; `cssNameOf` is the seam.) THIS copy survived that pass
+ * with the same two differences -- an arity floor of three, and no `tierOf` --
+ * so the comment claiming a single seam was two files away from the second one.
  *
  * They agreed until `color.scrim` arrived: two segments, a legal primitive under
  * the grammar, refused here. Generation went red rather than wrong, which is the

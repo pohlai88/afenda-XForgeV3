@@ -237,10 +237,12 @@ export const FOUNDATION_POLICIES = assertPolicyRegistry([
  * a control traded away for one that had never executed. No guard reads a
  * sentence, so this is corrected here and there rather than caught.
  *
- * `assertDensityAxis` still runs nowhere. It is a real, falsifiable function
- * taking its subject as an argument, and it is `densityPolicy`'s `assert`, so it
- * survives the deletion below -- but nothing invokes it, and that is now what
- * this paragraph says.
+ * `assertDensityAxis` NOW RUNS, since 2026-09-03 (ADR-031, Migration step 4):
+ * `generators/tokens.mjs` calls it over the real `$modes` after its own axis
+ * checks, so a density axis with one mode, an asymmetric pair, or a rebind
+ * outside the spatial namespaces fails generation. `tests/tokens.test.ts`
+ * shows it an asymmetric pair. It is `densityPolicy`'s `assert` and remains a
+ * function of its argument, which is why it is not in the list below.
  *
  * The same holds for `assertTypographyTokens`, which is absent from the list for
  * a reason that IS true: every synthetic source in the unit suite declares the
