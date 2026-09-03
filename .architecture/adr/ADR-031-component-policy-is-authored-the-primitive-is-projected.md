@@ -8,12 +8,20 @@ Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. 
 maintenance loop ran once** (Migration step 6): PREVIEW, ASSESS and REFRESH are proved and
 frozen with the core; **RECONCILE is proved only in its null form** — no upstream change has
 reached an Adapter — and stays provisional. TRANSLATE, the Integration Adapter class and the
-registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5, 6 and
-7 exist, were observed RED first, and were green on the author's run; behaviour survival for
+registry future remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5, 6, 7 and
+8 exist, were observed RED first, and were green on the author's run; behaviour survival for
 Switch and Combobox is proved in Chromium (Verification 6).
+**Amended 2026-09-03 by Decision 12** — components SELECT style, they do not DEFINE it.
+ADR-034 makes the style plane a closed language, and this ADR stops being an authority for
+style creation while remaining the authority for component structure, semantics and
+adaptation. Decision 12 is the single normative home for that change; the sections it
+touches — Decisions 1, 3, 5 and 10, the NORMALIZE stage, the ADOPT intent, the Adapter file
+schema and Verification 5 — carry a pointer to it and **not a copy of it**, because six
+restatements of one rule is the defect `CLAUDE.md` tracks, applied to the fix.
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
-ADR-033 (entry points; the vendored tree is unexported).
+ADR-033 (entry points; the vendored tree is unexported), **ADR-034 (the closed design
+language — the style plane this ADR now consumes rather than mints)**.
 
 ## Context
 
@@ -330,6 +338,12 @@ defined inside a test file (step 5: no screen has asked for it). Decision 4 admi
 because a real component needs it; these two were admitted at the owner's request for a
 fixture, and the first screen that sets a figure is the test of whether the words were right.
 
+**That a contract attribute cannot reach the DOM from a caller.** Omitting `role` from
+`AlertProps` (step 8) refuses a `role` written at a call site, and a `@ts-expect-error` case
+holds that. A SPREAD of a wider object still compiles — excess-property checks do not reach a
+JSX spread; tried, and tsc reported nothing — so a forwarding Adapter narrows its own props by
+hand, and nothing mechanical catches the one that forgets.
+
 ## Decision
 
 **Recipe + wrapper, no compiler, no fourth policy tree.** More precisely, because the
@@ -356,6 +370,16 @@ four parts are decided differently:
    words two screens use), as a mapping table onto the adaptee's vocabulary — the classes
    stay upstream's. Mandating thirteen recipes and thirteen contracts would recreate the
    rejected policy tree at finer grain.
+
+   **Amended by Decision 12: a recipe owns style SELECTION, not style DEFINITION.** A
+   component owns the axis vocabulary — `intent`, `size`, `tone`, `variant` — and owns
+   which approved role each value of that axis selects. It does not own what the role
+   means: `primary` being teal-700 on white at `radius.control` is the Style Contract's
+   answer, not Button's. **`button.tsx` is the one file this amendment changes rather than
+   confirms**, and it changes on a condition it wrote itself: its header says *"THE RECIPE
+   IS UPSTREAM'S. The classes live in the vendored file and are its business **until a
+   token policy says otherwise**."* ADR-034 is that policy. Button's `variant` stays; what
+   ends is upstream deciding what `variant` looks like.
 
 2. **The fourth policy tree is not built.** `POLICY_KINDS` keeps `component` reserved and
    `index.mjs` composes three. `policy/components/`, `axes.mjs`, a slot grammar and an
@@ -385,6 +409,13 @@ four parts are decided differently:
    translation. Required export shape: an Xforge-owned interface over the HTML attributes
    plus Xforge axes.
 
+   **The No-Style-Leakage Law** (added by Decision 12), its twin, and scoped the same way:
+   no foreign or undeclared design-bearing CSS crosses the Adapter boundary. A Target
+   renders only classes the Xforge Style Contract emits. Together the two laws close the
+   boundary in both directions — one protects the API vocabulary, the other the visual
+   vocabulary — and the second was missing because until ADR-034 there was no closed visual
+   vocabulary for it to protect.
+
    **Ownership**, so the Adapter does not become another implementation of Base UI:
 
    ```
@@ -400,7 +431,11 @@ four parts are decided differently:
    31). Once shared, its meaning may not vary by component.
 
 5. **State is never a variant.** `checked`, `open`, `selected`, `disabled`, `invalid` are
-   behaviour, exposed as `data-*` by the adaptee.
+   behaviour, exposed as `data-*` by the adaptee. **Amended by Decision 12:** a state may
+   select a DECLARED state role — `data-disabled` selects the disabled role of the role
+   contract it belongs to — and may not introduce styling of its own.
+   `data-disabled:opacity-37` is not a state style; it is an undeclared design value
+   wearing a state selector.
 
 6. **Component tokens start at zero.** The fifteen authored components use none. The
    first is minted only with a written justification — *semantic role X cannot express this
@@ -424,6 +459,78 @@ four parts are decided differently:
    manifest, the resolver refuses it with `TS2307`, and `tests/unit/package-exports.test.ts`
    asserts every file under the vendored tree is unreachable.
 
+12. **Components select style; they do not define style.** *(Added 2026-09-03. The single
+    normative home for this amendment; every other section that mentions it points here.)*
+
+    > Xforge is a closed design language. A component may choose among style roles already
+    > declared by design policy and emitted by the Style Contract, but neither a component
+    > nor its Adapter may introduce a design-bearing value, class, pairing, CSS capability
+    > or foreign style. A recipe is a mapping from component axes to generated Style
+    > Contract symbols. Public Targets do not expose unrestricted `className` or `style`.
+    > Missing vocabulary stops NORMALIZE and returns to the kernel; it is never invented
+    > during ADAPT.
+
+    **Kernel → component → consumer**, and this is the part that is promoted from history
+    rather than invented. Migration step 7 discovered it and stated it: *"a word the
+    component can say before the kernel projects it is a class that compiles to nothing."*
+    It was a sequencing note about one commit. It is now the rule: a component may not name
+    a design role before the kernel declares and projects it.
+
+    **What this amendment closes, measured on 2026-09-03 across the 15 authored components:**
+
+    ```
+      Targets accepting className and style BY INHERITANCE     13 of 15
+        ...from `extends ComponentProps<'div'|'button'|'p'>` or an alias of one
+      Targets that already list every adopted word              2 of 15   Switch, Combobox
+      recipes containing a literal design class                 0 of 15
+      authored uses of a SCALE_ALIASES word                     0
+      adapters whose classes are upstream's by declaration      1         Button
+    ```
+
+    Two things follow from that table, and they pull in opposite directions:
+
+    - **The recipes are already compliant.** `text.tsx` selects `text-error-foreground`,
+      `font-heading text-display`, `text-body-compact` — every value a role, no literal
+      design class anywhere in the authored layer. So this amendment closes a CAPABILITY,
+      not a violation. `bg-primary rounded-md px-4 text-sm` is merely *sayable* today.
+    - **The Targets are not.** Thirteen of fifteen accept `className` and `style` without
+      ever naming them — they arrive by inheriting an HTML props type, so
+      `<Button className="bg-red-500 rounded-[13px] px-[17px]" />` type-checks and bypasses
+      the entire language. That is a real hole and it is the largest one this amendment
+      closes.
+
+    **The precedent is local, and it is two files old.** `switch.tsx`'s Target says *"Each
+    adopted word is listed; nothing arrives by inheritance"* and Picks four attributes;
+    `combobox.tsx` declares a closed interface. Both were written that way during the beta,
+    for this reason, before there was a law requiring it. This decision generalises what
+    those two already do rather than importing a rule from outside.
+
+    **`className` and `style` become private by default.** Not narrowed — removed:
+    `Omit<ComponentProps<'button'>, 'className' | 'style'>`, or the Switch/Combobox shape of
+    listing what is adopted. A typed `className?: StyleClass` over a generated union of
+    approved classes is the obvious escape valve and is **not built now**: Decision 4's
+    no-speculative-axis rule applies to escape hatches too, and the first composition that
+    genuinely needs one is the evidence that it should exist.
+
+    **Structural classes are in the language too.** `flex`, `grid`, `absolute`,
+    `overflow-hidden`, `pointer-events-none`, `sr-only` reference no token, and that is the
+    reason they get overlooked rather than a reason they are exempt. The Style Contract
+    declares two domains — DESIGN-BEARING (colour, spacing, sizing, radius, typography,
+    elevation, motion, layering) and STRUCTURAL (display, position, overflow, alignment,
+    visibility, pointer behaviour, accessibility helpers) — and both are declared. What
+    differs is only that a structural capability need not resolve to a token. *"It is only
+    `absolute`"* is not an exemption.
+
+    **What this does NOT change.** React stays hand-written (Decision 9 unaffected — a style
+    contract generator is not a React generator). `policy/components/` stays rejected
+    (Decision 2 unaffected — the Adapter file schema IS the component schema, in normative
+    TypeScript, and a second per-component JSON copy of it is the tree that was refused).
+    cva stays as the implementation tool; what changes is what its variant values contain.
+
+    **Dependency direction, stated because it is the whole point:** ADR-034's style plane is
+    UPSTREAM of this ADR. `policy → generator → style.ts → recipe → Adapter → React`. Never
+    the reverse, and never a component minting a value the kernel has not declared.
+
 ### Rejected
 
 9. **Generating React from a declarative spec: REJECTED.** No production design system
@@ -446,6 +553,15 @@ four parts are decided differently:
     alias table's only remaining consumers are the vendored files. Delete when three hold:
     authored components contain zero references; application code contains zero; the
     omission scan and the static-hole test agree on zero.
+
+    **Amended by Decision 12 — vendor-compatibility shims only, and two of the three
+    conditions are now measured.** On 2026-09-03 the authored components contain **zero**
+    references to `text-sm`, `text-xs`, `text-base`, `rounded-md`, `shadow-md`,
+    `tracking-widest` and `leading-relaxed`, and `apps/web/app` contains **zero**. Only the
+    third condition is unverified. So the table is no longer "provisional" in the sense of
+    undecided: it is a shim for the sealed vendored tree, forbidden in authored components
+    by Decision 12, and forbidden from appearing in any generated Xforge style symbol. It
+    is deleted when the vendored tree stops needing it, which is ADR-034's Migration step 8.
 
 11. **The tone→announcement rule has one owner: the table exported beside Alert.** The
     e2e specs assert the DOM; Verification 1 asserts the DOM agrees with the table. Today
@@ -532,6 +648,11 @@ studio blocks, the existing tests for proof.
                foreign model does not constrain it. Because NORMALIZE fixes the Target
                before ADAPT exists, calling stage 4 a GoF Adapter is a description, not
                a metaphor.
+               AMENDED BY DECISION 12: if the Style Contract has no role that expresses
+               the normalized decision, NORMALIZE STOPS. ADAPT may not invent one. The
+               gap returns to the kernel, the kernel declares and projects it, and only
+               then does ADAPT resume — the order Migration step 7 discovered and
+               Decision 12 makes normative.
   4 ADAPT      Only now write the React: Xforge props → recipe + contract + mapping →
                adaptee. Boring by design. No compiler, no registry lookup, no policy
                runtime, no DSL, no `createXforgeAdapter()`.
@@ -571,6 +692,9 @@ starts from an existing Xforge Target and is never "acquired".
   creation
   ADOPT      the source is structurally suitable; keep behaviour and anatomy, adapt
              semantics and style                   native · Base UI · shadcn primitive
+             AMENDED BY DECISION 12: behaviour, focus and keyboard cross the boundary;
+             design-bearing upstream classes do NOT, unless the Style Contract has
+             deliberately declared an identical role
   INSPIRE    the source is valuable visually or compositionally but must not become an
              implementation dependency; digest the idea, rebuild from Xforge components;
              no source API becomes public           studio blocks and pages
@@ -672,6 +796,28 @@ export function X({ intent = 'primary', size = 'md', className, ...props }: XPro
 }
 ```
 
+**Amended by Decision 12.** Section 1 is renamed **STYLE SELECTION** and its values become
+generated symbols rather than authored class strings — the recipe does not cook the
+ingredients, it selects approved meals:
+
+```tsx
+import { STYLE } from '#generated/style'                   // 1 STYLE SELECTION
+
+export const buttonRecipe = cva([STYLE.shape.control, STYLE.typography.label,
+                                 STYLE.motion.press], {
+  variants: {
+    intent: {
+      primary: [STYLE.action.primary.background, STYLE.action.primary.foreground],
+      danger:  [STYLE.action.danger.background,  STYLE.action.danger.foreground],
+    },
+  },
+})
+```
+
+cva is unchanged as the mechanism; the strings it receives are generated. Section 3 lists
+every adopted word — the `switch.tsx` / `combobox.tsx` shape — or `Omit`s `'className' |
+'style'`; it never inherits them silently from an HTML props type.
+
 Rules the schema encodes, each with the check that sees it:
 
 ```
@@ -684,7 +830,19 @@ Rules the schema encodes, each with the check that sees it:
   every class in RECIPE names a token role                 design-system-classes.test.ts
   every CONTRACT row renders what it declares              <name>.test.tsx (Verification 1 shape)
   the adaptee is unreachable from outside the package      package-exports.test.ts (ADR-033)
+  --- added by Decision 12, none of these has a check yet ---
+  no public `className`, no public `style`                 Verification 5, EXTENSION OWED
+  STYLE SELECTION holds symbols, not literal classes       Verification 5, EXTENSION OWED
+  every STYLE symbol resolves to an emitted class          style-contract test, NOT WRITTEN
+  no foreign class survives the adaptee undeclared         NOT WRITTEN — see below
 ```
+
+**The last four are declared and unenforced today, and saying so is the point.** ADR-024's
+rule is that a guard whose name overclaims is worse than none; a schema listing four rules
+no check reads is the prose equivalent. They are listed as OWED rather than as encoded, and
+`design-system-classes.test.ts`'s lexical class reader is defeated by symbol indirection —
+so the replacement must land in the same commit that introduces `STYLE.*`, or the one
+guarantee the schema currently does enforce lapses silently while looking stronger.
 
 Test file schema, `packages/design/tests/<name>.test.tsx`, JSX-free (`createElement` +
 `renderToStaticMarkup`, node environment, no new dependency):
@@ -790,8 +948,8 @@ component's header when it is made.
 **What this costs today.** An Adapter per component: fifteen, every one carrying the
 provenance header. A recipe or a contract only where the component owns the decision:
 Alert owns a contract (`ALERT_TONE`); Text and Stack carry cva recipes; Button carries a
-two-row mapping table; Switch and Combobox own no axis; nothing else does. Six component
-tests (`alert`, `button`, `card`, `switch`, `combobox`, `text`), two browser tests (`switch`,
+two-row mapping table; Switch and Combobox own no axis; nothing else does. Seven component
+tests (`alert`, `button`, `card`, `switch`, `combobox`, `text`, `status`), two browser tests (`switch`,
 `combobox`) with one setup file, one composition test in the app, one schema check for the
 layer, and in `vitest.config.ts` one JSX-runtime line and one `browser` project over a
 provider added through the catalog.
@@ -805,7 +963,8 @@ In this order, each its own commit, rollback `git revert`:
 
 1. **Alert** — DONE 2026-09-03. Owner's decision: `danger` and `warning` are `alert`,
    `info` and `success` are `status` (Decision 11). `ALERT_TONE` exported with a `role`
-   column; the component reads it; the header rewritten with provenance and without the
+   column; the component reads it, and `role` is not a prop of the Target — the table's
+   answer cannot be overridden at a call site (step 8); the header rewritten with provenance and without the
    deleted registry's `revision`. Verification 1 observed RED on `danger` and `warning`
    (table said `alert`, DOM said `status`), then green. The five e2e assertions are
    untouched and now agree with the table.
@@ -859,7 +1018,8 @@ In this order, each its own commit, rollback `git revert`:
      `data-checked`/`data-unchecked`/`data-disabled` reach the DOM, controlled and
      uncontrolled; five cases; mutation (props no longer spread) → four red.
    - **Combobox** (Compound) — `src/components/combobox.tsx`. Six of upstream's sixteen parts
-     assembled once behind `options` + `value` (a string id, mapped both ways) +
+     assembled once behind `options` + `value` (a string id, mapped both ways; an id the
+     options lack is refused, step 8) +
      `onValueChange` + `placeholder` + `disabled` + `emptyMessage` + a label. Chips, groups,
      separators, multiple selection and custom filters not adopted. PROVE: one input with
      `role="combobox"`, closed, placeholder and label present, options absent while closed,
@@ -967,6 +1127,36 @@ In this order, each its own commit, rollback `git revert`:
      three classes the recipe gained; `text-display` is the one new bridge projection, the
      two inks were projected already and only their declared pairings changed.
 
+8. **Code-quality pass over the implementation — 2026-09-03**, ten commits `79101f5`…`83aaeed`,
+   one finding each, fast loop between them. Reviewed against "crashing is cheaper than
+   corrupting" and "make illegal states unrepresentable".
+   - **Alert and Status could be told what to announce.** The contract attributes were
+     written before the props spread, so `<Alert tone="danger" role="status">` rendered
+     `status` — rendered to check, not inferred — and Status accepted `role` and `aria-live`.
+     `AlertProps` now omits `role`; `StatusProps` omits `role`, `aria-live`, `aria-busy`. The
+     refusal is the type, held by a `@ts-expect-error` case in each test. **What the type
+     does NOT do:** a spread of a wider object still compiles, because excess-property checks
+     do not reach a JSX spread (tried; tsc reported nothing). ResourceBoundary therefore
+     narrows its own props to `Omit<AlertProps, 'tone'>` by hand; any Adapter that forwards
+     props into an Alert must do the same.
+   - **Combobox refuses an id its options do not contain.** It coerced the id to `null`: the
+     input rendered empty, the form carried nothing, the parent's state still held the id.
+     Now it throws, naming the id and the option count. `undefined` stays uncontrolled and
+     `null` stays controlled-empty; a screen renders the control once its options exist.
+   - **`textVariants` and `stackVariants` are no longer exported.** No consumer, and each
+     handed a screen a class-string factory.
+   - **Switch's size refusal is a compile-time case**, not `'size' in {}`, which was false
+     whatever the Target said.
+   - **MetricRow's delta is one object** (`{ text, trend? }`), so a trend cannot exist
+     without its signed text; rule 7 became a property of the type.
+   - **Comments stopped naming things that do not exist**: the deleted `no-bespoke-styling`
+     guard and gallery in `cn.ts`, the deleted contract registry in `status.tsx`, a Badge the
+     authored layer lacks, and the refresh date copied into four Adaptee lines.
+   - **Two defects of the landing, recorded in `83aaeed`:** the commit chain read grep's exit
+     status rather than vitest's, so one red case landed under `f299737` and four commits
+     over it before it was caught; and the comment commit's script stopped at status.tsx on
+     an em dash, so `31ae4a6` changed one file while its message listed five.
+
 ## Verification
 
 Replaces the first draft's four conditions and mutation fixtures A–F, which were fixtures
@@ -997,6 +1187,14 @@ for machinery that is not built and are rejected with it.
    red on 15 cases (two wholesale re-exports, thirteen missing headers), then red on
    `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases at
    thirteen files, 61 at fifteen. Lexical: see "does NOT prove" for what it cannot see.
+
+   **Extension owed under Decision 12**, and it must be observed RED first — which it will
+   be, because the tree already fails it: no public `className`; no public `style`; no
+   literal design class inside STYLE SELECTION. **13 of 15 authored Targets fail the first
+   two today** (Switch and Combobox pass), so this is a check with a known red, which is the
+   only kind worth adding. A separate style-contract test proves the other direction —
+   every `STYLE` symbol resolves to a class the generator emitted, and no emitted class is
+   undeclared — and neither test exists.
 6. **`packages/design/tests/{switch,combobox}.browser.test.tsx`** — the `browser` Vitest
    project (`vitest run --project browser`): Playwright Chromium, headless, mounted with
    `react-dom/client`, no framework helper, a stand-in box for the switch
@@ -1019,6 +1217,10 @@ for machinery that is not built and are rejected with it.
    ten red on the unchanged component (the three new words and their composition), all
    green once the recipe gained the words. The
    kernel half is the generator's refusal (Migration step 7), not this file.
+8. **`packages/design/tests/status.test.tsx`** — the live-region contract (`role="status"`,
+   `aria-live="polite"`, `aria-busy`) renders, forwarded props reach the element, and the
+   three contract attributes are refused as props at compile time. Status owned this
+   contract from the first commit and had no test until this one (Migration step 8).
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person
