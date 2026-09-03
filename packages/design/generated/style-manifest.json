@@ -382,6 +382,30 @@
         "semantic.color.on-primary-container"
       ]
     },
+    "interaction.invalid.background": {
+      "class": "data-invalid:not-data-disabled:bg-error",
+      "tokens": [
+        "semantic.color.error"
+      ]
+    },
+    "interaction.invalid.border": {
+      "class": "data-invalid:not-data-disabled:border-error",
+      "tokens": [
+        "semantic.color.error"
+      ]
+    },
+    "interaction.invalid.foreground": {
+      "class": "data-invalid:not-data-disabled:text-on-error",
+      "tokens": [
+        "semantic.color.on-error"
+      ]
+    },
+    "interaction.invalid.outline": {
+      "class": "data-invalid:not-data-disabled:outline-error",
+      "tokens": [
+        "semantic.color.error"
+      ]
+    },
     "interaction.unchecked.background": {
       "class": "data-unchecked:not-data-disabled:bg-surface-lowest",
       "tokens": [

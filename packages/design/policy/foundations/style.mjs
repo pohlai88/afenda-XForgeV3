@@ -93,8 +93,10 @@ const STATE_VARIANT = deepFreeze({ disabled: 'disabled' })
  * exposes `data-checked`, `data-unchecked`, `data-highlighted`, `data-disabled`; which
  * colour each means is Xforge's decision, made here once: checked is the primary fill,
  * unchecked is the lowest surface, highlighted is the primary container, disabled is the
- * disabled role. A recipe writes `STYLE.interaction.checked.background` and never assembles
- * `data-checked:` by hand.
+ * disabled role, invalid is the error accent -- Base UI stamps `data-invalid` on a Field's
+ * control exactly when aria-invalid holds, and the accent is drawn as its line (E40). A
+ * recipe writes `STYLE.interaction.checked.background` and never assembles `data-checked:`
+ * by hand.
  *
  * DISABLED DOMINATES, BY SELECTOR AND NOT BY LUCK. A disabled unchecked switch carries
  * `data-unchecked` and `data-disabled` at once; with one attribute selector each, the
@@ -107,6 +109,7 @@ export const INTERACTION_STATES = deepFreeze({
   checked: { root: 'primary', selector: 'data-checked' },
   disabled: { root: 'disabled', selector: 'data-disabled' },
   highlighted: { root: 'primary-container', selector: 'data-highlighted' },
+  invalid: { root: 'error', selector: 'data-invalid' },
   unchecked: { root: 'surface-lowest', selector: 'data-unchecked' },
 })
 

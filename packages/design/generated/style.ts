@@ -8,7 +8,7 @@
  * variant (`hover:`, `active:`) so that which selector means pressed is a fact of the
  * language, decided once.
  *
- * 153 symbols. Roles without one, and why:
+ * 157 symbols. Roles without one, and why:
  *   semantic.color.scrim -- compositing: declares no CSS channel until an overlay Adapter needs one
  *   semantic.color.shadow-ambient -- consumed by the elevation tokens through var(), never a class
  *   semantic.color.shadow-key -- consumed by the elevation tokens through var(), never a class
@@ -100,6 +100,12 @@ export const STYLE = {
     highlighted: {
       background: 'data-highlighted:not-data-disabled:bg-primary-container',
       foreground: 'data-highlighted:not-data-disabled:text-on-primary-container',
+    },
+    invalid: {
+      background: 'data-invalid:not-data-disabled:bg-error',
+      border: 'data-invalid:not-data-disabled:border-error',
+      foreground: 'data-invalid:not-data-disabled:text-on-error',
+      outline: 'data-invalid:not-data-disabled:outline-error',
     },
     unchecked: {
       background: 'data-unchecked:not-data-disabled:bg-surface-lowest',

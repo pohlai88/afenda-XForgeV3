@@ -1670,6 +1670,14 @@ describe('the style contract (ADR-034 Decision 4)', () => {
       'data-highlighted:not-data-disabled:text-on-primary-container',
     )
     expect(leaves.get('interaction.disabled.background')?.class).toBe('data-disabled:bg-disabled')
+    // The invalid field's outline: Base UI stamps `data-invalid` on the control exactly when
+    // aria-invalid holds, and the error accent is drawn as its line (E40). Disabled still wins.
+    expect(leaves.get('interaction.invalid.border')?.class).toBe(
+      'data-invalid:not-data-disabled:border-error',
+    )
+    expect(leaves.get('interaction.invalid.outline')?.class).toBe(
+      'data-invalid:not-data-disabled:outline-error',
+    )
     expect(leaves.get('field.placeholder')?.class).toBe('placeholder:text-on-surface-variant')
     // Component-tier geometry, each aliasing a semantic role, projected into spacing.
     expect(leaves.get('component.switch.trackWidth')?.class).toBe('w-switch-track-width')
