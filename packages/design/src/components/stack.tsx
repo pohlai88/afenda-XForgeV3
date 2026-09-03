@@ -46,5 +46,3 @@ export function Stack({
     </div>
   )
 }
-
-export { stackVariants }

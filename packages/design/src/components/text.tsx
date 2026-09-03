@@ -80,5 +80,3 @@ export function Text({
     </p>
   )
 }
-
-export { textVariants }
