@@ -8,10 +8,11 @@
  * ink that stopped clearing the page, refuses the token file); this file proves the
  * component reaches the projected names.
  *
- * MUTATION WATCHED GO RED, 2026-09-03: written before `text.tsx` knew either word. The
- * display case and both trend cases failed on the unchanged component -- cva dropped the
- * unknown values and rendered the defaults -- while the four existing words passed. Then
- * the recipe gained the words, and all cases passed.
+ * MUTATION WATCHED GO RED, 2026-09-03: written before `text.tsx` knew either word. Four
+ * of ten failed on the unchanged component -- display, success, danger, and the
+ * display+danger case; cva renders nothing for an axis value it does not know, so the
+ * expected class was simply absent -- while the six other cases passed. Then the recipe
+ * gained the words, and all ten passed.
  *
  * JSX-free in the test: `createElement` + `renderToStaticMarkup`, node environment.
  */

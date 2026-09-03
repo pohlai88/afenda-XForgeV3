@@ -314,6 +314,22 @@ the beta slice. They stay provisional until each has a real consumer; freezing t
 strength of Card, Switch, Combobox and one block would be the speculative-axis error one
 level up.
 
+**That 30px is the right display step.** The generator proves `display` is distinguishable
+from `title`, clears its floor and lands on the grid. The size, the semibold weight and the
+tight leading are the owner's choice: no row in the evidence table concerns a type scale,
+and `display` cites no reference the way `emphasis` cites Apple and Material 3.
+
+**That a coloured delta means anything to a reader.** The trend inks are proved for WCAG
+contrast on card, page and their own tint. Nothing proves green against red is perceptually
+distinguishable, which is why rule 7's signed delta is load-bearing — and that rule is
+enforced only by the composition test over its own sample. `Text` itself accepts
+`tone="success"` beside no sign; its Target does not constrain the misuse.
+
+**That `display` and the trend tones have a screen.** Their one consumer is a composition
+defined inside a test file (step 5: no screen has asked for it). Decision 4 admits an axis
+because a real component needs it; these two were admitted at the owner's request for a
+fixture, and the first screen that sets a figure is the test of whether the words were right.
+
 ## Decision
 
 **Recipe + wrapper, no compiler, no fourth policy tree.** More precisely, because the
@@ -774,8 +790,8 @@ component's header when it is made.
 **What this costs today.** An Adapter per component: fifteen, every one carrying the
 provenance header. A recipe or a contract only where the component owns the decision:
 Alert owns a contract (`ALERT_TONE`); Text and Stack carry cva recipes; Button carries a
-two-row mapping table; Switch and Combobox own no axis; nothing else does. Five component
-tests (`alert`, `button`, `card`, `switch`, `combobox`), two browser tests (`switch`,
+two-row mapping table; Switch and Combobox own no axis; nothing else does. Six component
+tests (`alert`, `button`, `card`, `switch`, `combobox`, `text`), two browser tests (`switch`,
 `combobox`) with one setup file, one composition test in the app, one schema check for the
 layer, and in `vitest.config.ts` one JSX-runtime line and one `browser` project over a
 provider added through the catalog.
@@ -933,7 +949,8 @@ In this order, each its own commit, rollback `git revert`:
      40px, on the grid with no new leading step. `color.success-foreground` and
      `color.error-foreground` now declare `card` and `page` among the contexts they are
      read on, so the generator measures the inks where the trend tone actually puts them
-     (light 6.79–8.01 : 1, dark 7.13–10.27 : 1, all above 4.5). Mutation watched go red:
+     (on card and page: light 6.79–8.01 : 1, dark 7.13–10.27 : 1; on their own tints, the
+     lowest, 5.71 and 6.13 : 1 in light; every declared pair above 4.5). Mutation watched go red:
      `display` bound to `size.text-xl` — the same size as `title` — and the generator refused
      the file on the relational check. Five generated files changed, deliberately (law 27).
    - **Component.** `Text` gains `variant="display"` (`font-heading text-display`) and
@@ -944,9 +961,11 @@ In this order, each its own commit, rollback `git revert`:
      `trend` the screen chooses; the delta stays words with a sign, and the composition
      test asserts that a trend ink never appears without a signed delta in front of it
      (constitution rule 7). The sample deliberately colours a falling number `success`.
-   - **PROVE.** Verification 7, RED first on the unchanged component (display and both
-     trend cases; the four existing words passed), green after the recipe gained the words.
-     `design-system-classes` compiles the three new classes from the bridge.
+   - **PROVE.** Verification 7, RED first on the unchanged component — four of ten:
+     `display`, `success`, `danger`, and the `display`+`danger` case; the six other cases
+     passed — green after the recipe gained the words. `design-system-classes` compiles the
+     three classes the recipe gained; `text-display` is the one new bridge projection, the
+     two inks were projected already and only their declared pairings changed.
 
 ## Verification
 
@@ -997,7 +1016,8 @@ for machinery that is not built and are rejected with it.
 7. **`packages/design/tests/text.test.tsx`** — every variant and tone `Text` owns renders
    the classes the kernel projects for it, and a tone never displaces the role. **Observed
    2026-09-03:** written before the recipe knew `display`, `success` or `danger`; four of
-   ten red on the unchanged component, all green once the recipe gained the words. The
+   ten red on the unchanged component (the three new words and their composition), all
+   green once the recipe gained the words. The
    kernel half is the generator's refusal (Migration step 7), not this file.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
@@ -1034,6 +1054,16 @@ the unmeasured NORMALIZE cost. Non-blocking corrections: exit C reworded to the 
 its check, stale first-draft line numbers marked as such, thirteen → fifteen, 53 → 61 cases,
 the Zag and Panda rows, the Mitosis file count dropped, and the composition test's slice
 anchor made deliberate.
+
+A fifth pass after Migration step 7 (HEAD `a2d5a0f`): every step 7 claim checked against the
+tree and the contrast ratios recomputed with the generator's own formula; the three tests
+step 7 leans on run green by the reviewer. No blocking finding. Six non-blocking corrections,
+all folded in: the Consequences count still said five component tests; the contrast range
+was the card-and-page range while the sentence said "the contexts they are read on"; the
+red-first record named three cases where four failed and "four existing words" where six
+cases passed; the test header said cva rendered defaults for an unknown value when it
+renders nothing for that axis; "three new classes" where one is a new bridge projection; and
+"does NOT prove" said nothing about step 7 — three paragraphs added.
 
 A third pass after the browser suite landed (HEAD `842c2f6`): every previous finding
 confirmed fixed in text and in the tree; Verification 6's files, config, catalog entry and
