@@ -1,6 +1,6 @@
 # ADR-031 — Component policy is authored beside the component; the React primitive is hand-written
 
-**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–7
+**Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–9
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
 revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
 — the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
@@ -306,6 +306,14 @@ loop exists for — an upstream change to a primitive's API or DOM that an Adapt
 — because none has arrived. PREVIEW, ASSESS and REFRESH are proved by this run; RECONCILE is
 proved only in its null form and stays provisional until an upstream change reaches an
 Adapter's Target or a test.
+
+**That the mechanised DIGEST sees what a parser would.** `tooling/adapter/lib/digest.mjs`
+(step 9) is lexical: TypeScript 7 ships no compiler API and no other parser is installed. It
+reads exported names, `data-slot` values, cva `variants` blocks, `"a" | "b"` unions, `data-*`
+and `aria-*` selectors, import specifiers and raw design values from the text. It cannot see
+a class built at runtime or a prop reached through a spread, and a change it does not model
+is a change it does not report. It is proved on four adaptees against the vendored tree and
+on five mutations, not on an upstream change that has actually arrived.
 
 **That the axis vocabulary survives sixty components.** Thirteen are written. Hence the
 no-speculative-axis rule and the lifting rule in Decision 4.
@@ -666,11 +674,13 @@ studio blocks, the existing tests for proof.
 ### Maintenance — a separate loop, and foreign code is inspected before it may mutate the tree
 
 ```
-  PREVIEW    shadcn diff FIRST -- the CLI's own answer -- then a fetch into the scratch
-             project and `cmp` against the (verbatim) tree; `view` / `--dry-run` for a
-             single item. Step 6 learned the order: `cmp` against a restyled tree is noise
+  PREVIEW    `pnpm adapter preview <item>` (step 9): fetch the registry item, digest it,
+             diff against the adaptee record per dimension, name the Adapters above it;
+             exit 1 if anything moved. `shadcn diff` in the scratch project remains the
+             CLI's own answer. Step 6 learned: `cmp` against a restyled tree is noise
      ▼
-  ASSESS     the change on the seven DIGEST dimensions; provider and context changes first
+  ASSESS     the per-dimension diff PREVIEW printed, read against the Adapters it named;
+             provider and context changes first
      ▼
   REFRESH    shadcn add <name> --overwrite into the vendored tree; nothing merged back
      ▼
@@ -1156,6 +1166,29 @@ In this order, each its own commit, rollback `git revert`:
      status rather than vitest's, so one red case landed under `f299737` and four commits
      over it before it was caught; and the comment commit's script stopped at status.tsx on
      an em dash, so `31ae4a6` changed one file while its message listed five.
+
+9. **Protocol tooling, wave 1 — 2026-09-03**, commit `665a8f6`, `tooling/adapter/`. The Beta
+   develops: ACQUIRE, DIGEST and PREVIEW are mechanised; the Adapter stays a hand-written
+   function (Decision 3 and Decision 9 untouched).
+   - **`pnpm adapter ingest <item>`** fetches the shadcn registry item as JSON — no install,
+     so `catalogMode: strict` is not in the way — reproduces the two transforms `shadcn add`
+     performs on the text (alias rewrite, icon-placeholder resolution), digests the files on
+     the seven DIGEST dimensions, and writes `packages/design/adaptees/<item>.json`: the
+     memory a later PREVIEW diffs against. Not a component spec; nothing at runtime reads it.
+   - **`pnpm adapter digest <item>`** compares the vendored file to its record.
+     **`pnpm adapter preview <item>`** fetches again and reports what moved, per dimension,
+     with the Adapters above it; exit 1 if anything did.
+   - **Proved** on Switch, Combobox, Button and Card: each record digests to what the
+     vendored file digests to, and `tests/unit/adapter-digest.test.ts` holds that, so a
+     refresh without a re-ingest goes red. Digest diffs attribute a class change to STYLE
+     alone, a dropped slot to ANATOMY, a new union value to AXES, a swapped primitive to
+     BEHAVIOUR and DEPENDENCIES. The first Combobox record was wrong — the raw registry text
+     imports an `IconPlaceholder`, not lucide — which is how the icon transform was found to
+     be needed. Byte identity is reported and not relied on: the CLI also strips `cn-*`
+     classes, so Card and Combobox differ in bytes while matching on every dimension.
+   - **Not built:** NORMALIZE and SCAFFOLD (a hand-authored `normalize.json` the tool checks
+     for coverage of every digested axis and part; a one-shot Adapter skeleton). They are
+     the second wave, and each needs a first component to be built against.
 
 ## Verification
 
