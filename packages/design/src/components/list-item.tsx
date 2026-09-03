@@ -9,12 +9,19 @@ import type { NativeProps } from '#lib/props'
  * Intent    ADOPT
  * Owns      none
  * Contract  inherited from the element
+ *
+ * A ROW, NOT A COLUMN. Its children lie across it, centred, the first at the start and the
+ * last at the end: content, then the action. It was a column, and the employee screen's
+ * Save button stretched to the row's full width under the contact's name; the gallery
+ * showed the same bar in every list. Wrapping the pair in a row Stack on every screen
+ * would have repeated one layout decision everywhere it is made, so it is made here, once.
+ * Stacked content inside a row -- a name over a phone number -- is a Stack, as it was.
  */
 export function ListItem({ children, ...props }: NativeProps<'li'>) {
   return (
     <li
       className={cn(
-        'flex flex-col',
+        'flex items-center justify-between',
         STYLE.space.tight.gap,
         STYLE.shape.control,
         STYLE.stroke.width,
