@@ -3,6 +3,7 @@
 import { Grid } from '@xforge/design/components/grid'
 import { Specimen } from '@xforge/design/components/specimen'
 import { SWATCH_ROLES, Swatch, type SwatchRole } from '@xforge/design/components/swatch'
+import manifest from '@xforge/design/style-manifest.json' with { type: 'json' }
 import { useEffect, useRef, useState } from 'react'
 
 /**
@@ -63,6 +64,21 @@ const readBack = (el: HTMLElement, kind: 'fill' | 'stroke'): string => {
   return `${hex(s.backgroundColor)} / ${hex(s.color)} · ${contrast(s.backgroundColor, s.color)}`
 }
 
+/**
+ * Where the role stands against Material 3, from the manifest the generator writes: the M3
+ * role it carries, or the reason it exists with none. The swatch's class names the token
+ * root (`bg-surface-lowest` -> `surface-lowest`); the manifest is keyed by that root.
+ */
+const placement = (role: SwatchRole): string => {
+  const recipe = SWATCH_ROLES[role]
+  const root = (recipe.stroke ?? recipe.fill).replace(/^(bg|border)-/, '')
+  const placed = (manifest.roles as Record<string, { m3: string | null; why?: string }>)[root]
+  if (!placed) {
+    return ''
+  }
+  return placed.m3 ? `M3 ${placed.m3}` : `no M3 role: ${placed.why ?? ''}`
+}
+
 export function ColourPlate() {
   const swatches = useRef<(HTMLDivElement | null)[]>([])
   const [values, setValues] = useState<readonly string[]>([])
@@ -84,7 +100,11 @@ export function ColourPlate() {
   return (
     <Grid columns={4}>
       {ROLES.map((role, i) => (
-        <Specimen footer={values[i] || undefined} key={role} label={role}>
+        <Specimen
+          footer={[values[i], placement(role)].filter(Boolean).join(' · ') || undefined}
+          key={role}
+          label={role}
+        >
           <Swatch
             colour={role}
             ref={(el) => {
