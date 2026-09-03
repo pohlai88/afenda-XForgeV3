@@ -63,7 +63,12 @@ export function Plates({
       {words.recipe.length > 0 ? <Text tone="muted">Recipe {codes(words.recipe)}</Text> : null}
       <Grid columns={columns}>
         {states.map((state, i) => (
-          <Specimen footer={codes(words.footnotes[i] ?? [])} key={state.name} label={state.name}>
+          <Specimen
+            footer={codes(words.footnotes[i] ?? [])}
+            key={state.name}
+            label={state.name}
+            surface={state.surface}
+          >
             <div
               ref={(el) => {
                 stages.current[i] = el

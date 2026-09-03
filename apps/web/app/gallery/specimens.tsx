@@ -39,6 +39,8 @@ import type { ReactNode } from 'react'
 export interface State {
   readonly name: string
   readonly node: ReactNode
+  /** The surface the state is judged on; the page ground unless a card is named. */
+  readonly surface?: 'card' | 'page'
 }
 
 export interface Group {
@@ -135,6 +137,16 @@ export const GALLERY: readonly Group[] = [
             <Button variant="outline">Try again</Button>
           </Stack>
         ),
+      },
+      {
+        name: 'Variants, on a card',
+        node: (
+          <Stack direction="row" gap="normal">
+            <Button>Save</Button>
+            <Button variant="outline">Try again</Button>
+          </Stack>
+        ),
+        surface: 'card',
       },
       {
         name: 'Disabled',
@@ -571,6 +583,18 @@ export const GALLERY: readonly Group[] = [
             <Text tone="danger">danger — a failed write</Text>
           </Stack>
         ),
+      },
+      {
+        name: 'Tones, on a card',
+        node: (
+          <Stack gap="tight">
+            <Text>default — the ink every screen reads in</Text>
+            <Text tone="muted">muted — secondary, measured against page and card</Text>
+            <Text tone="success">success — what a change means, not its sign</Text>
+            <Text tone="danger">danger — a failed write</Text>
+          </Stack>
+        ),
+        surface: 'card',
       },
       {
         name: 'Variants',
