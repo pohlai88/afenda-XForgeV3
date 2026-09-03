@@ -76,7 +76,10 @@ export const ALERT_TONE = {
  * `role` IS NOT A PROP. The table decides it (Decision 11), and the spread below comes
  * after `role={role}`, so a caller's `role` would have won silently -- rendered to check:
  * `<Alert tone="danger" role="status">` came out as `status`. Omitting it from the Target
- * makes the override a compile error instead of a runtime surprise nothing asserts.
+ * makes the override a compile error for a prop written at the call site. A SPREAD of a
+ * wider object still passes -- excess-property checks do not reach JSX spreads -- which
+ * is why every Adapter that forwards props into an Alert narrows its own type by hand
+ * (`resource-boundary.tsx`).
  */
 export interface AlertProps extends Omit<ComponentProps<'div'>, 'role'> {
   readonly tone?: keyof typeof ALERT_TONE

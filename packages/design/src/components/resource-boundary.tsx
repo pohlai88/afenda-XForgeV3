@@ -38,8 +38,11 @@ import { Text } from '#components/text'
  * The props it does not name are forwarded to the Alert, so `data-testid` lands
  * on the failure surface — which is the element a test wants anyway.
  */
-// The Alert's own props minus the tone this boundary fixes. It was `ComponentProps<'div'>`
-// until Alert stopped accepting `role`; the compiler found this copy of the wider type.
+// The Alert's own props minus the tone this boundary fixes. NARROWED BY HAND, NOT BY
+// THE COMPILER: this was `ComponentProps<'div'>`, and spreading that wider type into
+// `<Alert>` still compiles after Alert dropped `role`, because excess-property checks do
+// not apply to a JSX spread (tried: tsc reported nothing). So a boundary that kept the
+// wide type would have re-admitted `role` to its own callers through the back door.
 export class ResourceBoundary extends Component<
   Omit<AlertProps, 'tone'>,
   { readonly failed: boolean }
