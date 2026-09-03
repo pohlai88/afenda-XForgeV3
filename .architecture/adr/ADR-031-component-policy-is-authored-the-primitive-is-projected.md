@@ -235,7 +235,7 @@ match found; sources examined are listed in the table.
 | [MDN — ARIA `alert` role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role) | 2026-09-03 | "Setting `role="alert"` is equivalent to setting `aria-live="assertive"` and `aria-atomic="true"`"; "must be used sparingly and only in situations where the user's immediate attention is required" |
 | [MDN — ARIA live regions](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions) | 2026-09-03 | "adding both `aria-live` and `role="alert"` causes double speaking issues in VoiceOver on iOS"; for `status`: "To maximize compatibility, add a redundant `aria-live="polite"`" |
 | ["The Story of My Failed Design System"](https://dev.to/hsskey/the-story-of-my-failed-design-system-a85) | 2026-09-03 | an XML DSL plus JSX generator; "implement just the minimum functionality needed to confirm whether our target scale would actually work" — weak, one account, the only direct match |
-| `git ls-files \| xargs wc -l`, this tree | 2026-09-03 | policy 13,962 (25 files) : authored components 503 (13 files); vendored 7,279 (61 files) |
+| `git ls-files \| xargs wc -l`, the tree of the morning of 2026-09-03 (before steps 4–6) | 2026-09-03 | policy 13,962 (25 files) : authored components 503 (13 files); vendored 7,279 (61 files). After step 6: 59 vendored files, verbatim |
 | `packages/design/src/components/button.tsx`, `card.tsx`, in full | 2026-09-03 | `export * from '#components/ui/button'` / `…/card` — the adaptee's `Props & VariantProps<…>` re-exported as the Target; the No-Leakage Law violated by two of the thirteen |
 | `projection/index.mjs:63-76`, `foundations/index.mjs:240`, `assistive-technology.mjs:487`, as of the first draft | 2026-09-03 | the dead surfaces named in Context; all three files were changed by Migration step 4 and the lines now describe the deletion or the wiring |
 | `alert.tsx:80` (first draft; the role is read from the table at `:90` now) against the five e2e lines | 2026-09-03 | the live `role` contradiction, since resolved by Migration step 1 |
@@ -273,11 +273,13 @@ Vitest's `browser` project drives the Playwright Chromium the e2e suite already 
 (`@vitest/browser-playwright`, one devDependency through the catalog; no database, no app
 build, no DOM emulation). `switch.browser.test.tsx` clicks, presses Space, holds a
 controlled value and refuses when disabled; `combobox.browser.test.tsx` types to open and
-filter, chooses an option and receives the Xforge id, sees the label, presses Escape. What
-this does NOT prove: every other Adapter's behaviour (eleven have none of their own; Button
-and Card inherit the element's), and anything about appearance — the browser project loads
-no stylesheet, and gives the switch a stand-in box because Tailwind compiles utilities only
-inside the application build.
+filter, chooses an option and receives the Xforge id, sees the label, presses Escape; after
+the third review, Switch's adopted form words are exercised too — `name`, `value` and
+`required` through a real `<form>`, `readOnly` under click and key. What this does NOT
+prove: every other Adapter's behaviour (eleven have none of their own; Button and Card
+inherit the element's), anything about appearance — the browser project loads no
+stylesheet, and gives the switch a stand-in box because Tailwind compiles utilities only
+inside the application build — and anything beyond one headless Chromium on one machine.
 
 **That the Anti-Corruption Layer applies at component grain, or what NORMALIZE costs.** Both
 sources describe system-to-system integration, and Microsoft says the pattern "might not be
@@ -527,7 +529,9 @@ studio blocks, the existing tests for proof.
 ### Maintenance — a separate loop, and foreign code is inspected before it may mutate the tree
 
 ```
-  PREVIEW    shadcn view · add --dry-run · --diff : what would change, before it does
+  PREVIEW    shadcn diff FIRST -- the CLI's own answer -- then a fetch into the scratch
+             project and `cmp` against the (verbatim) tree; `view` / `--dry-run` for a
+             single item. Step 6 learned the order: `cmp` against a restyled tree is noise
      ▼
   ASSESS     the change on the seven DIGEST dimensions; provider and context changes first
      ▼
@@ -711,11 +715,12 @@ decision.
   without an adapter subsystem?
 
 Four yeses freeze the **creation core**: the five stages, the No-Leakage Law,
-Adapter-versus-Composition, the Primitive and Compound classes, ADOPT and INSPIRE. **The
-maintenance loop, TRANSLATE, the Integration Adapter class and the registry future stay
-provisional** until each has been exercised for real — an upstream change reconciled, a
-Figma source translated, a specialist library isolated, a registry consumer. Any no is the
-finding, recorded here.
+Adapter-versus-Composition, the Primitive and Compound classes, ADOPT and INSPIRE. What
+else is frozen and what stays provisional is stated ONCE, in the Status line, and moved
+there by the Migration record: TRANSLATE, the Integration Adapter class and the registry
+future wait for a Figma source translated, a specialist library isolated, a registry
+consumer; the maintenance loop's own status is whatever its last run (step 6) earned. Any
+no is the finding, recorded here.
 
 ## Alternatives considered
 
@@ -866,9 +871,10 @@ In this order, each its own commit, rollback `git revert`:
    - **B — an upstream overwrite without editing a vendored file?** YES for the half that
      can be answered: no file under `src/components/ui/` changed during the slice, and the
      one `--overwrite` of the day (commit `bfbdc88`, 59 primitives; toast and questionnaire
-     are no longer in the registry and were left as they were) edited nothing by hand. The
-     RECONCILE half is UNTESTED: that refresh predates the Adapters, and no upstream change
-     has arrived since they existed. The maintenance loop therefore stays provisional.
+     were no longer in the registry and were left in place until step 6 deleted them)
+     edited nothing by hand. The RECONCILE half was UNTESTED at this point: that refresh
+     predates the Adapters, and no upstream change had arrived since they existed. Step 6
+     is the run that followed.
    - **C — any adaptee vocabulary leaking through a public Target?** NONE THAT THE LEXICAL
      CHECK OR A READING FINDS. `adapter-schema.test.ts` is green over fifteen authored
      files; Switch's adopted words are Base UI's by explicit decision, listed one by one,
@@ -890,15 +896,18 @@ In this order, each its own commit, rollback `git revert`:
    - **PREVIEW.** `shadcn diff` in the scratch project: "No updates found." A fresh
      `add --overwrite` of the 59 into scratch and `cmp` against the tree: **59 of 59
      differ**. The two signals disagreed, so ASSESS had to say which was right.
-   - **ASSESS.** Normalised through the repository's own fix command
-     (`biome check --write --skip=correctness/noUnusedImports`), the fresh bytes match the
+   - **ASSESS.** Normalised the way the repository's fix hook normalises (`pnpm run fix` is
+     `ultracite fix`, Biome underneath; reproduced on the scratch copies as
+     `biome check --write --skip=correctness/noUnusedImports`), the fresh bytes match the
      tree **59 of 59**: zero upstream content change. The tree was not the registry's bytes
      — the `pnpm run fix` PostToolUse hook had restyled the morning's copies before the
      Biome `!!` exclusion took effect (today the same command touches nothing under
      `ui/`, measured). Two files in the tree no longer exist in the registry:
      `toast.tsx` (upstream moved to sonner) and `questionnaire.tsx`; nothing imports
      either. Seven-dimension inventory: no anatomy, behaviour, state, axis, style, a11y
-     or dependency change anywhere.
+     or dependency change anywhere — which means the inventory's power to discriminate is
+     as unexercised as RECONCILE's; what this run proved of ASSESS is the adjudication
+     between two disagreeing PREVIEW signals, not the seven questions.
    - **REFRESH.** The 59 landed as verbatim registry bytes (Decision 7, amended), and the
      two removed items were deleted. 61 → 59 files under `ui/`.
    - **RECONCILE.** Five authored files sit above refreshed primitives — `button`,
@@ -948,13 +957,17 @@ for machinery that is not built and are rejected with it.
    `react-dom/client`, no framework helper, a stand-in box for the switch
    (`browser.setup.ts`) because Tailwind's utilities exist only in the application build.
    Switch: click toggles and reports the value; Space toggles; a controlled value holds;
-   disabled refuses both. Combobox: typing opens and filters; choosing reports the Xforge
-   id and shows the label; the empty message; Escape closes. **Observed 2026-09-03:** first
+   disabled refuses both; `readOnly` shows the state and refuses to change it; `name`,
+   `value` and `required` reach the hidden checkbox a real `<form>` reads — invalid and
+   empty unchecked, valid with `[["notify","yes"]]` checked. Combobox: typing opens and
+   filters; choosing reports the Xforge id and shows the label; the empty message; Escape
+   closes. **Observed 2026-09-03:** first
    run red on all four Switch cases for the wrong reason (no box — "waiting for element to
    be visible"), then red on one for a real reason (`element()` before React's first
-   commit), then 8/8 green. Mutations: Switch not forwarding `onCheckedChange` → the
-   callback cases red while the DOM still toggled; Combobox reporting the option object →
-   the selection case red.
+   commit), then 8/8 green; 10/10 after the form and `readOnly` cases joined. Mutations: Switch
+   not forwarding `onCheckedChange` → the three callback cases red while the DOM still
+   toggled; Switch not spreading its props → all six Switch cases red; Combobox reporting
+   the option object → the selection case red.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person
@@ -1001,3 +1014,13 @@ removed, their paths ignored, and `screenshotFailures` turned off so a red run l
 tree as it found it (law 33). The reviewer also noted, correctly, that the browser proof is
 one headless Chromium on one machine and that Switch's adopted form words (`name`, `value`,
 `required`, `readOnly`) are forwarded but not exercised by a browser case.
+
+A fourth pass after Migration step 6 and the two added Switch cases: every claim about the
+tree and history confirmed (59 files verbatim, two deletions, the hook and the exclusion,
+the new cases and their header); nothing blocking. Its drift findings, all fixed here: the
+freeze boundary was stated twice (§Beta exit and Status) and now has one owner; ASSESS's
+seven-question inventory is marked as unexercised as RECONCILE, since every answer was
+"none"; the PREVIEW diagram now puts `shadcn diff` first, as the run learned; the fix
+command is named as `pnpm run fix` / `ultracite fix`; "two form-word cases" no longer
+counts `readOnly` as one; the morning's evidence row says which tree it measured; and the
+exit-B sentence about toast and questionnaire says step 6 deleted them.
