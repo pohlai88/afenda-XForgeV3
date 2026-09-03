@@ -9,9 +9,10 @@ capability is enforced by emission: 52 `@utility` blocks, no colour role project
 `token-names.json`; every authored recipe selects those symbols and no Target exposes
 `className` or `style`; the app no longer scans the vendored tree for classes; the numeric
 spacing scale is closed and the zero is a role; arbitrary bracket values are refused on any
-prefix. What remains is the freeze question, which law 34 answers with evidence this ADR does
-not yet have: the qualification tests are written and green on this machine, and nothing
-external has run them. No section is FROZEN and none may be.
+prefix. The qualification tests are written and green on the author's machine, and three
+evidence-reviewer passes are recorded below; that is the whole qualification this repository
+runs (CLAUDE.md, Repository workflow: no CI by decision). No section is FROZEN yet: the freeze
+is the owner's call on that evidence, not a gate this ADR is waiting for.
 
 **Measurements in the Context below are the ones the decisions were taken on**, made on
 2026-09-03 before the steps ran. Where a step changed a figure, the sentence says so or the
@@ -280,8 +281,8 @@ For the relationship layer itself:
   local design, qualified only by tests written the same day by the same hands, and graded by
   no source. The register's `no-direct-match` for the relationship layer covers what they
   extend, not them.
-- **Nothing external qualifies any of this.** Only Verification does; its cases are written
-  and green on this machine, and nothing external has run them.
+- **Nothing external qualifies any of this.** Only Verification does, on the author's machine,
+  by the owner's decision to run no CI; its cases are written, red first, and green.
 
 ## Decision
 

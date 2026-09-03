@@ -46,7 +46,8 @@
 29. Architecture invariants are enforced by guards, not prose.
 30. New infrastructure requires a named, measured pain.
 31. Generalise a platform abstraction only after a second real use case proves it.
-32. pnpm verify is the canonical definition of repository green.
+32. The fast loop is the canonical definition of repository green: Biome, tsc, the
+    unit and browser Vitest projects, and byte-identical regeneration.
 33. A green verification run leaves the checkout exactly as it found it.
 34. Search prior art before proposing an architectural pattern. Record what
     was found, what was rejected, and what it does not prove. Do not build
@@ -97,61 +98,33 @@ name overclaims is worse than none, which is why it is called
 
 # Repository workflow
 
-The initial commits established this repository and its default branch. That
-was a one-time exception: with zero commits there is nothing to branch from,
-and reconstructing history to satisfy a branch-first rule would have bought
-ceremony, not architecture.
+Work lands on feature/* branches and is pushed to origin
+(github.com/pohlai88/afenda-XForgeV3). That is the whole workflow.
 
-  From here onward: feature/* -> PR -> main. No direct commits to main.
+THERE IS NO CI, NO PULL-REQUEST GATE AND NO BRANCH PROTECTION, BY DECISION. The
+owner removed them on 2026-09-03 after they became a blocker on the coding road
+rather than a check on it: `.github/workflows/verify.yml` does not exist,
+`package.json` declares no `verify` script, and `tooling/verify/` holds one
+helper. Earlier versions of this file described all three as if they existed
+and prescribed a protection rule "before the first merge"; that text is gone,
+and the decision is recorded here so it is not re-litigated by the next agent
+reading an older ADR.
 
-Recorded here so it is not re-litigated, and so "the last change went straight
-to main" is never cited as precedent.
+  Do not propose CI, a required check, a pull-request gate, branch protection
+  or a `verify` script. Do not append "no CI ran" or "the PR is the check" to
+  a report. Report what ran and its result, then stop.
 
-The default branch was renamed master -> main when the remote was created. The
-rename is only safe because .github/workflows/verify.yml was renamed with it: it
-triggered on `branches: [master]`, so on a repository whose default branch is
-`main` the required check would never have run. A required check that cannot
-fire is worse than no check, because the branch protection UI reports it as
-configured.
-
-main is NOT protected. Being precise about that matters, because a policy
-written down reads exactly like a policy enforced:
-
-  branch policy         DEFINED     this file
-  CI workflow           DEFINED     .github/workflows/verify.yml
-  remote CI execution   NOT SHOWN   nothing has ever run it
-  branch protection     NOT ACTIVE  the remote exists, nothing is set
-
-That last row read "there is no remote to configure" until 2026-09-01, when it
-was found stale by the simple act of looking: origin has been
-github.com/pohlai88/afenda-XForgeV3 for some time, carrying main and four
-feature branches. The paragraph documenting facts that drift from their
-documentation had itself drifted. Corrected in place AND recorded, because the
-correction is the more useful artefact -- and because nothing here could have
-caught it. No guard reads a claim about a remote.
-
-One consequence is easy to assume wrongly, so it is written down: pushing a
-feature branch runs NO CI. verify.yml triggers on pull_request and push against
-main only. A pushed branch is off-machine backup; the pull request is the check.
-
-The remote exists. Apply exactly this, BEFORE the first merge and not after --
-a protection rule weaker than the local gate teaches people the gate is
-optional:
-
-  required check        verify / verify  (pnpm verify --ci)
-  pull request          required, no direct push, no force push
-  up to date            branch must be current with main before merge
-  BLOCKED stages        a failure, which --ci already enforces
-
-  Until then: Phase 1 may be DEVELOPED locally, and may not be MERGED to
-  main. Phase 1 is where the tenant isolation proof lands, and that is the
-  one check that most needs to have actually executed somewhere other than the
-  machine that wrote it.
+"Green" therefore means one thing: the fast loop passed on the machine that made
+the change, with every command's exit code read directly (never through a pipe
+into grep or tail -- two commits landed red that way on 2026-09-03). An ADR's
+qualification is that loop plus the evidence-reviewer passes recorded in the
+ADR. "Nothing external has run this" is true of everything here and is not a
+finding.
 
 # Phases
 
 .architecture/state.json holds the phase, and the repository owns it. The
-environment may raise it locally and may never lower it; --ci ignores it.
+environment may raise it locally and may never lower it.
 
   Advancing currentPhase is a phase-COMPLETION event, never a phase-start one.
 
@@ -159,7 +132,7 @@ environment may raise it locally and may never lower it; --ci ignores it.
                              -> that phase's checks become mandatory HERE, and
                                 anything unbuilt goes red immediately
   all exit criteria pass     commit currentPhase: tenancy
-                             -> from that commit on, CI requires it permanently
+                             -> from that commit on, the loop requires it permanently
 
 So currentPhase reads "the furthest phase this architecture has CERTIFIED", not
 "the phase someone is working on". A stage that reports PENDING during its own
@@ -192,72 +165,33 @@ subsystem.
 
 # Verification
 
-  pnpm verify:fast  the ONLY gate an agent runs. Humans too, while writing.
-  pnpm verify       a HUMAN, before committing anything executable. BLOCKED tolerated.
-  pnpm verify:ci    BLOCKED is a failure. CI MUST use this.
+The fast loop, run by whoever made the change -- agent or human -- with each
+command's exit code read directly:
 
-WHO RUNS WHICH, BEFORE WHICH ONE AND WHEN. An agent runs `verify:fast` and
-stops there. `pnpm verify` and `verify:ci` are human commands. An agent whose
-change needs the full gate SAYS SO and hands it over; it does not run it and
-report the result.
+  pnpm exec biome ci .                                   lint and format
+  pnpm exec tsc --noEmit -p tsconfig.json                types (tests included)
+  pnpm exec vitest run --project unit                    no database, no browser
+  pnpm exec vitest run --project browser                 Chromium; when behaviour changes
+  pnpm gen:tokens && git diff --exit-code packages/design/generated
+                                                         law 27: regeneration is byte-identical
 
-Two reasons, and the second is the one that would not be obvious later:
+That is the gate. There is no aggregate `pnpm verify`, no `--ci` mode and no
+BLOCKED state; the earlier design with those words was deleted with the guard
+subsystem (a3cf31b) and is not coming back. An agent runs the loop after every
+change that can alter a verdict and says which commands ran and what they
+returned. A prose change needs `biome ci` alone.
 
-  COST     the full gate shells four generators, a production build, a database
-           and a browser. An agent iterates -- ten edits become ten full gates,
-           and minutes each. The fast loop is twenty seconds and answers the
-           question the edit actually raised.
-  CUSTODY  the gate is the thing that decides "green". An agent reporting a
-           green the human did not witness moves the authority for that verdict
-           into a transcript. The gate exists to be run BY the person who is
-           about to commit.
+Two habits the loop cannot enforce and the repository keeps paying for:
 
-Read-only reporting -- `verify:list`, `verify:coverage` -- executes no stage and
-is not covered by this. Neither is a single stage's own command (`pnpm guards`,
-`vitest run --project unit`); those are how an agent narrows a failure the fast
-loop found. It is the AGGREGATE gate that is not an agent's to run.
+  RED FIRST   a new check is watched failing before the code that satisfies it
+              lands, and the commit message says what went red. A check that
+              has never failed is decoration (checks-that-can-fail skill).
+  EXIT CODES  `cmd | tail -1` reports tail's exit status. Write output to a
+              file and test the command's own status, or do not claim green.
 
-WHICH ONE, AND WHEN, for the human. The full gate is for changes that can alter
-behaviour. A commit of prose, a deletion of files nothing imports, a comment --
-the fast loop already answers those, and the full gate answers them in three
-minutes instead of twenty seconds.
-
-The first version of that rule said "before every commit", and that was worse
-than useless: it got applied to a markdown edit and to a three-file deletion,
-and defended as consistency. A rule followed past the reason for it is how a
-gate becomes something people route around, which is the failure this whole
-section exists to prevent. If a change cannot alter a verdict, the fast loop IS
-the check.
-
-The fast loop is guards, typecheck, lint and unit. The criterion is mechanical
-rather than a judgement about importance -- an authorship stage needs NO external
-service, NO build artefact and NO browser -- and each stage DECLARES it with
-`authorship: true` in tooling/verify/stages.mjs. The runner filters on that
-declaration and holds no list, so a stage that later grows a database leaves the
-fast loop by editing one line beside itself rather than by someone remembering.
-
-It names the stages it did not run, every single time, and says to run the full
-gate before committing. A fast check whose limits go unstated is the easiest
-thing in a repository to mistake for the gate -- and `--fast --ci` is refused
-outright, because the CI gate is not a subset of anything.
-
-That closing line is now also the HANDOVER POINT. For an agent it is not an
-instruction to run the full gate; it is the list to repeat to the human, so
-what remains unverified is stated rather than left as an absence. "The
-authorship loop is green and these stages did not run" is an honest report.
-"Verify is green" from an agent is not, because the agent did not run it.
-
-A stage is BLOCKED when its phase has started but a prerequisite is missing --
-no database, no browser. A check that did not run is not a check that passed,
-and without that distinction "verify was green" eventually comes to mean "the
-database tests never ran".
-
-The last stage asserts law 33: the gate must leave the checkout exactly as it
-found it. It is the only check here that does not depend on the source
-universe's category vocabulary being complete -- twice now, every tool agreed
-about a file and every tool was wrong, and a red build found it rather than a
-guard. Asking a behavioural question instead of a classification one catches
-that whole class, including the next category nobody has thought of yet.
+The database-backed projects (`contract`, `integration`, `architecture`) run
+when their subject changes, by the person with the database; law 33 still
+holds for them: a run leaves the checkout exactly as it found it.
 
 A question not answered here is answered in .architecture/adr/ — consult it
 rather than re-deciding. Changes to a FROZEN section arrive as an ADR, never as
