@@ -1110,7 +1110,7 @@ describe('typography role contracts (ADR-034)', () => {
     ])
     for (const [name, role] of Object.entries(foundations.TYPE_ROLES)) {
       for (const field of foundations.TYPE_ROLE_FIELDS) {
-        expect(field in role, `${name} omits ${field}`).toBe(true)
+        expect(Object.hasOwn(role as object, field), `${name} omits ${field}`).toBe(true)
       }
     }
   })
