@@ -1,3 +1,4 @@
+import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
 /**
@@ -70,10 +71,37 @@ export default defineConfig({
             ...NOT_THIS_CHECKOUT,
             '**/*.contract.test.ts',
             '**/*.integration.test.ts',
+            '**/*.browser.test.tsx',
             '**/tests/architecture/**',
           ],
           include: ['**/tests/**/*.test.{ts,tsx,mjs}'],
           name: 'unit',
+        },
+      },
+      {
+        extends: true,
+        test: {
+          // A REAL BROWSER, for the one question a server render cannot answer:
+          // does behaviour survive the Adapter. ADR-031's beta proved Switch and
+          // Combobox by `renderToStaticMarkup` only, and its review found the two
+          // file headers pointing at a browser suite that did not exist. This is
+          // that suite: Vitest's browser mode over the Playwright Chromium the e2e
+          // suite already installs, no database, no app build, no DOM emulation.
+          //
+          //   vitest run --project browser      Chromium, headless
+          //
+          // `*.browser.test.tsx` is the partition, excluded from `unit` above so a
+          // file is never collected twice under two environments.
+          browser: {
+            enabled: true,
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+            provider: playwright(),
+          },
+          exclude: NOT_THIS_CHECKOUT,
+          include: ['**/tests/**/*.browser.test.tsx'],
+          name: 'browser',
+          setupFiles: ['./packages/design/tests/browser.setup.ts'],
         },
       },
       {

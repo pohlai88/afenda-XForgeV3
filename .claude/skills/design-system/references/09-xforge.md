@@ -142,8 +142,10 @@ folded into rewritten specs. Naming suites is the same mistake as naming paths, 
 directory up: the spec files are the most volatile thing this document could point at.
 
 ```
-  what runs        ls e2e/*.spec.ts                (browser + database; not the fast loop)
-                   packages/design/tests/*.test.tsx (per-component contract tests, fast loop)
+  what runs        ls e2e/*.spec.ts                        (browser + database; not the fast loop)
+                   packages/design/tests/*.test.tsx         (per-component contract tests, node)
+                   packages/design/tests/*.browser.test.tsx (behaviour in Chromium:
+                                                             vitest run --project browser)
   what is gated    NOTHING MECHANICALLY TODAY. The registry that derived the gated set
                    and the stage that read it are both deleted (ae4e294, a3cf31b).
                    A component's announcement contract is the table beside it, e.g.

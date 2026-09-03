@@ -7,9 +7,9 @@ revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation c
 Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. **The
 maintenance loop is NOT frozen**: no upstream change has arrived since an Adapter existed,
 so RECONCILE has never run. TRANSLATE, the Integration Adapter class and the registry future
-remain provisional. The Adapter file schema is normative and enforced. Verification 1 and 5
-exist, were observed RED first, and were green on the author's run; behaviour survival for
-Switch and Combobox is owed to a browser check that does not exist yet (see "does NOT prove").
+remain provisional. The Adapter file schema is normative and enforced. Verification 1, 5 and
+6 exist, were observed RED first, and were green on the author's run; behaviour survival for
+Switch and Combobox is proved in Chromium (Verification 6).
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
 ADR-033 (entry points; the vendored tree is unexported).
@@ -265,14 +265,18 @@ Primitive>`, or an exported alias of an internal alias of the adaptee's type, pa
 Exit question C below is answered to the strength of that check plus a reading, and no
 further.
 
-**That behaviour survives the Adapter.** The two beta cases chosen for behaviour — Switch
-and Combobox — are proved by server render only: role, state attributes, closed state,
-forwarded words. Nothing toggles the Switch or opens the Combobox anywhere in this
-repository: no e2e spec mounts either, and this package has no DOM test environment. PROVE's
-second question is unanswered for exactly the components it was asked of. Owed: a browser
-render of each, the day a screen mounts one or a DOM environment is added — whichever is
-first — and until then the two component files say so rather than pointing at a suite
-that does not exist.
+**That behaviour survives the Adapter — now proved for the two beta cases, and only for
+them.** The final review found Switch and Combobox proved by server render alone while
+their headers pointed at a browser suite that did not exist. The suite exists now:
+Vitest's `browser` project drives the Playwright Chromium the e2e suite already installs
+(`@vitest/browser-playwright`, one devDependency through the catalog; no database, no app
+build, no DOM emulation). `switch.browser.test.tsx` clicks, presses Space, holds a
+controlled value and refuses when disabled; `combobox.browser.test.tsx` types to open and
+filter, chooses an option and receives the Xforge id, sees the label, presses Escape. What
+this does NOT prove: every other Adapter's behaviour (eleven have none of their own; Button
+and Card inherit the element's), and anything about appearance — the browser project loads
+no stylesheet, and gives the switch a stand-in box because Tailwind compiles utilities only
+inside the application build.
 
 **That the Anti-Corruption Layer applies at component grain, or what NORMALIZE costs.** Both
 sources describe system-to-system integration, and Microsoft says the pattern "might not be
@@ -845,8 +849,10 @@ In this order, each its own commit, rollback `git revert`:
 
    **Exit questions.**
    - **A — one method, no special-case architecture?** YES. Three adapters and a
-     composition, no new mechanism; the only infrastructure change in the whole beta was
-     one JSX-runtime line in `vitest.config.ts`, needed by the first component test.
+     composition, no new mechanism; the only infrastructure change in the beta itself was
+     one JSX-runtime line in `vitest.config.ts`, needed by the first component test. After
+     the review, one more: the `browser` Vitest project and its provider, added to prove
+     behaviour (Verification 6) — a test environment, not a component mechanism.
    - **B — an upstream overwrite without editing a vendored file?** YES for the half that
      can be answered: no file under `src/components/ui/` changed during the slice, and the
      one `--overwrite` of the day (commit `bfbdc88`, 59 primitives; toast and questionnaire
@@ -866,7 +872,8 @@ In this order, each its own commit, rollback `git revert`:
    No-Leakage, Adapter-versus-Composition, Primitive and Compound, ADOPT and INSPIRE.
    **The maintenance loop stays provisional** (B's untested half), and so do TRANSLATE,
    the Integration Adapter class and the registry future — none was exercised. Behaviour
-   survival for Switch and Combobox is owed (see "does NOT prove").
+   survival for Switch and Combobox, owed at the time of the review, is proved in Chromium
+   (Verification 6).
 
 ## Verification
 
@@ -898,6 +905,18 @@ for machinery that is not built and are rejected with it.
    red on 15 cases (two wholesale re-exports, thirteen missing headers), then red on
    `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases at
    thirteen files, 61 at fifteen. Lexical: see "does NOT prove" for what it cannot see.
+6. **`packages/design/tests/{switch,combobox}.browser.test.tsx`** — the `browser` Vitest
+   project (`vitest run --project browser`): Playwright Chromium, headless, mounted with
+   `react-dom/client`, no framework helper, a stand-in box for the switch
+   (`browser.setup.ts`) because Tailwind's utilities exist only in the application build.
+   Switch: click toggles and reports the value; Space toggles; a controlled value holds;
+   disabled refuses both. Combobox: typing opens and filters; choosing reports the Xforge
+   id and shows the label; the empty message; Escape closes. **Observed 2026-09-03:** first
+   run red on all four Switch cases for the wrong reason (no box — "waiting for element to
+   be visible"), then red on one for a real reason (`element()` before React's first
+   commit), then 8/8 green. Mutations: Switch not forwarding `onCheckedChange` → the
+   callback cases red while the DOM still toggled; Combobox reporting the option object →
+   the selection case red.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person

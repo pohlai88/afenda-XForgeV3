@@ -24,6 +24,7 @@
     "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "@vitest/browser-playwright": "catalog:",
     "@xforge/api": "workspace:*",
     "@xforge/api-client": "workspace:*",
     "@xforge/db": "workspace:*",

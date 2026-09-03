@@ -34,10 +34,9 @@ import {
  * object would make the caller's state Base UI's shape. The adapter maps both ways.
  *
  * WHAT IS PROVED HERE AND WHAT IS NOT. A server render shows the input, its role and
- * its closed state. Opening, traversal and selection are Base UI's and are proved by
- * NOTHING in this repository yet: no e2e spec mounts a Combobox and this package has no
- * DOM test environment. Owed, and recorded in ADR-031 ("does NOT prove") — stated
- * rather than implied.
+ * its closed state. Opening, filtering, selection, the id mapping under real events and
+ * Escape are proved in Chromium by `tests/combobox.browser.test.tsx`
+ * (`vitest run --project browser`).
  */
 
 export interface ComboboxOption {
