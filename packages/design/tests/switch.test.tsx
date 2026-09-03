@@ -53,9 +53,12 @@ describe('Switch keeps the primitive behaviour and exposes only Xforge words', (
   })
 
   it('does not expose the adaptee size axis', () => {
-    // A compile-time fact made visible: the Target has no `size`.
-    const props: Parameters<typeof Switch>[0] = {}
-    expect('size' in props).toBe(false)
+    // The refusal is the type, and tsc covers this file: the day `size` is adopted, this
+    // line fails the typecheck. (`'size' in {}` stood here before, and is false whatever
+    // the Target says -- a case that could not go red.)
+    // @ts-expect-error -- the Target has no size axis (Decision 4)
+    render({ size: 'sm' })
+    // What renders is upstream's default, untouched by the Adapter.
     expect(render({})).toContain('data-size="default"')
   })
 })
