@@ -72,7 +72,13 @@ export const ALERT_TONE = {
   { className: string; Icon: typeof Info; role: 'alert' | 'status' }
 >
 
-export interface AlertProps extends ComponentProps<'div'> {
+/**
+ * `role` IS NOT A PROP. The table decides it (Decision 11), and the spread below comes
+ * after `role={role}`, so a caller's `role` would have won silently -- rendered to check:
+ * `<Alert tone="danger" role="status">` came out as `status`. Omitting it from the Target
+ * makes the override a compile error instead of a runtime surprise nothing asserts.
+ */
+export interface AlertProps extends Omit<ComponentProps<'div'>, 'role'> {
   readonly tone?: keyof typeof ALERT_TONE
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { Component, type ComponentProps, type ErrorInfo } from 'react'
-import { Alert } from '#components/alert'
+import { Component, type ErrorInfo } from 'react'
+import { Alert, type AlertProps } from '#components/alert'
 import { Button } from '#components/button'
 import { Text } from '#components/text'
 
@@ -38,8 +38,10 @@ import { Text } from '#components/text'
  * The props it does not name are forwarded to the Alert, so `data-testid` lands
  * on the failure surface — which is the element a test wants anyway.
  */
+// The Alert's own props minus the tone this boundary fixes. It was `ComponentProps<'div'>`
+// until Alert stopped accepting `role`; the compiler found this copy of the wider type.
 export class ResourceBoundary extends Component<
-  ComponentProps<'div'>,
+  Omit<AlertProps, 'tone'>,
   { readonly failed: boolean }
 > {
   // ANNOTATED, not inferred. Without the type, `{ failed: false }` infers the

@@ -17,7 +17,14 @@ import { cn } from '#lib/cn'
  * `aria-busy` marks the region as not-yet-settled, which is what stops assistive
  * technology reading a half-built subtree as if it were the answer.
  */
-export function Status({ children, className, ...props }: ComponentProps<'p'>) {
+/**
+ * The three live-region attributes are the contract this component owns, so they are
+ * not props: a caller's `role="alert"` or `aria-live="assertive"` would otherwise win
+ * through the spread (rendered to check) and turn a polite wait into an interruption.
+ */
+export type StatusProps = Omit<ComponentProps<'p'>, 'aria-busy' | 'aria-live' | 'role'>
+
+export function Status({ children, className, ...props }: StatusProps) {
   return (
     <p
       aria-busy="true"

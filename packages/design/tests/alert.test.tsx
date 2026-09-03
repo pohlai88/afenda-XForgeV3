@@ -27,7 +27,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ALERT_TONE, Alert } from '../src/components/alert'
+import { ALERT_TONE, Alert, type AlertProps } from '../src/components/alert'
 
 const tones = Object.keys(ALERT_TONE) as (keyof typeof ALERT_TONE)[]
 
@@ -57,6 +57,14 @@ describe('Alert announces what its contract table says', () => {
     for (const tone of tones) {
       expect(['alert', 'status']).toContain(ALERT_TONE[tone].role)
     }
+  })
+
+  it('refuses a caller-supplied role at compile time', () => {
+    // Rendered before the Target changed, `role="status"` on a danger Alert WON: the spread
+    // follows `role={role}`. The refusal is the type, and tsc covers this file.
+    // @ts-expect-error -- the role is the table's (Decision 11), not the caller's
+    const illegal: AlertProps = { role: 'status', tone: 'danger' }
+    expect(illegal.tone).toBe('danger')
   })
 
   it('binds colour to a redundant cue in every row', () => {
