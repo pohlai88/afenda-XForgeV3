@@ -1,4 +1,9 @@
 /**
+ * Reading the style contract back from a rendered tree: which symbols a set of classes wears,
+ * and, across several frames, what they share versus what each adds. Facts about the
+ * manifest and how STYLE symbols map to classes, so they live beside it; the gallery and
+ * a Storybook decorator both read them from here.
+ *
  * The footnote rule, as a pure function so it can be held to.
  *
  * A group of frames drew a set of STYLE symbols each. What every frame shares is the

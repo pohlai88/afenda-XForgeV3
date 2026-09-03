@@ -6,9 +6,9 @@ import { Specimen } from '@xforge/design/components/specimen'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import manifest from '@xforge/design/style-manifest.json' with { type: 'json' }
+import { symbolsOn } from '@xforge/design/style-words'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import type { State } from './specimens'
-import { symbolsOn } from './words'
 
 /**
  * A plate of samples with what each one measured read back beneath it.

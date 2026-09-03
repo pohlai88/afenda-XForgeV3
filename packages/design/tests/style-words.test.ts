@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { partition, symbolsOn } from '../app/gallery/words'
+import { partition, symbolsOn } from '../src/lib/style-words'
 
 describe('partition: recipe once, differences per frame', () => {
   it('the recipe is what every frame shares; each footnote is what that frame adds', () => {

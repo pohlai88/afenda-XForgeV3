@@ -185,7 +185,7 @@ describe('the gallery keeps its shape', () => {
 
   it('imports the design package through its components and its manifest, nothing else of it', () => {
     const allowed =
-      /^(@xforge\/design\/components\/[a-z-]+|@xforge\/design\/style-manifest\.json|react|next\/navigation|\.\/[a-z-]+)$/
+      /^(@xforge\/design\/components\/[a-z-]+|@xforge\/design\/style-manifest\.json|@xforge\/design\/style-words|react|next\/navigation|\.\/[a-z-]+)$/
     for (const file of files) {
       const source = readFileSync(join(GALLERY_DIR, file), 'utf8')
       const specifiers = [...source.matchAll(/from '([^']+)'/g)].map((m) => m[1] ?? '')

@@ -17,6 +17,7 @@
     "./components/ui/*": null,
     "./policy": "./policy/index.mjs",
     "./style-manifest.json": "./generated/style-manifest.json",
+    "./style-words": "./src/lib/style-words.ts",
     "./tailwind-theme.css": "./generated/tailwind-theme.css",
     "./tokens.css": "./generated/tokens.css",
     "./tokens.json": "./policy/tokens.json"
@@ -39,6 +40,7 @@
     "tailwind-merge": "catalog:"
   },
   "devDependencies": {
+    "@storybook/react-vite": "catalog:",
     "tailwindcss": "catalog:",
     "vitest": "catalog:"
   }
