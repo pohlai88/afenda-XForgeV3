@@ -12,7 +12,7 @@ import {
 /**
  * Combobox — pick one option from a list, by typing to narrow it.
  *
- * Adaptee   shadcn `combobox` (style base-nova, refreshed 2026-09-03) over Base UI Combobox:
+ * Adaptee   shadcn `combobox` (style base-nova) over Base UI Combobox:
  *           Root + Input + Content + List + Item + Empty, six of its sixteen parts
  * Intent    ADOPT
  * Owns      none — the axis a screen would write does not exist yet

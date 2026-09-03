@@ -6,7 +6,7 @@ import { Switch as Primitive } from '#components/ui/switch'
 /**
  * Switch — a binary control: on or off, and it takes effect at once.
  *
- * Adaptee   shadcn `switch` (style base-nova, refreshed 2026-09-03) over Base UI Switch
+ * Adaptee   shadcn `switch` (style base-nova) over Base UI Switch
  * Intent    ADOPT
  * Owns      none — no screen has asked for a size; upstream's `size` stays behind the boundary
  * Contract  inherited from the adaptee: `role="switch"`, `aria-checked`, Space and Enter,

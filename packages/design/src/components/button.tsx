@@ -4,7 +4,7 @@ import { Button as Primitive } from '#components/ui/button'
 /**
  * Button — the one control a person presses to make something happen.
  *
- * Adaptee   shadcn `button` (style base-nova, refreshed 2026-09-03) over Base UI Button
+ * Adaptee   shadcn `button` (style base-nova) over Base UI Button
  * Intent    ADOPT
  * Owns      variant (primary | outline)
  * Contract  inherited from the adaptee: a real `<button>`, Enter AND Space, focus ring

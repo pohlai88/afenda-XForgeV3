@@ -4,7 +4,7 @@ import { Card as Primitive } from '#components/ui/card'
 /**
  * Card — a bounded surface that groups one thing's content.
  *
- * Adaptee   shadcn `card` (style base-nova, refreshed 2026-09-03)
+ * Adaptee   shadcn `card` (style base-nova)
  * Intent    ADOPT
  * Owns      none
  * Contract  inherited from the adaptee: a plain `div`; the caller names it (`aria-labelledby`)
