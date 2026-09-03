@@ -23,7 +23,7 @@ import { describe, expect, it } from 'vitest'
 // gets its own sentence rather than inheriting a wrong one.
 import * as foundations from '../policy/foundations/index.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
-import { flatten, generate } from '../policy/generators/tokens.mjs'
+import { flatten, generate, TOKEN_PACKAGES } from '../policy/generators/tokens.mjs'
 // @ts-expect-error -- tooling is untyped .mjs, deliberately outside the app graph
 import * as policy from '../policy/index.mjs'
 
@@ -1416,4 +1416,26 @@ describe('colour role contracts (ADR-034)', () => {
       /root 'info' names foreground 'semantic\.color\.info-foreground', which does not exist/,
     )
   })
+})
+
+/**
+ * THE SHIPPED CONFIGURATION, THROUGH THE SAME CALL THE CLI MAKES. Every other case here
+ * runs `generate(source)` with the defaults, and the defaults select NO type roles -- so
+ * on 2026-09-03 the whole unit suite was green while `node generators/tokens.mjs` refused
+ * the shipped token file (body's tracking, measured with no font size). The suite had
+ * never run the package's own options. Now it does, and it holds the committed stylesheet
+ * to what those options generate (law 27).
+ */
+describe('the shipped package configuration', () => {
+  it.each([...TOKEN_PACKAGES])(
+    '$pkg generates, and the committed tokens.css is what it generates',
+    (pkg) => {
+      const { css } = generate(source, {
+        closes: pkg.closes,
+        typeRoles: foundations.typeRolesFor(pkg.typeRoles),
+      })
+      const committed = readFileSync(join(ROOT, pkg.pkg, 'generated/tokens.css'), 'utf8')
+      expect(css).toBe(committed)
+    },
+  )
 })

@@ -151,7 +151,7 @@ const ROOT = join(import.meta.dirname, '../../../..')
  * added here cannot appear over there, and `packages/design` keeps the
  * three-step scale it shipped with until it is deleted.
  */
-const TOKEN_PACKAGES = deepFreeze([
+export const TOKEN_PACKAGES = deepFreeze([
   {
     // Colour, weight, size and leading: the four namespaces a role competes in.
     // Every one of them was reachable past the vocabulary until this line --

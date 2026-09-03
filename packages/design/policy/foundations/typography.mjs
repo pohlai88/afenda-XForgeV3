@@ -514,7 +514,7 @@ export function assertTypographyCoverage(tokens, roles = TYPE_ROLES, shims = TYP
     if (!TYPE_NAMESPACES.some((ns) => path.startsWith(ns))) {
       continue
     }
-    if (!named.has(path) && !(path in shims)) {
+    if (!(named.has(path) || path in shims)) {
       throw new Error(
         `'${path}' is named by no type role and listed as no shim -- a typography token is a ` +
           "role's field or a vendor shim with a reason (TYPE_TOKEN_SHIMS)",
@@ -642,12 +642,12 @@ const byRank = (roles, weightOf = () => 0) =>
  * this function COLLECTS failures rather than throwing -- so the refusal is
  * turned back into a reported failure, carrying its own message.
  */
-const pixelSize = (raw, rootPx) => {
+const pixelSize = (raw, rootPx, fontPx) => {
   if (typeof raw !== 'string') {
     return { px: null, why: `is ${JSON.stringify(raw)}, which is not a dimension` }
   }
   try {
-    const px = toPixels(raw, { rootPx })
+    const px = toPixels(raw, { fontPx, rootPx })
     return px === null
       ? { px: null, why: `is '${raw}', a rem with no usable root size to measure it against` }
       : { px }
@@ -787,7 +787,10 @@ export function typographyFailures(resolvedByMode, roles = TYPE_ROLES, rootPx = 
       // dimension. No ordering rule is attached to it: Material-style positive
       // tracking at small sizes and tighter tracking at display sizes are both legal.
       if (policy.tracking !== NONE && read(resolved, policy.tracking) !== undefined) {
-        const tracking = pixelSize(read(resolved, policy.tracking), rootPx)
+        // Tracking is an em length, measured against the role's OWN size. The first run
+        // with a role that declared tracking refused '0em' as "a rem with no usable root",
+        // because nothing had ever passed the font size down -- no role had tracking.
+        const tracking = pixelSize(read(resolved, policy.tracking), rootPx, px)
         if (tracking.px === null) {
           failures.push(`${label}: ${role} tracking ${tracking.why}`)
         }
