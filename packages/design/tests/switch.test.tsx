@@ -6,8 +6,10 @@
  * the DOM as `aria-checked` AND as Base UI's `data-checked`/`data-unchecked` (the
  * state vocabulary a stylesheet reads); `disabled` reaches `aria-disabled` and
  * `data-disabled` and takes it out of the tab order; and nothing the Target does not
- * name is exposed. The toggle itself is Base UI's (ownership table) and is exercised
- * by the browser suite, not here.
+ * name is exposed. The toggle itself is Base UI's (ownership table) and is NOT proved
+ * anywhere in this repository yet: no e2e spec mounts a Switch and this package has no
+ * DOM test environment. That is owed, and ADR-031 says so ("does NOT prove"), rather
+ * than pointed at a suite that does not exist.
  *
  * MUTATION WATCHED GO RED, 2026-09-03: with `{...props}` no longer spread onto the
  * primitive, four of the five cases went red; only the axis case, which asserts what is

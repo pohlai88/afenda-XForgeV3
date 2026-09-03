@@ -30,10 +30,10 @@
  * The move is not tidying. Those two files answered a question about a DESIGN
  * SYSTEM CONTRACT -- which profile owes evidence, and what evidence is -- from
  * inside the verify runner, one directory away from the `interaction.profile`
- * declarations that decide it. `packages/design/policy/contracts.ts` states the
- * profile; `keyboard.mjs` states what that profile owes a keyboard; this states
- * what it owes a screen reader. Those are three parts of one fact and they now
- * sit together.
+ * declarations that decided it. At the time, `contracts.ts` stated the profile
+ * (deleted in ae4e294; under ADR-031 a component's own table does); `keyboard.mjs`
+ * states what a profile owes a keyboard; this states what it owes a screen
+ * reader. Those are three parts of one fact and the two that survive sit together.
  *
  * ── THE GATE USED TO READ ONE INTEGER ──────────────────────────────────────
  *

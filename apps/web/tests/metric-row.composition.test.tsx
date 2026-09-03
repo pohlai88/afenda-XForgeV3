@@ -72,6 +72,8 @@ function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Me
   )
 }
 
+// -- end of the composition; everything below is the test that reads it back --
+
 const sample: readonly Metric[] = [
   { baseline: 'than last month', delta: '+3', label: 'Headcount', value: '128' },
   { baseline: 'of 42 submitted', label: 'Timesheets pending', value: '7' },
@@ -97,10 +99,14 @@ describe('a studio statistics block reduces to Xforge components', () => {
 
   it('is a composition, not an adapter: Xforge components only, no styling of its own', () => {
     const source = readFileSync(new URL(import.meta.url), 'utf8')
-    const composition = source.slice(
-      source.indexOf('function MetricRow'),
-      source.indexOf('const metrics'),
-    )
+    // Sliced between the function and the sentinel comment above `sample`. The first
+    // pass sliced to `'const metrics'`, a declaration that no longer existed; it worked
+    // by matching its own literal, which is the kind of accident a check should not
+    // rest on. The sentinel's first occurrence is the comment, before this test's text.
+    const end = source.indexOf('// -- end of the composition')
+    expect(end).toBeGreaterThan(0)
+    const composition = source.slice(source.indexOf('function MetricRow'), end)
+    expect(composition.length).toBeGreaterThan(200)
     expect(composition).not.toContain('className')
     // Judged on the import specifiers, not on the file's text: this very assertion
     // would otherwise be the match. Nothing private to the design package, nothing

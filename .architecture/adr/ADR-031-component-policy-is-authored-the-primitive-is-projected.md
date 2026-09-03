@@ -2,10 +2,14 @@
 
 **Status:** Accepted (amended) · 2026-09-03 · Proposed, amended, and Migration steps 1–5
 landed the same day against the tree as measured. Decision 9 (generation) REJECTED with two
-revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **core FROZEN** on four
-yeses to the exit questions (Migration step 5); TRANSLATE, the Integration Adapter class and
-the registry future remain provisional. The Adapter file schema is normative and enforced.
-Verification 1 and 5 exist, were observed RED first, and are green.
+revisit triggers. §Beta, the Xforge Component Adaptation Protocol: **creation core FROZEN**
+— the five stages, the No-Leakage Law, Adapter-versus-Composition, the Primitive and
+Compound classes, ADOPT and INSPIRE — on the beta record in Migration step 5. **The
+maintenance loop is NOT frozen**: no upstream change has arrived since an Adapter existed,
+so RECONCILE has never run. TRANSLATE, the Integration Adapter class and the registry future
+remain provisional. The Adapter file schema is normative and enforced. Verification 1 and 5
+exist, were observed RED first, and were green on the author's run; behaviour survival for
+Switch and Combobox is owed to a browser check that does not exist yet (see "does NOT prove").
 **Relates to:** ADR-028 (Tailwind + shadcn base), ADR-029 (one UI system), ADR-024
 (governance ratio), ADR-025 (AT evidence is risk-based), ADR-032 (no restoration),
 ADR-033 (entry points; the vendored tree is unexported).
@@ -53,7 +57,9 @@ and refreshed only by `shadcn add --overwrite`. The 232 and the 23 are upstream'
 until a component crosses into the authored layer. What crosses is decided one component at
 a time, above the file.
 
-What remains, measured on 2026-09-03 with `git ls-files | xargs wc -l`:
+What remained on the morning of 2026-09-03, measured with `git ls-files | xargs wc -l`
+(after Migration step 4 the policy tree is 13,518 lines in 24 files, and the authored
+layer is fifteen files; the argument below was made against these numbers):
 
 ```
   packages/design/policy/**              13,962 lines   25 files
@@ -71,16 +77,19 @@ generating its own defects. Inside the 13,962:
   `cssPolicy` is registered and its import-time assertion runs; the module it guards is
   otherwise dead.
 - `interaction/**` (2,735 lines): its declared subject, `contracts.ts`, was deleted in
-  `ae4e294`. `policy/index.mjs`, `interaction/index.mjs` and `keyboard.mjs` still cite it;
-  `assistive-technology.mjs:487` dynamically imports it in a CLI block nothing invokes;
-  `contractsOwingAtEvidence` and `ledgerFailures` have no caller.
+  `ae4e294`. `policy/index.mjs`, `interaction/index.mjs` and `keyboard.mjs` still cited it;
+  `assistive-technology.mjs` (then at line 487) dynamically imported it in a CLI block
+  nothing invoked; `contractsOwingAtEvidence` and `ledgerFailures` had no caller.
 - the component token tier: declared, edge-guarded, ceilinged at 12 (`vocabulary.mjs:49`,
-  enforced at `generators/tokens.mjs:712`), **0 members**.
+  enforced at `generators/tokens.mjs:713`), **0 members**.
 - `assertDensityAxis` (`foundations/density.mjs:189`): "still runs nowhere", in the words
-  of `foundations/index.mjs:240`.
+  `foundations/index.mjs:240` then carried (that paragraph now records the wiring).
 
-And one live defect that belongs to no layer: `packages/design/src/components/alert.tsx:80`
-renders `role="status"` for every tone, while five end-to-end assertions expect
+Line numbers in this section are as of the first draft; Migration step 4 changed every
+one of these files, and each is described in its landed state there.
+
+And one live defect that belonged to no layer: `packages/design/src/components/alert.tsx`
+(then line 80) rendered `role="status"` for every tone, while five end-to-end assertions expect
 `role="alert"` on danger and warning surfaces — `e2e/read-state-conformance.spec.ts:177,207`,
 `e2e/write-outcome-conformance.spec.ts:154,175`, `e2e/error-containment.spec.ts:84`. Commit
 `dc6fdad` recorded this exact defect ("TONE_ANNOUNCEMENT flattened to a constant, and the
@@ -90,7 +99,7 @@ rule is a four-row table. Today it has two owners that disagree: `alert.tsx:44-4
 opposite. Neither reads the other. That is this ADR's whole question at the smallest scale
 it comes in.
 
-**And two of the thirteen authored files are not Adapters at all.** `button.tsx` and
+**And two of the thirteen authored files were not Adapters at all.** `button.tsx` and
 `card.tsx` are, in full, `export * from '#components/ui/button'` and the same for card:
 wholesale re-exports of the adaptee, written on 2026-09-03 as ADR-033's transitional
 facades. Upstream `Button`'s props are `ButtonPrimitive.Props & VariantProps<typeof
@@ -135,8 +144,8 @@ repository already does it: `text.tsx` and `stack.tsx` carry cva recipes.
 
 **Compile-to-framework.** Mitosis ("Write components once, compile to every framework";
 Deutsche Bahn's DB UX ships React/Angular/Vue/Web Components from one source — its
-`packages/components/package.json` depends on Mitosis and the tree holds 377 `.lite.tsx`
-sources; the README does not say so) and Stencil ("Stencil is a compiler that generates Web
+`packages/components/package.json` depends on Mitosis and the tree holds several hundred
+`.lite.tsx` sources; the README prose does not say so) and Stencil ("Stencil is a compiler that generates Web
 Components"; "Stencil's primary objective is providing amazing tools for design systems and
 component libraries"; Ionic; `@stencil/react-output-target` "Generate[s] React functional
 component wrappers with JSX bindings") are real production compilers. Both compile from a **component source** and both are justified by
@@ -204,12 +213,12 @@ match found; sources examined are listed in the table.
 | [Ark UI](https://ark-ui.com/) · [About](https://ark-ui.com/docs/overview/about) | 2026-09-03 | "Unstyled UI components for your Design System"; "Framework Agnostic… React, Solid, Vue, and Svelte"; "built on top of Zag.js" — parity via shared machines, not generated components |
 | [cva](https://cva.style/docs) | 2026-09-03 | "type-safe, variant-driven class names… first-class Tailwind CSS support"; a class-name builder, not a component emitter |
 | [tailwind-variants](https://www.tailwind-variants.org/docs/introduction) | 2026-09-03 | slots as "named parts — `base`, `icon`, `label`"; component hand-written |
-| [Panda CSS — Recipes](https://panda-css.com/docs/concepts/recipes) | 2026-09-03 | `defineRecipe` / `defineSlotRecipe` are config; "Use config recipes for design-system components and leaner CSS." |
+| [Panda CSS — Recipes](https://panda-css.com/docs/concepts/recipes) · [Slot recipes](https://panda-css.com/docs/concepts/slot-recipes) | 2026-09-03 | `defineRecipe` is config; "Use config recipes for design-system components and leaner CSS."; slot recipes: "To define a config slot recipe, import the `defineSlotRecipe` function" |
 | [Chakra UI v3 — Recipes](https://chakra-ui.com/docs/theming/recipes) | 2026-09-03 | declarative `defineRecipe`; `useRecipe`; "Use the `chakra` function to create a component from a recipe." — a factory call in hand-written code |
 | [Park UI](https://park-ui.com/) · [Introduction](https://park-ui.com/docs/introduction) | 2026-09-03 | "built with Ark UI and Panda CSS"; installed by CLI or by copying "component source code" — source, not a generator |
 | [Mitosis](https://github.com/BuilderIO/mitosis) · [DB UX core-web](https://github.com/db-ux-design-system/core-web) | 2026-09-03 | "Write components once, compile to every framework"; DB UX ships React/Angular/Vue/Web Component packages — its `packages/components/package.json` depends on Mitosis (the README does not say so; the repository does) — justified by four targets |
 | [Stencil](https://stenciljs.com/docs/introduction) · [React output target](https://stenciljs.com/docs/react) | 2026-09-03 | "Stencil is a compiler that generates Web Components"; "Stencil's primary objective is providing amazing tools for design systems and component libraries"; "Generate React functional component wrappers with JSX bindings" — mechanical bindings |
-| [Zag.js](https://zagjs.com/overview/introduction) | 2026-09-03 | "Powered by state machines"; framework bindings are the consumer's, the page shows no generated component |
+| [Zag.js](https://zagjs.com/overview/introduction) | 2026-09-03 | "Powered by state machines"; "We provide adapters for JS frameworks so you can use it in React, Solid, or Vue 3" — hand-written adapters around a shared machine, no generated component |
 | [shadcn — Docs](https://ui.shadcn.com/docs) | 2026-09-03 | "You have full control to customize and extend the components to your needs"; "edit the button code directly" — the stance Decision 7 inverts |
 | [shadcn — Registry](https://ui.shadcn.com/docs/registry) · [registry-item.json](https://ui.shadcn.com/docs/registry/registry-item-json) · [Examples](https://ui.shadcn.com/docs/registry/examples) | 2026-09-03 | "A distribution system for code"; the item schema declares `files`, `dependencies`, `devDependencies`, `registryDependencies`, `cssVars`, `meta`; target aliases resolve from `components.json` "so the same registry item works in projects using `@/`, custom TypeScript aliases, package imports or workspace package exports" |
 | [shadcn — GitHub registries](https://ui.shadcn.com/docs/registry/github) | 2026-09-03 | "Review the item definition, especially `files`, `target`, `dependencies`, `devDependencies`, `registryDependencies` and `envVars`"; "Prefer pinned refs"; `--dry-run`, `--diff`, `--view` |
@@ -227,15 +236,15 @@ match found; sources examined are listed in the table.
 | ["The Story of My Failed Design System"](https://dev.to/hsskey/the-story-of-my-failed-design-system-a85) | 2026-09-03 | an XML DSL plus JSX generator; "implement just the minimum functionality needed to confirm whether our target scale would actually work" — weak, one account, the only direct match |
 | `git ls-files \| xargs wc -l`, this tree | 2026-09-03 | policy 13,962 (25 files) : authored components 503 (13 files); vendored 7,279 (61 files) |
 | `packages/design/src/components/button.tsx`, `card.tsx`, in full | 2026-09-03 | `export * from '#components/ui/button'` / `…/card` — the adaptee's `Props & VariantProps<…>` re-exported as the Target; the No-Leakage Law violated by two of the thirteen |
-| `projection/index.mjs:63-76`, `foundations/index.mjs:240`, `assistive-technology.mjs:487` | 2026-09-03 | the dead surfaces named in Context |
-| `alert.tsx:80` against the five e2e lines | 2026-09-03 | the live `role` contradiction |
+| `projection/index.mjs:63-76`, `foundations/index.mjs:240`, `assistive-technology.mjs:487`, as of the first draft | 2026-09-03 | the dead surfaces named in Context; all three files were changed by Migration step 4 and the lines now describe the deletion or the wiring |
+| `alert.tsx:80` (first draft; the role is read from the table at `:90` now) against the five e2e lines | 2026-09-03 | the live `role` contradiction, since resolved by Migration step 1 |
 | `vocabulary.mjs:49,77` · `generators/tokens.mjs:712` · `generated/FOUNDATIONS.md` | 2026-09-03 | the component tier, its edge boundary and ceiling exist and hold 0 of 12 |
 | `packages/design/src/contracts.ts` @ `ae4e294^` | 2026-09-03 | the slot grammar was deferred under law 30, pending measured pain |
 | Not retrieved: W3C WCAG technique ARIA22 (HTTP 403); carbondesignsystem.com rendered page (truncated, replaced by the repository MDX) | 2026-09-03 | recorded; nothing below rests on either |
 
 ### What prior art does NOT prove
 
-**That recipe-as-data is needed at thirteen components.** The field runs it at fifty and
+**That recipe-as-data is needed at fifteen components.** The field runs it at fifty and
 more. Here it is over-qualified, not under; the danger is mandating it where a component
 owns no axis at all, which is why Decision 1 makes recipe and contract EARNED.
 
@@ -247,19 +256,38 @@ that state is exposed. They say nothing about whether a wrapper here forwards it
 dropped `data-checked` is invisible until a selector silently matches nothing. Asserted,
 never assumed: it is PROVE's second question in §Beta.
 
-**That the existing thirteen are Adapters.** The paragraph above worries about a wrapper
-dropping `data-checked`. The failure actually present in the tree is the opposite: two
-wrappers that forward everything, the adaptee's public type included. No source above
-addresses type-level leakage and no existing test detects it — `package-exports.test.ts`
-checks the specifier, `design-system-classes.test.ts` checks class names, tsc is satisfied.
-Verification 5 is the check this ADR owes for that, and it is named, not written.
+**That the thirteen that existed were Adapters.** The paragraph above worries about a
+wrapper dropping `data-checked`. The failure actually present in the first draft's tree was
+the opposite: two wrappers that forwarded everything, the adaptee's public type included.
+No source above addresses type-level leakage. Verification 5 now checks it — LEXICALLY. It
+reads one line per `export type|interface`; a multi-line `extends ComponentProps<typeof
+Primitive>`, or an exported alias of an internal alias of the adaptee's type, passes it.
+Exit question C below is answered to the strength of that check plus a reading, and no
+further.
 
-**That the Anti-Corruption Layer applies at component grain.** Both sources describe
-system-to-system integration, and Microsoft says the pattern "might not be suitable when
-the new and legacy systems have no significant semantic differences." Whether a shadcn
-Button and an Xforge Button differ enough to pay for NORMALIZE per component is asserted
-by the protocol and shown by nothing yet. The ACL sources name the shape; they say nothing
-about its cost at this scale. The beta slice is where that cost is measured.
+**That behaviour survives the Adapter.** The two beta cases chosen for behaviour — Switch
+and Combobox — are proved by server render only: role, state attributes, closed state,
+forwarded words. Nothing toggles the Switch or opens the Combobox anywhere in this
+repository: no e2e spec mounts either, and this package has no DOM test environment. PROVE's
+second question is unanswered for exactly the components it was asked of. Owed: a browser
+render of each, the day a screen mounts one or a DOM environment is added — whichever is
+first — and until then the two component files say so rather than pointing at a suite
+that does not exist.
+
+**That the Anti-Corruption Layer applies at component grain, or what NORMALIZE costs.** Both
+sources describe system-to-system integration, and Microsoft says the pattern "might not be
+suitable when the new and legacy systems have no significant semantic differences." The
+beta did NOT measure the cost: its three adapters own no axis, so NORMALIZE ran where there
+was nothing to normalise, and RECIPE and CONTRACT — sections 1 and 2 of the schema — were
+exercised only by Alert and Button, outside the slice. The cost is measured by the first
+adapter that owns an axis a screen asked for.
+
+**That the maintenance loop works.** PREVIEW → ASSESS → REFRESH → RECONCILE → PROVE has
+never run: the one `--overwrite` of the day (commit `bfbdc88`) predates the protocol, used
+no `shadcn view` or `--diff`, and landed on two `export *` facades that could not have gone
+red. Exit question B is "yes" for the half that says no vendored file is edited, and
+untested for the half that reconciles. The loop stays provisional until an upstream change
+arrives and is reconciled above the file.
 
 **That the axis vocabulary survives sixty components.** Thirteen are written. Hence the
 no-speculative-axis rule and the lifting rule in Decision 4.
@@ -348,7 +376,7 @@ four parts are decided differently:
 5. **State is never a variant.** `checked`, `open`, `selected`, `disabled`, `invalid` are
    behaviour, exposed as `data-*` by the adaptee.
 
-6. **Component tokens start at zero.** The thirteen authored components use none. The
+6. **Component tokens start at zero.** The fifteen authored components use none. The
    first is minted only with a written justification — *semantic role X cannot express this
    because …; this component must evolve independently because …* — which is what makes the
    existing ceiling useful rather than decorative.
@@ -669,10 +697,12 @@ decision.
 - **D.** Does the studio block reduce to existing Xforge primitives and compositions
   without an adapter subsystem?
 
-Four yeses freeze the **core**: the five stages, the maintenance loop, the No-Leakage
-Law, Adapter-versus-Composition, the Primitive and Compound classes, ADOPT and INSPIRE.
-**TRANSLATE, the Integration Adapter class and the registry future stay provisional**
-until each has a real consumer. Any no is the finding, recorded here.
+Four yeses freeze the **creation core**: the five stages, the No-Leakage Law,
+Adapter-versus-Composition, the Primitive and Compound classes, ADOPT and INSPIRE. **The
+maintenance loop, TRANSLATE, the Integration Adapter class and the registry future stay
+provisional** until each has been exercised for real — an upstream change reconciled, a
+Figma source translated, a specialist library isolated, a registry consumer. Any no is the
+finding, recorded here.
 
 ## Alternatives considered
 
@@ -749,7 +779,7 @@ In this order, each its own commit, rollback `git revert`:
    `default | outline`; Card is the root only. Verification 5 observed RED on both first.
    `emergency-contacts.tsx` wrote upstream's `variant="default"` and is now silent (primary
    is the default); `resource-boundary.tsx` reached the adaptee directly and now consumes
-   the authored Button. Question C is "yes" for Card.
+   the authored Button. Card no longer leaks (exit question C).
 3. **Provenance headers** — DONE 2026-09-03 on all thirteen authored files, per the
    owner's decision to apply the schema retroactively.
 4. **Dead surfaces — DONE 2026-09-03**, each resolved as decided rather than as listed:
@@ -817,18 +847,26 @@ In this order, each its own commit, rollback `git revert`:
    - **A — one method, no special-case architecture?** YES. Three adapters and a
      composition, no new mechanism; the only infrastructure change in the whole beta was
      one JSX-runtime line in `vitest.config.ts`, needed by the first component test.
-   - **B — an upstream overwrite without editing a vendored file?** YES. No file under
-     `src/components/ui/` changed during the slice, and the refresh loop was exercised
-     earlier the same day when all 59 primitives were re-fetched with `--overwrite` while
-     the authored layer stayed green.
-   - **C — any adaptee vocabulary leaking through a public Target?** NO. `adapter-schema.test.ts`
-     is green over fifteen authored files; Switch's adopted words are Base UI's by explicit
-     decision, listed one by one, not inherited.
+   - **B — an upstream overwrite without editing a vendored file?** YES for the half that
+     can be answered: no file under `src/components/ui/` changed during the slice, and the
+     one `--overwrite` of the day (commit `bfbdc88`, 59 primitives; toast and questionnaire
+     are no longer in the registry and were left as they were) edited nothing by hand. The
+     RECONCILE half is UNTESTED: that refresh predates the Adapters, and no upstream change
+     has arrived since they existed. The maintenance loop therefore stays provisional.
+   - **C — any adaptee vocabulary leaking through a public Target?** NONE THAT THE LEXICAL
+     CHECK OR A READING FINDS. `adapter-schema.test.ts` is green over fifteen authored
+     files; Switch's adopted words are Base UI's by explicit decision, listed one by one,
+     not inherited; `BUTTON_VARIANT`'s values (`'default'`, `'outline'`) are upstream's
+     words by the same explicit adoption — a distinction the check cannot make and a
+     reader did.
    - **D — does the studio block reduce to Xforge primitives and compositions without an
      adapter subsystem?** YES, with two vocabulary gaps recorded and nothing invented.
 
-   Four yeses freeze the core. **TRANSLATE, the Integration Adapter class and the registry
-   future stay provisional** — none was exercised.
+   Three clean yeses and one half: the **creation core** is frozen — five stages,
+   No-Leakage, Adapter-versus-Composition, Primitive and Compound, ADOPT and INSPIRE.
+   **The maintenance loop stays provisional** (B's untested half), and so do TRANSLATE,
+   the Integration Adapter class and the registry future — none was exercised. Behaviour
+   survival for Switch and Combobox is owed (see "does NOT prove").
 
 ## Verification
 
@@ -858,7 +896,8 @@ for machinery that is not built and are rejected with it.
    `typeof <adaptee import>`; a file imports `#components/ui/<x>` only if it is `<x>`'s
    adapter or `<x>` has none; the four provenance labels present. **Observed 2026-09-03:**
    red on 15 cases (two wholesale re-exports, thirteen missing headers), then red on
-   `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases.
+   `resource-boundary.tsx` for the bypass rule after it was added, then green — 53 cases at
+   thirteen files, 61 at fifteen. Lexical: see "does NOT prove" for what it cannot see.
 
 Recording what is not enforced: `adr-has-evidence` was deleted in `a3cf31b`, so the
 presence of sources, retrieval dates and a "does NOT prove" section is checked by a person
@@ -882,3 +921,15 @@ plus a dead Ark UI link, a DTCG draft cited where the stable spec should be, two
 inside quotation marks, three claims true but not on the cited page, "60 files" for 61, and
 two missing gaps (type-level leakage; ACL at component grain). All incorporated in this
 text; the blocking finding became Migration step 2 and Verification 5.
+
+A final `adr-evidence-reviewer` pass after Migration step 5 (HEAD `36f7ddc`): every URL
+re-fetched and every Migration claim checked against the tree — all steps CONFIRMED read-only.
+Two blocking findings, both about what "FROZEN" covered: behaviour survival for Switch and
+Combobox was proved by nothing, and two file headers said a browser suite did; and the
+maintenance loop was in the frozen core without ever having run. Both corrected here: the
+freeze is narrowed to the creation core, the loop stays provisional, the two headers say what
+is owed, and "does NOT prove" carries both gaps plus the lexical limits of Verification 5 and
+the unmeasured NORMALIZE cost. Non-blocking corrections: exit C reworded to the strength of
+its check, stale first-draft line numbers marked as such, thirteen → fifteen, 53 → 61 cases,
+the Zag and Panda rows, the Mitosis file count dropped, and the composition test's slice
+anchor made deliberate.

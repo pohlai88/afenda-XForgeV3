@@ -4,8 +4,8 @@
  * What a server render can prove: the assembled input carries the platform role and
  * its closed state; the Target's words reach the DOM (`placeholder`, `disabled`, the
  * label); the option list is not in the document while closed; and the Target does
- * not leak the adaptee's part vocabulary. Opening and selecting are Base UI's, proved
- * in a browser, not here.
+ * not leak the adaptee's part vocabulary. Opening and selecting are Base UI's and are
+ * not proved anywhere yet — no browser check mounts a Combobox; ADR-031 records the debt.
  *
  * MUTATIONS WATCHED, 2026-09-03: with `placeholder` no longer passed to the input, the
  * first case went red. With `disabled` removed from the INPUT the third case stayed
