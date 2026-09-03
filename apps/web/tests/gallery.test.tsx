@@ -16,6 +16,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ALERT_TONE } from '@xforge/design/components/alert'
 import { BUTTON_VARIANT } from '@xforge/design/components/button'
+import { GRID_COLUMNS } from '@xforge/design/components/grid'
+import { TEXT_TONE, TEXT_VARIANT } from '@xforge/design/components/text'
 import { createElement as h } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -73,6 +75,33 @@ describe('the rendered page carries every word', () => {
     for (const variant of Object.keys(BUTTON_VARIANT)) {
       expect(html, variant).toContain(`data-variant="${variant}"`)
     }
+  })
+
+  /**
+   * A state framed by nothing is scanned by nothing, and every check stays green. So each
+   * axis table a component exports is read here and every word in it must be on the page,
+   * stamped as data on the element that wears it. Red before Text exported its tables and
+   * stamped its axes (2026-09-04).
+   */
+  it('every Text tone and variant, stamped on a Text', () => {
+    for (const tone of Object.keys(TEXT_TONE)) {
+      expect(html, tone).toMatch(new RegExp(`data-slot="text"[^>]*data-tone="${tone}"`))
+    }
+    for (const variant of Object.keys(TEXT_VARIANT)) {
+      expect(html, variant).toMatch(new RegExp(`data-slot="text"[^>]*data-variant="${variant}"`))
+    }
+  })
+
+  it('every Grid column count', () => {
+    for (const columns of Object.keys(GRID_COLUMNS)) {
+      expect(html, columns).toContain(`data-columns="${columns}"`)
+    }
+  })
+
+  it('every Switch state the adaptee exposes: unchecked, checked, disabled', () => {
+    expect(html).toMatch(/data-slot="switch"[^>]*data-unchecked/)
+    expect(html).toMatch(/data-slot="switch"[^>]*data-checked/)
+    expect(html).toMatch(/data-slot="switch"[^>]*data-disabled/)
   })
 
   it('every Heading level', () => {
