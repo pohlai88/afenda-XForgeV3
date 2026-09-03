@@ -1439,3 +1439,215 @@ export const colorPolicy = definePolicy({
   id: 'foundation.color',
   kind: 'foundation',
 })
+
+/* ------------------------------------------------------- role contracts -- */
+
+/**
+ * A DESIGNED ABSENCE, as distinct from a field nobody wrote (ADR-034 Decision 2).
+ *
+ * `scrim` has no foreground because nothing is set in text on a scrim; that is a fact
+ * about the design, and it is written down as one. A slot that is simply missing is a
+ * defect, refused below, so that "no separate pressed colour exists" and "nobody
+ * decided" can never read the same.
+ */
+export const NONE = Symbol.for('xforge.design.none')
+
+/** The companions a colour root may declare, and the suffix each one wears in a token name. */
+export const COLOR_COMPANIONS = deepFreeze(['foreground', 'hover', 'pressed'])
+
+/**
+ * THE 48 SEMANTIC COLOUR TOKENS ARE 26 ROOTS, and until this table the grouping lived in
+ * the names: `card-foreground` belonged to `card` because of its suffix, and nothing read
+ * the suffix. That is the defect CLAUDE.md keeps a list of -- a fact with two sources that
+ * agree until they do not -- in its sixth appearance. `destructive` had a hover and no
+ * pressed, and no check could say whether that was a decision.
+ *
+ * Every root is declared, including the eleven with no companion. Every companion slot
+ * is a token reference or NONE; a missing slot is refused. The relationship lives inside
+ * the role rather than in a generic wrapper, because `scrim` is a scrim and not "a family
+ * with only a container".
+ *
+ * WHAT THIS TABLE IS NOT. `COLOR_ROLE_POLICIES` above says what each token PROVES about
+ * contrast (its kind and the contexts it is measured against). This table says which
+ * tokens are ONE ROLE. The two overlap in vocabulary and not in fact: `error-foreground`
+ * is `error`'s foreground here, and is measured against `card` and `page` there, because
+ * Text sets it on both.
+ */
+export const COLOR_ROLE_CONTRACTS = deepFreeze({
+  accent: {
+    base: 'semantic.color.accent',
+    foreground: 'semantic.color.accent-foreground',
+    hover: 'semantic.color.accent-hover',
+    pressed: 'semantic.color.accent-pressed',
+  },
+  background: {
+    base: 'semantic.color.background',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  border: {
+    base: 'semantic.color.border',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  card: {
+    base: 'semantic.color.card',
+    foreground: 'semantic.color.card-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  // An ACTION fill, like primary, secondary and accent -- each of which has a pressed
+  // state. destructive had a hover and no pressed, and nothing here could say whether
+  // that was a decision or an omission. It was an omission: this row is the decision,
+  // and the token it names was minted in ADR-034 Migration step 3.
+  destructive: {
+    base: 'semantic.color.destructive',
+    foreground: 'semantic.color.destructive-foreground',
+    hover: 'semantic.color.destructive-hover',
+    pressed: 'semantic.color.destructive-pressed',
+  },
+  disabled: {
+    base: 'semantic.color.disabled',
+    foreground: 'semantic.color.disabled-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  error: {
+    base: 'semantic.color.error',
+    foreground: 'semantic.color.error-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  field: {
+    base: 'semantic.color.field',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  foreground: {
+    base: 'semantic.color.foreground',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  info: {
+    base: 'semantic.color.info',
+    foreground: 'semantic.color.info-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  input: {
+    base: 'semantic.color.input',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  muted: {
+    base: 'semantic.color.muted',
+    foreground: 'semantic.color.muted-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  popover: {
+    base: 'semantic.color.popover',
+    foreground: 'semantic.color.popover-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  primary: {
+    base: 'semantic.color.primary',
+    foreground: 'semantic.color.primary-foreground',
+    hover: 'semantic.color.primary-hover',
+    pressed: 'semantic.color.primary-pressed',
+  },
+  ring: {
+    base: 'semantic.color.ring',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  scrim: {
+    base: 'semantic.color.scrim',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  secondary: {
+    base: 'semantic.color.secondary',
+    foreground: 'semantic.color.secondary-foreground',
+    hover: 'semantic.color.secondary-hover',
+    pressed: 'semantic.color.secondary-pressed',
+  },
+  'shadow-ambient': {
+    base: 'semantic.color.shadow-ambient',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  'shadow-key': {
+    base: 'semantic.color.shadow-key',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  sidebar: {
+    base: 'semantic.color.sidebar',
+    foreground: 'semantic.color.sidebar-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  'sidebar-accent': {
+    base: 'semantic.color.sidebar-accent',
+    foreground: 'semantic.color.sidebar-accent-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  'sidebar-border': {
+    base: 'semantic.color.sidebar-border',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  'sidebar-ring': {
+    base: 'semantic.color.sidebar-ring',
+    foreground: NONE,
+    hover: NONE,
+    pressed: NONE,
+  },
+  statutory: {
+    base: 'semantic.color.statutory',
+    foreground: 'semantic.color.statutory-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  success: {
+    base: 'semantic.color.success',
+    foreground: 'semantic.color.success-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+  warning: {
+    base: 'semantic.color.warning',
+    foreground: 'semantic.color.warning-foreground',
+    hover: NONE,
+    pressed: NONE,
+  },
+})
+
+/**
+ * The root a semantic colour token belongs to by its NAME. Used only to check the table
+ * against the names -- never the other way round. `sidebar-accent-foreground` is
+ * `sidebar-accent`'s foreground; `sidebar-border` is a root of its own, because `border`
+ * is not a companion.
+ */
+export function colorRootOf(name) {
+  for (const companion of COLOR_COMPANIONS) {
+    const suffix = `-${companion}`
+    if (name.endsWith(suffix) && name.length > suffix.length) {
+      return { companion, root: name.slice(0, -suffix.length) }
+    }
+  }
+  return { companion: null, root: name }
+}
