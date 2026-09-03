@@ -42,11 +42,14 @@ import { describe, expect, it } from 'vitest'
 interface Metric {
   /** The comparison, in words: "than last month", "of 42 submitted". */
   readonly baseline: string
-  /** Signed and worded, never colour alone: "+4%", "−2 days". */
-  readonly delta?: string
+  /**
+   * The change, as one thing: its text is signed and worded ("+4%", "−2 days"), and the
+   * trend -- what the change MEANS, decided by the screen and not by the sign -- cannot
+   * exist without that text. Two independent optionals let a trend stand alone and be
+   * silently ignored; one object makes rule 7 a property of the type.
+   */
+  readonly delta?: { readonly text: string; readonly trend?: 'danger' | 'success' }
   readonly label: string
-  /** What the delta MEANS for this metric. The screen decides; the sign does not. */
-  readonly trend?: 'danger' | 'success'
   readonly value: string
 }
 
@@ -71,8 +74,8 @@ function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Me
               h(Text, { variant: 'display' }, m.value),
               h(
                 Text,
-                { tone: m.delta && m.trend ? m.trend : 'muted' },
-                m.delta ? `${m.delta} ${m.baseline}` : m.baseline,
+                { tone: m.delta?.trend ?? 'muted' },
+                m.delta ? `${m.delta.text} ${m.baseline}` : m.baseline,
               ),
             ),
           ),
@@ -84,14 +87,18 @@ function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Me
 // -- end of the composition; everything below is the test that reads it back --
 
 const sample: readonly Metric[] = [
-  { baseline: 'than last month', delta: '+3', label: 'Headcount', trend: 'success', value: '128' },
+  {
+    baseline: 'than last month',
+    delta: { text: '+3', trend: 'success' },
+    label: 'Headcount',
+    value: '128',
+  },
   { baseline: 'of 42 submitted', label: 'Timesheets pending', value: '7' },
   // A falling number that is GOOD: the trend is the screen's judgement, not the sign's.
   {
     baseline: 'than last month',
-    delta: '−2%',
+    delta: { text: '−2%', trend: 'success' },
     label: 'Overtime hours',
-    trend: 'success',
     value: '212',
   },
 ]
@@ -123,7 +130,7 @@ describe('a studio statistics block reduces to Xforge components', () => {
     const toned = [
       ...html.matchAll(/<p class="[^"]*text-(?:success|error)-foreground[^"]*"[^>]*>([^<]*)</g),
     ]
-    expect(toned).toHaveLength(sample.filter((m) => m.delta && m.trend).length)
+    expect(toned).toHaveLength(sample.filter((m) => m.delta?.trend).length)
     for (const [, content] of toned) {
       expect(content).toMatch(/^[+−-]\d/)
     }
