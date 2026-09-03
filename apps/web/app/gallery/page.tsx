@@ -1,5 +1,7 @@
 import { Card } from '@xforge/design/components/card'
+import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
+import { Link } from '@xforge/design/components/link'
 import { Stack } from '@xforge/design/components/stack'
 import { Text } from '@xforge/design/components/text'
 import { notFound } from 'next/navigation'
@@ -22,10 +24,16 @@ import { GALLERY } from './specimens'
  *
  * It composes the design package and nothing else, and writes no class: the
  * components' props do not admit one, which is Decision 12 of ADR-031 as a type rather
- * than a rule. When the gallery needed a word the language lacked -- a grid, a frame --
- * the word was added to the language, not to this file.
+ * than a rule. When the gallery needed a word the language lacked -- a grid, a frame, a
+ * link -- the word was added to the language, not to this file.
  */
 export const metadata = { title: 'Gallery — Xforge' }
+
+/** `empty-state` reads as "Empty state": the file name is the id, the title is for people. */
+export const titleOf = (component: string): string =>
+  component.charAt(0).toUpperCase() + component.slice(1).replace(/-/g, ' ')
+
+const anchorOf = (component: string): string => `gallery-${component}`
 
 export default function GalleryPage() {
   if (process.env.NODE_ENV === 'production') {
@@ -34,7 +42,9 @@ export default function GalleryPage() {
   return (
     <Stack gap="loose">
       <Stack gap="tight">
-        <Heading level={1}>Gallery</Heading>
+        <Heading id="gallery-top" level={1}>
+          Gallery
+        </Heading>
         <Text tone="muted">
           Every authored component, in every word it owns, against the stylesheet the application
           builds. Each group prints its recipe once; beneath each frame, only the words that state
@@ -42,12 +52,24 @@ export default function GalleryPage() {
         </Text>
       </Stack>
       <Modes />
+      <nav aria-label="Index">
+        <Grid columns={4} gap="tight">
+          {GALLERY.map((group) => (
+            <Link href={`#${anchorOf(group.component)}`} key={group.component}>
+              {titleOf(group.component)}
+            </Link>
+          ))}
+        </Grid>
+      </nav>
       {GALLERY.map((group) => (
-        <Card aria-labelledby={`gallery-${group.component}`} key={group.component}>
+        <Card aria-labelledby={anchorOf(group.component)} key={group.component}>
           <Stack gap="normal">
-            <Heading id={`gallery-${group.component}`} level={2}>
-              {group.component}
-            </Heading>
+            <Stack direction="row" gap="normal">
+              <Heading id={anchorOf(group.component)} level={2}>
+                {titleOf(group.component)}
+              </Heading>
+              <Link href="#gallery-top">Top</Link>
+            </Stack>
             <Plates columns={group.columns} states={group.states} />
           </Stack>
         </Card>

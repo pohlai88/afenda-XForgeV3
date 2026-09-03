@@ -488,10 +488,17 @@ const probe = async (tab) =>
           word,
         }
       })
+      // The index: every in-page link must land on an element that exists.
+      const anchors = [...document.querySelectorAll('a[href^="#"]')].map(
+        (el) => el.getAttribute('href') ?? '',
+      )
+      const missingAnchors = anchors.filter((href) => !document.getElementById(href.slice(1)))
       const mode = {
+        anchors: anchors.length,
         background: root.getPropertyValue('--semantic-color-background').trim(),
         controlMinSize: root.getPropertyValue('--semantic-control-min-size').trim(),
         density: document.documentElement.dataset.density ?? '(none)',
+        missingAnchors,
         spaceNormal: root.getPropertyValue('--semantic-space-normal').trim(),
         theme: document.documentElement.dataset.theme ?? '(none)',
         typeBody: root.getPropertyValue('--semantic-type-body').trim(),
@@ -561,7 +568,7 @@ for (const [mode, r] of Object.entries(results)) {
   const total = r.rows.length + r.attrs.length
   lines.push(`## ${mode} — ${okCount} of ${total} rows match`, '')
   lines.push(
-    `root: data-theme=${r.mode.theme}, data-density=${r.mode.density}; control floor ${r.mode.controlMinSize}, space.normal ${r.mode.spaceNormal}, type.body ${r.mode.typeBody}, background ${r.mode.background}`,
+    `root: data-theme=${r.mode.theme}, data-density=${r.mode.density}; index ${r.mode.anchors} links, ${r.mode.missingAnchors.length} dangling; control floor ${r.mode.controlMinSize}, space.normal ${r.mode.spaceNormal}, type.body ${r.mode.typeBody}, background ${r.mode.background}`,
     '',
   )
   lines.push(
@@ -584,6 +591,14 @@ writeFileSync(join(OUT, 'gallery-proof.md'), lines.join('\n'))
 writeFileSync(join(OUT, 'gallery-proof.json'), JSON.stringify(results, null, 2))
 const summary = Object.entries(results).map(([m, r]) => {
   const bad = [...r.rows, ...r.attrs].filter((x) => !x.ok)
+  for (const href of r.mode.missingAnchors) {
+    bad.push({
+      component: 'index',
+      expected: 'an element with that id',
+      rendered: `${href} -> nothing`,
+      word: 'link target',
+    })
+  }
   const detail = bad
     .map((b) => `${b.component}/${b.word} [${b.rendered} vs ${b.expected}]`)
     .join('; ')

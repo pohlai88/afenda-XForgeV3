@@ -91,6 +91,22 @@ describe('the rendered page carries every word', () => {
     }
   })
 
+  it('an index link per group, and every in-page link lands on an element that exists', () => {
+    const hrefs = [...html.matchAll(/href="#([^"]+)"/g)].map((m) => m[1] ?? '')
+    const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1] ?? ''))
+    expect(hrefs.length).toBeGreaterThanOrEqual(GALLERY.length + 1)
+    for (const target of hrefs) {
+      expect(ids, `#${target}`).toContain(target)
+    }
+    for (const group of GALLERY) {
+      expect(hrefs).toContain(`gallery-${group.component}`)
+    }
+    // The way back sits beside every group heading (a specimen may add one more).
+    expect(hrefs.filter((href) => href === 'gallery-top').length).toBeGreaterThanOrEqual(
+      GALLERY.length,
+    )
+  })
+
   it('every state sits in a frame, inside a grid', () => {
     const states = GALLERY.reduce((n, g) => n + g.states.length, 0)
     const frames = html.match(/data-slot="specimen"/g)?.length ?? 0

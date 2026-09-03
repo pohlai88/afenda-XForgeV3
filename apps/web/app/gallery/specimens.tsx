@@ -6,6 +6,7 @@ import { Combobox } from '@xforge/design/components/combobox'
 import { EmptyState } from '@xforge/design/components/empty-state'
 import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
+import { Link } from '@xforge/design/components/link'
 import { List } from '@xforge/design/components/list'
 import { ListItem } from '@xforge/design/components/list-item'
 import { ResourceBoundary } from '@xforge/design/components/resource-boundary'
@@ -361,6 +362,31 @@ export const GALLERY: readonly Group[] = [
             <Text>
               Every employee should have at least one contact we can reach outside working hours.
             </Text>
+          </Stack>
+        ),
+      },
+    ],
+  },
+  {
+    component: 'link',
+    states: [
+      {
+        name: 'In prose: underlined, in the page ink',
+        node: (
+          <Text>
+            Back to <Link href="#gallery-top">Employees</Link>.
+          </Text>
+        ),
+      },
+      {
+        name: 'An index, one destination current',
+        node: (
+          <Stack direction="row" gap="normal">
+            <Link href="#gallery-alert">Alert</Link>
+            <Link current href="#gallery-link">
+              Link
+            </Link>
+            <Link href="#gallery-card">Card</Link>
           </Stack>
         ),
       },
