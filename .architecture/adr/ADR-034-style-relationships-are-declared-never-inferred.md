@@ -224,19 +224,19 @@ colour roles** — cited for unpaired roles being first-class; **retrieval faile
 Retrieved 2026-09-03 by the first draft's author; **all four re-fetched for this revision**
 and every quoted sentence found on its page (the Figma variables reference now lives at
 `developers.figma.com/docs/rest-api/variables-types/`; the old URL redirects). Register IDs: the
-primary-sources table ends at E23 and the 31 August table already uses E24–E28 for other
-sources, so these are E32–E35 (the first evidence pass found them filed as E28–E31, colliding
-with the 31 August E28; renumbered). E22 itself is used by both tables — DTCG in the primary
-table, PostgreSQL in the 31 August one — a collision this ADR inherits and does not resolve.
-Grades: E22 is a published standard (S); the three Tailwind pages and the Figma reference are
-vendor documentation (V). The primary-sources table carries no grade column, so E22's grade
+register has one number sequence. The 31 August block was numbered first and holds E22–E28;
+the two DTCG rows filed on 2 September as E22–E23 collided with it and are **E29–E30** since
+the collision was resolved on 3 September; the four sources below are **E32–E35** (the first
+evidence pass found them filed as E28–E31, colliding with the 31 August E28). Grades: E29 is a
+published standard (S); the three Tailwind pages and the Figma reference are
+vendor documentation (V). The primary-sources table carries no grade column, so E29's grade
 is stated here and nowhere else.
 
 | Source | Supports |
 |---|---|
-| W3C DTCG *Format Module* 2025.10 §3.7 (repeated at the head of §6) — "Groups are arbitrary and tools _SHOULD NOT_ use them to infer the type or purpose of design tokens." (E22) | That "declare, never infer" is the published rule; the direct argument against deriving a family from a name stem |
-| Same, §6.3 `$type` (the rule is numbered §6.7.3, Type Inheritance) — a group's `$type` is a default for tokens that declare none (E22) | The behaviour `flatten()` already implements |
-| Same, Example 37 — a typography composite whose spec source enumerates `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight` (E22). §9.8 (Typography) is truncated in every rendered fetch so far; the five come from the source markdown | That the composite exists; Decision 2 does not rest on its full field list |
+| W3C DTCG *Format Module* 2025.10 §3.7 (repeated at the head of §6) — "Groups are arbitrary and tools _SHOULD NOT_ use them to infer the type or purpose of design tokens." (E29) | That "declare, never infer" is the published rule; the direct argument against deriving a family from a name stem |
+| Same, §6.3 `$type` (the rule is numbered §6.7.3, Type Inheritance) — a group's `$type` is a default for tokens that declare none (E29) | The behaviour `flatten()` already implements |
+| Same, Example 37 — a typography composite whose spec source enumerates `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight` (E29). §9.8 (Typography) is truncated in every rendered fetch so far; the five come from the source markdown | That the composite exists; Decision 2 does not rest on its full field list |
 | Tailwind v4 *Theme variables* — "Theme variables are defined in _namespaces_ and each namespace corresponds to one or more utility class or variant APIs"; "set the global theme variable namespace to `initial`… none of the default utility classes that are driven by theme variables will be available" (**E33**) | That closure is the supported mechanism — and that adding `--spacing-row-y` enlarges the namespace rather than replacing it |
 | Tailwind v4 *Margin* — `m-<number>` → `margin: calc(var(--spacing) * <number>)`; the utilities "are driven by the `--spacing` theme variable" (**E34**) | That the numeric scale is derived from a multiplier, not enumerated. Unboundedness follows from the formula and is inferred, not quoted |
 | Tailwind v4 *Detecting classes in source files* — "Use `@source not` to ignore specific paths… legacy components or third-party libraries"; `source(none)` (**E35**) | That the vendored tree can leave detection. See Decision 3 for what this does not buy |
@@ -574,7 +574,8 @@ name an executable proof, so the commands above are the ones that run; the drift
 
 ## Review record
 
-First draft 2026-09-03: eight decisions, two measurement passes, evidence table E22 plus four
+First draft 2026-09-03: eight decisions, two measurement passes, evidence table E22 (the DTCG
+format module; E29 since the register's collision was resolved) plus four
 sources then unregistered; committed whole as `ca61f6a`. Owner's review the same day: the
 draft answered three questions at once, and Decision 6 spent its length routing the component
 grammar back to ADR-031 — the signal that ADR-034 should stop there. This revision: Decision 3

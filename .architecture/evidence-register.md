@@ -54,12 +54,18 @@ Xforge tests answer: *"Did we implement the pattern correctly here?"*
 | Open-code UI primitives | E18 | V | design-system, a11y, ERP-primitive tests | REVERSIBLE |
 | Auth behind a facade | E19, E21 | V | business topology stays outside the provider | STABLE / provider REVERSIBLE |
 | Durable executor behind the outbox | E20 — *executor capability, not the source of durable business intent* | V | AQS-013 | REVERSIBLE |
-| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E22 (declare, never infer), E33–E35 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E32 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | ADR-034 Verification, all unwritten | PROPOSED |
-| DTCG-shaped token document, pinned at 2025.10 | E22, E23 — the version is real and its value shapes are normative. **What it does not prove:** that `tokens.json` conforms. It does not, deliberately and in writing — colour is a hex string where E23 requires `{colorSpace, components}`, dimension is a CSS length string where E22 requires `{value, unit}`, and `$modes` is a root property the schema does not enumerate. Precedent qualifies the TARGET, not the current document | S | `tokens.test.ts` value-shape suite, `assertContractVersions` | STABLE / migration tracked |
+| Closed design language: declared role contracts, closed Tailwind namespaces, generated style symbols (ADR-034, Proposed) | E29 (declare, never infer), E33–E35 (namespace closure is Tailwind's supported mechanism; the numeric spacing scale is a multiplier, not a list; `@source not` bounds detection), E32 (Figma scopes exist and are advisory). **What it does not prove:** that these 26 stems are correctly paired, or that closing spacing is right here — only the tree measurement in ADR-034 supports that | S/V | ADR-034 Verification, all unwritten | PROPOSED |
+| DTCG-shaped token document, pinned at 2025.10 | E29, E30 — the version is real and its value shapes are normative. **What it does not prove:** that `tokens.json` conforms. It does not, deliberately and in writing — colour is a hex string where E30 requires `{colorSpace, components}`, dimension is a CSS length string where E29 requires `{value, unit}`, and `$modes` is a root property the schema does not enumerate. Precedent qualifies the TARGET, not the current document | S | `tokens.test.ts` value-shape suite, `assertContractVersions` | STABLE / migration tracked |
 
 ---
 
 ## Primary sources
+
+**Numbering.** One sequence across the whole register. E01–E21 are the original entries;
+E22–E28 belong to the 31 August block below, which was numbered first; the two DTCG rows
+filed on 2 September reused E22 and E23 and collided with it, and are E29 and E30 since
+3 September; the 3 September block is E32–E35 (E31 was skipped and stays unused). A number,
+once issued, is never reused for a different source.
 
 Every entry carries a URL. Entries without a verifiable retrieval are marked **UNVERIFIED** and must not be relied on until confirmed.
 
@@ -86,8 +92,8 @@ Every entry carries a URL. Entries without a verifiable retrieval are marked **U
 | **E19** | Better Auth — *Organization Plugin* | https://better-auth.com/docs/plugins/organization | not re-verified |
 | **E20** | Trigger.dev — *Idempotency* | https://trigger.dev/docs/idempotency | not re-verified |
 | **E21** | Vercel — *Vercel acquires Better Auth* (7 Jul 2026; MIT retained, framework-agnostic, agent identity focus) | https://vercel.com/blog/vercel-acquires-better-auth | **verified 31 Aug 2026** |
-| **E22** | W3C DTCG — *Design Tokens Format Module*, 2025.10 | https://www.designtokens.org/TR/2025.10/format | **verified 2 Sep 2026** |
-| **E23** | W3C DTCG — *Color type*, 2025.10 | https://www.designtokens.org/TR/2025.10/color | **verified 2 Sep 2026** |
+| **E29** | W3C DTCG — *Design Tokens Format Module*, 2025.10 | https://www.designtokens.org/TR/2025.10/format | **verified 2 Sep 2026**; filed as E22 until 3 Sep, see note above |
+| **E30** | W3C DTCG — *Color type*, 2025.10 | https://www.designtokens.org/TR/2025.10/color | **verified 2 Sep 2026**; filed as E23 until 3 Sep |
 
 > **Sources marked "not re-verified" were cited by predecessor drafts and carried forward.** Their URLs are recorded so they can be checked; until they are, treat them as claims rather than as confirmed citations. Verify before any of them is used to justify reopening a FROZEN decision.
 
@@ -1721,8 +1727,8 @@ no upstream backing of any kind.
 ## Verified 3 September 2026
 
 Retrieved by the author of ADR-034's first draft and re-fetched for the ADR's revision; quoted there. Numbered
-from E32 because the primary-sources table ends at E23 and the 31 August table
-already spent E24–E28 on other sources (the first filing numbered these E28–E31 and collided
+from E32 because the 31 August table had spent E22–E28 and the primary table's DTCG rows,
+then filed as E22–E23, were about to become E29–E30 (the first filing numbered these E28–E31 and collided
 with the 31 August E28); reusing a number would send a reader to the wrong claim.
 
 | # | Source | Retrieved | Grade | Supports | Outcome |
