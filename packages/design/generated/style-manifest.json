@@ -951,67 +951,75 @@
       ]
     },
     "typography.bodyCompact": {
-      "class": "font-body-compact text-body-compact",
+      "class": "font-body-compact text-body-compact tracking-body-compact",
       "tokens": [
         "semantic.weight.body-compact",
         "semantic.type.body-compact",
-        "semantic.leading.body-compact"
+        "semantic.leading.body-compact",
+        "semantic.tracking.body-compact"
       ]
     },
     "typography.caption": {
-      "class": "font-caption text-caption",
+      "class": "font-caption text-caption tracking-caption",
       "tokens": [
         "semantic.weight.caption",
         "semantic.type.caption",
-        "semantic.leading.caption"
+        "semantic.leading.caption",
+        "semantic.tracking.caption"
       ]
     },
     "typography.display": {
-      "class": "font-heading text-display",
+      "class": "font-heading text-display tracking-display",
       "tokens": [
         "semantic.weight.heading",
         "semantic.type.display",
-        "semantic.leading.display"
+        "semantic.leading.display",
+        "semantic.tracking.display"
       ]
     },
     "typography.emphasis": {
-      "class": "font-emphasis text-emphasis",
+      "class": "font-emphasis text-emphasis tracking-emphasis",
       "tokens": [
         "semantic.weight.emphasis",
         "semantic.type.emphasis",
-        "semantic.leading.body"
+        "semantic.leading.body",
+        "semantic.tracking.emphasis"
       ]
     },
     "typography.heading": {
-      "class": "font-heading text-heading",
+      "class": "font-heading text-heading tracking-heading",
       "tokens": [
         "semantic.weight.heading",
         "semantic.type.heading",
-        "semantic.leading.heading"
+        "semantic.leading.heading",
+        "semantic.tracking.heading"
       ]
     },
     "typography.label": {
-      "class": "font-label text-label",
+      "class": "font-label text-label tracking-label",
       "tokens": [
         "semantic.weight.label",
         "semantic.type.label",
-        "semantic.leading.label"
+        "semantic.leading.label",
+        "semantic.tracking.label"
       ]
     },
     "typography.subheading": {
-      "class": "font-heading text-subheading",
+      "class": "font-heading text-subheading tracking-subheading",
       "tokens": [
         "semantic.weight.heading",
         "semantic.type.subheading",
-        "semantic.leading.subheading"
+        "semantic.leading.subheading",
+        "semantic.tracking.subheading"
       ]
     },
     "typography.title": {
-      "class": "font-heading text-title",
+      "class": "font-heading text-title tracking-title",
       "tokens": [
         "semantic.weight.heading",
         "semantic.type.title",
-        "semantic.leading.title"
+        "semantic.leading.title",
+        "semantic.tracking.title"
       ]
     }
   }

@@ -122,7 +122,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 14,
     rank: 1,
     size: 'semantic.type.body-compact',
-    tracking: NONE,
+    tracking: 'semantic.tracking.body-compact',
     weight: 'semantic.weight.body-compact',
   },
 
@@ -147,7 +147,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 12,
     rank: 0,
     size: 'semantic.type.caption',
-    tracking: NONE,
+    tracking: 'semantic.tracking.caption',
     weight: 'semantic.weight.caption',
   },
 
@@ -173,7 +173,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 24,
     rank: 6,
     size: 'semantic.type.display',
-    tracking: NONE,
+    tracking: 'semantic.tracking.display',
     weight: 'semantic.weight.heading',
   },
 
@@ -192,7 +192,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 14,
     rank: 2,
     size: 'semantic.type.emphasis',
-    tracking: NONE,
+    tracking: 'semantic.tracking.emphasis',
     weight: 'semantic.weight.emphasis',
   },
 
@@ -207,7 +207,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 16,
     rank: 4,
     size: 'semantic.type.heading',
-    tracking: NONE,
+    tracking: 'semantic.tracking.heading',
     weight: 'semantic.weight.heading',
   },
 
@@ -223,7 +223,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 12,
     rank: 1,
     size: 'semantic.type.label',
-    tracking: NONE,
+    tracking: 'semantic.tracking.label',
     weight: 'semantic.weight.label',
   },
 
@@ -247,7 +247,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 14,
     rank: 3,
     size: 'semantic.type.subheading',
-    tracking: NONE,
+    tracking: 'semantic.tracking.subheading',
     weight: 'semantic.weight.heading',
   },
 
@@ -261,7 +261,7 @@ export const TYPE_ROLES = deepFreeze({
     minimumPx: 18,
     rank: 5,
     size: 'semantic.type.title',
-    tracking: NONE,
+    tracking: 'semantic.tracking.title',
     weight: 'semantic.weight.heading',
   },
 })

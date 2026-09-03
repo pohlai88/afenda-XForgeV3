@@ -18,5 +18,5 @@ export const TWMERGE_CLASS_GROUPS = {
   'outline-color': [{ outline: ['focus', 'outline'] }],
   'ring-color': [{ ring: ['focus', 'outline'] }],
   'text-color': [{ text: ['on-disabled', 'on-error', 'on-error-container', 'on-info-container', 'on-primary', 'on-primary-container', 'on-statutory-container', 'on-success-container', 'on-surface', 'on-surface-variant', 'on-warning-container'] }],
-  'tracking': [{ tracking: ['body'] }],
+  'tracking': [{ tracking: ['body', 'body-compact', 'caption', 'display', 'emphasis', 'heading', 'label', 'subheading', 'title'] }],
 } as const

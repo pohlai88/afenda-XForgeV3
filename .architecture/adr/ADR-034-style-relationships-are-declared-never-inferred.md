@@ -244,6 +244,7 @@ decision row grades the DTCG pair S, and this table says so beside the rows.
 | Figma REST API *Variables* — "Setting scopes for a variable does not prevent that variable from being bound in other scopes… This only limits the variables that are shown in pickers within the Figma UI." (**E32**) | That a shipped tool modelled per-variable scope, and that its scopes are advisory |
 | Material Design 3 *Color roles* — "There are 26 standard color roles organized into six groups"; surface / primary–secondary–tertiary / container / on / variant as the words every role is built from; "apply colors only in the intended pairs or layering orders"; outline for "important boundaries, such as a text field outline", outline variant for "decorative elements, such as dividers" (**E37**, read 2026-09-04) | The colour-role grammar and the pairing law the tokens now follow: `surface`, `surface-lowest`, `surface-container`, `on-surface`, `on-surface-variant`, `primary` / `on-primary` / `primary-container`, `error` / `error-container`, `outline` / `outline-variant`, and `COLOR_PAIRS`. ADAPT: hover and pressed stay explicit fills where M3 uses state layers, and the status containers follow M3's custom-colour pattern with no high-emphasis fill |
 | Material Design 3 *Type scale & tokens* — fifteen baseline styles "from Display Large to Label Small", a brand and a plain typeface, an emphasized set that is "a higher weight" and never a new size, "the Major Second type scale with 14 as its key base size"; metrics from Google's material-web token file v0.192 (**E38**, read 2026-09-04) | The placement of our nine type roles: six carry a style to the pixel (`M3_TYPE_STYLES`), heading and display moved onto title-large and headline-large the same day, rank by weight on headings is the recorded deviation. ADAPT: one typeface, no brand face, no emphasized set beyond subheading |
+| Carbon `@carbon/type` *styles.ts* — the production type styles for IBM Plex Sans: `letterSpacing: px(0.32)` on every 12px style, `px(0.16)` on every 14px style, `0` from 16px up, at regular and semibold alike (**E39**, read 2026-09-04) | The tracking rule every type role now declares: a function of size, in em, three steps. ADOPT: Carbon sets the typeface this system uses; M3's tracking is Roboto's and was not taken |
 
 For the relationship layer itself:
 
@@ -671,4 +672,6 @@ the size ramp reads 12, 14, 16, 22, 24, 32 -- M3's steps. subheading is title-me
 emphasized set. Weight is the
 systematic deviation: M3 sets headlines regular and carries rank by size; this system, with one
 typeface and no brand face, carries rank by size and weight together, and says so on the row.
-Tracking is absent rather than zero on every role but body, and is not yet decided.
+Tracking was absent rather than zero on every role but body; it is declared on all nine now,
+as a function of size from Carbon's Plex Sans styles (E39): +0.32px at 12px, +0.16px at 14px,
+zero from 16px, in em so it scales.

@@ -23,7 +23,7 @@
  *   semantic.motion.duration.pulse -- a looping animation duration, consumed by the shimmer keyframes rather than by a utility
  *   semantic.motion.duration.state -- no --duration-* theme namespace; reached through the `duration-state` @utility
  *
- * 67 roles projected; 38 colour utilities emitted per channel.
+ * 75 roles projected; 38 colour utilities emitted per channel.
  */
 :root {
   --disabled: var(--semantic-color-disabled);
@@ -269,6 +269,14 @@
   --text-subheading: var(--semantic-type-subheading);
   --text-title: var(--semantic-type-title);
   --tracking-body: var(--semantic-tracking-body);
+  --tracking-body-compact: var(--semantic-tracking-body-compact);
+  --tracking-caption: var(--semantic-tracking-caption);
+  --tracking-display: var(--semantic-tracking-display);
+  --tracking-emphasis: var(--semantic-tracking-emphasis);
+  --tracking-heading: var(--semantic-tracking-heading);
+  --tracking-label: var(--semantic-tracking-label);
+  --tracking-subheading: var(--semantic-tracking-subheading);
+  --tracking-title: var(--semantic-tracking-title);
   --text-body--line-height: var(--semantic-leading-body);
   --text-body-compact--line-height: var(--semantic-leading-body-compact);
   --text-caption--line-height: var(--semantic-leading-caption);

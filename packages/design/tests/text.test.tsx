@@ -35,11 +35,11 @@ describe('Text renders the role and tone it is asked for', () => {
   })
 
   it.each([
-    ['body', 'font-body text-body'],
-    ['emphasis', 'font-emphasis text-emphasis'],
-    ['label', 'font-label text-label'],
+    ['body', 'font-body text-body tracking-body'],
+    ['emphasis', 'font-emphasis text-emphasis tracking-emphasis'],
+    ['label', 'font-label text-label tracking-label'],
     // The headline figure: heading weight, one size above title.
-    ['display', 'font-heading text-display'],
+    ['display', 'font-heading text-display tracking-display'],
   ] as const)('variant %s sets its role classes', (variant, classes) => {
     const html = render({ variant })
     for (const cls of classes.split(' ')) {

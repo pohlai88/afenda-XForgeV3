@@ -13,7 +13,7 @@ deliberately reproduces no values.
 ## Coverage
 
 - Token contract `2.0.0`, DTCG format `2025.10`.
-- 238 custom properties: 122 primitive, 112 semantic, 4 component (ceiling 12).
+- 247 custom properties: 123 primitive, 120 semantic, 4 component (ceiling 12).
 - 3 mode blocks: `density=comfortable`, `density=compact`, `theme=dark`.
 
 ## Primitive
@@ -138,8 +138,9 @@ Raw material with no opinion about use. The stylesheet may not name these.
 | `--space-7` | `space.7` | dimension | `2.5rem` |
 | `--space-8` | `space.8` | dimension | `3rem` |
 | `--space-9` | `space.9` | dimension | `4rem` |
-| `--tracking-normal` | `tracking.normal` | dimension | `0em` |
-| `--tracking-wide` | `tracking.wide` | dimension | `0.02em` |
+| `--tracking-none` | `tracking.none` | dimension | `0em` |
+| `--tracking-open` | `tracking.open` | dimension | `0.0114em` |
+| `--tracking-wide` | `tracking.wide` | dimension | `0.0267em` |
 | `--weight-bold` | `weight.bold` | fontWeight | `700` |
 | `--weight-medium` | `weight.medium` | fontWeight | `500` |
 | `--weight-normal` | `weight.normal` | fontWeight | `400` |
@@ -249,7 +250,15 @@ elevation domains.
 | `--semantic-space-snug` | `semantic.space.snug` | dimension | `{space.3}` | -- |
 | `--semantic-space-tight` | `semantic.space.tight` | dimension | `{space.2}` | -- |
 | `--semantic-target-minimum` | `semantic.target.minimum` | dimension | `{size.target-min}` | -- |
-| `--semantic-tracking-body` | `semantic.tracking.body` | dimension | `{tracking.normal}` | -- |
+| `--semantic-tracking-body` | `semantic.tracking.body` | dimension | `{tracking.none}` | -- |
+| `--semantic-tracking-body-compact` | `semantic.tracking.body-compact` | dimension | `{tracking.open}` | -- |
+| `--semantic-tracking-caption` | `semantic.tracking.caption` | dimension | `{tracking.wide}` | -- |
+| `--semantic-tracking-display` | `semantic.tracking.display` | dimension | `{tracking.none}` | -- |
+| `--semantic-tracking-emphasis` | `semantic.tracking.emphasis` | dimension | `{tracking.none}` | -- |
+| `--semantic-tracking-heading` | `semantic.tracking.heading` | dimension | `{tracking.none}` | -- |
+| `--semantic-tracking-label` | `semantic.tracking.label` | dimension | `{tracking.open}` | -- |
+| `--semantic-tracking-subheading` | `semantic.tracking.subheading` | dimension | `{tracking.none}` | -- |
+| `--semantic-tracking-title` | `semantic.tracking.title` | dimension | `{tracking.none}` | -- |
 | `--semantic-type-body` | `semantic.type.body` | dimension | `{size.text-md}` | type body · ≥14px at a 16px root |
 | `--semantic-type-body-compact` | `semantic.type.body-compact` | dimension | `{size.text-sm}` | type body-compact · ≥14px at a 16px root |
 | `--semantic-type-caption` | `semantic.type.caption` | dimension | `{size.text-xs}` | type caption · ≥12px at a 16px root |
@@ -408,6 +417,12 @@ ours has the same size and line height in pixels; a weight that differs is named
 A role that carries no style names its difference below. Every line height sits on the 4px
 grid, which `typographyFailures` holds; rank is carried by size and weight together, which
 is this system's deviation from M3's regular headlines, recorded rather than hidden.
+
+**Tracking is a function of size**, declared on every role and taken from the system that
+sets IBM Plex Sans in production, Carbon (@carbon/type styles.ts, read 2026-09-04): 12px text
+is spaced +0.32px (`tracking.wide`, 0.0267em), 14px text +0.16px (`tracking.open`, 0.0114em),
+16px and larger 0 (`tracking.none`) -- the same at regular and semibold. Material 3's per-style
+values are for Roboto and were not adopted. In em, so the spacing scales with the text size.
 
 ### Material 3 baseline styles, placed
 

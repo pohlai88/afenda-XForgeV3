@@ -120,8 +120,9 @@
   --leading-snug: 1.4;
   --leading-normal: 1.4286;
   --leading-loose: 1.5;
-  --tracking-normal: 0em;
-  --tracking-wide: 0.02em;
+  --tracking-none: 0em;
+  --tracking-open: 0.0114em;
+  --tracking-wide: 0.0267em;
   --easing-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
   --easing-entrance: cubic-bezier(0, 0, 0.38, 0.9);
   --easing-exit: cubic-bezier(0.2, 0, 1, 0.9);
@@ -212,7 +213,15 @@
   --semantic-leading-heading: var(--leading-tighter);
   --semantic-leading-title: var(--leading-tight);
   --semantic-leading-display: var(--leading-tightest);
-  --semantic-tracking-body: var(--tracking-normal);
+  --semantic-tracking-caption: var(--tracking-wide);
+  --semantic-tracking-body-compact: var(--tracking-open);
+  --semantic-tracking-label: var(--tracking-open);
+  --semantic-tracking-body: var(--tracking-none);
+  --semantic-tracking-emphasis: var(--tracking-none);
+  --semantic-tracking-subheading: var(--tracking-none);
+  --semantic-tracking-heading: var(--tracking-none);
+  --semantic-tracking-title: var(--tracking-none);
+  --semantic-tracking-display: var(--tracking-none);
   --semantic-ease-standard: var(--easing-standard);
   --semantic-ease-entrance: var(--easing-entrance);
   --semantic-ease-exit: var(--easing-exit);
