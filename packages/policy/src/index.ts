@@ -18,8 +18,33 @@
  * a typo in a handler is a type error rather than a silent denial.
  */
 export const PERMISSIONS = {
-  'hr.employee.read': 'Read employee records and their emergency contacts',
+  /**
+   * Onboarding creates a person, an employee and their first employment period
+   * in one transaction. Separate from `update` because putting somebody ON the
+   * books of a legal entity is a different authority from correcting a record
+   * already there -- an administrator who may fix a misspelled name is not
+   * thereby someone who may add a headcount to a payroll.
+   */
+  'hr.employee.onboard': 'Onboard an employee to a legal entity',
+  'hr.employee.read': 'Read employee records, employment history and emergency contacts',
+  /**
+   * Transfer moves a person between legal entities in one transaction: one
+   * employment period ends, another begins at a different employer, against the
+   * same human. It is separate from `onboard` because it changes which
+   * STATUTORY REGISTRATION somebody is filed under -- two EPF employer numbers,
+   * two EA forms -- and separate from `update` for the reason both are: putting
+   * a headcount onto another entity's payroll is not correcting a record.
+   */
+  'hr.employee.transfer': 'Transfer an employee to another legal entity',
   'hr.employee.update': 'Amend employee records',
+  /**
+   * Separate from `hr.employee.read` because the two answer different
+   * questions. The legal entity is the payroll scope and the statutory filing
+   * identity (law 15, ADR-009): reading the list tells you which employers
+   * exist in this group, which is org-structure information a person cleared to
+   * see one team's contact details has no reason to hold.
+   */
+  'hr.legal_entity.read': 'Read the legal entities in this tenant',
 } as const
 
 export type Permission = keyof typeof PERMISSIONS

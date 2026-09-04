@@ -25,6 +25,21 @@ export const metadata = { title: 'Xforge — development' }
 
 const ROUTES = [
   {
+    detail: 'Headcount across the group, and every change recorded after it took effect.',
+    href: '/dashboard',
+    title: 'People dashboard',
+  },
+  {
+    detail: 'Who is on the books, as at a date. Add ?asOf=YYYY-MM-DD to read another day.',
+    href: '/employees',
+    title: 'Employee directory',
+  },
+  {
+    detail: 'The first write: person, employee and first employment period, in one command.',
+    href: '/employees/new',
+    title: 'Onboard an employee',
+  },
+  {
     detail: 'Every authored component in every word it owns, with the dictionaries.',
     href: '/gallery',
     title: 'Gallery',

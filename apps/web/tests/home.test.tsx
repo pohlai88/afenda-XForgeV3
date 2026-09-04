@@ -23,7 +23,14 @@ describe('the development index', () => {
     // must not restate; the index names the route and says where the id lives.
     expect(html).toContain('/employees/&lt;id&gt;')
     expect(html).toContain('tests/fixtures/employee.ts')
-    expect(html).not.toMatch(/href="\/employees\//)
+    // A UUID-SHAPED SEGMENT, not any subpath. The rule is "the seeded id is not
+    // restated here", and the first form of it -- forbidding `href="/employees/`
+    // outright -- also forbade `/employees/new`, a static route carrying no id
+    // at all. It went red the moment the onboarding screen was linked, which is
+    // a check refusing the thing it was never about.
+    expect(html).not.toMatch(
+      /href="\/employees\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    )
   })
 
   it('is a page in the language: a Shell, links, no class of its own, nothing from tests/', () => {

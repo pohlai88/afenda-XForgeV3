@@ -238,3 +238,72 @@ export function toWriteOutcome(outcome: MutationOutcome): WriteOutcome {
       return assertNever(outcome, 'mutation outcome')
   }
 }
+
+/**
+ * A bounded-read query's status becomes a `ReadOutcome`.
+ *
+ * LIFTED HERE WHEN THE SECOND SCREEN NEEDED IT, not before. This lived inside
+ * `use-emergency-contacts.ts` while one screen existed, which was right: one
+ * caller is not evidence of a shared concern (law 31). The employee directory
+ * is the second, and it consumes the same envelope -- `{ items, meta }` with a
+ * completeness marker -- from a different operation. Copying nine lines into
+ * the new hook would have been the cheapest possible way to acquire a second
+ * source for "what does a succeeded-but-bodyless response mean", and the two
+ * copies would have agreed until one of them learnt about a new state.
+ *
+ * Generic in the item, because that is the only thing that differs. Every
+ * bounded read in this API returns the same shape by construction: the
+ * completeness envelope is one schema in the contract, not one per operation.
+ */
+export function readOutcomeOf<T>(
+  status: 'error' | 'pending' | 'success',
+  error: unknown,
+  data: { items: T[]; meta: Completeness } | undefined,
+): ReadOutcome<T> {
+  switch (status) {
+    case 'pending':
+      return { kind: 'pending' }
+    case 'error':
+      return { error, kind: 'failed' }
+    case 'success':
+      // `data` is defined when the query succeeded; the envelope carries the
+      // completeness a screen would otherwise have to infer from a count.
+      return data
+        ? { items: data.items, kind: 'succeeded', meta: data.meta }
+        : { error: new Error('succeeded with no body'), kind: 'failed' }
+    default:
+      return assertNever(status, 'query status')
+  }
+}
+
+/**
+ * A mutation's status becomes a `MutationOutcome`.
+ *
+ * LIFTED WHEN THE SECOND WRITE SCREEN NEEDED IT, exactly as `readOutcomeOf` was
+ * (law 31). It lived inside `use-emergency-contacts.ts` while one screen wrote
+ * anything; onboarding is the second, and the alternative was a nested ternary
+ * in the new screen doing the same mapping with no `assertNever` behind it --
+ * which is how a library adding a fifth status becomes a silent `idle` rather
+ * than a build failure.
+ *
+ * react-query's status is a closed union, so this is where the four write
+ * outcomes stop being a restatement of a library's states and start having a
+ * producer in this repository.
+ */
+export function writeOutcomeOf(
+  status: 'error' | 'idle' | 'pending' | 'success',
+  error: unknown,
+): MutationOutcome {
+  switch (status) {
+    case 'idle':
+      return { kind: 'idle' }
+    case 'pending':
+      return { kind: 'saving' }
+    case 'success':
+      return { kind: 'saved' }
+    case 'error':
+      return { error, kind: 'failed' }
+    default:
+      return assertNever(status, 'mutation status')
+  }
+}

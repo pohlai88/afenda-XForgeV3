@@ -19,7 +19,13 @@ import type {
 
 import type {
   EmergencyContact,
-  ListEmergencyContacts200
+  GetEmployee200,
+  ListEmergencyContacts200,
+  ListEmployees200,
+  ListEmployments200,
+  ListLegalEntities200,
+  OnboardEmployee201,
+  TransferEmployee201
 } from './model';
 
 
@@ -28,6 +34,18 @@ export const getListEmergencyContactsResponseMock = (overrideResponse: Partial<E
 export const getCreateEmergencyContactResponseMock = (overrideResponse: Partial<Extract<EmergencyContact, object>> = {}): EmergencyContact => ({employeeId: faker.string.uuid(), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), phone: faker.string.alpha({length: {min: 3, max: 40}}), relationship: faker.string.alpha({length: {min: 1, max: 80}}), version: faker.number.int({min: 0}), ...overrideResponse})
 
 export const getUpdateEmergencyContactResponseMock = (overrideResponse: Partial<Extract<EmergencyContact, object>> = {}): EmergencyContact => ({employeeId: faker.string.uuid(), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), phone: faker.string.alpha({length: {min: 3, max: 40}}), relationship: faker.string.alpha({length: {min: 1, max: 80}}), version: faker.number.int({min: 0}), ...overrideResponse})
+
+export const getListLegalEntitiesResponseMock = (overrideResponse: Partial<Extract<ListLegalEntities200, object>> = {}): ListLegalEntities200 => ({items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({countryCode: faker.string.alpha({length: {min: 2, max: 2}}), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), registrationNumber: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 60}}), null]), timeZone: faker.string.alpha({length: {min: 1, max: 64}})})), meta: {completeness: faker.helpers.arrayElement(['complete','partial'] as const), partialReasons: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: faker.helpers.arrayElement(['result_cap'] as const), limit: faker.number.int({min: 0}), returned: faker.number.int({min: 0})}))}, ...overrideResponse})
+
+export const getListEmployeesResponseMock = (overrideResponse: Partial<Extract<ListEmployees200, object>> = {}): ListEmployees200 => ({asOf: faker.date.past().toISOString().slice(0, 10), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({employeeId: faker.string.uuid(), employeeNumber: faker.string.alpha({length: {min: 1, max: 40}}), employment: faker.helpers.arrayElement([{effectiveFrom: faker.date.past().toISOString().slice(0, 10), effectiveTo: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]), jobTitle: faker.string.alpha({length: {min: 1, max: 160}}), payBasis: faker.helpers.arrayElement(['monthly','daily','hourly'] as const)},null,]), fullName: faker.string.alpha({length: {min: 1, max: 200}}), legalEntityId: faker.string.uuid(), legalEntityName: faker.string.alpha({length: {min: 1, max: 200}}), personId: faker.string.uuid()})), meta: {completeness: faker.helpers.arrayElement(['complete','partial'] as const), partialReasons: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: faker.helpers.arrayElement(['result_cap'] as const), limit: faker.number.int({min: 0}), returned: faker.number.int({min: 0})}))}, ...overrideResponse})
+
+export const getOnboardEmployeeResponseMock = (overrideResponse: Partial<Extract<OnboardEmployee201, object>> = {}): OnboardEmployee201 => ({asOf: faker.date.past().toISOString().slice(0, 10), employee: {employeeId: faker.string.uuid(), employeeNumber: faker.string.alpha({length: {min: 1, max: 40}}), employment: faker.helpers.arrayElement([{effectiveFrom: faker.date.past().toISOString().slice(0, 10), effectiveTo: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]), jobTitle: faker.string.alpha({length: {min: 1, max: 160}}), payBasis: faker.helpers.arrayElement(['monthly','daily','hourly'] as const)},null,]), fullName: faker.string.alpha({length: {min: 1, max: 200}}), legalEntity: {countryCode: faker.string.alpha({length: {min: 2, max: 2}}), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), registrationNumber: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 60}}), null]), timeZone: faker.string.alpha({length: {min: 1, max: 64}})}, personId: faker.string.uuid(), preferredName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 120}}), null])}, ...overrideResponse})
+
+export const getGetEmployeeResponseMock = (overrideResponse: Partial<Extract<GetEmployee200, object>> = {}): GetEmployee200 => ({asOf: faker.date.past().toISOString().slice(0, 10), employee: {employeeId: faker.string.uuid(), employeeNumber: faker.string.alpha({length: {min: 1, max: 40}}), employment: faker.helpers.arrayElement([{effectiveFrom: faker.date.past().toISOString().slice(0, 10), effectiveTo: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]), jobTitle: faker.string.alpha({length: {min: 1, max: 160}}), payBasis: faker.helpers.arrayElement(['monthly','daily','hourly'] as const)},null,]), fullName: faker.string.alpha({length: {min: 1, max: 200}}), legalEntity: {countryCode: faker.string.alpha({length: {min: 2, max: 2}}), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), registrationNumber: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 60}}), null]), timeZone: faker.string.alpha({length: {min: 1, max: 64}})}, personId: faker.string.uuid(), preferredName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 120}}), null])}, ...overrideResponse})
+
+export const getTransferEmployeeResponseMock = (overrideResponse: Partial<Extract<TransferEmployee201, object>> = {}): TransferEmployee201 => ({asOf: faker.date.past().toISOString().slice(0, 10), employee: {employeeId: faker.string.uuid(), employeeNumber: faker.string.alpha({length: {min: 1, max: 40}}), employment: faker.helpers.arrayElement([{effectiveFrom: faker.date.past().toISOString().slice(0, 10), effectiveTo: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]), jobTitle: faker.string.alpha({length: {min: 1, max: 160}}), payBasis: faker.helpers.arrayElement(['monthly','daily','hourly'] as const)},null,]), fullName: faker.string.alpha({length: {min: 1, max: 200}}), legalEntity: {countryCode: faker.string.alpha({length: {min: 2, max: 2}}), id: faker.string.uuid(), name: faker.string.alpha({length: {min: 1, max: 200}}), registrationNumber: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 60}}), null]), timeZone: faker.string.alpha({length: {min: 1, max: 64}})}, personId: faker.string.uuid(), preferredName: faker.helpers.arrayElement([faker.string.alpha({length: {min: 1, max: 120}}), null])}, ...overrideResponse})
+
+export const getListEmploymentsResponseMock = (overrideResponse: Partial<Extract<ListEmployments200, object>> = {}): ListEmployments200 => ({items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({effectiveFrom: faker.date.past().toISOString().slice(0, 10), effectiveTo: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 10), null]), employeeId: faker.string.uuid(), id: faker.string.uuid(), jobTitle: faker.string.alpha({length: {min: 1, max: 160}}), payBasis: faker.helpers.arrayElement(['monthly','daily','hourly'] as const), recordedAt: faker.date.past().toISOString().slice(0, 19) + 'Z'})), meta: {completeness: faker.helpers.arrayElement(['complete','partial'] as const), partialReasons: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: faker.helpers.arrayElement(['result_cap'] as const), limit: faker.number.int({min: 0}), returned: faker.number.int({min: 0})}))}, ...overrideResponse})
 
 
 export const getListEmergencyContactsMockHandler = (overrideResponse?: ListEmergencyContacts200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ListEmergencyContacts200> | ListEmergencyContacts200), options?: RequestHandlerOptions) => {
@@ -65,8 +83,86 @@ export const getUpdateEmergencyContactMockHandler = (overrideResponse?: Emergenc
       })
   }, options)
 }
+
+export const getListLegalEntitiesMockHandler = (overrideResponse?: ListLegalEntities200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ListLegalEntities200> | ListLegalEntities200), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/legal-entities', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListLegalEntitiesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getListEmployeesMockHandler = (overrideResponse?: ListEmployees200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ListEmployees200> | ListEmployees200), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/employees', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListEmployeesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getOnboardEmployeeMockHandler = (overrideResponse?: OnboardEmployee201 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OnboardEmployee201> | OnboardEmployee201), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/employees', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOnboardEmployeeResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
+
+export const getGetEmployeeMockHandler = (overrideResponse?: GetEmployee200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<GetEmployee200> | GetEmployee200), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/employees/:employeeId', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetEmployeeResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getTransferEmployeeMockHandler = (overrideResponse?: TransferEmployee201 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<TransferEmployee201> | TransferEmployee201), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/employees/:employeeId/transfer', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTransferEmployeeResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
+
+export const getListEmploymentsMockHandler = (overrideResponse?: ListEmployments200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ListEmployments200> | ListEmployments200), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/employees/:employeeId/employments', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListEmploymentsResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getXforgeAPIMock = () => [
   getListEmergencyContactsMockHandler(),
   getCreateEmergencyContactMockHandler(),
-  getUpdateEmergencyContactMockHandler()
+  getUpdateEmergencyContactMockHandler(),
+  getListLegalEntitiesMockHandler(),
+  getListEmployeesMockHandler(),
+  getOnboardEmployeeMockHandler(),
+  getGetEmployeeMockHandler(),
+  getTransferEmployeeMockHandler(),
+  getListEmploymentsMockHandler()
 ]

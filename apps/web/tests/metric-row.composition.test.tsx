@@ -18,73 +18,38 @@
  *             - a trend tone on Text (`success` / `danger`), set by the SCREEN for what
  *               the change means, not by the sign: fewer overtime hours is `success`.
  *               The delta stays words with a sign, so colour never carries the meaning
- *               alone (constitution rule 7), and the test reads that back.
+ *               alone (constitution rule 7), and this test reads that back.
  *           Studio's CardHeader/CardContent anatomy is not adopted: Card is a root and
  *           Stack does the layout. Icons, badges and the period dropdown are dropped —
  *           nothing on a payroll screen has asked for them.
  * ADAPT     none. This is a COMPOSITION, not an Adapter: it consumes
  *           `@xforge/design/components/*` and nothing else, and it lives in the app.
- *           It is defined inside this test because no screen has asked for it yet; the
- *           day one does, it moves beside that screen unchanged.
- * PROVE     below. The composition's own source is read back to assert the reduction:
- *           no `className`, no `#components/ui`, no studio import.
+ * PROVE     below.
+ *
+ * -------------------------------------------------------------------------------------
+ * THE COMPOSITION HAS MOVED, AND THIS FILE NOW PROVES SOMETHING IT DOES NOT CONTAIN.
+ * -------------------------------------------------------------------------------------
+ * It was defined inside this test, with the header saying "the day a screen asks for it,
+ * it moves beside that screen unchanged". The dashboard asked. It lives at
+ * `apps/web/app/metric-row.tsx`, and the source-readback below reads THAT file rather
+ * than this one.
+ *
+ * That is not a detail. The old readback sliced this file's own text between a function
+ * and a sentinel comment, so the assertion and its subject were the same bytes — which
+ * worked, and would have gone on passing unchanged while the thing a screen actually
+ * renders drifted anywhere it liked. A proof that cannot see its subject is the shape
+ * this repository keeps finding.
  */
 
 import { readFileSync } from 'node:fs'
-import { Card } from '@xforge/design/components/card'
-import { Heading } from '@xforge/design/components/heading'
-import { Stack } from '@xforge/design/components/stack'
-import { Text } from '@xforge/design/components/text'
-import { createElement as h, type ReactElement } from 'react'
+import { join } from 'node:path'
+import { createElement as h } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import { type Metric, MetricRow } from '../app/metric-row'
 
-interface Metric {
-  /** The comparison, in words: "than last month", "of 42 submitted". */
-  readonly baseline: string
-  /**
-   * The change, as one thing: its text is signed and worded ("+4%", "−2 days"), and the
-   * trend -- what the change MEANS, decided by the screen and not by the sign -- cannot
-   * exist without that text. Two independent optionals let a trend stand alone and be
-   * silently ignored; one object makes rule 7 a property of the type.
-   */
-  readonly delta?: { readonly text: string; readonly trend?: 'danger' | 'success' }
-  readonly label: string
-  readonly value: string
-}
-
-/** The composition. Equal tiles, one number each, each with its baseline. */
-function MetricRow({ heading, metrics }: { heading: string; metrics: readonly Metric[] }) {
-  return h(
-    Stack,
-    { 'aria-labelledby': 'metric-row-heading', gap: 'normal', role: 'region' },
-    h(Heading, { id: 'metric-row-heading', level: 2 }, heading),
-    h(
-      Stack,
-      { direction: 'row', gap: 'normal' },
-      ...metrics.map(
-        (m): ReactElement =>
-          h(
-            Card,
-            { 'aria-label': `${m.label}: ${m.value} ${m.baseline}`, key: m.label },
-            h(
-              Stack,
-              { gap: 'tight' },
-              h(Text, { variant: 'label' }, m.label),
-              h(Text, { variant: 'display' }, m.value),
-              h(
-                Text,
-                { tone: m.delta?.trend ?? 'muted' },
-                m.delta ? `${m.delta.text} ${m.baseline}` : m.baseline,
-              ),
-            ),
-          ),
-      ),
-    ),
-  )
-}
-
-// -- end of the composition; everything below is the test that reads it back --
+const ROOT = join(import.meta.dirname, '../../..')
+const COMPOSITION = join(ROOT, 'apps/web/app/metric-row.tsx')
 
 const sample: readonly Metric[] = [
   {
@@ -112,6 +77,11 @@ describe('a studio statistics block reduces to Xforge components', () => {
     expect(html.match(/data-slot="card"/g)).toHaveLength(sample.length)
   })
 
+  /** A Grid, not a row Stack: a fifth tile wraps instead of squeezing the other four. */
+  it('lays the tiles on a grid', () => {
+    expect(html).toContain('data-slot="grid"')
+  })
+
   it('never shows a number without its baseline in words', () => {
     for (const m of sample) {
       expect(html).toContain(m.value)
@@ -137,27 +107,28 @@ describe('a studio statistics block reduces to Xforge components', () => {
   })
 
   it('is a composition, not an adapter: Xforge components only, no styling of its own', () => {
-    const source = readFileSync(new URL(import.meta.url), 'utf8')
-    // Sliced between the function and the sentinel comment above `sample`. The first
-    // pass sliced to `'const metrics'`, a declaration that no longer existed; it worked
-    // by matching its own literal, which is the kind of accident a check should not
-    // rest on. The sentinel's first occurrence is the comment, before this test's text.
-    const end = source.indexOf('// -- end of the composition')
-    expect(end).toBeGreaterThan(0)
-    const composition = source.slice(source.indexOf('function MetricRow'), end)
-    expect(composition.length).toBeGreaterThan(200)
-    expect(composition).not.toContain('className')
-    // Judged on the import specifiers, not on the file's text: this very assertion
-    // would otherwise be the match. Nothing private to the design package, nothing
-    // from the studio, and every Xforge import a public component entry.
+    const source = readFileSync(COMPOSITION, 'utf8')
+    // Read from disk, so this fails if the file is moved or emptied rather than passing
+    // over its own text. The old version sliced THIS file and could not see the subject.
+    expect(source.length).toBeGreaterThan(200)
+    expect(source).toContain('export function MetricRow')
+
+    // COMMENTS STRIPPED FIRST. The rule is "this composition writes no class of its
+    // own", and a raw substring scan enforces "this composition never says the word" --
+    // a different and sillier rule, which went red the moment the file's own header
+    // explained that it has no className. A check whose subject includes the prose
+    // about the check cannot distinguish a violation from a description of one.
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+    expect(code).not.toContain('className')
+
     const imports = [...source.matchAll(/from '([^']+)'/g)].map((m) => m[1] ?? '')
-    expect(imports.length).toBeGreaterThan(4)
+    expect(imports.length).toBeGreaterThan(3)
     for (const spec of imports) {
+      // Nothing private to the design package, nothing from the studio, and every
+      // import a public component entry point (ADR-033).
       expect(spec.startsWith('#')).toBe(false)
       expect(spec).not.toMatch(/studio/)
-      if (spec.startsWith('@xforge/')) {
-        expect(spec).toMatch(/^@xforge\/design\/components\/[a-z-]+$/)
-      }
+      expect(spec).toMatch(/^@xforge\/design\/components\/[a-z-]+$/)
     }
   })
 })

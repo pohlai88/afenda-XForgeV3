@@ -10,7 +10,12 @@ import { ListItem } from '@xforge/design/components/list-item'
 import { Stack } from '@xforge/design/components/stack'
 import { Status } from '@xforge/design/components/status'
 import { Text } from '@xforge/design/components/text'
-import { assertNever, type ResourceState, readSucceeded, type WriteOutcome } from './resource-state'
+import {
+  assertNever,
+  type ResourceState,
+  readSucceeded,
+  type WriteOutcome,
+} from '../resource-state'
 /**
  * Emergency contacts -- the design system's representative screen.
  *

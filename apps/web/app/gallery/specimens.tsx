@@ -3,7 +3,9 @@ import { Button } from '@xforge/design/components/button'
 import { Card } from '@xforge/design/components/card'
 import { Code } from '@xforge/design/components/code'
 import { Combobox } from '@xforge/design/components/combobox'
+import { DateInput } from '@xforge/design/components/date-input'
 import { EmptyState } from '@xforge/design/components/empty-state'
+import { Field } from '@xforge/design/components/field'
 import { Grid } from '@xforge/design/components/grid'
 import { Heading } from '@xforge/design/components/heading'
 import { Link } from '@xforge/design/components/link'
@@ -16,6 +18,7 @@ import { Status } from '@xforge/design/components/status'
 import { Swatch } from '@xforge/design/components/swatch'
 import { Switch } from '@xforge/design/components/switch'
 import { Text } from '@xforge/design/components/text'
+import { TextInput } from '@xforge/design/components/text-input'
 import type { ReactNode } from 'react'
 
 /**
@@ -606,6 +609,127 @@ export const GALLERY: readonly Group[] = [
             <Text variant="display">display</Text>
           </Stack>
         ),
+      },
+    ],
+  },
+  {
+    // A field is wide: two frames a row, not four.
+    columns: 2,
+    component: 'field',
+    states: [
+      {
+        name: 'Label and control',
+        node: (
+          <Field label="Job title">
+            <TextInput placeholder="Payroll Manager" />
+          </Field>
+        ),
+      },
+      {
+        name: 'With a description',
+        node: (
+          <Field
+            description="Unique within the employer, not across the group."
+            label="Employee number"
+          >
+            <TextInput placeholder="MY-0001" />
+          </Field>
+        ),
+      },
+      {
+        // The state a single `helperText` prop cannot express: the rule stays on
+        // screen when the complaint arrives.
+        name: 'Description AND error, together',
+        node: (
+          <Field
+            description="Unique within the employer, not across the group."
+            error="MY-0001 already belongs to Siti binti Rahman at this employer."
+            label="Employee number"
+          >
+            <TextInput defaultValue="MY-0001" />
+          </Field>
+        ),
+      },
+      {
+        name: 'Disabled',
+        node: (
+          <Field description="Set by the employment period." disabled label="Job title">
+            <TextInput defaultValue="Payroll Manager" />
+          </Field>
+        ),
+      },
+      {
+        // A form is a grid of MIXED widths; a Grid of equal columns cannot say
+        // two-of-four, which is why the span is the field's and not the screen's.
+        name: 'Spans: a mixed-width row',
+        node: (
+          <Grid columns={4} gap="normal">
+            <Field label="Employee number" span={1}>
+              <TextInput placeholder="MY-0001" />
+            </Field>
+            <Field label="Full name" span={3}>
+              <TextInput placeholder="Siti binti Rahman" />
+            </Field>
+          </Grid>
+        ),
+      },
+    ],
+  },
+  {
+    columns: 2,
+    component: 'text-input',
+    states: [
+      {
+        name: 'Empty, and filled',
+        node: (
+          <Stack gap="normal">
+            <TextInput aria-label="Job title, empty" placeholder="Payroll Manager" />
+            <TextInput aria-label="Job title, filled" defaultValue="Payroll Manager" />
+          </Stack>
+        ),
+      },
+      {
+        name: 'Disabled, and read-only',
+        node: (
+          <Stack gap="normal">
+            <TextInput aria-label="Disabled" defaultValue="Payroll Manager" disabled />
+            <TextInput aria-label="Read only" defaultValue="MY-0001" readOnly />
+          </Stack>
+        ),
+      },
+      {
+        name: 'On a card',
+        node: <TextInput aria-label="On a card" defaultValue="Payroll Manager" />,
+        surface: 'card',
+      },
+    ],
+  },
+  {
+    columns: 2,
+    component: 'date-input',
+    states: [
+      {
+        name: 'Empty, and carrying a date',
+        node: (
+          <Stack gap="normal">
+            <DateInput aria-label="Effective from, empty" />
+            <DateInput aria-label="Effective from, filled" defaultValue="2026-03-16" />
+          </Stack>
+        ),
+      },
+      {
+        // The end is EXCLUSIVE: a same-day joiner-leaver is [2026-03-03, 2026-03-04).
+        name: 'A half-open period',
+        node: (
+          <Stack direction="row" gap="normal">
+            <DateInput aria-label="Effective from" defaultValue="2026-03-03" />
+            <DateInput aria-label="Effective to" defaultValue="2026-03-04" min="2026-03-03" />
+          </Stack>
+        ),
+      },
+      {
+        name: 'Disabled',
+        node: <DateInput aria-label="Effective from" defaultValue="2024-04-01" disabled />,
       },
     ],
   },

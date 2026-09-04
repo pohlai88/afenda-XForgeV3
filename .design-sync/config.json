@@ -18,7 +18,9 @@
     "Card": "../../packages/design/src/components/card.tsx",
     "Code": "../../packages/design/src/components/code.tsx",
     "Combobox": "../../packages/design/src/components/combobox.tsx",
+    "DateInput": "../../packages/design/src/components/date-input.tsx",
     "EmptyState": "../../packages/design/src/components/empty-state.tsx",
+    "Field": "../../packages/design/src/components/field.tsx",
     "Grid": "../../packages/design/src/components/grid.tsx",
     "Heading": "../../packages/design/src/components/heading.tsx",
     "Link": "../../packages/design/src/components/link.tsx",
@@ -32,7 +34,8 @@
     "Status": "../../packages/design/src/components/status.tsx",
     "Swatch": "../../packages/design/src/components/swatch.tsx",
     "Switch": "../../packages/design/src/components/switch.tsx",
-    "Text": "../../packages/design/src/components/text.tsx"
+    "Text": "../../packages/design/src/components/text.tsx",
+    "TextInput": "../../packages/design/src/components/text-input.tsx"
   },
   "srcDir": "../../packages/design/src/components",
   "dtsPropsFor": {

@@ -68,6 +68,8 @@ catalog:
   embla-carousel-react: ^8.6.0
   '@shadcn/react': ^0.3.1
   recharts: 3.8.0
+  storybook: 10.6.0
+  '@storybook/react-vite': 10.6.0
 
 # ONE FIELD decides whether a dependency may run its install scripts.
 #

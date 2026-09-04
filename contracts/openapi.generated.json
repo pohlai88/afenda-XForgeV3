@@ -183,6 +183,315 @@
         "required": [
           "version"
         ]
+      },
+      "LegalEntity": {
+        "type": "object",
+        "properties": {
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "registrationNumber": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "countryCode",
+          "id",
+          "name",
+          "registrationNumber",
+          "timeZone"
+        ]
+      },
+      "EmployeeSummary": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employeeNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "employment": {
+            "$ref": "#/components/schemas/EmploymentSummary"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "legalEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "legalEntityName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employeeNumber",
+          "employment",
+          "fullName",
+          "legalEntityId",
+          "legalEntityName",
+          "personId"
+        ]
+      },
+      "EmploymentSummary": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "effectiveTo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "jobTitle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "payBasis": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "daily",
+              "hourly"
+            ]
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "effectiveTo",
+          "jobTitle",
+          "payBasis"
+        ]
+      },
+      "EmployeeRecord": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "employeeNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "employment": {
+            "$ref": "#/components/schemas/EmploymentSummary"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "legalEntity": {
+            "$ref": "#/components/schemas/LegalEntity"
+          },
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preferredName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "employeeId",
+          "employeeNumber",
+          "employment",
+          "fullName",
+          "legalEntity",
+          "personId",
+          "preferredName"
+        ]
+      },
+      "NewEmployee": {
+        "type": "object",
+        "properties": {
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "employeeNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "jobTitle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "legalEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payBasis": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "daily",
+              "hourly"
+            ]
+          },
+          "preferredName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "employeeNumber",
+          "fullName",
+          "jobTitle",
+          "legalEntityId",
+          "payBasis"
+        ],
+        "additionalProperties": false
+      },
+      "Transfer": {
+        "type": "object",
+        "properties": {
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "employeeNumber": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "jobTitle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "payBasis": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "daily",
+              "hourly"
+            ]
+          },
+          "toLegalEntityId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "employeeNumber",
+          "jobTitle",
+          "payBasis",
+          "toLegalEntityId"
+        ],
+        "additionalProperties": false
+      },
+      "Employment": {
+        "type": "object",
+        "properties": {
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "effectiveTo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "employeeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobTitle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "payBasis": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "daily",
+              "hourly"
+            ]
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "effectiveTo",
+          "employeeId",
+          "id",
+          "jobTitle",
+          "payBasis",
+          "recordedAt"
+        ]
       }
     },
     "parameters": {}
@@ -396,6 +705,491 @@
           },
           "409": {
             "description": "Version conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/legal-entities": {
+      "get": {
+        "operationId": "listLegalEntities",
+        "summary": "List legal entities",
+        "tags": [
+          "HR"
+        ],
+        "responses": {
+          "200": {
+            "description": "The legal entities in this tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LegalEntity"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Completeness"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/employees": {
+      "get": {
+        "operationId": "listEmployees",
+        "summary": "List employees as at a date",
+        "tags": [
+          "HR"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": true,
+            "name": "asOf",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "legalEntityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The employees, resolved at asOf, and whether this is all of them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EmployeeSummary"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Completeness"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "items",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "onboardEmployee",
+        "summary": "Onboard an employee to a legal entity",
+        "tags": [
+          "HR"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewEmployee"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The employee, resolved at the day employment begins",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "employee": {
+                      "$ref": "#/components/schemas/EmployeeRecord"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "employee"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such legal entity in this tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already employed here, or the number is taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/employees/{employeeId}": {
+      "get": {
+        "operationId": "getEmployee",
+        "summary": "Read one employee as at a date",
+        "tags": [
+          "HR"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "employeeId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": true,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The employee, resolved at asOf",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "employee": {
+                      "$ref": "#/components/schemas/EmployeeRecord"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "employee"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/employees/{employeeId}/transfer": {
+      "post": {
+        "operationId": "transferEmployee",
+        "summary": "Transfer an employee to another legal entity",
+        "tags": [
+          "HR"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "employeeId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Transfer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The employee record at the DESTINATION, resolved on the transfer date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "employee": {
+                      "$ref": "#/components/schemas/EmployeeRecord"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "employee"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such employee, or no such legal entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nothing to transfer, or already employed there",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid, or already at that employer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/employees/{employeeId}/employments": {
+      "get": {
+        "operationId": "listEmployments",
+        "summary": "List an employee employment periods",
+        "tags": [
+          "HR"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "employeeId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every employment period for this employee, earliest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Employment"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Completeness"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {

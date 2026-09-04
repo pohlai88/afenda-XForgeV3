@@ -29,6 +29,16 @@ storybook-static/
 # `git add -A` in the main checkout commits an entire second copy of the tree.
 .claude/worktrees/
 
+# Storybook's build output. `storybook build` writes it into the checkout, and a run
+# that leaves the tree dirty is the thing law 33 exists to prevent.
+storybook-static/
+
+# Downloaded UI reference material and the notes written about it. Personal
+# working notes, not repository artefacts -- same category as .human-plans-file.
+# ~11k lines of third-party docs (Base UI, Prototyper, Fragments); vendoring them
+# would put someone else's documentation under this repository's review rules.
+.claude/llmx/
+
 # Written by Next, and its content depends on whether dev or build ran last.
 # Tracking it guarantees a dirty tree. apps/web/types/assets.d.ts owns the
 # declarations this application actually needs.

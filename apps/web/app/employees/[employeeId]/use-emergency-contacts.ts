@@ -18,67 +18,20 @@
  */
 import {
   type EmergencyContact,
-  type ListEmergencyContacts200,
   useCreateEmergencyContact,
   useListEmergencyContacts,
   useUpdateEmergencyContact,
 } from '@xforge/api-client'
 import {
-  assertNever,
-  type MutationOutcome,
-  type ReadOutcome,
   type ResourceState,
+  readOutcomeOf,
   toResourceState,
   toWriteOutcome,
   type WriteOutcome,
-} from './resource-state'
+  writeOutcomeOf,
+} from '../resource-state'
 
 export type Contact = EmergencyContact
-
-/**
- * react-query's status is a closed union, so this is where the four write
- * outcomes stop being a restatement of a library's states and start having a
- * producer in this repository. `assertNever` means a new library status stops
- * the build rather than falling through to `idle`.
- */
-function writeOutcomeOf(
-  status: 'error' | 'idle' | 'pending' | 'success',
-  error: unknown,
-): MutationOutcome {
-  switch (status) {
-    case 'idle':
-      return { kind: 'idle' }
-    case 'pending':
-      return { kind: 'saving' }
-    case 'success':
-      return { kind: 'saved' }
-    case 'error':
-      return { error, kind: 'failed' }
-    default:
-      return assertNever(status, 'mutation status')
-  }
-}
-
-function readOutcomeOf(
-  status: 'error' | 'pending' | 'success',
-  error: unknown,
-  data: ListEmergencyContacts200 | undefined,
-): ReadOutcome<Contact> {
-  switch (status) {
-    case 'pending':
-      return { kind: 'pending' }
-    case 'error':
-      return { error, kind: 'failed' }
-    case 'success':
-      // `data` is defined when the query succeeded; the envelope carries the
-      // completeness the screen used to throw away.
-      return data
-        ? { items: data.items, kind: 'succeeded', meta: data.meta }
-        : { error: new Error('succeeded with no body'), kind: 'failed' }
-    default:
-      return assertNever(status, 'query status')
-  }
-}
 
 export interface EmergencyContactsView {
   add: { outcome: WriteOutcome; run: () => void }

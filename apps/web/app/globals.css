@@ -18,12 +18,32 @@
  * make it possible.
  */
 
-@import "tailwindcss";
+/*
+ * `source("../")` PINS AUTOMATIC DETECTION TO `apps/web`, WHICH WAS PREVIOUSLY AN
+ * ACCIDENT OF CWD. Tailwind resolves `@source` relative to this file, but its automatic
+ * scan starts at the process working directory. `next dev` runs from `apps/web`, so the
+ * base was right whenever Next built it and wrong for every other runner --
+ * `design-system-classes.test.ts` had to pass `base: apps/web` explicitly to reproduce
+ * what a screen receives, which is a second place holding the same fact.
+ *
+ * Measured 2026-09-04, compiling THIS file twice with only the base changed:
+ *
+ *   base = apps/web     214 classes    what next dev emits
+ *   base = repo root    295 classes    +81, and none missing
+ *
+ * The 81 are a strict superset scavenged from tests, documentation and notes, and they
+ * include `z-50`, `z-[999]`, `mt-[13px]`, `w-[180px]` and `scale-[0.25]` -- the raw
+ * stacking values and arbitrary lengths ADR-034 closed the scales to refuse. A runner
+ * that scans the repository root compiles them, so a component written against one
+ * renders correctly there and not in the product. `source()` is Tailwind's documented
+ * answer for exactly this case: a monorepo whose build commands run from the root.
+ */
+@import "tailwindcss" source("../");
 @import "@xforge/design/tokens.css";
 @import "@xforge/design/tailwind-theme.css";
 
 /*
- * Most components need no `dark:` at all -- `bg-card` already rebinds itself.
+ * Most components need no `dark:` at all -- `bg-surface-lowest` already rebinds itself.
  * This is for the cases a pasted block arrives carrying.
  */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -56,6 +76,15 @@
  * selects; it is a complement to the namespace closures, never a substitute (E31).
  */
 @source not "../../../packages/design/src/components/ui/";
+
+/*
+ * Storybook stories for app SCREENS live in `apps/web/stories/`, and
+ * `source("../")` above means Tailwind scans them. A story is not product
+ * source: a class literal written in one would be compiled into the stylesheet
+ * a real screen receives. Excluded structurally rather than by convention --
+ * the same treatment, and the same reason, as the vendored tree above.
+ */
+@source not "../stories/";
 /*
  * CUSTOM UTILITIES — the widths Tailwind has no namespace for.
  *

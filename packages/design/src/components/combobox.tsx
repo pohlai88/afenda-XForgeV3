@@ -99,6 +99,14 @@ const FIELD = cn(
   STYLE.shape.control,
   STYLE.stroke.width,
   STYLE.outline.default.border,
+  // The same invalid cue the text and date controls take. Base UI registers this
+  // input with a surrounding Field exactly as it registers a plain one, so the
+  // attribute was already here and only the border was missing: measured on the
+  // onboarding form, a refused Employer carried `data-invalid` and `aria-invalid`
+  // and drew rgb(111, 123, 133) -- told to a screen reader, invisible to a
+  // sighted one. Four invalid fields, three error borders, and the fourth was
+  // this. Found by counting the two, which is why the check counts both.
+  STYLE.interaction.invalid.border,
   STYLE.surface.lowest.background,
   STYLE.ink.onSurface.text,
   STYLE.typography.body,

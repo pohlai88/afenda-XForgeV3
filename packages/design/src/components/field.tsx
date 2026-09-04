@@ -120,28 +120,37 @@ export const FIELD_SPAN = {
   4: 'col-span-4',
 } as const
 
-/** Section 3 — the Target. */
+/**
+ * Section 3 — the Target.
+ *
+ * `| undefined` ON EVERY OPTIONAL, deliberately, under `exactOptionalPropertyTypes`.
+ * A screen computing `error={errors.fullName}` from a partial record produces
+ * `string | undefined`, which a bare `error?: string` REFUSES -- the flag draws a
+ * distinction between "absent" and "present and undefined" that no caller here means.
+ * The alternative is every call site spreading conditionally to say a thing it does not
+ * think; `resource-state.ts` carries the same note for the same reason.
+ */
 export interface FieldProps extends Pick<NativeProps<'div'>, 'id'> {
   /** The control. A `TextInput`, `DateInput`, `Combobox` or `Switch`. */
   readonly children: ReactNode
   /** What to enter, said before the person enters it. Stays visible when there is an error. */
-  readonly description?: string
-  readonly disabled?: boolean
+  readonly description?: string | undefined
+  readonly disabled?: boolean | undefined
   /**
    * What went wrong. Its presence is what makes the field invalid — one fact, not a
    * boolean and a string that can disagree about whether there is a problem.
    */
-  readonly error?: string
+  readonly error?: string | undefined
   /** Required, and a string. See the header. */
   readonly label: string
   /** Submitted with the form, and the key a form library reports errors against. */
-  readonly name?: string
+  readonly name?: string | undefined
   /**
    * Tracks occupied in a parent `Grid`. Absent means the field takes its natural place
    * in whatever lays it out -- a `Stack` gives it the full width, and a field outside a
    * grid is unaffected by a span it cannot use.
    */
-  readonly span?: keyof typeof FIELD_SPAN
+  readonly span?: keyof typeof FIELD_SPAN | undefined
 }
 
 /** Section 4 — the Adapter. Base UI wires the ids; every class is a symbol. */

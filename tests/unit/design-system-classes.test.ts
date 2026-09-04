@@ -395,8 +395,31 @@ describe('the authored layer selects style; it does not write it', () => {
   // Comments are not literals: cn.ts explains a merge with `"p-normal p-loose"` in prose.
   const stripComments = (text: string) =>
     text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  /**
+   * A `data-*` ATTRIBUTE VALUE IS NOT A CLASS, and this scan used to read it as one.
+   *
+   * The subject of these two checks is class literals; the population was every string
+   * literal in the file, split on whitespace. Those coincided only for as long as no
+   * component's slot name began with a closed namespace — and then `text-input.tsx`
+   * landed, whose `data-slot="text-input"` was reported as a hand-written `text-*`
+   * utility. The component is not misnamed: `text-input` is the natural kebab of
+   * `TextInput`, and the same collision waits for anything called `size-*`, `p-*`,
+   * `shadow-*` or `bg-*`.
+   *
+   * Stripped rather than special-cased, and stripped NARROWLY: only the value of a
+   * `data-…="…"` attribute goes, which is provably never a class, so a real class in a
+   * `className` or a `cn()` call is caught exactly as before. The test below proves that
+   * the narrowing did not buy the exclusion with a hole.
+   */
+  const stripDataAttributes = (text: string) => text.replace(/\bdata-[\w-]+=(["'])[^"']*\1/g, '')
+
   const literals = sourceFiles(join(PKG, 'src')).flatMap((f) =>
-    [...stripComments(readFileSync(f, 'utf8')).matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)]
+    [
+      ...stripDataAttributes(stripComments(readFileSync(f, 'utf8'))).matchAll(
+        /'([^'\n]*)'|"([^"\n]*)"/g,
+      ),
+    ]
       .flatMap((m) => (m[1] ?? m[2] ?? '').split(/\s+/))
       .filter(Boolean)
       .map((word) => ({ file: f.slice(PKG.length + 1), word })),
@@ -423,6 +446,23 @@ describe('the authored layer selects style; it does not write it', () => {
       .filter(({ word }) => isArbitrary(word))
       .map(({ file, word }) => `${file}: ${word}`)
     expect(offenders, 'hand-typed design values in authored source').toEqual([])
+  })
+
+  /**
+   * THE NARROWING ABOVE MUST NOT BE A HOLE, so it is exercised in both directions on
+   * fixtures rather than trusted: a slot value that looks like a utility is ignored, and
+   * the same word inside a `className` or a `cn()` call is still caught. Without this the
+   * exclusion could quietly widen to "any string on a line containing data-" and nothing
+   * would report it — a check narrowed until nothing can fail it is not a check.
+   */
+  it('ignores a data attribute value and still catches the same word as a class', () => {
+    const slotOnly = stripDataAttributes('<div data-slot="text-input" data-tone="bg-surface" />')
+    expect(slotOnly).not.toContain('text-input')
+    expect(slotOnly).not.toContain('bg-surface')
+
+    const asClass = stripDataAttributes('<div className={cn("text-input")} data-slot="x" />')
+    expect(asClass).toContain('text-input')
+    expect(isThemed('text-input')).toBe(true)
   })
 
   it('writes no design-bearing class literal', () => {

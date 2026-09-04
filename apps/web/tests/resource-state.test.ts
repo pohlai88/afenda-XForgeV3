@@ -18,7 +18,7 @@ import {
   type ReadOutcome,
   toResourceState,
   toWriteOutcome,
-} from '../app/employees/[employeeId]/resource-state'
+} from '../app/employees/resource-state'
 
 const complete = { completeness: 'complete' } as const
 // Not `as const`: `partialReasons` is a mutable array on the generated type,

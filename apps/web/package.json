@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./globals.css": "./app/globals.css"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
@@ -23,6 +26,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@storybook/react-vite": "catalog:",
     "@tailwindcss/postcss": "^4.3.3",
     "tailwindcss": "catalog:",
     "vitest": "catalog:"
