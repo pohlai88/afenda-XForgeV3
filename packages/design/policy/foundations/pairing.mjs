@@ -307,7 +307,8 @@ export const XFORGE_ONLY_ROLES = deepFreeze({
   disabled:
     'M3 draws disabled as on-surface at 38% over a 12% container; ours are explicit fills so the pair can be measured (3.2:1, held to 3:1)',
   focus:
-    'M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once',
+    "M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, an alias of primary (Carbon's $focus is $interactive's value, E41), separated from a same-coloured fill by the 2px offset",
+
   'info-container':
     "M3's custom-colour pattern: a status container with its on-colour and no high-emphasis fill, because nothing has asked for one",
   'on-disabled': 'the ink of the explicit disabled fill; see disabled',

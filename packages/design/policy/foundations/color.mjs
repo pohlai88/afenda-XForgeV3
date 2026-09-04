@@ -900,7 +900,12 @@ export const COLOR_ROLE_POLICIES = deepFreeze({
     providesContexts: ['error'],
     reason: 'the pressed fill of a destructive action, proved through on-error',
   },
-  'color.focus': { againstContexts: ['surface', 'surface-lowest'], kind: 'ui' },
+  'color.focus': {
+    againstContexts: ['surface', 'surface-lowest'],
+    kind: 'ui',
+    reason:
+      'the one focus ring, an alias of primary: separated from a same-coloured fill by the 2px offset, so the surface is its only neighbour',
+  },
   'color.info-container': {
     kind: 'surface',
     providesContexts: ['info-container'],

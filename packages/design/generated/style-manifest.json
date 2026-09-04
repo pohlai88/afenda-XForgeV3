@@ -39,7 +39,7 @@
     },
     "focus": {
       "m3": null,
-      "why": "M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once"
+      "why": "M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, an alias of primary (Carbon's $focus is $interactive's value, E41), separated from a same-coloured fill by the 2px offset"
     },
     "info-container": {
       "m3": null,

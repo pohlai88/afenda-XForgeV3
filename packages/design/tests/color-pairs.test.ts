@@ -160,3 +160,29 @@ describe('every Material 3 colour role is placed: carried by a root of ours, or 
     }
   })
 })
+
+describe('the focus ring derives from primary', () => {
+  // Focus and primary resolved to the same primitive in both themes (teal.700, teal.500)
+  // as two independent declarations -- the two-copies defect, agreeing until one moved.
+  // Carbon's white theme sets $focus to $interactive's value on purpose and separates the
+  // ring from the fill with $focus-inset (E41); ours separates it with the 2px offset, so
+  // the relation is declared once: focus IS primary, and no theme redeclares it.
+  interface ColourSource {
+    readonly $modes: { theme: { dark: { semantic: { color: Record<string, unknown> } } } }
+    readonly semantic: { color: { focus: { $value: string } } }
+  }
+  const source = tokens as unknown as ColourSource
+
+  it('is declared as an alias of primary, not a copy of its value', () => {
+    expect(source.semantic.color.focus.$value).toBe('{semantic.color.primary}')
+  })
+
+  it('has no dark override of its own; it follows primary into the dark theme', () => {
+    expect('focus' in source.$modes.theme.dark.semantic.color).toBe(false)
+    for (const theme of ['light', 'dark']) {
+      expect(contrastOfPair(tokens, 'focus', 'surface', theme)).toBe(
+        contrastOfPair(tokens, 'primary', 'surface', theme),
+      )
+    }
+  })
+})

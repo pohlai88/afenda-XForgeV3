@@ -161,7 +161,7 @@
   --semantic-color-on-statutory-container: var(--color-brass-700);
   --semantic-color-outline-variant: var(--color-neutral-300);
   --semantic-color-outline: var(--color-neutral-500);
-  --semantic-color-focus: var(--color-teal-700);
+  --semantic-color-focus: var(--semantic-color-primary);
   --semantic-color-disabled: var(--color-neutral-200);
   --semantic-color-on-disabled: var(--color-neutral-500);
   --semantic-color-scrim: var(--color-scrim);
@@ -322,7 +322,6 @@
   --semantic-color-on-statutory-container: var(--color-brass-300);
   --semantic-color-outline-variant: var(--color-ink-600);
   --semantic-color-outline: var(--color-ink-400);
-  --semantic-color-focus: var(--color-teal-500);
   --semantic-color-disabled: var(--color-ink-750);
   --semantic-color-on-disabled: var(--color-ink-400);
   --semantic-color-shadow-ambient: var(--color-shadow-ambient-dark);

@@ -163,7 +163,7 @@ elevation domains.
 | `--semantic-color-error-container` | `semantic.color.error-container` | color | `{color.red.100}` | surface · provides error-container · bg only |
 | `--semantic-color-error-hover` | `semantic.color.error-hover` | color | `{color.red.800}` | surface · provides error · bg only |
 | `--semantic-color-error-pressed` | `semantic.color.error-pressed` | color | `{color.red.950}` | surface · provides error · bg only |
-| `--semantic-color-focus` | `semantic.color.focus` | color | `{color.teal.700}` | ui · ≥3:1 against surface, surface-lowest · border, outline, ring only |
+| `--semantic-color-focus` | `semantic.color.focus` | color | `{semantic.color.primary}` | ui · ≥3:1 against surface, surface-lowest · border, outline, ring only |
 | `--semantic-color-info-container` | `semantic.color.info-container` | color | `{color.sky.100}` | surface · provides info-container · bg only |
 | `--semantic-color-on-disabled` | `semantic.color.on-disabled` | color | `{color.neutral.500}` | inactive · ≥3:1 against disabled · text only |
 | `--semantic-color-on-error` | `semantic.color.on-error` | color | `{color.neutral.0}` | text · ≥4.5:1 against error · text only |
@@ -360,7 +360,7 @@ its floor and the generator refuses a root placed against no Material 3 role.
 | Root | Why it exists |
 | --- | --- |
 | `disabled` | M3 draws disabled as on-surface at 38% over a 12% container; ours are explicit fills so the pair can be measured (3.2:1, held to 3:1) |
-| `focus` | M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, defined once |
+| `focus` | M3 has no focus role -- its indicators borrow the accent colours; ours is the one focus ring, an alias of primary (Carbon's $focus is $interactive's value, E41), separated from a same-coloured fill by the 2px offset |
 | `info-container` | M3's custom-colour pattern: a status container with its on-colour and no high-emphasis fill, because nothing has asked for one |
 | `on-disabled` | the ink of the explicit disabled fill; see disabled |
 | `statutory-container` | a custom status container: EPF, SOCSO, EIS and PCB are law, not advice, and do not borrow info |
@@ -498,7 +498,7 @@ Selector `:root[data-density='compact']`, 11 rebound.
 
 ### `theme=dark`
 
-Selector `:root[data-theme='dark']`, 36 rebound.
+Selector `:root[data-theme='dark']`, 35 rebound.
 
 | Custom property | Value in this mode |
 | --- | --- |
@@ -507,7 +507,6 @@ Selector `:root[data-theme='dark']`, 36 rebound.
 | `--semantic-color-error-container` | `{color.red.950}` |
 | `--semantic-color-error-hover` | `{color.red.200}` |
 | `--semantic-color-error-pressed` | `{color.red.100}` |
-| `--semantic-color-focus` | `{color.teal.500}` |
 | `--semantic-color-info-container` | `{color.sky.950}` |
 | `--semantic-color-on-disabled` | `{color.ink.400}` |
 | `--semantic-color-on-error` | `{color.ink.950}` |
